@@ -55,10 +55,17 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_hn.h"
-#include "opt_inet6.h"
-#include "opt_inet.h"
-#include "opt_rss.h"
+#include <bsd/porting/netport.h>
+#include <bsd/porting/bus.h>
+#include <bsd/porting/mmu.h>
+#include <bsd/porting/synch.h>
+#include <bsd/porting/kthread.h>
+#include <bsd/porting/callout.h>
+
+//#include "opt_hn.h"
+//#include "opt_inet6.h"
+//#include "opt_inet.h"
+//#include "opt_rss.h"
 
 #include <sys/param.h>
 #include <sys/bus.h>
@@ -70,37 +77,39 @@ __FBSDID("$FreeBSD$");
 #include <sys/queue.h>
 #include <sys/lock.h>
 #include <sys/smp.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
+#include <bsd/sys/sys/socket.h>
+#include <osv/ioctl.h>
 #include <sys/sx.h>
 #include <sys/sysctl.h>
 #include <sys/systm.h>
 #include <sys/taskqueue.h>
-#include <sys/buf_ring.h>
+//#include <sys/buf_ring.h>
 #include <sys/eventhandler.h>
 
 #include <machine/atomic.h>
 #include <machine/in_cksum.h>
 
-#include <net/bpf.h>
-#include <net/ethernet.h>
-#include <net/if.h>
-#include <net/if_dl.h>
-#include <net/if_media.h>
-#include <net/if_types.h>
-#include <net/if_var.h>
-#include <net/rndis.h>
+#include <bsd/sys/net/bpf.h>
+#include <bsd/sys/net/ethernet.h>
+#include <bsd/sys/net/if.h>
+#include <bsd/sys/net/if_dl.h>
+#include <bsd/sys/net/if_media.h>
+#include <bsd/sys/net/if_types.h>
+#include <bsd/sys/net/if_var.h>
+//#include <bsd/sys/net/rndis.h>
 #ifdef RSS
-#include <net/rss_config.h>
+#include <bsd/sys/net/rss_config.h>
 #endif
 
-#include <netinet/in_systm.h>
-#include <netinet/in.h>
-#include <netinet/ip.h>
-#include <netinet/ip6.h>
-#include <netinet/tcp.h>
-#include <netinet/tcp_lro.h>
-#include <netinet/udp.h>
+#include <bsd/sys/netinet/in_systm.h>
+#include <bsd/sys/netinet/in.h>
+#include <bsd/sys/netinet/ip.h>
+#ifdef INET6
+#include <bsd/sys/netinet/ip6.h>
+#endif
+#include <bsd/sys/netinet/tcp.h>
+#include <bsd/sys/netinet/tcp_lro.h>
+#include <bsd/sys/netinet/udp.h>
 
 #include <dev/hyperv/include/hyperv.h>
 #include <dev/hyperv/include/hyperv_busdma.h>
@@ -113,7 +122,7 @@ __FBSDID("$FreeBSD$");
 #include <dev/hyperv/netvsc/hn_nvs.h>
 #include <dev/hyperv/netvsc/hn_rndis.h>
 
-#include "vmbus_if.h"
+//#include "vmbus_if.h"
 
 #define HN_IFSTART_SUPPORT
 
@@ -525,17 +534,11 @@ static device_method_t hn_methods[] = {
 	DEVMETHOD_END
 };
 
-static driver_t hn_driver = {
+driver_t hn_driver = {
 	"hn",
 	hn_methods,
 	sizeof(struct hn_softc)
 };
-
-static devclass_t hn_devclass;
-
-DRIVER_MODULE(hn, vmbus, hn_driver, hn_devclass, 0, 0);
-MODULE_VERSION(hn, 1);
-MODULE_DEPEND(hn, vmbus, 1, 1, 1);
 
 #if __FreeBSD_version >= 1100099
 static void
