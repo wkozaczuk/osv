@@ -35,13 +35,20 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <bsd/porting/netport.h>
+#include <bsd/porting/bus.h>
+#include <bsd/porting/mmu.h>
+#include <bsd/porting/synch.h>
+#include <bsd/porting/kthread.h>
+#include <bsd/porting/callout.h>
+
 #include <sys/param.h>
 #include <sys/proc.h>
-#include <sys/condvar.h>
+#include <osv/condvar.h>
 #include <sys/time.h>
 #include <sys/systm.h>
 #include <sys/sysctl.h>
-#include <sys/sockio.h>
+#include <osv/ioctl.h>
 #include <sys/mbuf.h>
 #include <sys/malloc.h>
 #include <sys/module.h>
@@ -52,18 +59,19 @@ __FBSDID("$FreeBSD$");
 #include <sys/taskqueue.h>
 #include <sys/bus.h>
 #include <sys/mutex.h>
-#include <sys/callout.h>
+//#include <sys/callout.h>
 #include <sys/smp.h>
 #include <vm/vm.h>
 #include <vm/pmap.h>
-#include <vm/uma.h>
+//#include <vm/uma.h>
 #include <sys/lock.h>
-#include <sys/sema.h>
-#include <sys/sglist.h>
+//#include <sys/sema.h>
+//#include <sys/sglist.h>
 #include <sys/eventhandler.h>
 #include <machine/bus.h>
 #include <sys/bus_dma.h>
 
+/*
 #include <cam/cam.h>
 #include <cam/cam_ccb.h>
 #include <cam/cam_periph.h>
@@ -73,11 +81,11 @@ __FBSDID("$FreeBSD$");
 #include <cam/cam_debug.h>
 #include <cam/scsi/scsi_all.h>
 #include <cam/scsi/scsi_message.h>
-
+*/
 #include <dev/hyperv/include/hyperv.h>
 #include <dev/hyperv/include/vmbus.h>
 #include "hv_vstorage.h"
-#include "vmbus_if.h"
+//#include "vmbus_if.h"
 
 #define STORVSC_MAX_LUNS_PER_TARGET	(64)
 #define STORVSC_MAX_IO_REQUESTS		(STORVSC_MAX_LUNS_PER_TARGET * 2)
@@ -355,14 +363,9 @@ static device_method_t storvsc_methods[] = {
 	DEVMETHOD_END
 };
 
-static driver_t storvsc_driver = {
+driver_t storvsc_driver = {
 	"storvsc", storvsc_methods, sizeof(struct storvsc_softc),
 };
-
-static devclass_t storvsc_devclass;
-DRIVER_MODULE(storvsc, vmbus, storvsc_driver, storvsc_devclass, 0, 0);
-MODULE_VERSION(storvsc, 1);
-MODULE_DEPEND(storvsc, vmbus, 1, 1, 1);
 
 static void
 storvsc_subchan_attach(struct storvsc_softc *sc,

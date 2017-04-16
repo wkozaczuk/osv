@@ -35,7 +35,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-#include <sys/timetc.h>
+//#include <sys/timetc.h>
 
 #include <dev/hyperv/include/hyperv.h>
 #include <dev/hyperv/include/hyperv_busdma.h>

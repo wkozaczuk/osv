@@ -32,6 +32,13 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <bsd/porting/netport.h>
+#include <bsd/porting/bus.h>
+#include <bsd/porting/mmu.h>
+#include <bsd/porting/synch.h>
+#include <bsd/porting/kthread.h>
+#include <bsd/porting/callout.h>
+
 #include <sys/param.h>
 #include <sys/bus.h>
 #include <sys/kernel.h>
@@ -47,22 +54,22 @@ __FBSDID("$FreeBSD$");
 #include <machine/bus.h>
 #include <machine/intr_machdep.h>
 #include <machine/resource.h>
-#include <x86/include/apicvar.h>
+//#include <x86/include/apicvar.h>
 
-#include <contrib/dev/acpica/include/acpi.h>
-#include <dev/acpica/acpivar.h>
+#include "acpi.h"
+//#include <dev/acpica/acpivar.h>
 
 #include <dev/hyperv/include/hyperv.h>
 #include <dev/hyperv/include/vmbus_xact.h>
 #include <dev/hyperv/vmbus/hyperv_reg.h>
 #include <dev/hyperv/vmbus/hyperv_var.h>
 #include <dev/hyperv/vmbus/vmbus_reg.h>
-#include <dev/hyperv/vmbus/vmbus_var.h>
-#include <dev/hyperv/vmbus/vmbus_chanvar.h>
+//#include <dev/hyperv/vmbus/vmbus_var.h>
+//#include <dev/hyperv/vmbus/vmbus_chanvar.h>
 
-#include "acpi_if.h"
-#include "pcib_if.h"
-#include "vmbus_if.h"
+//#include "acpi_if.h"
+//#include "pcib_if.h"
+//#include "vmbus_if.h"
 
 #define VMBUS_GPADL_START		0xe1e10
 
@@ -182,18 +189,11 @@ static device_method_t vmbus_methods[] = {
 	DEVMETHOD_END
 };
 
-static driver_t vmbus_driver = {
+driver_t vmbus_driver = {
 	"vmbus",
 	vmbus_methods,
 	sizeof(struct vmbus_softc)
 };
-
-static devclass_t vmbus_devclass;
-
-DRIVER_MODULE(vmbus, acpi, vmbus_driver, vmbus_devclass, NULL, NULL);
-MODULE_DEPEND(vmbus, acpi, 1, 1, 1);
-MODULE_DEPEND(vmbus, pci, 1, 1, 1);
-MODULE_VERSION(vmbus, 1);
 
 static __inline struct vmbus_softc *
 vmbus_get_softc(void)
