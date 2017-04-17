@@ -617,6 +617,8 @@ endif
 #bsd += bsd/sys/dev/hyperv/vmbus/vmbus.o
 bsd += bsd/sys/dev/hyperv/vmbus/hyperv.o
 #bsd += bsd/sys/dev/hyperv/netvsc/if_hn.o
+#bsd += bsd/sys/dev/hyperv/netvsc/hn_rndis.o
+#bsd += bsd/sys/dev/hyperv/netvsc/hn_nvs.o
 
 bsd += bsd/sys/dev/random/hash.o
 bsd += bsd/sys/dev/random/randomdev_soft.o

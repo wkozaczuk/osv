@@ -32,16 +32,20 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <bsd/porting/netport.h>
+
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
-//#include <sys/timetc.h>
+#include <sys/timetc.h>
 
 #include <dev/hyperv/include/hyperv.h>
 #include <dev/hyperv/include/hyperv_busdma.h>
 #include <dev/hyperv/vmbus/hyperv_machdep.h>
 #include <dev/hyperv/vmbus/hyperv_reg.h>
 #include <dev/hyperv/vmbus/hyperv_var.h>
+
+
 
 #define HYPERV_FREEBSD_BUILD		0ULL
 #define HYPERV_FREEBSD_VERSION		((uint64_t)__FreeBSD_version)
@@ -95,14 +99,14 @@ static struct hypercall_ctx	hypercall_context;
 static u_int
 hyperv_get_timecount(struct timecounter *tc __unused)
 {
-	return rdmsr(MSR_HV_TIME_REF_COUNT);
+	return processor::rdmsr(MSR_HV_TIME_REF_COUNT);
 }
 
 static uint64_t
 hyperv_tc64_rdmsr(void)
 {
 
-	return (rdmsr(MSR_HV_TIME_REF_COUNT));
+	return (processor::rdmsr(MSR_HV_TIME_REF_COUNT));
 }
 
 uint64_t
@@ -216,13 +220,15 @@ hyperv_identify(void)
 
 	if (maxleaf >= CPUID_LEAF_HV_HWFEATURES) {
 		do_cpuid(CPUID_LEAF_HV_HWFEATURES, regs);
-		if (bootverbose) {
-			printf("  HW Features: %08x, AMD: %08x\n",
-			    regs[0], regs[3]);
-		}
 	}
 
-	return (true);
+	if (bootverbose) {
+		printf("  HW Features: %08x, AMD: %08x\n",
+			   regs[0], regs[3]);
+	}
+}
+
+return (true);
 }
 
 static void
@@ -233,8 +239,6 @@ hyperv_init(void *dummy __unused)
 		if (vm_guest == VM_GUEST_HV)
 			vm_guest = VM_GUEST_VM;
 		return;
-	}
-
 	/* Set guest id */
 	wrmsr(MSR_HV_GUEST_OS_ID, MSR_HV_GUESTID_FREEBSD);
 
@@ -278,7 +282,7 @@ hypercall_create(void *arg __unused)
 	}
 
 	/* Get the 'reserved' bits, which requires preservation. */
-	hc_orig = rdmsr(MSR_HV_HYPERCALL);
+	hc_orig = processor::rdmsr(MSR_HV_HYPERCALL);
 
 	/*
 	 * Setup the Hypercall page.
@@ -289,12 +293,12 @@ hypercall_create(void *arg __unused)
 	    MSR_HV_HYPERCALL_PGSHIFT) |
 	    (hc_orig & MSR_HV_HYPERCALL_RSVD_MASK) |
 	    MSR_HV_HYPERCALL_ENABLE;
-	wrmsr(MSR_HV_HYPERCALL, hc);
+    processor::wrmsr(MSR_HV_HYPERCALL, hc);
 
 	/*
 	 * Confirm that Hypercall page did get setup.
 	 */
-	hc = rdmsr(MSR_HV_HYPERCALL);
+	hc = processor::rdmsr(MSR_HV_HYPERCALL);
 	if ((hc & MSR_HV_HYPERCALL_ENABLE) == 0) {
 		printf("hyperv: Hypercall setup failed\n");
 		hypercall_memfree();
@@ -316,8 +320,8 @@ hypercall_destroy(void *arg __unused)
 		return;
 
 	/* Disable Hypercall */
-	hc = rdmsr(MSR_HV_HYPERCALL);
-	wrmsr(MSR_HV_HYPERCALL, (hc & MSR_HV_HYPERCALL_RSVD_MASK));
+	hc = processor::rdmsr(MSR_HV_HYPERCALL);
+    processor::wrmsr(MSR_HV_HYPERCALL, (hc & MSR_HV_HYPERCALL_RSVD_MASK));
 	hypercall_memfree();
 
 	if (bootverbose)
