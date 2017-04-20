@@ -94,7 +94,7 @@ struct vmbus_chanpkt_hdr {
 	VMBUS_CHANPKT_GETLEN((pkt)->cph_hlen))
 
 /* Include padding */
-#define VMBUS_CHANPKT_DATALEN(pkt)		\
+#define VMBUS_CHANPKT_DATALEN(pkt)		g\
 	(VMBUS_CHANPKT_GETLEN((pkt)->cph_tlen) -\
 	 VMBUS_CHANPKT_GETLEN((pkt)->cph_hlen))
 
@@ -130,7 +130,7 @@ typedef void	(*vmbus_chan_callback_t)(struct vmbus_channel *, void *);
 static __inline struct vmbus_channel *
 vmbus_get_channel(device_t dev)
 {
-	return device_get_ivars(dev);
+	return static_cast<struct vmbus_channel *>(device_get_ivars(dev));
 }
 
 /*

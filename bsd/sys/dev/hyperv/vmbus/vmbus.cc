@@ -64,12 +64,12 @@ __FBSDID("$FreeBSD$");
 #include <dev/hyperv/vmbus/hyperv_reg.h>
 #include <dev/hyperv/vmbus/hyperv_var.h>
 #include <dev/hyperv/vmbus/vmbus_reg.h>
-//#include <dev/hyperv/vmbus/vmbus_var.h>
-//#include <dev/hyperv/vmbus/vmbus_chanvar.h>
+#include <dev/hyperv/vmbus/vmbus_var.h>
+#include <dev/hyperv/vmbus/vmbus_chanvar.h>
 
 //#include "acpi_if.h"
 //#include "pcib_if.h"
-//#include "vmbus_if.h"
+#include "vmbus_if.h"
 
 #define VMBUS_GPADL_START		0xe1e10
 
