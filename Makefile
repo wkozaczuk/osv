@@ -609,13 +609,13 @@ bsd += bsd/sys/dev/xen/blkfront/blkfront.o
 endif
 
 #bsd += bsd/sys/dev/hyperv/storvsc/hv_storvsc_drv_freebsd.o
-#bsd += bsd/sys/dev/hyperv/vmbus/vmbus_chan.o
-#bsd += bsd/sys/dev/hyperv/vmbus/vmbus_xact.o #Compiles except for missing DELAY
-#bsd += bsd/sys/dev/hyperv/vmbus/amd64/hyperv_machdep.o
+bsd += bsd/sys/dev/hyperv/vmbus/vmbus_chan.o
+bsd += bsd/sys/dev/hyperv/vmbus/vmbus_xact.o #Compiles except for missing DELAY
+bsd += bsd/sys/dev/hyperv/vmbus/amd64/hyperv_machdep.o
 bsd += bsd/sys/dev/hyperv/vmbus/hyperv_busdma.o
-#bsd += bsd/sys/dev/hyperv/vmbus/vmbus_br.o   #Compiles except for __compiler_membar
-#bsd += bsd/sys/dev/hyperv/vmbus/vmbus.o
-#bsd += bsd/sys/dev/hyperv/vmbus/hyperv.o
+bsd += bsd/sys/dev/hyperv/vmbus/vmbus_br.o   #Compiles except for __compiler_membar
+bsd += bsd/sys/dev/hyperv/vmbus/vmbus.o
+bsd += bsd/sys/dev/hyperv/vmbus/hyperv.o
 #bsd += bsd/sys/dev/hyperv/netvsc/if_hn.o
 #bsd += bsd/sys/dev/hyperv/netvsc/hn_rndis.o
 #bsd += bsd/sys/dev/hyperv/netvsc/hn_nvs.o

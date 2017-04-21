@@ -226,7 +226,7 @@ vmbus_chan_rem_list(struct vmbus_softc *sc, struct vmbus_channel *chan)
 static int
 vmbus_chan_sysctl_mnf(SYSCTL_HANDLER_ARGS)
 {
-	struct vmbus_channel *chan = arg1;
+	struct vmbus_channel *chan = static_cast<struct vmbus_channel *>(arg1);
 	int mnf = 0;
 
 	if (chan->ch_txflags & VMBUS_CHAN_TXF_HASMNF)
@@ -384,7 +384,7 @@ vmbus_chan_open_br(struct vmbus_channel *chan, const struct vmbus_chan_br *cbr,
 		return (EINVAL);
 	}
 
-	br = cbr->cbr;
+	br = static_cast<uint8_t *>(cbr->cbr);
 	txbr_size = cbr->cbr_txsz;
 	rxbr_size = cbr->cbr_rxsz;
 	KASSERT((txbr_size & PAGE_MASK) == 0,
@@ -452,7 +452,7 @@ vmbus_chan_open_br(struct vmbus_channel *chan, const struct vmbus_chan_br *cbr,
 		goto failed;
 	}
 
-	req = vmbus_msghc_dataptr(mh);
+	req = static_cast<struct vmbus_chanmsg_chopen *>(vmbus_msghc_dataptr(mh));
 	req->chm_hdr.chm_type = VMBUS_CHANMSG_TYPE_CHOPEN;
 	req->chm_chanid = chan->ch_id;
 	req->chm_openid = chan->ch_id;
@@ -519,8 +519,7 @@ vmbus_chan_open_br(struct vmbus_channel *chan, const struct vmbus_chan_br *cbr,
 	vmbus_msghc_put(sc, mh);
 
 	if (status == 0) {
-		if (bootverbose)
-			vmbus_chan_printf(chan, "chan%u opened\n", chan->ch_id);
+		vmbus_chan_printf(chan, "chan%u opened\n", chan->ch_id);
 		return (0);
 	}
 
@@ -614,7 +613,7 @@ vmbus_chan_gpadl_connect(struct vmbus_channel *chan, bus_addr_t paddr,
 		return EIO;
 	}
 
-	req = vmbus_msghc_dataptr(mh);
+	req = static_cast<struct vmbus_chanmsg_gpadl_conn *>(vmbus_msghc_dataptr(mh));
 	req->chm_hdr.chm_type = VMBUS_CHANMSG_TYPE_GPADL_CONN;
 	req->chm_chanid = chan->ch_id;
 	req->chm_gpadl = gpadl;
@@ -647,7 +646,7 @@ vmbus_chan_gpadl_connect(struct vmbus_channel *chan, bus_addr_t paddr,
 		    chm_gpa_page[cnt]);
 		vmbus_msghc_reset(mh, reqsz);
 
-		subreq = vmbus_msghc_dataptr(mh);
+		subreq = static_cast<struct vmbus_chanmsg_gpadl_subconn *>(vmbus_msghc_dataptr(mh));
 		subreq->chm_hdr.chm_type = VMBUS_CHANMSG_TYPE_GPADL_SUBCONN;
 		subreq->chm_gpadl = gpadl;
 		for (i = 0; i < cnt; ++i)
@@ -671,10 +670,8 @@ vmbus_chan_gpadl_connect(struct vmbus_channel *chan, bus_addr_t paddr,
 
 	/* Done; commit the GPADL id. */
 	*gpadl0 = gpadl;
-	if (bootverbose) {
-		vmbus_chan_printf(chan, "gpadl_conn(chan%u) succeeded\n",
-		    chan->ch_id);
-	}
+	vmbus_chan_printf(chan, "gpadl_conn(chan%u) succeeded\n",
+		chan->ch_id);
 	return 0;
 }
 
@@ -719,7 +716,7 @@ vmbus_chan_gpadl_disconnect(struct vmbus_channel *chan, uint32_t gpadl)
 		return (EBUSY);
 	}
 
-	req = vmbus_msghc_dataptr(mh);
+	req = static_cast<struct vmbus_chanmsg_gpadl_disconn *>(vmbus_msghc_dataptr(mh));
 	req->chm_hdr.chm_type = VMBUS_CHANMSG_TYPE_GPADL_DISCONN;
 	req->chm_chanid = chan->ch_id;
 	req->chm_gpadl = gpadl;
@@ -758,7 +755,7 @@ vmbus_chan_detach(struct vmbus_channel *chan)
 
 	KASSERT(chan->ch_refs > 0, ("chan%u: invalid refcnt %d",
 	    chan->ch_id, chan->ch_refs));
-	refs = atomic_fetchadd_int(&chan->ch_refs, -1);
+	refs = static_cast<int>(atomic_fetchadd_int(&chan->ch_refs, -1));
 #ifdef INVARIANTS
 	if (VMBUS_CHAN_ISPRIMARY(chan)) {
 		KASSERT(refs == 1, ("chan%u: invalid refcnt %d for prichan",
@@ -769,10 +766,8 @@ vmbus_chan_detach(struct vmbus_channel *chan)
 		/*
 		 * Detach the target channel.
 		 */
-		if (bootverbose) {
-			vmbus_chan_printf(chan, "chan%u detached\n",
-			    chan->ch_id);
-		}
+		vmbus_chan_printf(chan, "chan%u detached\n",
+			chan->ch_id);
 		taskqueue_enqueue(chan->ch_mgmt_tq, &chan->ch_detach_task);
 	}
 }
@@ -780,7 +775,7 @@ vmbus_chan_detach(struct vmbus_channel *chan)
 static void
 vmbus_chan_clrchmap_task(void *xchan, int pending __unused)
 {
-	struct vmbus_channel *chan = xchan;
+	struct vmbus_channel *chan = static_cast<struct vmbus_channel *>(xchan);
 
 	chan->ch_vmbus->vmbus_chmap[chan->ch_id] = NULL;
 }
@@ -805,7 +800,7 @@ static void
 vmbus_chan_poll_cancel_task(void *xchan, int pending __unused)
 {
 
-	vmbus_chan_poll_cancel_intq(xchan);
+	vmbus_chan_poll_cancel_intq(static_cast<struct vmbus_channel *>(xchan));
 }
 
 static void
@@ -839,10 +834,8 @@ vmbus_chan_close_internal(struct vmbus_channel *chan)
 	}
 	if ((old_stflags & VMBUS_CHAN_ST_OPENED) == 0) {
 		/* Not opened yet; done */
-		if (bootverbose) {
-			vmbus_chan_printf(chan, "chan%u not opened\n",
-			    chan->ch_id);
-		}
+		vmbus_chan_printf(chan, "chan%u not opened\n",
+			chan->ch_id);
 		return (0);
 	}
 
@@ -879,7 +872,7 @@ vmbus_chan_close_internal(struct vmbus_channel *chan)
 		goto disconnect;
 	}
 
-	req = vmbus_msghc_dataptr(mh);
+	req = static_cast<struct vmbus_chanmsg_chclose *>(vmbus_msghc_dataptr(mh));
 	req->chm_hdr.chm_type = VMBUS_CHANMSG_TYPE_CHCLOSE;
 	req->chm_chanid = chan->ch_id;
 
@@ -893,8 +886,7 @@ vmbus_chan_close_internal(struct vmbus_channel *chan)
 		goto disconnect;
 	}
 
-	if (bootverbose)
-		vmbus_chan_printf(chan, "chan%u closed\n", chan->ch_id);
+	vmbus_chan_printf(chan, "chan%u closed\n", chan->ch_id);
 
 disconnect:
 	/*
@@ -1221,7 +1213,7 @@ vmbus_chan_recv_pkt(struct vmbus_channel *chan,
 static void
 vmbus_chan_task(void *xchan, int pending __unused)
 {
-	struct vmbus_channel *chan = xchan;
+	struct vmbus_channel *chan = static_cast<struct vmbus_channel *>(xchan);
 	vmbus_chan_callback_t cb = chan->ch_cb;
 	void *cbarg = chan->ch_cbarg;
 
@@ -1257,7 +1249,7 @@ vmbus_chan_task(void *xchan, int pending __unused)
 static void
 vmbus_chan_task_nobatch(void *xchan, int pending __unused)
 {
-	struct vmbus_channel *chan = xchan;
+	struct vmbus_channel *chan = static_cast<struct vmbus_channel *>(xchan);
 
 	KASSERT(chan->ch_poll_intvl == 0,
 	    ("chan%u: interrupted in polling mode", chan->ch_id));
@@ -1267,7 +1259,7 @@ vmbus_chan_task_nobatch(void *xchan, int pending __unused)
 static void
 vmbus_chan_poll_timeout(void *xchan)
 {
-	struct vmbus_channel *chan = xchan;
+	struct vmbus_channel *chan = static_cast<struct vmbus_channel *>(xchan);
 
 	KASSERT(chan->ch_poll_intvl != 0,
 	    ("chan%u: polling timeout in interrupt mode", chan->ch_id));
@@ -1277,7 +1269,7 @@ vmbus_chan_poll_timeout(void *xchan)
 static void
 vmbus_chan_poll_task(void *xchan, int pending __unused)
 {
-	struct vmbus_channel *chan = xchan;
+	struct vmbus_channel *chan = static_cast<struct vmbus_channel *>(xchan);
 
 	KASSERT(chan->ch_poll_intvl != 0,
 	    ("chan%u: polling in interrupt mode", chan->ch_id));
@@ -1289,7 +1281,7 @@ vmbus_chan_poll_task(void *xchan, int pending __unused)
 static void
 vmbus_chan_pollcfg_task(void *xarg, int pending __unused)
 {
-	const struct vmbus_chan_pollarg *arg = xarg;
+	const struct vmbus_chan_pollarg *arg = static_cast<const struct vmbus_chan_pollarg *>(xarg);
 	struct vmbus_channel *chan = arg->poll_chan;
 	sbintime_t intvl;
 	int poll_flags;
@@ -1376,7 +1368,7 @@ vmbus_chan_poll_cancel_intq(struct vmbus_channel *chan)
 static void
 vmbus_chan_polldis_task(void *xchan, int pending __unused)
 {
-	struct vmbus_channel *chan = xchan;
+	struct vmbus_channel *chan = static_cast<struct vmbus_channel *>(xchan);
 
 	if (!vmbus_chan_poll_cancel_intq(chan)) {
 		/* Already disabled; done. */
@@ -1478,11 +1470,9 @@ vmbus_chan_update_evtflagcnt(struct vmbus_softc *sc,
 		if (old_flag_cnt >= flag_cnt)
 			break;
 		if (atomic_cmpset_int(flag_cnt_ptr, old_flag_cnt, flag_cnt)) {
-			if (bootverbose) {
-				vmbus_chan_printf(chan,
-				    "chan%u update cpu%d flag_cnt to %d\n",
-				    chan->ch_id, chan->ch_cpuid, flag_cnt);
-			}
+			vmbus_chan_printf(chan,
+				"chan%u update cpu%d flag_cnt to %d\n",
+				chan->ch_id, chan->ch_cpuid, flag_cnt);
 			break;
 		}
 	}
@@ -1493,11 +1483,11 @@ vmbus_chan_alloc(struct vmbus_softc *sc)
 {
 	struct vmbus_channel *chan;
 
-	chan = malloc(sizeof(*chan), M_DEVBUF, M_WAITOK | M_ZERO);
+	chan = static_cast<struct vmbus_channel *>(malloc(sizeof(*chan), M_DEVBUF, M_WAITOK | M_ZERO));
 
-	chan->ch_monprm = hyperv_dmamem_alloc(bus_get_dma_tag(sc->vmbus_dev),
+	chan->ch_monprm = static_cast<struct hyperv_mon_param *>(hyperv_dmamem_alloc(bus_get_dma_tag(sc->vmbus_dev),
 	    HYPERCALL_PARAM_ALIGN, 0, sizeof(struct hyperv_mon_param),
-	    &chan->ch_monprm_dma, BUS_DMA_WAITOK | BUS_DMA_ZERO);
+	    &chan->ch_monprm_dma, BUS_DMA_WAITOK | BUS_DMA_ZERO));
 	if (chan->ch_monprm == NULL) {
 		device_printf(sc->vmbus_dev, "monprm alloc failed\n");
 		free(chan, M_DEVBUF);
@@ -1638,10 +1628,8 @@ done:
 	vmbus_chan_ins_list(sc, newchan);
 	mtx_unlock(&sc->vmbus_chan_lock);
 
-	if (bootverbose) {
-		vmbus_chan_printf(newchan, "chan%u subidx%u offer\n",
-		    newchan->ch_id, newchan->ch_subidx);
-	}
+	vmbus_chan_printf(newchan, "chan%u subidx%u offer\n",
+		newchan->ch_id, newchan->ch_subidx);
 
 	/* Select default cpu for this channel. */
 	vmbus_chan_cpu_default(newchan);
@@ -1663,11 +1651,9 @@ vmbus_chan_cpu_set(struct vmbus_channel *chan, int cpu)
 	chan->ch_cpuid = cpu;
 	chan->ch_vcpuid = VMBUS_PCPU_GET(chan->ch_vmbus, vcpuid, cpu);
 
-	if (bootverbose) {
-		vmbus_chan_printf(chan,
-		    "chan%u assigned to cpu%u [vcpu%u]\n",
-		    chan->ch_id, chan->ch_cpuid, chan->ch_vcpuid);
-	}
+	vmbus_chan_printf(chan,
+		"chan%u assigned to cpu%u [vcpu%u]\n",
+		chan->ch_id, chan->ch_cpuid, chan->ch_vcpuid);
 }
 
 void
@@ -1831,8 +1817,7 @@ vmbus_chan_msgproc_chrescind(struct vmbus_softc *sc,
 		vmbus_xact_ctx_orphan(chan->ch_orphan_xact);
 	sx_xunlock(&chan->ch_orphan_lock);
 
-	if (bootverbose)
-		vmbus_chan_printf(chan, "chan%u revoked\n", note->chm_chanid);
+	vmbus_chan_printf(chan, "chan%u revoked\n", note->chm_chanid);
 	vmbus_chan_detach(chan);
 }
 
@@ -1852,7 +1837,7 @@ vmbus_chan_release(struct vmbus_channel *chan)
 		return (ENXIO);
 	}
 
-	req = vmbus_msghc_dataptr(mh);
+	req = static_cast<struct vmbus_chanmsg_chfree *>(vmbus_msghc_dataptr(mh));
 	req->chm_hdr.chm_type = VMBUS_CHANMSG_TYPE_CHFREE;
 	req->chm_chanid = chan->ch_id;
 
@@ -1864,8 +1849,7 @@ vmbus_chan_release(struct vmbus_channel *chan)
 		    "chfree(chan%u) msg hypercall exec failed: %d\n",
 		    chan->ch_id, error);
 	} else {
-		if (bootverbose)
-			vmbus_chan_printf(chan, "chan%u freed\n", chan->ch_id);
+		vmbus_chan_printf(chan, "chan%u freed\n", chan->ch_id);
 	}
 	return (error);
 }
@@ -1873,7 +1857,7 @@ vmbus_chan_release(struct vmbus_channel *chan)
 static void
 vmbus_prichan_detach_task(void *xchan, int pending __unused)
 {
-	struct vmbus_channel *chan = xchan;
+	struct vmbus_channel *chan = static_cast<struct vmbus_channel *>(xchan);
 
 	KASSERT(VMBUS_CHAN_ISPRIMARY(chan),
 	    ("chan%u is not primary channel", chan->ch_id));
@@ -1891,7 +1875,7 @@ vmbus_prichan_detach_task(void *xchan, int pending __unused)
 static void
 vmbus_subchan_detach_task(void *xchan, int pending __unused)
 {
-	struct vmbus_channel *chan = xchan;
+	struct vmbus_channel *chan = static_cast<struct vmbus_channel *>(xchan);
 	struct vmbus_channel *pri_chan = chan->ch_prichan;
 
 	KASSERT(!VMBUS_CHAN_ISPRIMARY(chan),
@@ -1918,7 +1902,7 @@ vmbus_prichan_attach_task(void *xchan, int pending __unused)
 	/*
 	 * Add device for this primary channel.
 	 */
-	vmbus_add_child(xchan);
+	vmbus_add_child(static_cast<struct vmbus_channel *>(xchan));
 }
 
 static void
@@ -1968,8 +1952,8 @@ vmbus_subchan_get(struct vmbus_channel *pri_chan, int subchan_cnt)
 
 	KASSERT(subchan_cnt > 0, ("invalid sub-channel count %d", subchan_cnt));
 
-	ret = malloc(subchan_cnt * sizeof(struct vmbus_channel *), M_TEMP,
-	    M_WAITOK);
+	ret = static_cast<struct vmbus_channel **>(malloc(subchan_cnt * sizeof(struct vmbus_channel *), M_TEMP,
+	    M_WAITOK));
 
 	mtx_lock(&pri_chan->ch_subchan_lock);
 

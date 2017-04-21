@@ -35,8 +35,8 @@
 #include <sys/rman.h>
 
 #include <dev/hyperv/include/hyperv_busdma.h>
-#include <dev/pci/pcivar.h>
-#include <dev/pci/pcib_private.h>
+//#include <dev/pci/pcivar.h>
+//#include <dev/pci/pcib_private.h>
 
 /*
  * NOTE: DO NOT CHANGE THIS.

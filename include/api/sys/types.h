@@ -73,6 +73,7 @@ typedef unsigned long u_long, ulong;
 typedef long long quad_t;
 typedef unsigned long long u_quad_t;
 typedef long register_t;
+typedef __int64_t sbintime_t;
 #include <endian.h>
 #include <sys/select.h>
 #include <sys/sysmacros.h>

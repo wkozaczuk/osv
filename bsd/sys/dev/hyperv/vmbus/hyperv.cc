@@ -45,7 +45,7 @@ __FBSDID("$FreeBSD$");
 #include <dev/hyperv/vmbus/hyperv_reg.h>
 #include <dev/hyperv/vmbus/hyperv_var.h>
 
-
+#include <osv/debug.hh>
 
 #define HYPERV_FREEBSD_BUILD		0ULL
 #define HYPERV_FREEBSD_VERSION		((uint64_t)__FreeBSD_version)
@@ -142,8 +142,10 @@ hyperv_identify(void)
 	u_int regs[4];
 	unsigned int maxleaf;
 
+	/* WALDEK: How do I know that OSv is running on Hyper-V?
 	if (vm_guest != VM_GUEST_HV)
 		return (false);
+	 */
 
 	do_cpuid(CPUID_LEAF_HV_MAXLEAF, regs);
 	maxleaf = regs[0];
@@ -209,26 +211,19 @@ hyperv_identify(void)
 
 	do_cpuid(CPUID_LEAF_HV_RECOMMENDS, regs);
 	hyperv_recommends = regs[0];
-	if (bootverbose)
-		printf("  Recommends: %08x %08x\n", regs[0], regs[1]);
+	debug("  Recommends: %08x %08x\n", regs[0], regs[1]);
 
 	do_cpuid(CPUID_LEAF_HV_LIMITS, regs);
-	if (bootverbose) {
-		printf("  Limits: Vcpu:%d Lcpu:%d Int:%d\n",
-		    regs[0], regs[1], regs[2]);
-	}
+	debug("  Limits: Vcpu:%d Lcpu:%d Int:%d\n",
+		regs[0], regs[1], regs[2]);
 
 	if (maxleaf >= CPUID_LEAF_HV_HWFEATURES) {
 		do_cpuid(CPUID_LEAF_HV_HWFEATURES, regs);
+		debug("  HW Features: %08x, AMD: %08x\n",
+			  regs[0], regs[3]);
 	}
 
-	if (bootverbose) {
-		printf("  HW Features: %08x, AMD: %08x\n",
-			   regs[0], regs[3]);
-	}
-}
-
-return (true);
+	return (true);
 }
 
 static void
@@ -306,8 +301,7 @@ hypercall_create(void *arg __unused)
 		vm_guest = VM_GUEST_VM;
 		return;
 	}
-	if (bootverbose)
-		printf("hyperv: Hypercall created\n");
+	debug("hyperv: Hypercall created\n");
 }
 SYSINIT(hypercall_ctor, SI_SUB_DRIVERS, SI_ORDER_FIRST, hypercall_create, NULL);
 
@@ -324,8 +318,7 @@ hypercall_destroy(void *arg __unused)
     processor::wrmsr(MSR_HV_HYPERCALL, (hc & MSR_HV_HYPERCALL_RSVD_MASK));
 	hypercall_memfree();
 
-	if (bootverbose)
-		printf("hyperv: Hypercall destroyed\n");
+	debug("hyperv: Hypercall destroyed\n");
 }
 SYSUNINIT(hypercall_dtor, SI_SUB_DRIVERS, SI_ORDER_FIRST, hypercall_destroy,
     NULL);
