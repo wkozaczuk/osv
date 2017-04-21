@@ -33,12 +33,12 @@ __FBSDID("$FreeBSD$");
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/timetc.h>
-#include <sys/vdso.h>
+//#include <sys/vdso.h>
 
 #include <machine/cpufunc.h>
-#include <machine/cputypes.h>
-#include <machine/md_var.h>
-#include <machine/specialreg.h>
+//#include <machine/cputypes.h>
+//#include <machine/md_var.h>
+//#include <machine/specialreg.h>
 
 #include <vm/vm.h>
 

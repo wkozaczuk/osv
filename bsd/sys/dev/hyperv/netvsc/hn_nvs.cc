@@ -33,22 +33,30 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#include "opt_inet6.h"
-#include "opt_inet.h"
+//#include "opt_inet6.h"
+//#include "opt_inet.h"
+
+#include <bsd/porting/netport.h>
+#include <bsd/porting/bus.h>
+#include <bsd/porting/mmu.h>
+#include <bsd/porting/synch.h>
+#include <bsd/porting/kthread.h>
+#include <bsd/porting/callout.h>
 
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/limits.h>
-#include <sys/socket.h>
+//#include <sys/socket.h>
 #include <sys/systm.h>
 #include <sys/taskqueue.h>
+#include <sys/conf.h>
 
-#include <net/if.h>
-#include <net/if_var.h>
-#include <net/if_media.h>
+#include <bsd/sys/net/if.h>
+#include <bsd/sys/net/if_var.h>
+#include <bsd/sys/net/if_media.h>
 
-#include <netinet/in.h>
-#include <netinet/tcp_lro.h>
+#include <bsd/sys/netinet/in.h>
+#include <bsd/sys/netinet/tcp_lro.h>
 
 #include <dev/hyperv/include/hyperv.h>
 #include <dev/hyperv/include/hyperv_busdma.h>
@@ -109,8 +117,8 @@ hn_nvs_xact_execute(struct hn_softc *sc, struct vmbus_xact *xact,
 		vmbus_xact_deactivate(xact);
 		return (NULL);
 	}
-	hdr = vmbus_chan_xact_wait(sc->hn_prichan, xact, &resplen,
-	    HN_CAN_SLEEP(sc));
+	hdr = static_cast<const hn_nvs_hdr*>(vmbus_chan_xact_wait(sc->hn_prichan, xact, &resplen,
+	    HN_CAN_SLEEP(sc)));
 
 	/*
 	 * Check this NVS response message.
@@ -180,14 +188,14 @@ hn_nvs_conn_rxbuf(struct hn_softc *sc)
 		error = ENXIO;
 		goto cleanup;
 	}
-	conn = vmbus_xact_req_data(xact);
+	conn = static_cast<struct hn_nvs_rxbuf_conn *>(vmbus_xact_req_data(xact));
 	conn->nvs_type = HN_NVS_TYPE_RXBUF_CONN;
 	conn->nvs_gpadl = sc->hn_rxbuf_gpadl;
 	conn->nvs_sig = HN_NVS_RXBUF_SIG;
 
 	resp_len = sizeof(*resp);
-	resp = hn_nvs_xact_execute(sc, xact, conn, sizeof(*conn), &resp_len,
-	    HN_NVS_TYPE_RXBUF_CONNRESP);
+	resp = static_cast<const struct hn_nvs_rxbuf_connresp *>(hn_nvs_xact_execute(sc, xact, conn, sizeof(*conn), &resp_len,
+	    HN_NVS_TYPE_RXBUF_CONNRESP));
 	if (resp == NULL) {
 		if_printf(sc->hn_ifp, "exec nvs rxbuf conn failed\n");
 		error = EIO;
@@ -248,14 +256,14 @@ hn_nvs_conn_chim(struct hn_softc *sc)
 		error = ENXIO;
 		goto cleanup;
 	}
-	chim = vmbus_xact_req_data(xact);
+	chim = static_cast<struct hn_nvs_chim_conn *>(vmbus_xact_req_data(xact));
 	chim->nvs_type = HN_NVS_TYPE_CHIM_CONN;
 	chim->nvs_gpadl = sc->hn_chim_gpadl;
 	chim->nvs_sig = HN_NVS_CHIM_SIG;
 
 	resp_len = sizeof(*resp);
-	resp = hn_nvs_xact_execute(sc, xact, chim, sizeof(*chim), &resp_len,
-	    HN_NVS_TYPE_CHIM_CONNRESP);
+	resp = static_cast<const struct hn_nvs_chim_connresp *>(hn_nvs_xact_execute(sc, xact, chim, sizeof(*chim), &resp_len,
+	    HN_NVS_TYPE_CHIM_CONNRESP));
 	if (resp == NULL) {
 		if_printf(sc->hn_ifp, "exec nvs chim conn failed\n");
 		error = EIO;
@@ -460,14 +468,14 @@ hn_nvs_doinit(struct hn_softc *sc, uint32_t nvs_ver)
 		if_printf(sc->hn_ifp, "no xact for nvs init\n");
 		return (ENXIO);
 	}
-	init = vmbus_xact_req_data(xact);
+	init = static_cast<struct hn_nvs_init *>(vmbus_xact_req_data(xact));
 	init->nvs_type = HN_NVS_TYPE_INIT;
 	init->nvs_ver_min = nvs_ver;
 	init->nvs_ver_max = nvs_ver;
 
 	resp_len = sizeof(*resp);
-	resp = hn_nvs_xact_execute(sc, xact, init, sizeof(*init), &resp_len,
-	    HN_NVS_TYPE_INIT_RESP);
+	resp = static_cast<const struct hn_nvs_init_resp *>(hn_nvs_xact_execute(sc, xact, init, sizeof(*init), &resp_len,
+	    HN_NVS_TYPE_INIT_RESP));
 	if (resp == NULL) {
 		if_printf(sc->hn_ifp, "exec init failed\n");
 		vmbus_xact_put(xact);
@@ -656,7 +664,7 @@ hn_nvs_sent_xact(struct hn_nvs_sendctx *sndc,
     const void *data, int dlen)
 {
 
-	vmbus_xact_wakeup(sndc->hn_cbarg, data, dlen);
+	vmbus_xact_wakeup(static_cast<struct vmbus_xact *>(sndc->hn_cbarg), data, dlen);
 }
 
 static void
@@ -685,14 +693,14 @@ hn_nvs_alloc_subchans(struct hn_softc *sc, int *nsubch0)
 		if_printf(sc->hn_ifp, "no xact for nvs subch alloc\n");
 		return (ENXIO);
 	}
-	req = vmbus_xact_req_data(xact);
+	req = static_cast<struct hn_nvs_subch_req *>(vmbus_xact_req_data(xact));
 	req->nvs_type = HN_NVS_TYPE_SUBCH_REQ;
 	req->nvs_op = HN_NVS_SUBCH_OP_ALLOC;
 	req->nvs_nsubch = nsubch_req;
 
 	resp_len = sizeof(*resp);
-	resp = hn_nvs_xact_execute(sc, xact, req, sizeof(*req), &resp_len,
-	    HN_NVS_TYPE_SUBCH_RESP);
+	resp = static_cast<const struct hn_nvs_subch_resp *>(hn_nvs_xact_execute(sc, xact, req, sizeof(*req), &resp_len,
+	    HN_NVS_TYPE_SUBCH_RESP));
 	if (resp == NULL) {
 		if_printf(sc->hn_ifp, "exec nvs subch alloc failed\n");
 		error = EIO;

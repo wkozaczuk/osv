@@ -70,6 +70,8 @@ __FBSDID("$FreeBSD$");
 #include <sys/eventhandler.h>
 #include <machine/bus.h>
 #include <sys/bus_dma.h>
+#include <sys/conf.h>
+#include <sys/sys/kobj.h>
 
 /*
 #include <cam/cam.h>
@@ -85,7 +87,7 @@ __FBSDID("$FreeBSD$");
 #include <dev/hyperv/include/hyperv.h>
 #include <dev/hyperv/include/vmbus.h>
 #include "hv_vstorage.h"
-//#include "vmbus_if.h"
+#include "vmbus_if.h"
 
 #define STORVSC_MAX_LUNS_PER_TARGET	(64)
 #define STORVSC_MAX_IO_REQUESTS		(STORVSC_MAX_LUNS_PER_TARGET * 2)
