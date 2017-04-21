@@ -46,16 +46,18 @@ __FBSDID("$FreeBSD$");
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/limits.h>
-//#include <sys/socket.h>
 #include <sys/systm.h>
-#include <sys/taskqueue.h>
+//#include <sys/taskqueue.h>
 #include <sys/conf.h>
 
 #include <bsd/sys/net/if.h>
 #include <bsd/sys/net/if_var.h>
 #include <bsd/sys/net/if_media.h>
+#include <bsd/sys/sys/taskqueue.h>
+#include <bsd/sys/sys/malloc.h>
 
 #include <bsd/sys/netinet/in.h>
+#include <bsd/sys/netinet/tcp.h>
 #include <bsd/sys/netinet/tcp_lro.h>
 
 #include <dev/hyperv/include/hyperv.h>
@@ -309,8 +311,8 @@ hn_nvs_conn_chim(struct hn_softc *sc)
 	}
 
 	sc->hn_chim_bmap_cnt = sc->hn_chim_cnt / LONG_BIT;
-	sc->hn_chim_bmap = malloc(sc->hn_chim_bmap_cnt * sizeof(u_long),
-	    M_DEVBUF, M_WAITOK | M_ZERO);
+	sc->hn_chim_bmap = static_cast<u_long *>(malloc(sc->hn_chim_bmap_cnt * sizeof(u_long),
+	    M_DEVBUF, M_WAITOK | M_ZERO));
 
 	/* Done! */
 	sc->hn_flags |= HN_FLAG_CHIM_CONNECTED;
@@ -365,11 +367,11 @@ hn_nvs_disconn_rxbuf(struct hn_softc *sc)
 		 */
 		while (!vmbus_chan_tx_empty(sc->hn_prichan) &&
 		    !vmbus_chan_is_revoked(sc->hn_prichan))
-			pause("waittx", 1);
+			bsd_pause("waittx", 1);
 		/*
 		 * Linger long enough for NVS to disconnect RXBUF.
 		 */
-		pause("lingtx", (200 * hz) / 1000);
+		bsd_pause("lingtx", (200 * hz) / 1000);
 	}
 
 	if (sc->hn_rxbuf_gpadl != 0) {
@@ -425,12 +427,12 @@ hn_nvs_disconn_chim(struct hn_softc *sc)
 		 */
 		while (!vmbus_chan_tx_empty(sc->hn_prichan) &&
 		    !vmbus_chan_is_revoked(sc->hn_prichan))
-			pause("waittx", 1);
+			bsd_pause("waittx", 1);
 		/*
 		 * Linger long enough for NVS to disconnect chimney
 		 * sending buffer.
 		 */
-		pause("lingtx", (200 * hz) / 1000);
+		bsd_pause("lingtx", (200 * hz) / 1000);
 	}
 
 	if (sc->hn_chim_gpadl != 0) {
