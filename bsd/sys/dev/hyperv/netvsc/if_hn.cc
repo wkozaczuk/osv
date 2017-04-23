@@ -101,6 +101,7 @@ __FBSDID("$FreeBSD$");
 #include <bsd/sys/net/if_types.h>
 #include <bsd/sys/net/if_var.h>
 #include <bsd/sys/net/rndis.h>
+#include <bsd/sys/net/if_vlan_var.h>
 #ifdef RSS
 #include <bsd/sys/net/rss_config.h>
 #endif
@@ -187,7 +188,7 @@ do {							\
 	roundup2(ETHER_MIN_LEN + ETHER_VLAN_ENCAP_LEN - ETHER_CRC_LEN + \
 	    HN_RNDIS_PKT_LEN, (align))
 #define HN_PKTSIZE(m, align)		\
-	roundup2((m)->m_pkthdr.len + HN_RNDIS_PKT_LEN, (align))
+	roundup2((m)->M_dat.MH.MH_pkthdr.len + HN_RNDIS_PKT_LEN, (align))
 
 #ifdef RSS
 #define HN_RING_IDX2CPU(sc, idx)	rss_getcpu((idx) % rss_getnumbuckets())
@@ -643,7 +644,7 @@ hn_tso_fixup(struct mbuf *m_head)
 
 #define PULLUP_HDR(m, len)				\
 do {							\
-	if (__predict_false((m)->m_len < (len))) {	\
+	if (__predict_false((m)->m_hdr.mh_len < (len))) {	\
 		(m) = m_pullup((m), (len));		\
 		if ((m) == NULL)			\
 			return (NULL);			\
@@ -658,7 +659,7 @@ do {							\
 		ehlen = ETHER_HDR_LEN;
 
 #ifdef INET
-	if (m_head->m_pkthdr.csum_flags & CSUM_IP_TSO) {
+	if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_IP_TSO) {
 		struct ip *ip;
 		int iphlen;
 
@@ -1935,9 +1936,9 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 	}
 
 	pkt->rm_type = REMOTE_NDIS_PACKET_MSG;
-	pkt->rm_len = m_head->m_pkthdr.len;
+	pkt->rm_len = m_head->M_dat.MH.MH_pkthdr.len;
 	pkt->rm_dataoffset = 0;
-	pkt->rm_datalen = m_head->m_pkthdr.len;
+	pkt->rm_datalen = m_head->M_dat.MH.MH_pkthdr.len;
 	pkt->rm_oobdataoffset = 0;
 	pkt->rm_oobdatalen = 0;
 	pkt->rm_oobdataelements = 0;
@@ -1957,23 +1958,23 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 		*pi_data = txr->hn_tx_idx;
 	}
 
-	if (m_head->m_flags & M_VLANTAG) {
+	if (m_head->m_hdr.mh_flags & M_VLANTAG) {
 		pi_data = static_cast<uint32_t *>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
 		    NDIS_VLAN_INFO_SIZE, NDIS_PKTINFO_TYPE_VLAN));
 		*pi_data = NDIS_VLAN_INFO_MAKE(
-		    EVL_VLANOFTAG(m_head->m_pkthdr.ether_vtag),
-		    EVL_PRIOFTAG(m_head->m_pkthdr.ether_vtag),
-		    EVL_CFIOFTAG(m_head->m_pkthdr.ether_vtag));
+		    EVL_VLANOFTAG(m_head->M_dat.MH.MH_pkthdr.ether_vtag),
+		    EVL_PRIOFTAG(m_head->M_dat.MH.MH_pkthdr.ether_vtag),
+		    EVL_CFIOFTAG(m_head->M_dat.MH.MH_pkthdr.ether_vtag));
 	}
 
-	if (m_head->m_pkthdr.csum_flags & CSUM_TSO) {
+	if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_TSO) {
 #if defined(INET6) || defined(INET)
 		pi_data = hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
 		    NDIS_LSO2_INFO_SIZE, NDIS_PKTINFO_TYPE_LSO);
 #ifdef INET
-		if (m_head->m_pkthdr.csum_flags & CSUM_IP_TSO) {
+		if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_IP_TSO) {
 			*pi_data = NDIS_LSO2_INFO_MAKEIPV4(0,
-			    m_head->m_pkthdr.tso_segsz);
+			    m_head->M_dat.MH.MH_pkthdr.tso_segsz);
 		}
 #endif
 #if defined(INET6) && defined(INET)
@@ -1982,25 +1983,25 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 #ifdef INET6
 		{
 			*pi_data = NDIS_LSO2_INFO_MAKEIPV6(0,
-			    m_head->m_pkthdr.tso_segsz);
+			    m_head->M_dat.MH.MH_pkthdr.tso_segsz);
 		}
 #endif
 #endif	/* INET6 || INET */
-	} else if (m_head->m_pkthdr.csum_flags & txr->hn_csum_assist) {
+	} else if (m_head->M_dat.MH.MH_pkthdr.csum_flags & txr->hn_csum_assist) {
 		pi_data = static_cast<uint32_t *>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
 		    NDIS_TXCSUM_INFO_SIZE, NDIS_PKTINFO_TYPE_CSUM));
-		if (m_head->m_pkthdr.csum_flags &
+		if (m_head->M_dat.MH.MH_pkthdr.csum_flags &
 		    (CSUM_IP6_TCP | CSUM_IP6_UDP)) {
 			*pi_data = NDIS_TXCSUM_INFO_IPV6;
 		} else {
 			*pi_data = NDIS_TXCSUM_INFO_IPV4;
-			if (m_head->m_pkthdr.csum_flags & CSUM_IP)
+			if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_IP)
 				*pi_data |= NDIS_TXCSUM_INFO_IPCS;
 		}
 
-		if (m_head->m_pkthdr.csum_flags & (CSUM_IP_TCP | CSUM_IP6_TCP))
+		if (m_head->M_dat.MH.MH_pkthdr.csum_flags & (CSUM_IP_TCP | CSUM_IP6_TCP))
 			*pi_data |= NDIS_TXCSUM_INFO_TCPCS;
-		else if (m_head->m_pkthdr.csum_flags &
+		else if (m_head->M_dat.MH.MH_pkthdr.csum_flags &
 		    (CSUM_IP_UDP | CSUM_IP6_UDP))
 			*pi_data |= NDIS_TXCSUM_INFO_UDPCS;
 	}
@@ -2031,7 +2032,7 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 		    ("chimney sending buffer is not used"));
 		tgt_txd->chim_size += pkt->rm_len;
 
-		m_copydata(m_head, 0, m_head->m_pkthdr.len,
+		m_copydata(m_head, 0, m_head->M_dat.MH.MH_pkthdr.len,
 		    ((uint8_t *)chim) + pkt_hlen);
 
 		txr->hn_gpa_cnt = 0;
@@ -2095,8 +2096,8 @@ done:
 
 	/* Update temporary stats for later use. */
 	txr->hn_stat_pkts++;
-	txr->hn_stat_size += m_head->m_pkthdr.len;
-	if (m_head->m_flags & M_MCAST)
+	txr->hn_stat_size += m_head->M_dat.MH.MH_pkthdr.len;
+	if (m_head->m_hdr.mh_flags & M_MCAST)
 		txr->hn_stat_mcasts++;
 
 	return 0;
@@ -2215,7 +2216,7 @@ hv_m_append(struct mbuf *m0, int len, c_caddr_t cp)
 	struct mbuf *m, *n;
 	int remainder, space;
 
-	for (m = m0; m->m_next != NULL; m = m->m_next)
+	for (m = m0; m->m_hdr.mh_next != NULL; m = m->m_hdr.mh_next)
 		;
 	remainder = len;
 	space = M_TRAILINGSPACE(m);
@@ -2225,8 +2226,8 @@ hv_m_append(struct mbuf *m0, int len, c_caddr_t cp)
 		 */
 		if (space > remainder)
 			space = remainder;
-		bcopy(cp, mtod(m, caddr_t) + m->m_len, space);
-		m->m_len += space;
+		bcopy(cp, mtod(m, caddr_t) + m->m_hdr.mh_len, space);
+		m->m_hdr.mh_len += space;
 		cp += space;
 		remainder -= space;
 	}
@@ -2235,18 +2236,18 @@ hv_m_append(struct mbuf *m0, int len, c_caddr_t cp)
 		 * Allocate a new mbuf; could check space
 		 * and allocate a cluster instead.
 		 */
-		n = m_getjcl(M_NOWAIT, m->m_type, 0, MJUMPAGESIZE);
+		n = m_getjcl(M_NOWAIT, m->m_hdr.mh_type, 0, MJUMPAGESIZE);
 		if (n == NULL)
 			break;
-		n->m_len = min(MJUMPAGESIZE, remainder);
-		bcopy(cp, mtod(n, caddr_t), n->m_len);
-		cp += n->m_len;
-		remainder -= n->m_len;
-		m->m_next = n;
+		n->m_hdr.mh_len = min(MJUMPAGESIZE, remainder);
+		bcopy(cp, mtod(n, caddr_t), n->m_hdr.mh_len);
+		cp += n->m_hdr.mh_len;
+		remainder -= n->m_hdr.mh_len;
+		m->m_hdr.mh_next = n;
 		m = n;
 	}
-	if (m0->m_flags & M_PKTHDR)
-		m0->m_pkthdr.len += len - remainder;
+	if (m0->m_hdr.mh_flags & M_PKTHDR)
+		m0->M_dat.MH.MH_pkthdr.len += len - remainder;
 
 	return (remainder == 0);
 }
@@ -2296,7 +2297,7 @@ hn_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen,
 			return (0);
 		}
 		memcpy(mtod(m_new, void *), data, dlen);
-		m_new->m_pkthdr.len = m_new->m_len = dlen;
+		m_new->M_dat.MH.MH_pkthdr.len = m_new->m_hdr.mh_len = dlen;
 		rxr->hn_small_pkts++;
 	} else {
 		/*
@@ -2319,7 +2320,7 @@ hn_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen,
 
 		hv_m_append(m_new, dlen, static_cast<c_caddr_t>(data));
 	}
-	m_new->m_pkthdr.rcvif = ifp;
+	m_new->M_dat.MH.MH_pkthdr.rcvif = ifp;
 
 	if (__predict_false((ifp->if_capenable & IFCAP_RXCSUM) == 0))
 		do_csum = 0;
@@ -2328,7 +2329,7 @@ hn_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen,
 	if (info->csum_info != HN_NDIS_RXCSUM_INFO_INVALID) {
 		/* IP csum offload */
 		if ((info->csum_info & NDIS_RXCSUM_INFO_IPCS_OK) && do_csum) {
-			m_new->m_pkthdr.csum_flags |=
+			m_new->M_dat.MH.MH_pkthdr.csum_flags |=
 			    (CSUM_IP_CHECKED | CSUM_IP_VALID);
 			rxr->hn_csum_ip++;
 		}
@@ -2336,9 +2337,9 @@ hn_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen,
 		/* TCP/UDP csum offload */
 		if ((info->csum_info & (NDIS_RXCSUM_INFO_UDPCS_OK |
 		     NDIS_RXCSUM_INFO_TCPCS_OK)) && do_csum) {
-			m_new->m_pkthdr.csum_flags |=
+			m_new->M_dat.MH.MH_pkthdr.csum_flags |=
 			    (CSUM_DATA_VALID | CSUM_PSEUDO_HDR);
-			m_new->m_pkthdr.csum_data = 0xffff;
+			m_new->M_dat.MH.MH_pkthdr.csum_data = 0xffff;
 			if (info->csum_info & NDIS_RXCSUM_INFO_TCPCS_OK)
 				rxr->hn_csum_tcp++;
 			else
@@ -2362,7 +2363,7 @@ hn_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen,
 		int hoff;
 
 		hoff = sizeof(*eh);
-		if (m_new->m_len < hoff)
+		if (m_new->m_hdr.mh_len < hoff)
 			goto skip;
 		eh = mtod(m_new, struct ether_header *);
 		etype = ntohs(eh->ether_type);
@@ -2370,7 +2371,7 @@ hn_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen,
 			const struct ether_vlan_header *evl;
 
 			hoff = sizeof(*evl);
-			if (m_new->m_len < hoff)
+			if (m_new->m_hdr.mh_len < hoff)
 				goto skip;
 			evl = mtod(m_new, struct ether_vlan_header *);
 			etype = ntohs(evl->evl_proto);
@@ -2385,10 +2386,10 @@ hn_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen,
 				    (rxr->hn_trust_hcsum &
 				     HN_TRUST_HCSUM_TCP)) {
 					rxr->hn_csum_trusted++;
-					m_new->m_pkthdr.csum_flags |=
+					m_new->M_dat.MH.MH_pkthdr.csum_flags |=
 					   (CSUM_IP_CHECKED | CSUM_IP_VALID |
 					    CSUM_DATA_VALID | CSUM_PSEUDO_HDR);
-					m_new->m_pkthdr.csum_data = 0xffff;
+					m_new->M_dat.MH.MH_pkthdr.csum_data = 0xffff;
 				}
 				do_lro = 1;
 			} else if (pr == IPPROTO_UDP) {
@@ -2396,31 +2397,31 @@ hn_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen,
 				    (rxr->hn_trust_hcsum &
 				     HN_TRUST_HCSUM_UDP)) {
 					rxr->hn_csum_trusted++;
-					m_new->m_pkthdr.csum_flags |=
+					m_new->M_dat.MH.MH_pkthdr.csum_flags |=
 					   (CSUM_IP_CHECKED | CSUM_IP_VALID |
 					    CSUM_DATA_VALID | CSUM_PSEUDO_HDR);
-					m_new->m_pkthdr.csum_data = 0xffff;
+					m_new->M_dat.MH.MH_pkthdr.csum_data = 0xffff;
 				}
 			} else if (pr != IPPROTO_DONE && do_csum &&
 			    (rxr->hn_trust_hcsum & HN_TRUST_HCSUM_IP)) {
 				rxr->hn_csum_trusted++;
-				m_new->m_pkthdr.csum_flags |=
+				m_new->M_dat.MH.MH_pkthdr.csum_flags |=
 				    (CSUM_IP_CHECKED | CSUM_IP_VALID);
 			}
 		}
 	}
 skip:
 	if (info->vlan_info != HN_NDIS_VLAN_INFO_INVALID) {
-		m_new->m_pkthdr.ether_vtag = EVL_MAKETAG(
+		m_new->M_dat.MH.MH_pkthdr.ether_vtag = EVL_MAKETAG(
 		    NDIS_VLAN_INFO_ID(info->vlan_info),
 		    NDIS_VLAN_INFO_PRI(info->vlan_info),
 		    NDIS_VLAN_INFO_CFI(info->vlan_info));
-		m_new->m_flags |= M_VLANTAG;
+		m_new->m_hdr.mh_flags |= M_VLANTAG;
 	}
 
 	if (info->hash_info != HN_NDIS_HASH_INFO_INVALID) {
 		rxr->hn_rss_pkts++;
-		m_new->m_pkthdr.flowid = info->hash_value;
+		m_new->M_dat.MH.MH_pkthdr.flowid = info->hash_value;
 		hash_type = M_HASHTYPE_OPAQUE_HASH;
 		if ((info->hash_info & NDIS_HASH_FUNCTION_MASK) ==
 		    NDIS_HASH_FUNCTION_TOEPLITZ) {
@@ -2462,7 +2463,7 @@ skip:
 			}
 		}
 	} else {
-		m_new->m_pkthdr.flowid = rxr->hn_rx_idx;
+		m_new->M_dat.MH.MH_pkthdr.flowid = rxr->hn_rx_idx;
 		hash_type = M_HASHTYPE_OPAQUE;
 	}
 	M_HASHTYPE_SET(m_new, hash_type);
@@ -2872,7 +2873,7 @@ hn_chim_size_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_rx_stat_int_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<conver>(arg1);
+	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
 	int ofs = arg2, i, error;
 	struct hn_rx_ring *rxr;
 	uint64_t stat;
@@ -3273,11 +3274,11 @@ hn_check_iplen(const struct mbuf *m, int hoff)
 	len = hoff + sizeof(struct ip);
 
 	/* The packet must be at least the size of an IP header. */
-	if (m->m_pkthdr.len < len)
+	if (m->M_dat.MH.MH_pkthdr.len < len)
 		return IPPROTO_DONE;
 
 	/* The fixed IP header must reside completely in the first mbuf. */
-	if (m->m_len < len)
+	if (m->m_hdr.mh_len < len)
 		return IPPROTO_DONE;
 
 	ip = mtodo(m, hoff);
@@ -3288,7 +3289,7 @@ hn_check_iplen(const struct mbuf *m, int hoff)
 		return IPPROTO_DONE;
 
 	/* The full IP header must reside completely in the one mbuf. */
-	if (m->m_len < hoff + iphlen)
+	if (m->m_hdr.mh_len < hoff + iphlen)
 		return IPPROTO_DONE;
 
 	iplen = ntohs(ip->ip_len);
@@ -3297,7 +3298,7 @@ hn_check_iplen(const struct mbuf *m, int hoff)
 	 * Check that the amount of data in the buffers is as
 	 * at least much as the IP header would have us expect.
 	 */
-	if (m->m_pkthdr.len < hoff + iplen)
+	if (m->M_dat.MH.MH_pkthdr.len < hoff + iplen)
 		return IPPROTO_DONE;
 
 	/*
@@ -3314,19 +3315,19 @@ hn_check_iplen(const struct mbuf *m, int hoff)
 	case IPPROTO_TCP:
 		if (iplen < iphlen + sizeof(struct tcphdr))
 			return IPPROTO_DONE;
-		if (m->m_len < hoff + iphlen + sizeof(struct tcphdr))
+		if (m->m_hdr.mh_len < hoff + iphlen + sizeof(struct tcphdr))
 			return IPPROTO_DONE;
 		th = (const struct tcphdr *)((const uint8_t *)ip + iphlen);
 		thoff = th->th_off << 2;
 		if (thoff < sizeof(struct tcphdr) || thoff + iphlen > iplen)
 			return IPPROTO_DONE;
-		if (m->m_len < hoff + iphlen + thoff)
+		if (m->m_hdr.mh_len < hoff + iphlen + thoff)
 			return IPPROTO_DONE;
 		break;
 	case IPPROTO_UDP:
 		if (iplen < iphlen + sizeof(struct udphdr))
 			return IPPROTO_DONE;
-		if (m->m_len < hoff + iphlen + sizeof(struct udphdr))
+		if (m->m_hdr.mh_len < hoff + iphlen + sizeof(struct udphdr))
 			return IPPROTO_DONE;
 		break;
 	default:
@@ -4107,7 +4108,7 @@ hn_start_locked(struct hn_tx_ring *txr, int len)
 		if (m_head == NULL)
 			break;
 
-		if (len > 0 && m_head->m_pkthdr.len > len) {
+		if (len > 0 && m_head->M_dat.MH.MH_pkthdr.len > len) {
 			/*
 			 * This sending could be time consuming; let callers
 			 * dispatch this packet sending (and sending of any
@@ -4119,7 +4120,7 @@ hn_start_locked(struct hn_tx_ring *txr, int len)
 		}
 
 #if defined(INET6) || defined(INET)
-		if (m_head->m_pkthdr.csum_flags & CSUM_TSO) {
+		if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_TSO) {
 			m_head = hn_tso_fixup(m_head);
 			if (__predict_false(m_head == NULL)) {
 				if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
@@ -4275,7 +4276,7 @@ hn_xmit(struct hn_tx_ring *txr, int len)
 		struct hn_txdesc *txd;
 		int error;
 
-		if (len > 0 && m_head->m_pkthdr.len > len) {
+		if (len > 0 && m_head->M_dat.MH.MH_pkthdr.len > len) {
 			/*
 			 * This sending could be time consuming; let callers
 			 * dispatch this packet sending (and sending of any
@@ -4355,7 +4356,7 @@ hn_transmit(struct ifnet *ifp, struct mbuf *m)
 	 * Perform TSO packet header fixup now, since the TSO
 	 * packet header should be cache-hot.
 	 */
-	if (m->m_pkthdr.csum_flags & CSUM_TSO) {
+	if (m->M_dat.MH.MH_pkthdr.csum_flags & CSUM_TSO) {
 		m = hn_tso_fixup(m);
 		if (__predict_false(m == NULL)) {
 			if_inc_counter(ifp, IFCOUNTER_OERRORS, 1);
@@ -4371,12 +4372,12 @@ hn_transmit(struct ifnet *ifp, struct mbuf *m)
 #ifdef RSS
 		uint32_t bid;
 
-		if (rss_hash2bucket(m->m_pkthdr.flowid, M_HASHTYPE_GET(m),
+		if (rss_hash2bucket(m->M_dat.MH.MH_pkthdr.flowid, M_HASHTYPE_GET(m),
 		    &bid) == 0)
 			idx = bid % sc->hn_tx_ring_inuse;
 		else
 #endif
-			idx = m->m_pkthdr.flowid % sc->hn_tx_ring_inuse;
+			idx = m->M_dat.MH.MH_pkthdr.flowid % sc->hn_tx_ring_inuse;
 	}
 	txr = &sc->hn_tx_ring[idx];
 
@@ -5607,7 +5608,7 @@ hn_nvs_handle_rxbuf(struct hn_rx_ring *rxr, struct vmbus_channel *chan,
 		if_printf(rxr->hn_ifp, "invalid nvs RNDIS\n");
 		return;
 	}
-	nvs_hdr = static_cast<onst struct hn_nvs_hdr *>(VMBUS_CHANPKT_CONST_DATA(pkthdr));
+	nvs_hdr = static_cast<const struct hn_nvs_hdr *>(VMBUS_CHANPKT_CONST_DATA(pkthdr));
 
 	/* Make sure that this is a RNDIS message. */
 	if (__predict_false(nvs_hdr->nvs_type != HN_NVS_TYPE_RNDIS)) {
@@ -5698,7 +5699,7 @@ hn_chan_callback(struct vmbus_channel *chan, void *xrxr)
 	struct hn_softc *sc = static_cast<struct hn_softc *>(rxr->hn_ifp->if_softc);
 
 	for (;;) {
-		struct vmbus_chanpkt_hdr *pkt = static_cast<truct vmbus_chanpkt_hdr *>(rxr->hn_pktbuf);
+		struct vmbus_chanpkt_hdr *pkt = static_cast<struct vmbus_chanpkt_hdr *>(rxr->hn_pktbuf);
 		int error, pktlen;
 
 		pktlen = rxr->hn_pktbuf_len;
@@ -5787,7 +5788,7 @@ hn_tx_taskq_create(void *arg __unused)
 	if (hn_tx_taskq_mode != HN_TX_TASKQ_M_GLOBAL)
 		return;
 
-	hn_tx_taskque = static_cast<static struct taskqueue	**>(malloc(hn_tx_taskq_cnt * sizeof(struct taskqueue *),
+	hn_tx_taskque = static_cast<struct taskqueue **>(malloc(hn_tx_taskq_cnt * sizeof(struct taskqueue *),
 	    M_DEVBUF, M_WAITOK));
 	for (i = 0; i < hn_tx_taskq_cnt; ++i) {
 		hn_tx_taskque[i] = taskqueue_create("hn_tx", M_WAITOK,
