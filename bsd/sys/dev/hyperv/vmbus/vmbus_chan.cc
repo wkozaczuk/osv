@@ -499,14 +499,14 @@ vmbus_chan_open_br(struct vmbus_channel *chan, const struct vmbus_chan_br *cbr,
 				msg = vmbus_msghc_poll_result(sc, mh);
 				if (msg != NULL)
 					break;
-				pause("rchopen", 1);
+				bsd_pause("rchopen", 1);
 			}
 #undef REVOKE_LINGER
 			if (msg == NULL)
 				vmbus_msghc_exec_cancel(sc, mh);
 			break;
 		}
-		pause("chopen", 1);
+		bsd_pause("chopen", 1);
 	}
 	if (msg != NULL) {
 		status = ((const struct vmbus_chanmsg_chopen_resp *)
@@ -686,7 +686,7 @@ vmbus_chan_wait_revoke(const struct vmbus_channel *chan, bool can_sleep)
 		if (vmbus_chan_is_revoked(chan))
 			return (true);
 		if (can_sleep)
-			pause("wchrev", 1);
+			bsd_pause("wchrev", 1);
 		else
 			DELAY(1000);
 	}
@@ -2159,7 +2159,7 @@ vmbus_chan_xact_wait(const struct vmbus_channel *chan,
 		 */
 		while (!vmbus_chan_rx_empty(chan)) {
 			if (can_sleep)
-				pause("chxact", 1);
+				bsd_pause("chxact", 1);
 			else
 				DELAY(1000);
 		}

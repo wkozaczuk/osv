@@ -117,6 +117,8 @@ __FBSDID("$FreeBSD$");
 #define STORVSC_DATA_SIZE_MAX		\
 	((STORVSC_DATA_SEGCNT_MAX - 1) * STORVSC_DATA_SEGSZ_MAX)
 
+typedef int             boolean_t;
+
 struct storvsc_softc;
 
 struct hv_sgl_node {
