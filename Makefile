@@ -609,17 +609,21 @@ bsd += bsd/sys/dev/xen/blkfront/blkfront.o
 endif
 
 #In general restore bootverbose -> include sys/conf.h
-#bsd += bsd/sys/dev/hyperv/storvsc/hv_storvsc_drv_freebsd.o #How much?
-#bsd += bsd/sys/dev/hyperv/vmbus/vmbus_chan.o #243 lines of errors
+#bsd += bsd/sys/dev/hyperv/storvsc/hv_storvsc_drv_freebsd.o #1373 lines of errors - relies on CAM
+#bsd += bsd/sys/dev/hyperv/vmbus/vmbus_chan.o #180 lines of errors, missing:
+#atomic_swap_long
+#atomic_testandclear_int
+#atomic_testandclear_long
+#atomic_testandset_int
 #bsd += bsd/sys/dev/hyperv/vmbus/vmbus_xact.o #Compiles except for missing DELAY
 #bsd += bsd/sys/dev/hyperv/vmbus/amd64/hyperv_machdep.o #How much?
 bsd += bsd/sys/dev/hyperv/vmbus/hyperv_busdma.o
 #bsd += bsd/sys/dev/hyperv/vmbus/vmbus_br.o   #Compiles except for __compiler_membar -> add from ../freebsd/sys/sys/cdefs.h
-#bsd += bsd/sys/dev/hyperv/vmbus/vmbus.o #390 lines of errors
-#bsd += bsd/sys/dev/hyperv/vmbus/hyperv.o #48 lines of errors
-#bsd += bsd/sys/dev/hyperv/netvsc/if_hn.o #2300 lines of code
-#bsd += bsd/sys/dev/hyperv/netvsc/hn_rndis.o #Cannot include
-bsd += bsd/sys/dev/hyperv/netvsc/hn_nvs.o
+#bsd += bsd/sys/dev/hyperv/vmbus/vmbus.o #180 lines of errors
+bsd += bsd/sys/dev/hyperv/vmbus/hyperv.o #60 lines of errors
+bsd += bsd/sys/dev/hyperv/netvsc/if_hn.o #1200 lines of code
+bsd += bsd/sys/dev/hyperv/netvsc/hn_rndis.o #4 errors only
+#bsd += bsd/sys/dev/hyperv/netvsc/hn_nvs.o #2 errors only
 
 bsd += bsd/sys/dev/random/hash.o
 bsd += bsd/sys/dev/random/randomdev_soft.o

@@ -52,13 +52,13 @@ __FBSDID("$FreeBSD$");
 #include <sys/taskqueue.h>
 #include <sys/sys/kobj.h>
 
-#include <machine/bus.h>
+//#include <machine/bus.h> //PCI_PASS_THROUGH
 #include <machine/intr_machdep.h>
-#include <machine/resource.h>
+//#include <machine/resource.h> //PCI_PASS_THROUGH
 //#include <x86/include/apicvar.h>
 
 #include "acpi.h"
-//#include <dev/acpica/acpivar.h>
+//#include <dev/acpica/acpivar.h> //PCI_PASS_THROUGH
 
 #include <dev/hyperv/include/hyperv.h>
 #include <dev/hyperv/include/vmbus_xact.h>
@@ -69,7 +69,7 @@ __FBSDID("$FreeBSD$");
 #include <dev/hyperv/vmbus/vmbus_chanvar.h>
 
 //#include "acpi_if.h"
-//#include "pcib_if.h"
+//#include "pcib_if.h" //PCI_PASS_THROUGH
 #include "vmbus_if.h"
 
 #define VMBUS_GPADL_START		0xe1e10
@@ -86,6 +86,7 @@ static int			vmbus_read_ivar(device_t, device_t, int,
 				    uintptr_t *);
 static int			vmbus_child_pnpinfo_str(device_t, device_t,
 				    char *, size_t);
+#ifdef PCI_PASS_THROUGH
 static struct resource		*vmbus_alloc_resource(device_t dev,
 				    device_t child, int type, int *rid,
 				    rman_res_t start, rman_res_t end,
@@ -100,6 +101,7 @@ static int			vmbus_release_msix(device_t bus, device_t dev,
 				    int irq);
 static int			vmbus_map_msi(device_t bus, device_t dev,
 				    int irq, uint64_t *addr, uint32_t *data);
+#endif
 static uint32_t			vmbus_get_version_method(device_t, device_t);
 static int			vmbus_probe_guid_method(device_t, device_t,
 				    const struct hyperv_guid *);
@@ -150,6 +152,7 @@ vmbus_chanmsg_handlers[VMBUS_CHANMSG_TYPE_MAX] = {
 	VMBUS_CHANMSG_PROC_WAKEUP(CONNECT_RESP)
 };
 
+#if 0
 static device_method_t vmbus_methods[] = {
 	/* Device interface */
 	DEVMETHOD(device_probe,			vmbus_probe),
@@ -164,7 +167,9 @@ static device_method_t vmbus_methods[] = {
 	DEVMETHOD(bus_print_child,		bus_generic_print_child),
 	DEVMETHOD(bus_read_ivar,		vmbus_read_ivar),
 	DEVMETHOD(bus_child_pnpinfo_str,	vmbus_child_pnpinfo_str),
+#ifdef PCI_PASS_THROUGH
 	DEVMETHOD(bus_alloc_resource,		vmbus_alloc_resource),
+
 	DEVMETHOD(bus_release_resource,		bus_generic_release_resource),
 	DEVMETHOD(bus_activate_resource,	bus_generic_activate_resource),
 	DEVMETHOD(bus_deactivate_resource,	bus_generic_deactivate_resource),
@@ -180,6 +185,7 @@ static device_method_t vmbus_methods[] = {
 	DEVMETHOD(pcib_alloc_msix,		vmbus_alloc_msix),
 	DEVMETHOD(pcib_release_msix,		vmbus_release_msix),
 	DEVMETHOD(pcib_map_msi,			vmbus_map_msi),
+#endif
 
 	/* Vmbus interface */
 	DEVMETHOD(vmbus_get_version,		vmbus_get_version_method),
@@ -195,6 +201,7 @@ driver_t vmbus_driver = {
 	vmbus_methods,
 	sizeof(struct vmbus_softc)
 };
+#endif
 
 static __inline struct vmbus_softc *
 vmbus_get_softc(void)
@@ -461,9 +468,9 @@ vmbus_scan_done_task(void *xsc, int pending __unused)
 {
 	struct vmbus_softc *sc = static_cast<struct vmbus_softc *>(xsc);
 
-	mtx_lock(&Giant);
+	//mtx_lock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 	sc->vmbus_scandone = true;
-	mtx_unlock(&Giant);
+	//mtx_unlock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 	wakeup(&sc->vmbus_scandone);
 }
 
@@ -518,9 +525,9 @@ vmbus_scan(struct vmbus_softc *sc)
 	 * Wait for all vmbus devices from the initial channel offers to be
 	 * attached.
 	 */
-	GIANT_REQUIRED;
-	while (!sc->vmbus_scandone)
-		mtx_sleep(&sc->vmbus_scandone, &Giant, 0, "vmbusdev", 0);
+	//GIANT_REQUIRED; //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
+	//while (!sc->vmbus_scandone)
+	//	mtx_sleep(&sc->vmbus_scandone, &Giant, 0, "vmbusdev", 0);
 
 	device_printf(sc->vmbus_dev, "device scan, probe and attach "
 		"done\n");
@@ -531,17 +538,17 @@ static void
 vmbus_scan_teardown(struct vmbus_softc *sc)
 {
 
-	GIANT_REQUIRED;
+	//GIANT_REQUIRED;
 	if (sc->vmbus_devtq != NULL) {
-		mtx_unlock(&Giant);
+		//mtx_unlock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 		taskqueue_free(sc->vmbus_devtq);
-		mtx_lock(&Giant);
+		//mtx_lock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 		sc->vmbus_devtq = NULL;
 	}
 	if (sc->vmbus_subchtq != NULL) {
-		mtx_unlock(&Giant);
+		//mtx_unlock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 		taskqueue_free(sc->vmbus_subchtq);
-		mtx_lock(&Giant);
+		//mtx_lock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 		sc->vmbus_subchtq = NULL;
 	}
 }
@@ -991,11 +998,11 @@ vmbus_add_child(struct vmbus_channel *chan)
 	struct vmbus_softc *sc = chan->ch_vmbus;
 	device_t parent = sc->vmbus_dev;
 
-	mtx_lock(&Giant);
+	//mtx_lock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 
 	chan->ch_dev = device_add_child(parent, NULL, -1);
 	if (chan->ch_dev == NULL) {
-		mtx_unlock(&Giant);
+		//mtx_unlock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 		device_printf(parent, "device_add_child for chan%u failed\n",
 		    chan->ch_id);
 		return (ENXIO);
@@ -1003,7 +1010,7 @@ vmbus_add_child(struct vmbus_channel *chan)
 	device_set_ivars(chan->ch_dev, chan);
 	device_probe_and_attach(chan->ch_dev);
 
-	mtx_unlock(&Giant);
+	//mtx_unlock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 	return (0);
 }
 
@@ -1012,20 +1019,20 @@ vmbus_delete_child(struct vmbus_channel *chan)
 {
 	int error = 0;
 
-	mtx_lock(&Giant);
+	//mtx_lock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 	if (chan->ch_dev != NULL) {
 		error = device_delete_child(chan->ch_vmbus->vmbus_dev,
 		    chan->ch_dev);
 		chan->ch_dev = NULL;
 	}
-	mtx_unlock(&Giant);
+	//mtx_unlock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 	return (error);
 }
 
 static int
 vmbus_sysctl_version(SYSCTL_HANDLER_ARGS)
 {
-	struct vmbus_softc *sc = arg1;
+	struct vmbus_softc *sc = static_cast<struct vmbus_softc *>(arg1);
 	char verstr[16];
 
 	snprintf(verstr, sizeof(verstr), "%u.%u",
@@ -1034,6 +1041,7 @@ vmbus_sysctl_version(SYSCTL_HANDLER_ARGS)
 	return sysctl_handle_string(oidp, verstr, sizeof(verstr), req);
 }
 
+#ifdef PCI_PASS_THROUGH
 /*
  * We need the function to make sure the MMIO resource is allocated from the
  * ranges found in _CRS.
@@ -1101,6 +1109,7 @@ vmbus_map_msi(device_t bus, device_t dev, int irq, uint64_t *addr,
 {
 	return (PCIB_MAP_MSI(get_nexus(bus), dev, irq, addr, data));
 }
+#endif
 
 static uint32_t
 vmbus_get_version_method(device_t bus, device_t dev)
@@ -1138,6 +1147,7 @@ vmbus_get_eventtq_method(device_t bus, device_t dev __unused, int cpu)
 	return (VMBUS_PCPU_GET(sc, event_tq, cpu));
 }
 
+#ifdef PCI_PASS_THROUGH
 #ifdef NEW_PCIB
 #define VTPM_BASE_ADDR 0xfed40000
 #define FOUR_GB (1ULL << 32)
@@ -1270,6 +1280,7 @@ vmbus_free_mmio_res(device_t dev)
 	pcib_host_res_free(dev, &sc->vmbus_mmio_res);
 }
 #endif	/* NEW_PCIB */
+#endif
 
 static int
 vmbus_probe(device_t dev)

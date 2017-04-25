@@ -284,7 +284,7 @@ struct mbuf {
 #define	CSUM_SCTP_VALID		0x1000		/* SCTP checksum is valid */
 #define	CSUM_UDP_IPV6		0x2000		/* will csum IPv6/UDP */
 #define	CSUM_TCP_IPV6		0x4000		/* will csum IPv6/TCP */
-/*	CSUM_TSO_IPV6		0x8000		will do IPv6/TSO */
+#define CSUM_TSO_IPV6		0x8000		/* will do IPv6/TSO */
 
 /*	CSUM_FRAGMENT_IPV6	0x10000		will do IPv6 fragementation */
 

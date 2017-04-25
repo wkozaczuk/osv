@@ -177,8 +177,8 @@ do {							\
 } while (0)
 #define HN_UNLOCK(sc)			sx_xunlock(&(sc)->hn_lock)
 
-#define HN_CSUM_IP_MASK			(CSUM_IP | CSUM_IP_TCP | CSUM_IP_UDP)
-#define HN_CSUM_IP6_MASK		(CSUM_IP6_TCP | CSUM_IP6_UDP)
+#define HN_CSUM_IP_MASK			(CSUM_IP | CSUM_TCP | CSUM_UDP)
+#define HN_CSUM_IP6_MASK		(CSUM_TCP_IPV6 | CSUM_UDP_IPV6)
 #define HN_CSUM_IP_HWASSIST(sc)		\
 	((sc)->hn_tx_ring[0].hn_csum_assist & HN_CSUM_IP_MASK)
 #define HN_CSUM_IP6_HWASSIST(sc)	\
@@ -659,7 +659,7 @@ do {							\
 		ehlen = ETHER_HDR_LEN;
 
 #ifdef INET
-	if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_IP_TSO) {
+	if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_TSO) {
 		struct ip *ip;
 		int iphlen;
 
@@ -1321,11 +1321,11 @@ hn_attach(device_t dev)
 		ifp->if_capabilities |= IFCAP_TXCSUM_IPV6;
 	if (sc->hn_caps & HN_CAP_TSO4) {
 		ifp->if_capabilities |= IFCAP_TSO4;
-		ifp->if_hwassist |= CSUM_IP_TSO;
+		ifp->if_hwassist |= CSUM_TSO;
 	}
 	if (sc->hn_caps & HN_CAP_TSO6) {
 		ifp->if_capabilities |= IFCAP_TSO6;
-		ifp->if_hwassist |= CSUM_IP6_TSO;
+		ifp->if_hwassist |= CSUM_TSO_IPV6;
 	}
 
 	/* Enable all available capabilities by default. */
@@ -1336,7 +1336,7 @@ hn_attach(device_t dev)
 	 * be enabled through SIOCSIFCAP.
 	 */
 	ifp->if_capenable &= ~(IFCAP_TXCSUM_IPV6 | IFCAP_TSO6);
-	ifp->if_hwassist &= ~(HN_CSUM_IP6_MASK | CSUM_IP6_TSO);
+	ifp->if_hwassist &= ~(HN_CSUM_IP6_MASK | CSUM_TSO_IPV6);
 
 	if (ifp->if_capabilities & (IFCAP_TSO6 | IFCAP_TSO4)) {
 		hn_set_tso_maxsize(sc, hn_tso_maxlen, ETHERMTU);
@@ -1972,7 +1972,7 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 		pi_data = hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
 		    NDIS_LSO2_INFO_SIZE, NDIS_PKTINFO_TYPE_LSO);
 #ifdef INET
-		if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_IP_TSO) {
+		if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_TSO) {
 			*pi_data = NDIS_LSO2_INFO_MAKEIPV4(0,
 			    m_head->M_dat.MH.MH_pkthdr.tso_segsz);
 		}
@@ -1991,7 +1991,7 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 		pi_data = static_cast<uint32_t *>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
 		    NDIS_TXCSUM_INFO_SIZE, NDIS_PKTINFO_TYPE_CSUM));
 		if (m_head->M_dat.MH.MH_pkthdr.csum_flags &
-		    (CSUM_IP6_TCP | CSUM_IP6_UDP)) {
+		    (CSUM_TCP_IPV6 | CSUM_UDP_IPV6)) {
 			*pi_data = NDIS_TXCSUM_INFO_IPV6;
 		} else {
 			*pi_data = NDIS_TXCSUM_INFO_IPV4;
@@ -1999,10 +1999,10 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 				*pi_data |= NDIS_TXCSUM_INFO_IPCS;
 		}
 
-		if (m_head->M_dat.MH.MH_pkthdr.csum_flags & (CSUM_IP_TCP | CSUM_IP6_TCP))
+		if (m_head->M_dat.MH.MH_pkthdr.csum_flags & (CSUM_TCP | CSUM_TCP_IPV6))
 			*pi_data |= NDIS_TXCSUM_INFO_TCPCS;
 		else if (m_head->M_dat.MH.MH_pkthdr.csum_flags &
-		    (CSUM_IP_UDP | CSUM_IP6_UDP))
+		    (CSUM_UDP | CSUM_UDP_IPV6))
 			*pi_data |= NDIS_TXCSUM_INFO_UDPCS;
 	}
 
@@ -2641,16 +2641,16 @@ hn_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 		if (mask & IFCAP_TSO4) {
 			ifp->if_capenable ^= IFCAP_TSO4;
 			if (ifp->if_capenable & IFCAP_TSO4)
-				ifp->if_hwassist |= CSUM_IP_TSO;
+				ifp->if_hwassist |= CSUM_TSO;
 			else
-				ifp->if_hwassist &= ~CSUM_IP_TSO;
+				ifp->if_hwassist &= ~CSUM_TSO;
 		}
 		if (mask & IFCAP_TSO6) {
 			ifp->if_capenable ^= IFCAP_TSO6;
 			if (ifp->if_capenable & IFCAP_TSO6)
-				ifp->if_hwassist |= CSUM_IP6_TSO;
+				ifp->if_hwassist |= CSUM_TSO_IPV6;
 			else
-				ifp->if_hwassist &= ~CSUM_IP6_TSO;
+				ifp->if_hwassist &= ~CSUM_TSO_IPV6;
 		}
 
 		HN_UNLOCK(sc);
@@ -4018,13 +4018,13 @@ hn_fixup_tx_data(struct hn_softc *sc)
 	if (sc->hn_caps & HN_CAP_IPCS)
 		csum_assist |= CSUM_IP;
 	if (sc->hn_caps & HN_CAP_TCP4CS)
-		csum_assist |= CSUM_IP_TCP;
+		csum_assist |= CSUM_TCP;
 	if (sc->hn_caps & HN_CAP_UDP4CS)
-		csum_assist |= CSUM_IP_UDP;
+		csum_assist |= CSUM_UDP;
 	if (sc->hn_caps & HN_CAP_TCP6CS)
-		csum_assist |= CSUM_IP6_TCP;
+		csum_assist |= CSUM_TCP_IPV6;
 	if (sc->hn_caps & HN_CAP_UDP6CS)
-		csum_assist |= CSUM_IP6_UDP;
+		csum_assist |= CSUM_UDP_IPV6;
 	for (i = 0; i < sc->hn_tx_ring_cnt; ++i)
 		sc->hn_tx_ring[i].hn_csum_assist = csum_assist;
 
@@ -4104,7 +4104,9 @@ hn_start_locked(struct hn_tx_ring *txr, int len)
 		struct mbuf *m_head;
 		int error;
 
-		IFQ_DRV_DEQUEUE(&ifp->if_snd, m_head);
+        //WALDEK: Per https://www.freebsd.org/cgi/man.cgi?query=altq&sektion=9
+        // Replace IFQ_DRV_DEQUEUE with IF_DEQUEUE as we are not using 'driver managed' queue
+		IF_DEQUEUE(&ifp->if_snd, m_head);
 		if (m_head == NULL)
 			break;
 
@@ -4114,7 +4116,7 @@ hn_start_locked(struct hn_tx_ring *txr, int len)
 			 * dispatch this packet sending (and sending of any
 			 * following up packets) to tx taskqueue.
 			 */
-			IFQ_DRV_PREPEND(&ifp->if_snd, m_head);
+			IF_PREPEND(&ifp->if_snd, m_head); //WALDEK: Replace IFQ_DRV_PREPEND with IF_PREPEND
 			sched = 1;
 			break;
 		}
@@ -4132,7 +4134,7 @@ hn_start_locked(struct hn_tx_ring *txr, int len)
 		txd = hn_txdesc_get(txr);
 		if (txd == NULL) {
 			txr->hn_no_txdescs++;
-			IFQ_DRV_PREPEND(&ifp->if_snd, m_head);
+			IF_PREPEND(&ifp->if_snd, m_head);  //WALDEK: Replace IFQ_DRV_PREPEND with IF_PREPEND
 			atomic_set_int(&ifp->if_drv_flags, IFF_DRV_OACTIVE);
 			break;
 		}
@@ -4160,7 +4162,7 @@ hn_start_locked(struct hn_tx_ring *txr, int len)
 				error = hn_txpkt(ifp, txr, txd);
 				if (__predict_false(error)) {
 					/* txd is freed, but m_head is not */
-					IFQ_DRV_PREPEND(&ifp->if_snd, m_head);
+					IF_PREPEND(&ifp->if_snd, m_head); //WALDEK: Replace IFQ_DRV_PREPEND with IF_PREPEND
 					atomic_set_int(&ifp->if_drv_flags,
 					    IFF_DRV_OACTIVE);
 					break;

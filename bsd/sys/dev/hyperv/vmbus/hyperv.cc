@@ -234,6 +234,8 @@ hyperv_init(void *dummy __unused)
 		if (vm_guest == VM_GUEST_HV)
 			vm_guest = VM_GUEST_VM;
 		return;
+	}
+
 	/* Set guest id */
 	processor::wrmsr(MSR_HV_GUEST_OS_ID, MSR_HV_GUESTID_FREEBSD);
 
