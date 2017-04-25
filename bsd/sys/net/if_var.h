@@ -101,6 +101,22 @@ TAILQ_HEAD(ifprefixhead, ifprefix);
 TAILQ_HEAD(ifmultihead, ifmultiaddr);
 TAILQ_HEAD(ifgrouphead, ifg_group);
 
+typedef enum {
+	IFCOUNTER_IPACKETS = 0,
+	IFCOUNTER_IERRORS,
+	IFCOUNTER_OPACKETS,
+	IFCOUNTER_OERRORS,
+	IFCOUNTER_COLLISIONS,
+	IFCOUNTER_IBYTES,
+	IFCOUNTER_OBYTES,
+	IFCOUNTER_IMCASTS,
+	IFCOUNTER_OMCASTS,
+	IFCOUNTER_IQDROPS,
+	IFCOUNTER_OQDROPS,
+	IFCOUNTER_NOPROTO,
+	IFCOUNTERS /* Array size. */
+} ift_counter;
+
 /*
  * Structure defining a queue for a network interface.
  */
@@ -770,6 +786,8 @@ typedef	void *if_com_alloc_t(u_char type, struct ifnet *ifp);
 typedef	void if_com_free_t(void *com, u_char type);
 void	if_register_com_alloc(u_char type, if_com_alloc_t *a, if_com_free_t *f);
 void	if_deregister_com_alloc(u_char type);
+
+void    if_inc_counter(struct ifnet *, ift_counter, int64_t);
 
 #define IF_LLADDR(ifp)							\
     LLADDR((struct bsd_sockaddr_dl *)((ifp)->if_addr->ifa_addr))
