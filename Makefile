@@ -615,10 +615,10 @@ endif
 #atomic_testandclear_int
 #atomic_testandclear_long
 #atomic_testandset_int
-#bsd += bsd/sys/dev/hyperv/vmbus/vmbus_xact.o #Compiles except for missing DELAY
+bsd += bsd/sys/dev/hyperv/vmbus/vmbus_xact.o 
 #bsd += bsd/sys/dev/hyperv/vmbus/amd64/hyperv_machdep.o #How much?
 bsd += bsd/sys/dev/hyperv/vmbus/hyperv_busdma.o
-#bsd += bsd/sys/dev/hyperv/vmbus/vmbus_br.o   #Compiles except for __compiler_membar -> add from ../freebsd/sys/sys/cdefs.h
+bsd += bsd/sys/dev/hyperv/vmbus/vmbus_br.o
 #bsd += bsd/sys/dev/hyperv/vmbus/vmbus.o #178 lines of errors
 #bsd += bsd/sys/dev/hyperv/vmbus/hyperv.o #60 lines of errors
 bsd += bsd/sys/dev/hyperv/netvsc/if_hn.o #422 lines of code

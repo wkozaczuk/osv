@@ -226,7 +226,7 @@ vmbus_txbr_need_signal(const struct vmbus_txbr *tbr, uint32_t old_windex)
 	if (tbr->txbr_imask)
 		return (FALSE);
 
-	__compiler_membar();
+    std::atomic_signal_fence(std::memory_order_seq_cst);
 
 	/*
 	 * This is the only case we need to signal when the
@@ -326,7 +326,7 @@ vmbus_txbr_write(struct vmbus_txbr *tbr, const struct iovec iov[], int iovlen,
 	 * Update the write index _after_ the channel packet
 	 * is copied.
 	 */
-	__compiler_membar();
+	std::atomic_signal_fence(std::memory_order_seq_cst);
 	tbr->txbr_windex = windex;
 
 	mtx_unlock_spin(&tbr->txbr_lock);
@@ -408,7 +408,7 @@ vmbus_rxbr_read(struct vmbus_rxbr *rbr, void *data, int dlen, uint32_t skip)
 	/*
 	 * Update the read index _after_ the channel packet is fetched.
 	 */
-	__compiler_membar();
+	std::atomic_signal_fence(std::memory_order_seq_cst);
 	rbr->rxbr_rindex = rindex;
 
 	mtx_unlock_spin(&rbr->rxbr_lock);

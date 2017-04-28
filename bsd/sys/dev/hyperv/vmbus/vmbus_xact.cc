@@ -325,7 +325,7 @@ vmbus_xact_wait1(struct vmbus_xact *xact, size_t *resp_len,
 			    "wxact", 0);
 		} else {
 			mtx_unlock(&ctx->xc_lock);
-			DELAY(1000);
+			sched::thread::sleep(std::chrono::microseconds(1000));
 			mtx_lock(&ctx->xc_lock);
 		}
 	}
