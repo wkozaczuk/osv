@@ -621,7 +621,7 @@ bsd += bsd/sys/dev/hyperv/vmbus/hyperv_busdma.o
 #bsd += bsd/sys/dev/hyperv/vmbus/vmbus_br.o   #Compiles except for __compiler_membar -> add from ../freebsd/sys/sys/cdefs.h
 #bsd += bsd/sys/dev/hyperv/vmbus/vmbus.o #178 lines of errors
 #bsd += bsd/sys/dev/hyperv/vmbus/hyperv.o #60 lines of errors
-bsd += bsd/sys/dev/hyperv/netvsc/if_hn.o #856 lines of code
+bsd += bsd/sys/dev/hyperv/netvsc/if_hn.o #422 lines of code
 #bsd += bsd/sys/dev/hyperv/netvsc/hn_rndis.o #4 errors only
 #bsd += bsd/sys/dev/hyperv/netvsc/hn_nvs.o #2 errors only
 

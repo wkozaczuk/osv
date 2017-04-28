@@ -173,7 +173,7 @@ __FBSDID("$FreeBSD$");
 #define HN_LOCK(sc)					\
 do {							\
 	while (sx_try_xlock(&(sc)->hn_lock) == 0)	\
-		DELAY(1000);				\
+		sched::thread::sleep(std::chrono::microseconds(1000));				\
 } while (0)
 #define HN_UNLOCK(sc)			sx_xunlock(&(sc)->hn_lock)
 
@@ -363,7 +363,9 @@ static int			hn_check_iplen(const struct mbuf *, int);
 static int			hn_set_rxfilter(struct hn_softc *, uint32_t);
 static int			hn_rxfilter_config(struct hn_softc *);
 #ifndef RSS
+#ifdef OSV_SYSCTL_ENABLED
 static int			hn_rss_reconfig(struct hn_softc *);
+#endif //OSV_SYSCTL_ENABLED
 #endif
 static void			hn_rss_ind_fixup(struct hn_softc *);
 static int			hn_rxpkt(struct hn_rx_ring *, const void *,
@@ -488,12 +490,12 @@ SYSCTL_INT(_hw_hn, OID_AUTO, tx_taskq_mode, CTLFLAG_RDTUN,
     "0 - independent, 1 - share global tx taskqs, 2 - share event taskqs");
 #endif //OSV_SYSCTL_ENABLED
 
+#ifdef OSV_SYSCTL_ENABLED
 #ifndef HN_USE_TXDESC_BUFRING
 static int			hn_use_txdesc_bufring = 0;
 #else
 static int			hn_use_txdesc_bufring = 1;
 #endif
-#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, use_txdesc_bufring, CTLFLAG_RD,
     &hn_use_txdesc_bufring, 0, "Use buf_ring for TX descriptors");
 #endif //OSV_SYSCTL_ENABLED
@@ -861,6 +863,7 @@ hn_get_txswq_depth(const struct hn_tx_ring *txr)
 }
 
 #ifndef RSS
+#ifdef OSV_SYSCTL_ENABLED
 static int
 hn_rss_reconfig(struct hn_softc *sc)
 {
@@ -899,6 +902,7 @@ hn_rss_reconfig(struct hn_softc *sc)
 	}
 	return (0);
 }
+#endif //OSV_SYSCTL_ENABLED
 #endif	/* !RSS */
 
 static void
@@ -5749,7 +5753,7 @@ again:
 		rxr->hn_ack_failed++;
 		retries++;
 		if (retries < 10) {
-			DELAY(100);
+			sched::thread::sleep(std::chrono::microseconds(100));
 			goto again;
 		}
 		/* RXBUF leaks! */
@@ -5821,6 +5825,7 @@ hn_chan_callback(struct vmbus_channel *chan, void *xrxr)
 	hn_chan_rollup(rxr, rxr->hn_txr);
 }
 
+#if 0
 static void
 hn_tx_taskq_create(void *arg __unused)
 {
@@ -5862,9 +5867,11 @@ hn_tx_taskq_create(void *arg __unused)
 		    "hn tx%d", i);
 	}
 }
+#endif
 SYSINIT(hn_txtq_create, SI_SUB_DRIVERS, SI_ORDER_SECOND,
     hn_tx_taskq_create, NULL);
 
+#if 0
 static void
 hn_tx_taskq_destroy(void *arg __unused)
 {
@@ -5877,5 +5884,6 @@ hn_tx_taskq_destroy(void *arg __unused)
 		free(hn_tx_taskque, M_DEVBUF);
 	}
 }
+#endif
 SYSUNINIT(hn_txtq_destroy, SI_SUB_DRIVERS, SI_ORDER_SECOND,
     hn_tx_taskq_destroy, NULL);
