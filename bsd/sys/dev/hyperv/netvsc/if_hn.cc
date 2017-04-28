@@ -11,7 +11,7 @@
  *    notice unmodified, this list of conditions, and the following
  *    disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the/
+ *    notice, this list of conditions and the following disclaimer in the
  *    documentation and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
@@ -412,110 +412,137 @@ static void			hn_start_txeof_taskfunc(void *, int);
 #ifdef OSV_SYSCTL_ENABLED
 SYSCTL_NODE(_hw, OID_AUTO, hn, CTLFLAG_RD | CTLFLAG_MPSAFE, NULL,
     "Hyper-V network interface");
+#endif //OSV_SYSCTL_ENABLED
 
 /* Trust tcp segements verification on host side. */
 static int			hn_trust_hosttcp = 1;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, trust_hosttcp, CTLFLAG_RDTUN,
     &hn_trust_hosttcp, 0,
     "Trust tcp segement verification on host side, "
     "when csum info is missing (global setting)");
+#endif //OSV_SYSCTL_ENABLED
 
 /* Trust udp datagrams verification on host side. */
 static int			hn_trust_hostudp = 1;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, trust_hostudp, CTLFLAG_RDTUN,
     &hn_trust_hostudp, 0,
     "Trust udp datagram verification on host side, "
     "when csum info is missing (global setting)");
-
+#endif //OSV_SYSCTL_ENABLED
 /* Trust ip packets verification on host side. */
 static int			hn_trust_hostip = 1;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, trust_hostip, CTLFLAG_RDTUN,
     &hn_trust_hostip, 0,
     "Trust ip packet verification on host side, "
     "when csum info is missing (global setting)");
-
+#endif //OSV_SYSCTL_ENABLED
 /* Limit TSO burst size */
 static int			hn_tso_maxlen = IP_MAXPACKET;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, tso_maxlen, CTLFLAG_RDTUN,
     &hn_tso_maxlen, 0, "TSO burst limit");
+#endif //OSV_SYSCTL_ENABLED
 
 /* Limit chimney send size */
 static int			hn_tx_chimney_size = 0;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, tx_chimney_size, CTLFLAG_RDTUN,
     &hn_tx_chimney_size, 0, "Chimney send packet size limit");
+#endif //OSV_SYSCTL_ENABLED
 
 /* Limit the size of packet for direct transmission */
 static int			hn_direct_tx_size = HN_DIRECT_TX_SIZE_DEF;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, direct_tx_size, CTLFLAG_RDTUN,
     &hn_direct_tx_size, 0, "Size of the packet for direct transmission");
+#endif //OSV_SYSCTL_ENABLED
 
 /* # of LRO entries per RX ring */
 #if defined(INET) || defined(INET6)
 #if __FreeBSD_version >= 1100095
 static int			hn_lro_entry_count = HN_LROENT_CNT_DEF;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, lro_entry_count, CTLFLAG_RDTUN,
     &hn_lro_entry_count, 0, "LRO entry count");
+#endif //OSV_SYSCTL_ENABLED
 #endif
 #endif
 
 static int			hn_tx_taskq_cnt = 1;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, tx_taskq_cnt, CTLFLAG_RDTUN,
     &hn_tx_taskq_cnt, 0, "# of TX taskqueues");
+#endif //OSV_SYSCTL_ENABLED
 
 #define HN_TX_TASKQ_M_INDEP	0
 #define HN_TX_TASKQ_M_GLOBAL	1
 #define HN_TX_TASKQ_M_EVTTQ	2
 
 static int			hn_tx_taskq_mode = HN_TX_TASKQ_M_INDEP;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, tx_taskq_mode, CTLFLAG_RDTUN,
     &hn_tx_taskq_mode, 0, "TX taskqueue modes: "
     "0 - independent, 1 - share global tx taskqs, 2 - share event taskqs");
+#endif //OSV_SYSCTL_ENABLED
 
 #ifndef HN_USE_TXDESC_BUFRING
 static int			hn_use_txdesc_bufring = 0;
 #else
 static int			hn_use_txdesc_bufring = 1;
 #endif
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, use_txdesc_bufring, CTLFLAG_RD,
     &hn_use_txdesc_bufring, 0, "Use buf_ring for TX descriptors");
-
+#endif //OSV_SYSCTL_ENABLED
 #ifdef HN_IFSTART_SUPPORT
 /* Use ifnet.if_start instead of ifnet.if_transmit */
 static int			hn_use_if_start = 0;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, use_if_start, CTLFLAG_RDTUN,
     &hn_use_if_start, 0, "Use if_start TX method");
+#endif //OSV_SYSCTL_ENABLED
 #endif
 
 /* # of channels to use */
 static int			hn_chan_cnt = 0;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, chan_cnt, CTLFLAG_RDTUN,
     &hn_chan_cnt, 0,
     "# of channels to use; each channel has one RX ring and one TX ring");
-
+#endif //OSV_SYSCTL_ENABLED
 /* # of transmit rings to use */
 static int			hn_tx_ring_cnt = 0;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, tx_ring_cnt, CTLFLAG_RDTUN,
     &hn_tx_ring_cnt, 0, "# of TX rings to use");
-
+#endif //OSV_SYSCTL_ENABLED
 /* Software TX ring deptch */
 static int			hn_tx_swq_depth = 0;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, tx_swq_depth, CTLFLAG_RDTUN,
     &hn_tx_swq_depth, 0, "Depth of IFQ or BUFRING");
-
+#endif //OSV_SYSCTL_ENABLED
 /* Enable sorted LRO, and the depth of the per-channel mbuf queue */
 #if __FreeBSD_version >= 1100095
 static u_int			hn_lro_mbufq_depth = 0;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_UINT(_hw_hn, OID_AUTO, lro_mbufq_depth, CTLFLAG_RDTUN,
     &hn_lro_mbufq_depth, 0, "Depth of LRO mbuf queue");
+#endif //OSV_SYSCTL_ENABLED
 #endif
 
 /* Packet transmission aggregation size limit */
 static int			hn_tx_agg_size = -1;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, tx_agg_size, CTLFLAG_RDTUN,
     &hn_tx_agg_size, 0, "Packet transmission aggregation size limit");
-
+#endif //OSV_SYSCTL_ENABLED
 /* Packet transmission aggregation count limit */
 static int			hn_tx_agg_pkts = -1;
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_INT(_hw_hn, OID_AUTO, tx_agg_pkts, CTLFLAG_RDTUN,
     &hn_tx_agg_pkts, 0, "Packet transmission aggregation packet limit");
 #endif //OSV_SYSCTL_ENABLED
@@ -668,11 +695,11 @@ do {							\
 		int iphlen;
 
 		PULLUP_HDR(m_head, ehlen + sizeof(*ip));
-		ip = mtodo(m_head, ehlen);
+		ip = static_cast<struct ip *>(mtodo(m_head, ehlen));
 		iphlen = ip->ip_hl << 2;
 
 		PULLUP_HDR(m_head, ehlen + iphlen + sizeof(*th));
-		th = mtodo(m_head, ehlen + iphlen);
+		th = static_cast<struct tcphdr *>(mtodo(m_head, ehlen + iphlen));
 
 		ip->ip_len = 0;
 		ip->ip_sum = 0;
@@ -1977,8 +2004,8 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 
 	if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_TSO) {
 #if defined(INET6) || defined(INET)
-		pi_data = hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
-		    NDIS_LSO2_INFO_SIZE, NDIS_PKTINFO_TYPE_LSO);
+		pi_data = static_cast<uint32_t*>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
+		    NDIS_LSO2_INFO_SIZE, NDIS_PKTINFO_TYPE_LSO));
 #ifdef INET
 		if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_TSO) {
 			*pi_data = NDIS_LSO2_INFO_MAKEIPV4(0,
@@ -3301,7 +3328,7 @@ hn_check_iplen(const struct mbuf *m, int hoff)
 	if (m->m_hdr.mh_len < len)
 		return IPPROTO_DONE;
 
-	ip = mtodo(m, hoff);
+	ip = static_cast<const struct ip *>(mtodo(m, hoff));
 
 	/* Bound check the packet's stated IP header length. */
 	iphlen = ip->ip_hl << 2;
