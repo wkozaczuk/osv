@@ -11,7 +11,7 @@
  *    notice unmodified, this list of conditions, and the following
  *    disclaimer.
  * 2. Redistributions in binary form must reproduce the above copyright
- *    notice, this list of conditions and the following disclaimer in the
+ *    notice, this list of conditions and the following disclaimer in the/
  *    documentation and/or other materials provided with the distribution.
  *
  * THIS SOFTWARE IS PROVIDED BY THE AUTHOR ``AS IS'' AND ANY EXPRESS OR
@@ -288,6 +288,7 @@ static void			hn_nvs_handle_rxbuf(struct hn_rx_ring *,
 static void			hn_nvs_ack_rxbuf(struct hn_rx_ring *,
 				    struct vmbus_channel *, uint64_t);
 
+#ifdef OSV_SYSCTL_ENABLED
 #if __FreeBSD_version >= 1100099
 static int			hn_lro_lenlim_sysctl(SYSCTL_HANDLER_ARGS);
 static int			hn_lro_ackcnt_sysctl(SYSCTL_HANDLER_ARGS);
@@ -317,6 +318,7 @@ static int			hn_txagg_pktmax_sysctl(SYSCTL_HANDLER_ARGS);
 static int			hn_txagg_align_sysctl(SYSCTL_HANDLER_ARGS);
 static int			hn_polling_sysctl(SYSCTL_HANDLER_ARGS);
 static int			hn_vf_sysctl(SYSCTL_HANDLER_ARGS);
+#endif //OSV_SYSCTL_ENABLED
 
 static void			hn_stop(struct hn_softc *, bool);
 static void			hn_init_locked(struct hn_softc *);
@@ -407,6 +409,7 @@ static void			hn_start_txeof(struct hn_tx_ring *);
 static void			hn_start_txeof_taskfunc(void *, int);
 #endif
 
+#ifdef OSV_SYSCTL_ENABLED
 SYSCTL_NODE(_hw, OID_AUTO, hn, CTLFLAG_RD | CTLFLAG_MPSAFE, NULL,
     "Hyper-V network interface");
 
@@ -515,6 +518,7 @@ SYSCTL_INT(_hw_hn, OID_AUTO, tx_agg_size, CTLFLAG_RDTUN,
 static int			hn_tx_agg_pkts = -1;
 SYSCTL_INT(_hw_hn, OID_AUTO, tx_agg_pkts, CTLFLAG_RDTUN,
     &hn_tx_agg_pkts, 0, "Packet transmission aggregation packet limit");
+#endif //OSV_SYSCTL_ENABLED
 
 static u_int			hn_cpu_index;	/* next CPU for channel */
 static struct taskqueue		**hn_tx_taskque;/* shared TX taskqueues */
@@ -1023,7 +1027,7 @@ hn_ifnet_event(void *arg, struct ifnet *ifp, int event)
 	if (event != IFNET_EVENT_UP && event != IFNET_EVENT_DOWN)
 		return;
 
-	hn_set_vf(arg, ifp, event == IFNET_EVENT_UP);
+	hn_set_vf(static_cast<struct hn_softc *>(arg), ifp, event == IFNET_EVENT_UP);
 }
 
 static void
@@ -1054,8 +1058,10 @@ static int
 hn_attach(device_t dev)
 {
 	struct hn_softc *sc = static_cast<struct hn_softc *>(device_get_softc(dev));
+#ifdef OSV_SYSCTL_ENABLED
 	struct sysctl_oid_list *child;
 	struct sysctl_ctx_list *ctx;
+#endif // OSV_SYSCTL_ENABLED
 	uint8_t eaddr[ETHER_ADDR_LEN];
 	struct ifnet *ifp = NULL;
 	int error, ring_cnt, tx_ring_cnt;
@@ -1215,7 +1221,8 @@ hn_attach(device_t dev)
 	 */
 	hn_fixup_tx_data(sc);
 
-	ctx = device_get_sysctl_ctx(dev);
+#ifdef OSV_SYSCTL_ENABLED
+    ctx = device_get_sysctl_ctx(dev);
 	child = SYSCTL_CHILDREN(device_get_sysctl_tree(dev));
 	SYSCTL_ADD_UINT(ctx, child, OID_AUTO, "nvs_version", CTLFLAG_RD,
 	    &sc->hn_nvs_ver, 0, "NVS version");
@@ -1272,6 +1279,7 @@ hn_attach(device_t dev)
 	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "vf",
 	    CTLTYPE_STRING | CTLFLAG_RD | CTLFLAG_MPSAFE, sc, 0,
 	    hn_vf_sysctl, "A", "Virtual Function's name");
+#endif // OSV_SYSCTL_ENABLED
 
 	/*
 	 * Setup the ifmedia, which has been initialized earlier.
@@ -2765,6 +2773,7 @@ hn_init(void *xsc)
 
 #if __FreeBSD_version >= 1100099
 
+#ifdef OSV_SYSCTL_ENABLED
 static int
 hn_lro_lenlim_sysctl(SYSCTL_HANDLER_ARGS)
 {
@@ -2818,9 +2827,10 @@ hn_lro_ackcnt_sysctl(SYSCTL_HANDLER_ARGS)
 	HN_UNLOCK(sc);
 	return 0;
 }
-
+#endif //OSV_SYSCTL_ENABLED
 #endif
 
+#ifdef OSV_SYSCTL_ENABLED
 static int
 hn_trust_hcsum_sysctl(SYSCTL_HANDLER_ARGS)
 {
@@ -2868,7 +2878,9 @@ hn_chim_size_sysctl(SYSCTL_HANDLER_ARGS)
 	HN_UNLOCK(sc);
 	return 0;
 }
+#endif // OSV_SYSCTL_ENABLED
 
+#ifdef OSV_SYSCTL_ENABLED
 #if __FreeBSD_version < 1100095
 static int
 hn_rx_stat_int_sysctl(SYSCTL_HANDLER_ARGS)
@@ -2923,7 +2935,9 @@ hn_rx_stat_u64_sysctl(SYSCTL_HANDLER_ARGS)
 }
 
 #endif
+#endif // # OSV_SYSCTL_ENABLED
 
+#ifdef OSV_SYSCTL_ENABLED
 static int
 hn_rx_stat_ulong_sysctl(SYSCTL_HANDLER_ARGS)
 {
@@ -3057,6 +3071,7 @@ hn_txagg_align_sysctl(SYSCTL_HANDLER_ARGS)
 	align = sc->hn_tx_ring[0].hn_agg_align;
 	return (sysctl_handle_int(oidp, &align, 0, req));
 }
+#endif //OSV_SYSCTL_ENABLED
 
 static void
 hn_chan_polling(struct vmbus_channel *chan, u_int pollhz)
@@ -3086,6 +3101,7 @@ hn_polling(struct hn_softc *sc, u_int pollhz)
 	hn_chan_polling(sc->hn_prichan, pollhz);
 }
 
+#ifdef OSV_SYSCTL_ENABLED
 static int
 hn_polling_sysctl(SYSCTL_HANDLER_ARGS)
 {
@@ -3167,9 +3183,11 @@ hn_rxfilter_sysctl(SYSCTL_HANDLER_ARGS)
 	    NDIS_PACKET_TYPES);
 	return sysctl_handle_string(oidp, filter_str, sizeof(filter_str), req);
 }
+#endif //OSV_SYSCTL_ENABLED
 
 #ifndef RSS
 
+#ifdef OSV_SYSCTL_ENABLED
 static int
 hn_rss_key_sysctl(SYSCTL_HANDLER_ARGS)
 {
@@ -3230,9 +3248,10 @@ back:
 	HN_UNLOCK(sc);
 	return (error);
 }
-
+#endif //OSV_SYSCTL_ENABLED
 #endif	/* !RSS */
 
+#ifdef OSV_SYSCTL_ENABLED
 static int
 hn_rss_hash_sysctl(SYSCTL_HANDLER_ARGS)
 {
@@ -3262,6 +3281,7 @@ hn_vf_sysctl(SYSCTL_HANDLER_ARGS)
 	HN_UNLOCK(sc);
 	return sysctl_handle_string(oidp, vf_name, sizeof(vf_name), req);
 }
+#endif //OSV_SYSCTL_ENABLED
 
 static int
 hn_check_iplen(const struct mbuf *m, int hoff)
@@ -3341,8 +3361,10 @@ hn_check_iplen(const struct mbuf *m, int hoff)
 static int
 hn_create_rx_data(struct hn_softc *sc, int ring_cnt)
 {
+#ifdef OSV_SYSCTL_ENABLED
 	struct sysctl_oid_list *child;
 	struct sysctl_ctx_list *ctx;
+#endif //OSV_SYSCTL_ENABLED
 	device_t dev = sc->hn_dev;
 #if defined(INET) || defined(INET6)
 #if __FreeBSD_version >= 1100095
@@ -3383,12 +3405,14 @@ hn_create_rx_data(struct hn_softc *sc, int ring_cnt)
 #endif
 #endif	/* INET || INET6 */
 
+#ifdef OSV_SYSCTL_ENABLED
 	ctx = device_get_sysctl_ctx(dev);
 	child = SYSCTL_CHILDREN(device_get_sysctl_tree(dev));
 
 	/* Create dev.hn.UNIT.rx sysctl tree */
 	sc->hn_rx_sysctl_tree = SYSCTL_ADD_NODE(ctx, child, OID_AUTO, "rx",
 	    CTLFLAG_RD | CTLFLAG_MPSAFE, 0, "");
+#endif //OSV_SYSCTL_ENABLED
 
 	for (i = 0; i < sc->hn_rx_ring_cnt; ++i) {
 		struct hn_rx_ring *rxr = &sc->hn_rx_ring[i];
@@ -3432,6 +3456,7 @@ hn_create_rx_data(struct hn_softc *sc, int ring_cnt)
 #endif
 #endif	/* INET || INET6 */
 
+#ifdef OSV_SYSCTL_ENABLED
 		if (sc->hn_rx_sysctl_tree != NULL) {
 			char name[16];
 
@@ -3461,8 +3486,10 @@ hn_create_rx_data(struct hn_softc *sc, int ring_cnt)
 				    "Temporary channel packet buffer length");
 			}
 		}
+#endif //OSV_SYSCTL_ENABLED
 	}
 
+#ifdef OSV_SYSCTL_ENABLED
 	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "lro_queued",
 	    CTLTYPE_U64 | CTLFLAG_RW | CTLFLAG_MPSAFE, sc,
 	    __offsetof(struct hn_rx_ring, hn_lro.lro_queued),
@@ -3539,6 +3566,7 @@ hn_create_rx_data(struct hn_softc *sc, int ring_cnt)
 	    CTLFLAG_RD, &sc->hn_rx_ring_cnt, 0, "# created RX rings");
 	SYSCTL_ADD_INT(ctx, child, OID_AUTO, "rx_ring_inuse",
 	    CTLFLAG_RD, &sc->hn_rx_ring_inuse, 0, "# used RX rings");
+#endif //OSV_SYSCTL_ENABLED
 
 	return (0);
 }
@@ -3740,6 +3768,7 @@ hn_tx_ring_create(struct hn_softc *sc, int id)
 	}
 	txr->hn_txdesc_avail = txr->hn_txdesc_cnt;
 
+#ifdef OSV_SYSCTL_ENABLED
 	if (sc->hn_tx_sysctl_tree != NULL) {
 		struct sysctl_oid_list *child;
 		struct sysctl_ctx_list *ctx;
@@ -3779,6 +3808,7 @@ hn_tx_ring_create(struct hn_softc *sc, int id)
 			    CTLFLAG_RW, &txr->hn_sends, "# of sends");
 		}
 	}
+#endif //OSV_SYSCTL_ENABLED
 
 	return 0;
 }
@@ -3860,8 +3890,10 @@ hn_tx_ring_destroy(struct hn_tx_ring *txr)
 static int
 hn_create_tx_data(struct hn_softc *sc, int ring_cnt)
 {
+#ifdef OSV_SYSCTL_ENABLED
 	struct sysctl_oid_list *child;
 	struct sysctl_ctx_list *ctx;
+#endif //OSV_SYSCTL_ENABLED
 	int i;
 
 	/*
@@ -3883,12 +3915,14 @@ hn_create_tx_data(struct hn_softc *sc, int ring_cnt)
 	sc->hn_tx_ring = static_cast<struct hn_tx_ring *>(malloc(sizeof(struct hn_tx_ring) * sc->hn_tx_ring_cnt,
 	    M_DEVBUF, M_WAITOK | M_ZERO));
 
+#ifdef OSV_SYSCTL_ENABLED
 	ctx = device_get_sysctl_ctx(sc->hn_dev);
 	child = SYSCTL_CHILDREN(device_get_sysctl_tree(sc->hn_dev));
 
 	/* Create dev.hn.UNIT.tx sysctl tree */
 	sc->hn_tx_sysctl_tree = SYSCTL_ADD_NODE(ctx, child, OID_AUTO, "tx",
 	    CTLFLAG_RD | CTLFLAG_MPSAFE, 0, "");
+#endif //OSV_SYSCTL_ENABLED
 
 	for (i = 0; i < sc->hn_tx_ring_cnt; ++i) {
 		int error;
@@ -3898,6 +3932,7 @@ hn_create_tx_data(struct hn_softc *sc, int ring_cnt)
 			return error;
 	}
 
+#ifdef OSV_SYSCTL_ENABLED
 	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "no_txdescs",
 	    CTLTYPE_ULONG | CTLFLAG_RW | CTLFLAG_MPSAFE, sc,
 	    __offsetof(struct hn_tx_ring, hn_no_txdescs),
@@ -3962,6 +3997,7 @@ hn_create_tx_data(struct hn_softc *sc, int ring_cnt)
 	    CTLTYPE_INT | CTLFLAG_RD | CTLFLAG_MPSAFE, sc, 0,
 	    hn_txagg_align_sysctl, "I",
 	    "Applied packet transmission aggregation alignment");
+#endif// OSV_SYSCTL_ENABLED
 
 	return 0;
 }

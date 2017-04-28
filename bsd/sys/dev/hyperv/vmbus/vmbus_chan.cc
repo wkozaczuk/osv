@@ -68,9 +68,11 @@ static void			vmbus_chan_update_evtflagcnt(
 				    const struct vmbus_channel *);
 static int			vmbus_chan_close_internal(
 				    struct vmbus_channel *);
+#ifdef SYSCTL_ENABLED
 static int			vmbus_chan_sysctl_mnf(SYSCTL_HANDLER_ARGS);
 static void			vmbus_chan_sysctl_create(
 				    struct vmbus_channel *);
+#endif
 static struct vmbus_channel	*vmbus_chan_alloc(struct vmbus_softc *);
 static void			vmbus_chan_free(struct vmbus_channel *);
 static int			vmbus_chan_add(struct vmbus_channel *);
@@ -223,6 +225,7 @@ vmbus_chan_rem_list(struct vmbus_softc *sc, struct vmbus_channel *chan)
 	TAILQ_REMOVE(&sc->vmbus_chans, chan, ch_link);
 }
 
+#ifdef SYSCTL_ENABLED
 static int
 vmbus_chan_sysctl_mnf(SYSCTL_HANDLER_ARGS)
 {
@@ -318,6 +321,7 @@ vmbus_chan_sysctl_create(struct vmbus_channel *chan)
 		vmbus_br_sysctl_create(ctx, br_tree, &chan->ch_txbr.txbr, "tx");
 	}
 }
+#endif
 
 int
 vmbus_chan_open(struct vmbus_channel *chan, int txbr_size, int rxbr_size,
@@ -420,8 +424,10 @@ vmbus_chan_open_br(struct vmbus_channel *chan, const struct vmbus_chan_br *cbr,
 	/* RX bufring immediately follows TX bufring */
 	vmbus_rxbr_setup(&chan->ch_rxbr, br + txbr_size, rxbr_size);
 
+#ifdef SYSCTL_ENABLED
 	/* Create sysctl tree for this channel */
 	vmbus_chan_sysctl_create(chan);
+#endif
 
 	/*
 	 * Connect the bufrings, both RX and TX, to this channel.
@@ -527,7 +533,9 @@ vmbus_chan_open_br(struct vmbus_channel *chan, const struct vmbus_chan_br *cbr,
 	error = ENXIO;
 
 failed:
+#ifdef SYSCTL_ENABLED
 	sysctl_ctx_free(&chan->ch_sysctl_ctx);
+#endif
 	vmbus_chan_clear_chmap(chan);
 	if (chan->ch_bufring_gpadl != 0) {
 		int error1;
@@ -839,11 +847,13 @@ vmbus_chan_close_internal(struct vmbus_channel *chan)
 		return (0);
 	}
 
+#ifdef SYSCTL_ENABLED
 	/*
 	 * Free this channel's sysctl tree attached to its device's
 	 * sysctl tree.
 	 */
 	sysctl_ctx_free(&chan->ch_sysctl_ctx);
+#endif
 
 	/*
 	 * Cancel polling, if it is enabled.

@@ -398,6 +398,9 @@ EVENTHANDLER_DECLARE(ifnet_departure_event, ifnet_departure_event_handler_t);
 typedef void (*ifnet_link_event_handler_t)(void *, struct ifnet *, int);
 EVENTHANDLER_DECLARE(ifnet_link_event, ifnet_link_event_handler_t);
 
+#define IFNET_EVENT_UP          0
+#define IFNET_EVENT_DOWN        1
+
 /*
  * interface groups
  */

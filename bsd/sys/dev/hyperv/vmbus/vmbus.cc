@@ -126,7 +126,9 @@ static void			vmbus_chanmsg_handle(struct vmbus_softc *,
 static void			vmbus_msg_task(void *, int);
 static void			vmbus_synic_setup(void *);
 static void			vmbus_synic_teardown(void *);
+#ifdef SYSCTL_ENABLED
 static int			vmbus_sysctl_version(SYSCTL_HANDLER_ARGS);
+#endif
 static int			vmbus_dma_alloc(struct vmbus_softc *);
 static void			vmbus_dma_free(struct vmbus_softc *);
 static int			vmbus_intr_setup(struct vmbus_softc *);
@@ -1029,6 +1031,7 @@ vmbus_delete_child(struct vmbus_channel *chan)
 	return (error);
 }
 
+#ifdef SYSCTL_ENABLED
 static int
 vmbus_sysctl_version(SYSCTL_HANDLER_ARGS)
 {
@@ -1040,6 +1043,7 @@ vmbus_sysctl_version(SYSCTL_HANDLER_ARGS)
 	    VMBUS_VERSION_MINOR(sc->vmbus_version));
 	return sysctl_handle_string(oidp, verstr, sizeof(verstr), req);
 }
+#endif
 
 #ifdef PCI_PASS_THROUGH
 /*
@@ -1383,11 +1387,13 @@ vmbus_doattach(struct vmbus_softc *sc)
 	if (ret != 0)
 		goto cleanup;
 
+#ifdef SYSCTL_ENABLED
 	ctx = device_get_sysctl_ctx(sc->vmbus_dev);
 	child = SYSCTL_CHILDREN(device_get_sysctl_tree(sc->vmbus_dev));
 	SYSCTL_ADD_PROC(ctx, child, OID_AUTO, "version",
 	    CTLTYPE_STRING | CTLFLAG_RD | CTLFLAG_MPSAFE, sc, 0,
 	    vmbus_sysctl_version, "A", "vmbus version");
+#endif
 
 	return (ret);
 
