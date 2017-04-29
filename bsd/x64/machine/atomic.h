@@ -126,6 +126,74 @@ atomic_##NAME##_barr_##TYPE(volatile u_##TYPE *p, u_##TYPE v)\
 }							\
 struct __hack
 
+static __inline u_long
+atomic_swap_long(volatile u_long *p, u_long v)
+{
+
+	__asm __volatile(
+	"	xchgq	%1,%0 ;		"
+			"# atomic_swap_long"
+	: "+r" (v),			/* 0 */
+	"+m" (*p));			/* 1 */
+	return (v);
+}
+
+static __inline int
+atomic_testandclear_int(volatile u_int *p, u_int v)
+{
+	u_char res;
+
+	__asm __volatile(
+	"	" MPLOCKED "		"
+			"	btrl	%2,%1 ;		"
+			"	setc	%0 ;		"
+			"# atomic_testandclear_int"
+	: "=q" (res),			/* 0 */
+	"+m" (*p)			/* 1 */
+	: "Ir" (v & 0x1f)		/* 2 */
+	: "cc");
+	return (res);
+}
+
+static __inline int
+atomic_testandclear_long(volatile u_long *p, u_int v)
+{
+	u_char res;
+
+	__asm __volatile(
+	"	" MPLOCKED "		"
+			"	btrq	%2,%1 ;		"
+			"	setc	%0 ;		"
+			"# atomic_testandclear_long"
+	: "=q" (res),			/* 0 */
+	"+m" (*p)			/* 1 */
+	: "Jr" ((u_long)(v & 0x3f))	/* 2 */
+	: "cc");
+	return (res);
+}
+
+static __inline int
+atomic_testandset_int(volatile u_int *p, u_int v)
+{
+	u_char res;
+
+	__asm __volatile(
+	"	" MPLOCKED "		"
+			"	btsl	%2,%1 ;		"
+			"	setc	%0 ;		"
+			"# atomic_testandset_int"
+	: "=q" (res),			/* 0 */
+	"+m" (*p)			/* 1 */
+	: "Ir" (v & 0x1f)		/* 2 */
+	: "cc");
+	return (res);
+}
+
+u_long	atomic_swap_long(volatile u_long *p, u_long v);
+int	atomic_testandclear_int(volatile u_int *p, u_int v);
+int	atomic_testandclear_long(volatile u_long *p, u_int v);
+int	atomic_testandset_int(volatile u_int *p, u_int v);
+
 /*
  * Atomic compare and set, used by the mutex functions
  *

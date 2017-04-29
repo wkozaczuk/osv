@@ -696,7 +696,7 @@ vmbus_chan_wait_revoke(const struct vmbus_channel *chan, bool can_sleep)
 		if (can_sleep)
 			bsd_pause("wchrev", 1);
 		else
-			DELAY(1000);
+            sched::thread::sleep(std::chrono::microseconds(1000));
 	}
 	return (false);
 
@@ -763,7 +763,7 @@ vmbus_chan_detach(struct vmbus_channel *chan)
 
 	KASSERT(chan->ch_refs > 0, ("chan%u: invalid refcnt %d",
 	    chan->ch_id, chan->ch_refs));
-	refs = static_cast<int>(atomic_fetchadd_int(&chan->ch_refs, -1));
+	refs = static_cast<int>(atomic_fetchadd_int(reinterpret_cast<volatile u_int*>(&chan->ch_refs), -1));
 #ifdef INVARIANTS
 	if (VMBUS_CHAN_ISPRIMARY(chan)) {
 		KASSERT(refs == 1, ("chan%u: invalid refcnt %d for prichan",
@@ -800,7 +800,7 @@ vmbus_chan_clear_chmap(struct vmbus_channel *chan)
 static void
 vmbus_chan_set_chmap(struct vmbus_channel *chan)
 {
-	__compiler_membar();
+    std::atomic_signal_fence(std::memory_order_seq_cst);
 	chan->ch_vmbus->vmbus_chmap[chan->ch_id] = chan;
 }
 
@@ -1324,7 +1324,7 @@ vmbus_chan_pollcfg_task(void *xarg, int pending __unused)
 	 * NOTE: order is critical.
 	 */
 	chan->ch_vmbus->vmbus_chmap[chan->ch_id] = NULL;
-	__compiler_membar();
+    std::atomic_signal_fence(std::memory_order_seq_cst);
 	vmbus_rxbr_intr_mask(&chan->ch_rxbr);
 
 	/*
@@ -1390,7 +1390,7 @@ vmbus_chan_polldis_task(void *xchan, int pending __unused)
 	 * the RX bufring interrupt.
 	 */
 	chan->ch_vmbus->vmbus_chmap[chan->ch_id] = chan;
-	__compiler_membar();
+    std::atomic_signal_fence(std::memory_order_seq_cst);
 	vmbus_rxbr_intr_unmask(&chan->ch_rxbr);
 
 	/*
@@ -1428,7 +1428,7 @@ vmbus_event_flags_proc(struct vmbus_softc *sc, volatile u_long *event_flags,
 				/* Channel is closed. */
 				continue;
 			}
-			__compiler_membar();
+            std::atomic_signal_fence(std::memory_order_seq_cst);
 
 			if (chan->ch_flags & VMBUS_CHAN_FLAG_BATCHREAD)
 				vmbus_rxbr_intr_mask(&chan->ch_rxbr);
@@ -1479,7 +1479,7 @@ vmbus_chan_update_evtflagcnt(struct vmbus_softc *sc,
 		old_flag_cnt = *flag_cnt_ptr;
 		if (old_flag_cnt >= flag_cnt)
 			break;
-		if (atomic_cmpset_int(flag_cnt_ptr, old_flag_cnt, flag_cnt)) {
+		if (atomic_cmpset_int(reinterpret_cast<volatile u_int*>(flag_cnt_ptr), old_flag_cnt, flag_cnt)) {
 			vmbus_chan_printf(chan,
 				"chan%u update cpu%d flag_cnt to %d\n",
 				chan->ch_id, chan->ch_cpuid, flag_cnt);
@@ -1617,7 +1617,7 @@ vmbus_chan_add(struct vmbus_channel *newchan)
 	 */
 	KASSERT(newchan->ch_refs == 1, ("chan%u: invalid refcnt %d",
 	    newchan->ch_id, newchan->ch_refs));
-	atomic_add_int(&newchan->ch_refs, 1);
+	atomic_add_int(reinterpret_cast<volatile u_int*>(&newchan->ch_refs), 1);
 
 	newchan->ch_prichan = prichan;
 	newchan->ch_dev = prichan->ch_dev;
@@ -1761,7 +1761,7 @@ vmbus_chan_msgproc_choffer(struct vmbus_softc *sc,
 	if (error) {
 		device_printf(sc->vmbus_dev, "add chan%u failed: %d\n",
 		    chan->ch_id, error);
-		atomic_subtract_int(&chan->ch_refs, 1);
+		atomic_subtract_int(reinterpret_cast<volatile u_int*>(&chan->ch_refs), 1);
 		vmbus_chan_free(chan);
 		return;
 	}
@@ -2171,7 +2171,7 @@ vmbus_chan_xact_wait(const struct vmbus_channel *chan,
 			if (can_sleep)
 				bsd_pause("chxact", 1);
 			else
-				DELAY(1000);
+                sched::thread::sleep(std::chrono::microseconds(1000));
 		}
 	}
 	return (ret);

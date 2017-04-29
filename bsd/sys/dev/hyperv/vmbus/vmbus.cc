@@ -809,7 +809,7 @@ vmbus_dma_alloc(struct vmbus_softc *sc)
 	int cpu;
 
 	parent_dtag = bus_get_dma_tag(sc->vmbus_dev);
-	CPU_FOREACH(cpu) {
+    for (auto cpu : sched::cpus) {
 		void *ptr;
 
 		/*
@@ -872,7 +872,7 @@ vmbus_dma_free(struct vmbus_softc *sc)
 		sc->vmbus_mnf2 = NULL;
 	}
 
-	CPU_FOREACH(cpu) {
+    for (auto cpu : sched::cpus) {
 		if (VMBUS_PCPU_GET(sc, message, cpu) != NULL) {
 			hyperv_dmamem_free(
 			    VMBUS_PCPU_PTR(sc, message_dma, cpu),
@@ -893,7 +893,7 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 {
 	int cpu;
 
-	CPU_FOREACH(cpu) {
+    for (auto cpu : sched::cpus) {
 		char buf[MAXCOMLEN + 1];
 		cpuset_t cpu_mask;
 
@@ -951,7 +951,7 @@ vmbus_intr_teardown(struct vmbus_softc *sc)
 		sc->vmbus_idtvec = -1;
 	}
 
-	CPU_FOREACH(cpu) {
+    for (auto cpu : sched::cpus) {
 		if (VMBUS_PCPU_GET(sc, event_tq, cpu) != NULL) {
 			taskqueue_free(VMBUS_PCPU_GET(sc, event_tq, cpu));
 			VMBUS_PCPU_GET(sc, event_tq, cpu) = NULL;
