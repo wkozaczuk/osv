@@ -166,7 +166,7 @@ vmbus_rxbr_intr_unmask(struct vmbus_rxbr *rbr)
 static void
 vmbus_br_setup(struct vmbus_br *br, void *buf, int blen)
 {
-	br->vbr = static_cast<vmbus_bufring*>(buf);
+	br->vbr = reinterpret_cast<vmbus_bufring*>(buf);
 	br->vbr_dsize = blen - sizeof(struct vmbus_bufring);
 }
 
@@ -254,7 +254,7 @@ static __inline uint32_t
 vmbus_txbr_copyto(const struct vmbus_txbr *tbr, uint32_t windex,
     const void *src0, uint32_t cplen)
 {
-	const uint8_t *src = static_cast<const uint8_t *>(src0);
+	const uint8_t *src = reinterpret_cast<const uint8_t *>(src0);
 	uint8_t *br_data = tbr->txbr_data;
 	uint32_t br_dsize = tbr->txbr_dsize;
 
@@ -340,7 +340,7 @@ static __inline uint32_t
 vmbus_rxbr_copyfrom(const struct vmbus_rxbr *rbr, uint32_t rindex,
     void *dst0, int cplen)
 {
-	uint8_t *dst = static_cast<uint8_t *>(dst0);
+	uint8_t *dst = reinterpret_cast<uint8_t *>(dst0);
 	const uint8_t *br_data = rbr->rxbr_data;
 	uint32_t br_dsize = rbr->rxbr_dsize;
 

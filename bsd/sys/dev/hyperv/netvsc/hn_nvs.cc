@@ -119,7 +119,7 @@ hn_nvs_xact_execute(struct hn_softc *sc, struct vmbus_xact *xact,
 		vmbus_xact_deactivate(xact);
 		return (NULL);
 	}
-	hdr = static_cast<const hn_nvs_hdr*>(vmbus_chan_xact_wait(sc->hn_prichan, xact, &resplen,
+	hdr = reinterpret_cast<const hn_nvs_hdr*>(vmbus_chan_xact_wait(sc->hn_prichan, xact, &resplen,
 	    HN_CAN_SLEEP(sc)));
 
 	/*
@@ -190,13 +190,13 @@ hn_nvs_conn_rxbuf(struct hn_softc *sc)
 		error = ENXIO;
 		goto cleanup;
 	}
-	conn = static_cast<struct hn_nvs_rxbuf_conn *>(vmbus_xact_req_data(xact));
+	conn = reinterpret_cast<struct hn_nvs_rxbuf_conn *>(vmbus_xact_req_data(xact));
 	conn->nvs_type = HN_NVS_TYPE_RXBUF_CONN;
 	conn->nvs_gpadl = sc->hn_rxbuf_gpadl;
 	conn->nvs_sig = HN_NVS_RXBUF_SIG;
 
 	resp_len = sizeof(*resp);
-	resp = static_cast<const struct hn_nvs_rxbuf_connresp *>(hn_nvs_xact_execute(sc, xact, conn, sizeof(*conn), &resp_len,
+	resp = reinterpret_cast<const struct hn_nvs_rxbuf_connresp *>(hn_nvs_xact_execute(sc, xact, conn, sizeof(*conn), &resp_len,
 	    HN_NVS_TYPE_RXBUF_CONNRESP));
 	if (resp == NULL) {
 		if_printf(sc->hn_ifp, "exec nvs rxbuf conn failed\n");
@@ -258,13 +258,13 @@ hn_nvs_conn_chim(struct hn_softc *sc)
 		error = ENXIO;
 		goto cleanup;
 	}
-	chim = static_cast<struct hn_nvs_chim_conn *>(vmbus_xact_req_data(xact));
+	chim = reinterpret_cast<struct hn_nvs_chim_conn *>(vmbus_xact_req_data(xact));
 	chim->nvs_type = HN_NVS_TYPE_CHIM_CONN;
 	chim->nvs_gpadl = sc->hn_chim_gpadl;
 	chim->nvs_sig = HN_NVS_CHIM_SIG;
 
 	resp_len = sizeof(*resp);
-	resp = static_cast<const struct hn_nvs_chim_connresp *>(hn_nvs_xact_execute(sc, xact, chim, sizeof(*chim), &resp_len,
+	resp = reinterpret_cast<const struct hn_nvs_chim_connresp *>(hn_nvs_xact_execute(sc, xact, chim, sizeof(*chim), &resp_len,
 	    HN_NVS_TYPE_CHIM_CONNRESP));
 	if (resp == NULL) {
 		if_printf(sc->hn_ifp, "exec nvs chim conn failed\n");
@@ -311,7 +311,7 @@ hn_nvs_conn_chim(struct hn_softc *sc)
 	}
 
 	sc->hn_chim_bmap_cnt = sc->hn_chim_cnt / LONG_BIT;
-	sc->hn_chim_bmap = static_cast<u_long *>(malloc(sc->hn_chim_bmap_cnt * sizeof(u_long),
+	sc->hn_chim_bmap = reinterpret_cast<u_long *>(malloc(sc->hn_chim_bmap_cnt * sizeof(u_long),
 	    M_DEVBUF, M_WAITOK | M_ZERO));
 
 	/* Done! */
@@ -470,13 +470,13 @@ hn_nvs_doinit(struct hn_softc *sc, uint32_t nvs_ver)
 		if_printf(sc->hn_ifp, "no xact for nvs init\n");
 		return (ENXIO);
 	}
-	init = static_cast<struct hn_nvs_init *>(vmbus_xact_req_data(xact));
+	init = reinterpret_cast<struct hn_nvs_init *>(vmbus_xact_req_data(xact));
 	init->nvs_type = HN_NVS_TYPE_INIT;
 	init->nvs_ver_min = nvs_ver;
 	init->nvs_ver_max = nvs_ver;
 
 	resp_len = sizeof(*resp);
-	resp = static_cast<const struct hn_nvs_init_resp *>(hn_nvs_xact_execute(sc, xact, init, sizeof(*init), &resp_len,
+	resp = reinterpret_cast<const struct hn_nvs_init_resp *>(hn_nvs_xact_execute(sc, xact, init, sizeof(*init), &resp_len,
 	    HN_NVS_TYPE_INIT_RESP));
 	if (resp == NULL) {
 		if_printf(sc->hn_ifp, "exec init failed\n");
@@ -666,7 +666,7 @@ hn_nvs_sent_xact(struct hn_nvs_sendctx *sndc,
     const void *data, int dlen)
 {
 
-	vmbus_xact_wakeup(static_cast<struct vmbus_xact *>(sndc->hn_cbarg), data, dlen);
+	vmbus_xact_wakeup(reinterpret_cast<struct vmbus_xact *>(sndc->hn_cbarg), data, dlen);
 }
 
 static void
@@ -695,13 +695,13 @@ hn_nvs_alloc_subchans(struct hn_softc *sc, int *nsubch0)
 		if_printf(sc->hn_ifp, "no xact for nvs subch alloc\n");
 		return (ENXIO);
 	}
-	req = static_cast<struct hn_nvs_subch_req *>(vmbus_xact_req_data(xact));
+	req = reinterpret_cast<struct hn_nvs_subch_req *>(vmbus_xact_req_data(xact));
 	req->nvs_type = HN_NVS_TYPE_SUBCH_REQ;
 	req->nvs_op = HN_NVS_SUBCH_OP_ALLOC;
 	req->nvs_nsubch = nsubch_req;
 
 	resp_len = sizeof(*resp);
-	resp = static_cast<const struct hn_nvs_subch_resp *>(hn_nvs_xact_execute(sc, xact, req, sizeof(*req), &resp_len,
+	resp = reinterpret_cast<const struct hn_nvs_subch_resp *>(hn_nvs_xact_execute(sc, xact, req, sizeof(*req), &resp_len,
 	    HN_NVS_TYPE_SUBCH_RESP));
 	if (resp == NULL) {
 		if_printf(sc->hn_ifp, "exec nvs subch alloc failed\n");

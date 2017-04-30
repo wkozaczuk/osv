@@ -697,11 +697,11 @@ do {							\
 		int iphlen;
 
 		PULLUP_HDR(m_head, ehlen + sizeof(*ip));
-		ip = static_cast<struct ip *>(mtodo(m_head, ehlen));
+		ip = reinterpret_cast<struct ip *>(mtodo(m_head, ehlen));
 		iphlen = ip->ip_hl << 2;
 
 		PULLUP_HDR(m_head, ehlen + iphlen + sizeof(*th));
-		th = static_cast<struct tcphdr *>(mtodo(m_head, ehlen + iphlen));
+		th = reinterpret_cast<struct tcphdr *>(mtodo(m_head, ehlen + iphlen));
 
 		ip->ip_len = 0;
 		ip->ip_sum = 0;
@@ -938,7 +938,7 @@ hn_ifmedia_upd(struct ifnet *ifp __unused)
 static void
 hn_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(ifp->if_softc);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(ifp->if_softc);
 
 	ifmr->ifm_status = IFM_AVALID;
 	ifmr->ifm_active = IFM_ETHER;
@@ -954,7 +954,7 @@ hn_ifmedia_sts(struct ifnet *ifp, struct ifmediareq *ifmr)
 static void
 hn_update_vf_task(void *arg, int pending __unused)
 {
-	struct hn_update_vf *uv = static_cast<struct hn_update_vf *>(arg);
+	struct hn_update_vf *uv = reinterpret_cast<struct hn_update_vf *>(arg);
 
 	uv->rxr->hn_vf = uv->vf;
 }
@@ -1058,13 +1058,13 @@ hn_ifnet_event(void *arg, struct ifnet *ifp, int event)
 	if (event != IFNET_EVENT_UP && event != IFNET_EVENT_DOWN)
 		return;
 
-	hn_set_vf(static_cast<struct hn_softc *>(arg), ifp, event == IFNET_EVENT_UP);
+	hn_set_vf(reinterpret_cast<struct hn_softc *>(arg), ifp, event == IFNET_EVENT_UP);
 }
 
 static void
 hn_ifaddr_event(void *arg, struct ifnet *ifp)
 {
-	hn_set_vf(static_cast<struct hn_softc*>(arg), ifp, ifp->if_flags & IFF_UP);
+	hn_set_vf(reinterpret_cast<struct hn_softc*>(arg), ifp, ifp->if_flags & IFF_UP);
 }
 
 /* {F8615163-DF3E-46c5-913F-F2D2F965ED0E} */
@@ -1088,7 +1088,7 @@ hn_probe(device_t dev)
 static int
 hn_attach(device_t dev)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(device_get_softc(dev));
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(device_get_softc(dev));
 #ifdef OSV_SYSCTL_ENABLED
 	struct sysctl_oid_list *child;
 	struct sysctl_ctx_list *ctx;
@@ -1114,7 +1114,7 @@ hn_attach(device_t dev)
 		int i;
 
 		sc->hn_tx_taskqs =
-            static_cast<struct taskqueue **>(malloc(hn_tx_taskq_cnt * sizeof(struct taskqueue *),
+            reinterpret_cast<struct taskqueue **>(malloc(hn_tx_taskq_cnt * sizeof(struct taskqueue *),
 		    M_DEVBUF, M_WAITOK));
 		for (i = 0; i < hn_tx_taskq_cnt; ++i) {
 			sc->hn_tx_taskqs[i] = taskqueue_create("hn_tx",
@@ -1416,7 +1416,7 @@ failed:
 static int
 hn_detach(device_t dev)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(device_get_softc(dev));
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(device_get_softc(dev));
 	struct ifnet *ifp = sc->hn_ifp;
 
 	if (sc->hn_ifaddr_evthand != NULL)
@@ -1508,7 +1508,7 @@ hn_link_status(struct hn_softc *sc)
 static void
 hn_link_taskfunc(void *xsc, int pending __unused)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(xsc);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(xsc);
 
 	if (sc->hn_link_flags & HN_LINK_FLAG_NETCHG)
 		return;
@@ -1518,7 +1518,7 @@ hn_link_taskfunc(void *xsc, int pending __unused)
 static void
 hn_netchg_init_taskfunc(void *xsc, int pending __unused)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(xsc);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(xsc);
 
 	/* Prevent any link status checks from running. */
 	sc->hn_link_flags |= HN_LINK_FLAG_NETCHG;
@@ -1537,7 +1537,7 @@ hn_netchg_init_taskfunc(void *xsc, int pending __unused)
 static void
 hn_netchg_status_taskfunc(void *xsc, int pending __unused)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(xsc);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(xsc);
 
 	/* Re-allow link status checks. */
 	sc->hn_link_flags &= ~HN_LINK_FLAG_NETCHG;
@@ -1760,7 +1760,7 @@ static void
 hn_txpkt_done(struct hn_nvs_sendctx *sndc, struct hn_softc *sc,
     struct vmbus_channel *chan, const void *data __unused, int dlen __unused)
 {
-	struct hn_txdesc *txd = static_cast<struct hn_txdesc *>(sndc->hn_cbarg);
+	struct hn_txdesc *txd = reinterpret_cast<struct hn_txdesc *>(sndc->hn_cbarg);
 	struct hn_tx_ring *txr;
 
 	txr = txd->txr;
@@ -1909,7 +1909,7 @@ hn_try_txagg(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 
 			chim = (uint8_t *)pkt + pkt->rm_len;
 			/* Save the current packet for later fixup. */
-			txr->hn_agg_prevpkt = static_cast<struct rndis_packet_msg *>(chim);
+			txr->hn_agg_prevpkt = reinterpret_cast<struct rndis_packet_msg *>(chim);
 
 			txr->hn_agg_pktleft--;
 			txr->hn_agg_szleft -= pktsize;
@@ -1942,7 +1942,7 @@ hn_try_txagg(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 		txr->hn_agg_txd = txd;
 		txr->hn_agg_pktleft = txr->hn_agg_pktmax - 1;
 		txr->hn_agg_szleft = txr->hn_agg_szmax - pktsize;
-		txr->hn_agg_prevpkt = static_cast<struct rndis_packet_msg *>(chim);
+		txr->hn_agg_prevpkt = reinterpret_cast<struct rndis_packet_msg *>(chim);
 	}
 	return (chim);
 }
@@ -1968,7 +1968,7 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 	if (pkt_size < txr->hn_chim_size) {
 		chim = hn_try_txagg(ifp, txr, txd, pkt_size);
 		if (chim != NULL)
-			pkt = static_cast<struct rndis_packet_msg *>(chim);
+			pkt = reinterpret_cast<struct rndis_packet_msg *>(chim);
 	} else {
 		if (txr->hn_agg_txd != NULL)
 			hn_flush_txagg(ifp, txr);
@@ -1992,13 +1992,13 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 		 * dispatch the TX done event for this packet back to this TX
 		 * ring's channel.
 		 */
-		pi_data = static_cast<uint32_t *>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
+		pi_data = reinterpret_cast<uint32_t *>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
 		    HN_NDIS_HASH_VALUE_SIZE, HN_NDIS_PKTINFO_TYPE_HASHVAL));
 		*pi_data = txr->hn_tx_idx;
 	}
 
 	if (m_head->m_hdr.mh_flags & M_VLANTAG) {
-		pi_data = static_cast<uint32_t *>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
+		pi_data = reinterpret_cast<uint32_t *>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
 		    NDIS_VLAN_INFO_SIZE, NDIS_PKTINFO_TYPE_VLAN));
 		*pi_data = NDIS_VLAN_INFO_MAKE(
 		    EVL_VLANOFTAG(m_head->M_dat.MH.MH_pkthdr.ether_vtag),
@@ -2008,7 +2008,7 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 
 	if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_TSO) {
 #if defined(INET6) || defined(INET)
-		pi_data = static_cast<uint32_t*>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
+		pi_data = reinterpret_cast<uint32_t*>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
 		    NDIS_LSO2_INFO_SIZE, NDIS_PKTINFO_TYPE_LSO));
 #ifdef INET
 		if (m_head->M_dat.MH.MH_pkthdr.csum_flags & CSUM_TSO) {
@@ -2027,7 +2027,7 @@ hn_encap(struct ifnet *ifp, struct hn_tx_ring *txr, struct hn_txdesc *txd,
 #endif
 #endif	/* INET6 || INET */
 	} else if (m_head->M_dat.MH.MH_pkthdr.csum_flags & txr->hn_csum_assist) {
-		pi_data = static_cast<uint32_t *>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
+		pi_data = reinterpret_cast<uint32_t *>(hn_rndis_pktinfo_append(pkt, HN_RNDIS_PKT_LEN,
 		    NDIS_TXCSUM_INFO_SIZE, NDIS_PKTINFO_TYPE_CSUM));
 		if (m_head->M_dat.MH.MH_pkthdr.csum_flags &
 		    (CSUM_TCP_IPV6 | CSUM_UDP_IPV6)) {
@@ -2357,7 +2357,7 @@ hn_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen,
 			return (0);
 		}
 
-		hv_m_append(m_new, dlen, static_cast<c_caddr_t>(data));
+		hv_m_append(m_new, dlen, reinterpret_cast<c_caddr_t>(data));
 	}
 	m_new->M_dat.MH.MH_pkthdr.rcvif = ifp;
 
@@ -2538,7 +2538,7 @@ skip:
 static int
 hn_ioctl(struct ifnet *ifp, u_long cmd, caddr_t data)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(ifp->if_softc);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(ifp->if_softc);
 	struct ifreq *ifr = (struct ifreq *)data;
 	int mask, error = 0;
 
@@ -2795,7 +2795,7 @@ hn_init_locked(struct hn_softc *sc)
 static void
 hn_init(void *xsc)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(xsc);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(xsc);
 
 	HN_LOCK(sc);
 	hn_init_locked(sc);
@@ -2865,7 +2865,7 @@ hn_lro_ackcnt_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_trust_hcsum_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int hcsum = arg2;
 	int on, error, i;
 
@@ -2893,7 +2893,7 @@ hn_trust_hcsum_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_chim_size_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int chim_size, error;
 
 	chim_size = sc->hn_tx_ring[0].hn_chim_size;
@@ -2916,7 +2916,7 @@ hn_chim_size_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_rx_stat_int_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int ofs = arg2, i, error;
 	struct hn_rx_ring *rxr;
 	uint64_t stat;
@@ -2972,7 +2972,7 @@ hn_rx_stat_u64_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_rx_stat_ulong_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int ofs = arg2, i, error;
 	struct hn_rx_ring *rxr;
 	u_long stat;
@@ -2998,7 +2998,7 @@ hn_rx_stat_ulong_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_tx_stat_ulong_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int ofs = arg2, i, error;
 	struct hn_tx_ring *txr;
 	u_long stat;
@@ -3024,7 +3024,7 @@ hn_tx_stat_ulong_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_tx_conf_int_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int ofs = arg2, i, error, conf;
 	struct hn_tx_ring *txr;
 
@@ -3048,7 +3048,7 @@ hn_tx_conf_int_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_txagg_size_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int error, size;
 
 	size = sc->hn_agg_size;
@@ -3067,7 +3067,7 @@ hn_txagg_size_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_txagg_pkts_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int error, pkts;
 
 	pkts = sc->hn_agg_pkts;
@@ -3086,7 +3086,7 @@ hn_txagg_pkts_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_txagg_pktmax_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int pkts;
 
 	pkts = sc->hn_tx_ring[0].hn_agg_pktmax;
@@ -3096,7 +3096,7 @@ hn_txagg_pktmax_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_txagg_align_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int align;
 
 	align = sc->hn_tx_ring[0].hn_agg_align;
@@ -3136,7 +3136,7 @@ hn_polling(struct hn_softc *sc, u_int pollhz)
 static int
 hn_polling_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int pollhz, error;
 
 	pollhz = sc->hn_pollhz;
@@ -3163,7 +3163,7 @@ hn_polling_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_ndis_version_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	char verstr[16];
 
 	snprintf(verstr, sizeof(verstr), "%u.%u",
@@ -3175,7 +3175,7 @@ hn_ndis_version_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_caps_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	char caps_str[128];
 	uint32_t caps;
 
@@ -3189,7 +3189,7 @@ hn_caps_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_hwassist_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	char assist_str[128];
 	uint32_t hwassist;
 
@@ -3203,7 +3203,7 @@ hn_hwassist_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_rxfilter_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	char filter_str[128];
 	uint32_t filter;
 
@@ -3222,7 +3222,7 @@ hn_rxfilter_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_rss_key_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int error;
 
 	HN_LOCK(sc);
@@ -3250,7 +3250,7 @@ back:
 static int
 hn_rss_ind_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	int error;
 
 	HN_LOCK(sc);
@@ -3286,7 +3286,7 @@ back:
 static int
 hn_rss_hash_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	char hash_str[128];
 	uint32_t hash;
 
@@ -3300,7 +3300,7 @@ hn_rss_hash_sysctl(SYSCTL_HANDLER_ARGS)
 static int
 hn_vf_sysctl(SYSCTL_HANDLER_ARGS)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(arg1);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(arg1);
 	char vf_name[128];
 	struct ifnet *vf;
 
@@ -3332,7 +3332,7 @@ hn_check_iplen(const struct mbuf *m, int hoff)
 	if (m->m_hdr.mh_len < len)
 		return IPPROTO_DONE;
 
-	ip = static_cast<const struct ip *>(mtodo(m, hoff));
+	ip = reinterpret_cast<const struct ip *>(mtodo(m, hoff));
 
 	/* Bound check the packet's stated IP header length. */
 	iphlen = ip->ip_hl << 2;
@@ -3423,7 +3423,7 @@ hn_create_rx_data(struct hn_softc *sc, int ring_cnt)
 	sc->hn_rx_ring_cnt = ring_cnt;
 	sc->hn_rx_ring_inuse = sc->hn_rx_ring_cnt;
 
-	sc->hn_rx_ring = static_cast<struct hn_rx_ring *>(malloc(sizeof(struct hn_rx_ring) * sc->hn_rx_ring_cnt,
+	sc->hn_rx_ring = reinterpret_cast<struct hn_rx_ring *>(malloc(sizeof(struct hn_rx_ring) * sc->hn_rx_ring_cnt,
 	    M_DEVBUF, M_WAITOK | M_ZERO));
 
 #if defined(INET) || defined(INET6)
@@ -3468,7 +3468,7 @@ hn_create_rx_data(struct hn_softc *sc, int ring_cnt)
 		rxr->hn_pktbuf_len = HN_PKTBUF_LEN_DEF;
 		rxr->hn_pktbuf = malloc(rxr->hn_pktbuf_len, M_DEVBUF, M_WAITOK);
 		rxr->hn_rx_idx = i;
-		rxr->hn_rxbuf = static_cast<uint8_t	*>(sc->hn_rxbuf);
+		rxr->hn_rxbuf = reinterpret_cast<uint8_t	*>(sc->hn_rxbuf);
 
 		/*
 		 * Initialize LRO.
@@ -3660,7 +3660,7 @@ hn_tx_ring_create(struct hn_softc *sc, int id)
 	mtx_init(&txr->hn_tx_lock, "hn tx", NULL, MTX_DEF);
 
 	txr->hn_txdesc_cnt = HN_TX_DESC_CNT;
-	txr->hn_txdesc = static_cast<struct hn_txdesc *>(malloc(sizeof(struct hn_txdesc) * txr->hn_txdesc_cnt,
+	txr->hn_txdesc = reinterpret_cast<struct hn_txdesc *>(malloc(sizeof(struct hn_txdesc) * txr->hn_txdesc_cnt,
 	    M_DEVBUF, M_WAITOK | M_ZERO));
 #ifndef HN_USE_TXDESC_BUFRING
 	SLIST_INIT(&txr->hn_txlist);
@@ -3932,7 +3932,7 @@ hn_create_tx_data(struct hn_softc *sc, int ring_cnt)
 	 *
 	 * NOTE: It is shared by all channels.
 	 */
-	sc->hn_chim = static_cast<uint8_t *>(hyperv_dmamem_alloc(bus_get_dma_tag(sc->hn_dev),
+	sc->hn_chim = reinterpret_cast<uint8_t *>(hyperv_dmamem_alloc(bus_get_dma_tag(sc->hn_dev),
 	    PAGE_SIZE, 0, HN_CHIM_SIZE, &sc->hn_chim_dma,
 	    BUS_DMA_WAITOK | BUS_DMA_ZERO));
 	if (sc->hn_chim == NULL) {
@@ -3943,7 +3943,7 @@ hn_create_tx_data(struct hn_softc *sc, int ring_cnt)
 	sc->hn_tx_ring_cnt = ring_cnt;
 	sc->hn_tx_ring_inuse = sc->hn_tx_ring_cnt;
 
-	sc->hn_tx_ring = static_cast<struct hn_tx_ring *>(malloc(sizeof(struct hn_tx_ring) * sc->hn_tx_ring_cnt,
+	sc->hn_tx_ring = reinterpret_cast<struct hn_tx_ring *>(malloc(sizeof(struct hn_tx_ring) * sc->hn_tx_ring_cnt,
 	    M_DEVBUF, M_WAITOK | M_ZERO));
 
 #ifdef OSV_SYSCTL_ENABLED
@@ -4139,7 +4139,7 @@ hn_destroy_tx_data(struct hn_softc *sc)
 static void
 hn_start_taskfunc(void *xtxr, int pending __unused)
 {
-	struct hn_tx_ring *txr = static_cast<struct hn_tx_ring *>(xtxr);
+	struct hn_tx_ring *txr = reinterpret_cast<struct hn_tx_ring *>(xtxr);
 
 	mtx_lock(&txr->hn_tx_lock);
 	hn_start_locked(txr, 0);
@@ -4255,7 +4255,7 @@ hn_start_locked(struct hn_tx_ring *txr, int len)
 static void
 hn_start(struct ifnet *ifp)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(ifp->if_softc);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(ifp->if_softc);
 	struct hn_tx_ring *txr = &sc->hn_tx_ring[0];
 
 	if (txr->hn_sched_tx)
@@ -4276,7 +4276,7 @@ do_sched:
 static void
 hn_start_txeof_taskfunc(void *xtxr, int pending __unused)
 {
-	struct hn_tx_ring *txr = static_cast<struct hn_tx_ring *>(xtxr);
+	struct hn_tx_ring *txr = reinterpret_cast<struct hn_tx_ring *>(xtxr);
 
 	mtx_lock(&txr->hn_tx_lock);
 	atomic_clear_int(&txr->hn_sc->hn_ifp->if_drv_flags, IFF_DRV_OACTIVE);
@@ -4416,7 +4416,7 @@ hn_xmit(struct hn_tx_ring *txr, int len)
 static int
 hn_transmit(struct ifnet *ifp, struct mbuf *m)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(ifp->if_softc);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(ifp->if_softc);
 	struct hn_tx_ring *txr;
 	int error, idx = 0;
 
@@ -4489,7 +4489,7 @@ hn_tx_ring_qflush(struct hn_tx_ring *txr)
 static void
 hn_xmit_qflush(struct ifnet *ifp)
 {
-	struct hn_softc *sc = static_cast<struct hn_softc *>(ifp->if_softc);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(ifp->if_softc);
 	int i;
 
 	for (i = 0; i < sc->hn_tx_ring_inuse; ++i)
@@ -4530,7 +4530,7 @@ do_sched:
 static void
 hn_xmit_taskfunc(void *xtxr, int pending __unused)
 {
-	struct hn_tx_ring *txr = static_cast<struct hn_tx_ring *>(xtxr);
+	struct hn_tx_ring *txr = reinterpret_cast<struct hn_tx_ring *>(xtxr);
 
 	mtx_lock(&txr->hn_tx_lock);
 	hn_xmit(txr, 0);
@@ -4540,7 +4540,7 @@ hn_xmit_taskfunc(void *xtxr, int pending __unused)
 static void
 hn_xmit_txeof_taskfunc(void *xtxr, int pending __unused)
 {
-	struct hn_tx_ring *txr = static_cast<struct hn_tx_ring *>(xtxr);
+	struct hn_tx_ring *txr = reinterpret_cast<struct hn_tx_ring *>(xtxr);
 
 	mtx_lock(&txr->hn_tx_lock);
 	txr->hn_oactive = 0;
@@ -5322,7 +5322,7 @@ hn_rndis_rx_status(struct hn_softc *sc, const void *data, int dlen)
 		if_printf(sc->hn_ifp, "invalid RNDIS status\n");
 		return;
 	}
-	msg = static_cast<const struct rndis_status_msg *>(data);
+	msg = reinterpret_cast<const struct rndis_status_msg *>(data);
 
 	switch (msg->rm_status) {
 	case RNDIS_STATUS_MEDIA_CONNECT:
@@ -5360,7 +5360,7 @@ hn_rndis_rx_status(struct hn_softc *sc, const void *data, int dlen)
 static int
 hn_rndis_rxinfo(const void *info_data, int info_dlen, struct hn_rxinfo *info)
 {
-	const struct rndis_pktinfo *pi = static_cast<const struct rndis_pktinfo *>(info_data);
+	const struct rndis_pktinfo *pi = reinterpret_cast<const struct rndis_pktinfo *>(info_data);
 	uint32_t mask = 0;
 
 	while (info_dlen != 0) {
@@ -5459,7 +5459,7 @@ hn_rndis_rx_data(struct hn_rx_ring *rxr, const void *data, int dlen)
 		if_printf(rxr->hn_ifp, "invalid RNDIS packet msg\n");
 		return;
 	}
-	pkt = static_cast<const struct rndis_packet_msg *>(data);
+	pkt = reinterpret_cast<const struct rndis_packet_msg *>(data);
 
 	if (__predict_false(dlen < pkt->rm_len)) {
 		if_printf(rxr->hn_ifp, "truncated RNDIS packet msg, "
@@ -5616,7 +5616,7 @@ hn_rndis_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen)
 		if_printf(rxr->hn_ifp, "invalid RNDIS msg\n");
 		return;
 	}
-	hdr = static_cast<const struct rndis_msghdr *>(data);
+	hdr = reinterpret_cast<const struct rndis_msghdr *>(data);
 
 	if (__predict_true(hdr->rm_type == REMOTE_NDIS_PACKET_MSG)) {
 		/* Hot data path. */
@@ -5626,9 +5626,9 @@ hn_rndis_rxpkt(struct hn_rx_ring *rxr, const void *data, int dlen)
 	}
 
 	if (hdr->rm_type == REMOTE_NDIS_INDICATE_STATUS_MSG)
-		hn_rndis_rx_status(static_cast<struct hn_softc *>(rxr->hn_ifp->if_softc), data, dlen);
+		hn_rndis_rx_status(reinterpret_cast<struct hn_softc *>(rxr->hn_ifp->if_softc), data, dlen);
 	else
-		hn_rndis_rx_ctrl(static_cast<struct hn_softc *>(rxr->hn_ifp->if_softc), data, dlen);
+		hn_rndis_rx_ctrl(reinterpret_cast<struct hn_softc *>(rxr->hn_ifp->if_softc), data, dlen);
 }
 
 static void
@@ -5640,7 +5640,7 @@ hn_nvs_handle_notify(struct hn_softc *sc, const struct vmbus_chanpkt_hdr *pkt)
 		if_printf(sc->hn_ifp, "invalid nvs notify\n");
 		return;
 	}
-	hdr = static_cast<const struct hn_nvs_hdr *>(VMBUS_CHANPKT_CONST_DATA(pkt));
+	hdr = reinterpret_cast<const struct hn_nvs_hdr *>(VMBUS_CHANPKT_CONST_DATA(pkt));
 
 	if (hdr->nvs_type == HN_NVS_TYPE_TXTBL_NOTE) {
 		/* Useless; ignore */
@@ -5677,7 +5677,7 @@ hn_nvs_handle_rxbuf(struct hn_rx_ring *rxr, struct vmbus_channel *chan,
 		if_printf(rxr->hn_ifp, "invalid nvs RNDIS\n");
 		return;
 	}
-	nvs_hdr = static_cast<const struct hn_nvs_hdr *>(VMBUS_CHANPKT_CONST_DATA(pkthdr));
+	nvs_hdr = reinterpret_cast<const struct hn_nvs_hdr *>(VMBUS_CHANPKT_CONST_DATA(pkthdr));
 
 	/* Make sure that this is a RNDIS message. */
 	if (__predict_false(nvs_hdr->nvs_type != HN_NVS_TYPE_RNDIS)) {
@@ -5764,11 +5764,11 @@ again:
 static void
 hn_chan_callback(struct vmbus_channel *chan, void *xrxr)
 {
-	struct hn_rx_ring *rxr = static_cast<struct hn_rx_ring *>(xrxr);
-	struct hn_softc *sc = static_cast<struct hn_softc *>(rxr->hn_ifp->if_softc);
+	struct hn_rx_ring *rxr = reinterpret_cast<struct hn_rx_ring *>(xrxr);
+	struct hn_softc *sc = reinterpret_cast<struct hn_softc *>(rxr->hn_ifp->if_softc);
 
 	for (;;) {
-		struct vmbus_chanpkt_hdr *pkt = static_cast<struct vmbus_chanpkt_hdr *>(rxr->hn_pktbuf);
+		struct vmbus_chanpkt_hdr *pkt = reinterpret_cast<struct vmbus_chanpkt_hdr *>(rxr->hn_pktbuf);
 		int error, pktlen;
 
 		pktlen = rxr->hn_pktbuf_len;
@@ -5858,7 +5858,7 @@ hn_tx_taskq_create(void *arg __unused)
 	if (hn_tx_taskq_mode != HN_TX_TASKQ_M_GLOBAL)
 		return;
 
-	hn_tx_taskque = static_cast<struct taskqueue **>(malloc(hn_tx_taskq_cnt * sizeof(struct taskqueue *),
+	hn_tx_taskque = reinterpret_cast<struct taskqueue **>(malloc(hn_tx_taskq_cnt * sizeof(struct taskqueue *),
 	    M_DEVBUF, M_WAITOK));
 	for (i = 0; i < hn_tx_taskq_cnt; ++i) {
 		hn_tx_taskque[i] = taskqueue_create("hn_tx", M_WAITOK,

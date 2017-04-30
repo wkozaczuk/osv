@@ -219,7 +219,7 @@ vmbus_msghc_reset(struct vmbus_msghc *mh, size_t dsize)
 	if (dsize > HYPERCALL_POSTMSGIN_DSIZE_MAX)
 		panic("invalid data size %zu", dsize);
 
-	inprm = static_cast<struct hypercall_postmsg_in *>(vmbus_xact_req_data(mh->mh_xact));
+	inprm = reinterpret_cast<struct hypercall_postmsg_in *>(vmbus_xact_req_data(mh->mh_xact));
 	memset(inprm, 0, HYPERCALL_POSTMSGIN_SIZE);
 	inprm->hc_connid = VMBUS_CONNID_MESSAGE;
 	inprm->hc_msgtype = HYPERV_MSGTYPE_CHANNEL;
@@ -240,7 +240,7 @@ vmbus_msghc_get(struct vmbus_softc *sc, size_t dsize)
 	if (xact == NULL)
 		return (NULL);
 
-	mh = static_cast<struct vmbus_msghc *>(vmbus_xact_priv(xact, sizeof(*mh)));
+	mh = reinterpret_cast<struct vmbus_msghc *>(vmbus_xact_priv(xact, sizeof(*mh)));
 	mh->mh_xact = xact;
 
 	vmbus_msghc_reset(mh, dsize);
@@ -259,7 +259,7 @@ vmbus_msghc_dataptr(struct vmbus_msghc *mh)
 {
 	struct hypercall_postmsg_in *inprm;
 
-	inprm = static_cast<struct hypercall_postmsg_in *>(vmbus_xact_req_data(mh->mh_xact));
+	inprm = reinterpret_cast<struct hypercall_postmsg_in *>(vmbus_xact_req_data(mh->mh_xact));
 	return (inprm->hc_data);
 }
 
@@ -271,7 +271,7 @@ vmbus_msghc_exec_noresult(struct vmbus_msghc *mh)
 	bus_addr_t inprm_paddr;
 	int i;
 
-	inprm = static_cast<struct hypercall_postmsg_in *>(vmbus_xact_req_data(mh->mh_xact));
+	inprm = reinterpret_cast<struct hypercall_postmsg_in *>(vmbus_xact_req_data(mh->mh_xact));
 	inprm_paddr = vmbus_xact_req_paddr(mh->mh_xact);
 
 	/*
@@ -335,7 +335,7 @@ vmbus_msghc_wait_result(struct vmbus_softc *sc __unused, struct vmbus_msghc *mh)
 {
 	size_t resp_len;
 
-	return static_cast<const struct vmbus_message *>(vmbus_xact_wait(mh->mh_xact, &resp_len));
+	return reinterpret_cast<const struct vmbus_message *>(vmbus_xact_wait(mh->mh_xact, &resp_len));
 }
 
 const struct vmbus_message *
@@ -343,7 +343,7 @@ vmbus_msghc_poll_result(struct vmbus_softc *sc __unused, struct vmbus_msghc *mh)
 {
 	size_t resp_len;
 
-	return static_cast<const struct vmbus_message *>(vmbus_xact_poll(mh->mh_xact, &resp_len));
+	return reinterpret_cast<const struct vmbus_message *>(vmbus_xact_poll(mh->mh_xact, &resp_len));
 }
 
 void
@@ -377,7 +377,7 @@ vmbus_connect(struct vmbus_softc *sc, uint32_t version)
 	if (mh == NULL)
 		return ENXIO;
 
-	req = static_cast<struct vmbus_chanmsg_connect *>(vmbus_msghc_dataptr(mh));
+	req = reinterpret_cast<struct vmbus_chanmsg_connect *>(vmbus_msghc_dataptr(mh));
 	req->chm_hdr.chm_type = VMBUS_CHANMSG_TYPE_CONNECT;
 	req->chm_ver = version;
 	req->chm_evtflags = sc->vmbus_evtflags_dma.hv_paddr;
@@ -433,7 +433,7 @@ vmbus_disconnect(struct vmbus_softc *sc)
 		return;
 	}
 
-	req = static_cast<struct vmbus_chanmsg_disconnect *>(vmbus_msghc_dataptr(mh));
+	req = reinterpret_cast<struct vmbus_chanmsg_disconnect *>(vmbus_msghc_dataptr(mh));
 	req->chm_hdr.chm_type = VMBUS_CHANMSG_TYPE_DISCONNECT;
 
 	error = vmbus_msghc_exec_noresult(mh);
@@ -456,7 +456,7 @@ vmbus_req_channels(struct vmbus_softc *sc)
 	if (mh == NULL)
 		return ENXIO;
 
-	req = static_cast<struct vmbus_chanmsg_chrequest *>(vmbus_msghc_dataptr(mh));
+	req = reinterpret_cast<struct vmbus_chanmsg_chrequest *>(vmbus_msghc_dataptr(mh));
 	req->chm_hdr.chm_type = VMBUS_CHANMSG_TYPE_CHREQUEST;
 
 	error = vmbus_msghc_exec_noresult(mh);
@@ -468,7 +468,7 @@ vmbus_req_channels(struct vmbus_softc *sc)
 static void
 vmbus_scan_done_task(void *xsc, int pending __unused)
 {
-	struct vmbus_softc *sc = static_cast<struct vmbus_softc *>(xsc);
+	struct vmbus_softc *sc = reinterpret_cast<struct vmbus_softc *>(xsc);
 
 	//mtx_lock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 	sc->vmbus_scandone = true;
@@ -579,7 +579,7 @@ vmbus_chanmsg_handle(struct vmbus_softc *sc, const struct vmbus_message *msg)
 static void
 vmbus_msg_task(void *xsc, int pending __unused)
 {
-	struct vmbus_softc *sc = static_cast<struct vmbus_softc *>(xsc);
+	struct vmbus_softc *sc = reinterpret_cast<struct vmbus_softc *>(xsc);
 	volatile struct vmbus_message *msg;
 
 	msg = VMBUS_PCPU_GET(sc, message, curcpu) + VMBUS_SINT_MESSAGE;
@@ -704,7 +704,7 @@ vmbus_handle_intr(struct trapframe *trap_frame)
 static void
 vmbus_synic_setup(void *xsc)
 {
-	struct vmbus_softc *sc = static_cast<struct vmbus_softc *>(xsc);
+	struct vmbus_softc *sc = reinterpret_cast<struct vmbus_softc *>(xsc);
 	int cpu = curcpu;
 	uint64_t val, orig;
 	uint32_t sint;
@@ -830,7 +830,7 @@ vmbus_dma_alloc(struct vmbus_softc *sc)
 		VMBUS_PCPU_GET(sc, event_flags, cpu) = ptr;
 	}
 
-	evtflags = static_cast<uint8_t *>(hyperv_dmamem_alloc(parent_dtag, PAGE_SIZE, 0,
+	evtflags = reinterpret_cast<uint8_t *>(hyperv_dmamem_alloc(parent_dtag, PAGE_SIZE, 0,
 	    PAGE_SIZE, &sc->vmbus_evtflags_dma, BUS_DMA_WAITOK | BUS_DMA_ZERO));
 	if (evtflags == NULL)
 		return ENOMEM;
@@ -843,7 +843,7 @@ vmbus_dma_alloc(struct vmbus_softc *sc)
 	if (sc->vmbus_mnf1 == NULL)
 		return ENOMEM;
 
-	sc->vmbus_mnf2 = static_cast<struct vmbus_mnf *>(hyperv_dmamem_alloc(parent_dtag, PAGE_SIZE, 0,
+	sc->vmbus_mnf2 = reinterpret_cast<struct vmbus_mnf *>(hyperv_dmamem_alloc(parent_dtag, PAGE_SIZE, 0,
 	    sizeof(struct vmbus_mnf), &sc->vmbus_mnf2_dma,
 	    BUS_DMA_WAITOK | BUS_DMA_ZERO));
 	if (sc->vmbus_mnf2 == NULL)
@@ -1035,7 +1035,7 @@ vmbus_delete_child(struct vmbus_channel *chan)
 static int
 vmbus_sysctl_version(SYSCTL_HANDLER_ARGS)
 {
-	struct vmbus_softc *sc = static_cast<struct vmbus_softc *>(arg1);
+	struct vmbus_softc *sc = reinterpret_cast<struct vmbus_softc *>(arg1);
 	char verstr[16];
 
 	snprintf(verstr, sizeof(verstr), "%u.%u",
@@ -1118,7 +1118,7 @@ vmbus_map_msi(device_t bus, device_t dev, int irq, uint64_t *addr,
 static uint32_t
 vmbus_get_version_method(device_t bus, device_t dev)
 {
-	struct vmbus_softc *sc = static_cast<struct vmbus_softc *>(device_get_softc(bus));
+	struct vmbus_softc *sc = reinterpret_cast<struct vmbus_softc *>(device_get_softc(bus));
 
 	return sc->vmbus_version;
 }
@@ -1137,7 +1137,7 @@ vmbus_probe_guid_method(device_t bus, device_t dev,
 static uint32_t
 vmbus_get_vcpu_id_method(device_t bus, device_t dev, int cpu)
 {
-	const struct vmbus_softc *sc = static_cast<const struct vmbus_softc *>(device_get_softc(bus));
+	const struct vmbus_softc *sc = reinterpret_cast<const struct vmbus_softc *>(device_get_softc(bus));
 
 	return (VMBUS_PCPU_GET(sc, vcpuid, cpu));
 }
@@ -1145,7 +1145,7 @@ vmbus_get_vcpu_id_method(device_t bus, device_t dev, int cpu)
 static struct taskqueue *
 vmbus_get_eventtq_method(device_t bus, device_t dev __unused, int cpu)
 {
-	const struct vmbus_softc *sc = static_cast<const struct vmbus_softc *>(device_get_softc(bus));
+	const struct vmbus_softc *sc = reinterpret_cast<const struct vmbus_softc *>(device_get_softc(bus));
 
 	KASSERT(cpu >= 0 && cpu < mp_ncpus, ("invalid cpu%d", cpu));
 	return (VMBUS_PCPU_GET(sc, event_tq, cpu));
@@ -1334,7 +1334,7 @@ vmbus_doattach(struct vmbus_softc *sc)
 	TAILQ_INIT(&sc->vmbus_prichans);
 	mtx_init(&sc->vmbus_chan_lock, "vmbus channel", NULL, MTX_DEF);
 	TAILQ_INIT(&sc->vmbus_chans);
-	sc->vmbus_chmap = static_cast<struct vmbus_channel *volatile *>(malloc(
+	sc->vmbus_chmap = reinterpret_cast<struct vmbus_channel *volatile *>(malloc(
 	    sizeof(struct vmbus_channel *) * VMBUS_CHAN_MAX, M_DEVBUF,
 	    M_WAITOK | M_ZERO));
 
@@ -1434,7 +1434,7 @@ vmbus_intrhook(void *xsc)
 static int
 vmbus_attach(device_t dev)
 {
-	vmbus_sc = static_cast<struct vmbus_softc *>(device_get_softc(dev));
+	vmbus_sc = reinterpret_cast<struct vmbus_softc *>(device_get_softc(dev));
 	vmbus_sc->vmbus_dev = dev;
 	vmbus_sc->vmbus_idtvec = -1;
 
@@ -1469,7 +1469,7 @@ vmbus_attach(device_t dev)
 static int
 vmbus_detach(device_t dev)
 {
-	struct vmbus_softc *sc = static_cast<struct vmbus_softc *>(device_get_softc(dev));
+	struct vmbus_softc *sc = reinterpret_cast<struct vmbus_softc *>(device_get_softc(dev));
 
 	bus_generic_detach(dev);
 	vmbus_chan_destroy_all(sc);

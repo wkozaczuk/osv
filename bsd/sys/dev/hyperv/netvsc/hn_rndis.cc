@@ -127,7 +127,7 @@ hn_rndis_rx_ctrl(struct hn_softc *sc, const void *data, int dlen)
 	const struct rndis_msghdr *hdr;
 
 	KASSERT(dlen >= sizeof(*hdr), ("invalid RNDIS msg\n"));
-	hdr = static_cast<const struct rndis_msghdr *>(data);
+	hdr = reinterpret_cast<const struct rndis_msghdr *>(data);
 
 	switch (hdr->rm_type) {
 	case REMOTE_NDIS_INITIALIZE_CMPLT:
@@ -138,7 +138,7 @@ hn_rndis_rx_ctrl(struct hn_softc *sc, const void *data, int dlen)
 			if_printf(sc->hn_ifp, "invalid RNDIS cmplt\n");
 			return;
 		}
-		comp = static_cast<const struct rndis_comp_hdr *>(data);
+		comp = reinterpret_cast<const struct rndis_comp_hdr *>(data);
 
 		KASSERT(comp->rm_rid > HN_RNDIS_RID_COMPAT_MAX,
 		    ("invalid RNDIS rid 0x%08x\n", comp->rm_rid));
@@ -261,7 +261,7 @@ hn_rndis_xact_execute(struct hn_softc *sc, struct vmbus_xact *xact, uint32_t rid
 	/*
 	 * Execute the xact setup by the caller.
 	 */
-	comp = static_cast<const struct rndis_comp_hdr *>(hn_rndis_xact_exec1(sc, xact, reqlen, &hn_nvs_sendctx_none,
+	comp = reinterpret_cast<const struct rndis_comp_hdr *>(hn_rndis_xact_exec1(sc, xact, reqlen, &hn_nvs_sendctx_none,
 	    &comp_len));
 	if (comp == NULL)
 		return (NULL);
@@ -327,7 +327,7 @@ hn_rndis_query2(struct hn_softc *sc, uint32_t oid,
 		return (ENXIO);
 	}
 	rid = hn_rndis_rid(sc);
-	req = static_cast<struct rndis_query_req *>(vmbus_xact_req_data(xact));
+	req = reinterpret_cast<struct rndis_query_req *>(vmbus_xact_req_data(xact));
 	req->rm_type = REMOTE_NDIS_QUERY_MSG;
 	req->rm_len = reqlen;
 	req->rm_rid = rid;
@@ -351,7 +351,7 @@ hn_rndis_query2(struct hn_softc *sc, uint32_t oid,
 	}
 
 	comp_len = sizeof(*comp) + min_odlen;
-	comp = static_cast<const struct rndis_query_comp *>(hn_rndis_xact_execute(sc, xact, rid, reqlen, &comp_len,
+	comp = reinterpret_cast<const struct rndis_query_comp *>(hn_rndis_xact_execute(sc, xact, rid, reqlen, &comp_len,
 	    REMOTE_NDIS_QUERY_CMPLT));
 	if (comp == NULL) {
 		if_printf(sc->hn_ifp, "exec RNDIS query 0x%08x failed\n", oid);
@@ -535,7 +535,7 @@ hn_rndis_set(struct hn_softc *sc, uint32_t oid, const void *data, size_t dlen)
 		return (ENXIO);
 	}
 	rid = hn_rndis_rid(sc);
-	req = static_cast<struct rndis_set_req *>(vmbus_xact_req_data(xact));
+	req = reinterpret_cast<struct rndis_set_req *>(vmbus_xact_req_data(xact));
 	req->rm_type = REMOTE_NDIS_SET_MSG;
 	req->rm_len = reqlen;
 	req->rm_rid = rid;
@@ -546,7 +546,7 @@ hn_rndis_set(struct hn_softc *sc, uint32_t oid, const void *data, size_t dlen)
 	memcpy(req + 1, data, dlen);
 
 	comp_len = sizeof(*comp);
-	comp = static_cast<const struct rndis_set_comp *>(hn_rndis_xact_execute(sc, xact, rid, reqlen, &comp_len,
+	comp = reinterpret_cast<const struct rndis_set_comp *>(hn_rndis_xact_execute(sc, xact, rid, reqlen, &comp_len,
 	    REMOTE_NDIS_SET_CMPLT));
 	if (comp == NULL) {
 		if_printf(sc->hn_ifp, "exec RNDIS set 0x%08x failed\n", oid);
@@ -825,7 +825,7 @@ hn_rndis_init(struct hn_softc *sc)
 		return (ENXIO);
 	}
 	rid = hn_rndis_rid(sc);
-	req = static_cast<struct rndis_init_req *>(vmbus_xact_req_data(xact));
+	req = reinterpret_cast<struct rndis_init_req *>(vmbus_xact_req_data(xact));
 	req->rm_type = REMOTE_NDIS_INITIALIZE_MSG;
 	req->rm_len = sizeof(*req);
 	req->rm_rid = rid;
@@ -834,7 +834,7 @@ hn_rndis_init(struct hn_softc *sc)
 	req->rm_max_xfersz = HN_RNDIS_XFER_SIZE;
 
 	comp_len = RNDIS_INIT_COMP_SIZE_MIN;
-	comp = static_cast<const struct rndis_init_comp *>(hn_rndis_xact_execute(sc, xact, rid, sizeof(*req), &comp_len,
+	comp = reinterpret_cast<const struct rndis_init_comp *>(hn_rndis_xact_execute(sc, xact, rid, sizeof(*req), &comp_len,
 	    REMOTE_NDIS_INITIALIZE_CMPLT));
 	if (comp == NULL) {
 		if_printf(sc->hn_ifp, "exec RNDIS init failed\n");
@@ -890,7 +890,7 @@ hn_rndis_halt(struct hn_softc *sc)
 		if_printf(sc->hn_ifp, "no xact for RNDIS halt\n");
 		return (ENXIO);
 	}
-	halt = static_cast<struct rndis_halt_req *>(vmbus_xact_req_data(xact));
+	halt = reinterpret_cast<struct rndis_halt_req *>(vmbus_xact_req_data(xact));
 	halt->rm_type = REMOTE_NDIS_HALT_MSG;
 	halt->rm_len = sizeof(*halt);
 	halt->rm_rid = hn_rndis_rid(sc);
