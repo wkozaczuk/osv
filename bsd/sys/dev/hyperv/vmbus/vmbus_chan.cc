@@ -582,7 +582,7 @@ vmbus_chan_gpadl_connect(struct vmbus_channel *chan, bus_addr_t paddr,
 	    ("GPA is not page aligned %jx", (uintmax_t)paddr));
 	page_id = paddr >> PAGE_SHIFT;
 
-	range_len = __offsetof(struct vmbus_gpa_range, gpa_page[page_count]);
+	range_len = offsetof(struct vmbus_gpa_range, gpa_page[0]) + page_count * sizeof(uint64_t);
 	/*
 	 * We don't support multiple GPA ranges.
 	 */
@@ -611,8 +611,8 @@ vmbus_chan_gpadl_connect(struct vmbus_channel *chan, bus_addr_t paddr,
 		cnt = page_count;
 	page_count -= cnt;
 
-	reqsz = __offsetof(struct vmbus_chanmsg_gpadl_conn,
-	    chm_range.gpa_page[cnt]);
+	reqsz = offsetof(struct vmbus_chanmsg_gpadl_conn,
+	    chm_range.gpa_page[0]) + cnt * sizeof(uint64_t);
 	mh = vmbus_msghc_get(sc, reqsz);
 	if (mh == NULL) {
 		vmbus_chan_printf(chan,
@@ -650,8 +650,8 @@ vmbus_chan_gpadl_connect(struct vmbus_channel *chan, bus_addr_t paddr,
 			cnt = page_count;
 		page_count -= cnt;
 
-		reqsz = __offsetof(struct vmbus_chanmsg_gpadl_subconn,
-		    chm_gpa_page[cnt]);
+		reqsz = offsetof(struct vmbus_chanmsg_gpadl_subconn,
+		    chm_gpa_page[0]) + cnt * sizeof(uint64_t);
 		vmbus_msghc_reset(mh, reqsz);
 
 		subreq = static_cast<struct vmbus_chanmsg_gpadl_subconn *>(vmbus_msghc_dataptr(mh));
@@ -1066,7 +1066,7 @@ vmbus_chan_send_sglist(struct vmbus_channel *chan,
 	boolean_t send_evt;
 	uint64_t pad = 0;
 
-	hlen = __offsetof(struct vmbus_chanpkt_sglist, cp_gpa[sglen]);
+	hlen = offsetof(struct vmbus_chanpkt_sglist, cp_gpa[sglen]);
 	pktlen = hlen + dlen;
 	pad_pktlen = VMBUS_CHANPKT_TOTLEN(pktlen);
 	KASSERT(pad_pktlen <= vmbus_txbr_maxpktsz(&chan->ch_txbr),
@@ -1106,7 +1106,7 @@ vmbus_chan_send_prplist(struct vmbus_channel *chan,
 	boolean_t send_evt;
 	uint64_t pad = 0;
 
-	hlen = __offsetof(struct vmbus_chanpkt_prplist,
+	hlen = offsetof(struct vmbus_chanpkt_prplist,
 	    cp_range[0].gpa_page[prp_cnt]);
 	pktlen = hlen + dlen;
 	pad_pktlen = VMBUS_CHANPKT_TOTLEN(pktlen);
@@ -1124,7 +1124,7 @@ vmbus_chan_send_prplist(struct vmbus_channel *chan,
 	iov[0].iov_base = &pkt;
 	iov[0].iov_len = sizeof(pkt);
 	iov[1].iov_base = prp;
-	iov[1].iov_len = __offsetof(struct vmbus_gpa_range, gpa_page[prp_cnt]);
+	iov[1].iov_len = offsetof(struct vmbus_gpa_range, gpa_page[prp_cnt]);
 	iov[2].iov_base = data;
 	iov[2].iov_len = dlen;
 	iov[3].iov_base = &pad;
@@ -2059,7 +2059,7 @@ vmbus_chan_prplist_nelem(int br_size, int prpcnt_max, int dlen_max)
 {
 	int elem_size;
 
-	elem_size = __offsetof(struct vmbus_chanpkt_prplist,
+	elem_size = offsetof(struct vmbus_chanpkt_prplist,
 	    cp_range[0].gpa_page[prpcnt_max]);
 	elem_size += dlen_max;
 	elem_size = VMBUS_CHANPKT_TOTLEN(elem_size);
