@@ -515,8 +515,9 @@ vmbus_chan_open_br(struct vmbus_channel *chan, const struct vmbus_chan_br *cbr,
 		bsd_pause("chopen", 1);
 	}
 	if (msg != NULL) {
-		status = ((const struct vmbus_chanmsg_chopen_resp *)
-		    msg->msg_data)->chm_status;
+        const struct vmbus_chanmsg_chopen_resp* response = reinterpret_cast<const struct vmbus_chanmsg_chopen_resp *>(
+                msg->msg_data);
+		status = response->chm_status;
 	} else {
 		/* XXX any non-0 value is ok here. */
 		status = 0xff;
@@ -665,8 +666,9 @@ vmbus_chan_gpadl_connect(struct vmbus_channel *chan, bus_addr_t paddr,
 	KASSERT(page_count == 0, ("invalid page count %d", page_count));
 
 	msg = vmbus_msghc_wait_result(sc, mh);
-	status = ((const struct vmbus_chanmsg_gpadl_connresp *)
-	    msg->msg_data)->chm_status;
+    const struct vmbus_chanmsg_gpadl_connresp *response = reinterpret_cast<const struct vmbus_chanmsg_gpadl_connresp *>(
+        msg->msg_data);
+	status = response->chm_status;
 
 	vmbus_msghc_put(sc, mh);
 
@@ -2009,7 +2011,8 @@ vmbus_chan_msgproc(struct vmbus_softc *sc, const struct vmbus_message *msg)
 	vmbus_chanmsg_proc_t msg_proc;
 	uint32_t msg_type;
 
-	msg_type = ((const struct vmbus_chanmsg_hdr *)msg->msg_data)->chm_type;
+    const struct vmbus_chanmsg_hdr *header = reinterpret_cast<const struct vmbus_chanmsg_hdr *>(msg->msg_data);
+	msg_type = header->chm_type;
 	KASSERT(msg_type < VMBUS_CHANMSG_TYPE_MAX,
 	    ("invalid message type %u", msg_type));
 

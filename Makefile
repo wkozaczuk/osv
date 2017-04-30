@@ -610,7 +610,7 @@ endif
 
 #In general restore bootverbose -> include sys/conf.h
 #bsd += bsd/sys/dev/hyperv/storvsc/hv_storvsc_drv_freebsd.o #1373 lines of errors - relies on CAM
-bsd += bsd/sys/dev/hyperv/vmbus/vmbus_chan.o #46 lines of errors, missing:
+bsd += bsd/sys/dev/hyperv/vmbus/vmbus_chan.o #33 lines of errors, missing:
 bsd += bsd/sys/dev/hyperv/vmbus/vmbus_xact.o 
 #bsd += bsd/sys/dev/hyperv/vmbus/amd64/hyperv_machdep.o #173 lines of errors
 bsd += bsd/sys/dev/hyperv/vmbus/hyperv_busdma.o
