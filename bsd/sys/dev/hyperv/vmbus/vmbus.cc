@@ -79,13 +79,6 @@ struct vmbus_msghc {
 	struct hypercall_postmsg_in	mh_inprm_save;
 };
 
-static int			vmbus_probe(device_t);
-static int			vmbus_attach(device_t);
-static int			vmbus_detach(device_t);
-static int			vmbus_read_ivar(device_t, device_t, int,
-				    uintptr_t *);
-static int			vmbus_child_pnpinfo_str(device_t, device_t,
-				    char *, size_t);
 #ifdef PCI_PASS_THROUGH
 static struct resource		*vmbus_alloc_resource(device_t dev,
 				    device_t child, int type, int *rid,
@@ -102,13 +95,6 @@ static int			vmbus_release_msix(device_t bus, device_t dev,
 static int			vmbus_map_msi(device_t bus, device_t dev,
 				    int irq, uint64_t *addr, uint32_t *data);
 #endif
-static uint32_t			vmbus_get_version_method(device_t, device_t);
-static int			vmbus_probe_guid_method(device_t, device_t,
-				    const struct hyperv_guid *);
-static uint32_t			vmbus_get_vcpu_id_method(device_t bus,
-				    device_t dev, int cpu);
-static struct taskqueue		*vmbus_get_eventtq_method(device_t, device_t,
-				    int);
 #ifdef EARLY_AP_STARTUP
 static void			vmbus_intrhook(void *);
 #endif
@@ -391,8 +377,8 @@ vmbus_connect(struct vmbus_softc *sc, uint32_t version)
 	}
 
 	msg = vmbus_msghc_wait_result(sc, mh);
-	done = ((const struct vmbus_chanmsg_connect_resp *)
-	    msg->msg_data)->chm_done;
+	const struct vmbus_chanmsg_connect_resp *resp = reinterpret_cast<const struct vmbus_chanmsg_connect_resp *>(msg->msg_data);
+	done = resp->chm_done;
 
 	vmbus_msghc_put(sc, mh);
 
@@ -561,7 +547,8 @@ vmbus_chanmsg_handle(struct vmbus_softc *sc, const struct vmbus_message *msg)
 	vmbus_chanmsg_proc_t msg_proc;
 	uint32_t msg_type;
 
-	msg_type = ((const struct vmbus_chanmsg_hdr *)msg->msg_data)->chm_type;
+	const struct vmbus_chanmsg_hdr *hdr = reinterpret_cast<const struct vmbus_chanmsg_hdr *>(msg->msg_data);
+	msg_type = hdr->chm_type;
 	if (msg_type >= VMBUS_CHANMSG_TYPE_MAX) {
 		device_printf(sc->vmbus_dev, "unknown message type 0x%x\n",
 		    msg_type);
@@ -582,7 +569,7 @@ vmbus_msg_task(void *xsc, int pending __unused)
 	struct vmbus_softc *sc = reinterpret_cast<struct vmbus_softc *>(xsc);
 	volatile struct vmbus_message *msg;
 
-	msg = VMBUS_PCPU_GET(sc, message, curcpu) + VMBUS_SINT_MESSAGE;
+	msg = VMBUS_PCPU_GET(sc, message, get_cpuid()) + VMBUS_SINT_MESSAGE;
 	for (;;) {
 		if (msg->msg_type == HYPERV_MSGTYPE_NONE) {
 			/* No message */
@@ -681,7 +668,7 @@ void
 vmbus_handle_intr(struct trapframe *trap_frame)
 {
 	struct vmbus_softc *sc = vmbus_get_softc();
-	int cpu = curcpu;
+	int cpu = get_cpuid();
 
 	/*
 	 * Disable preemption.
@@ -705,7 +692,7 @@ static void
 vmbus_synic_setup(void *xsc)
 {
 	struct vmbus_softc *sc = reinterpret_cast<struct vmbus_softc *>(xsc);
-	int cpu = curcpu;
+	int cpu = get_cpuid();
 	uint64_t val, orig;
 	uint32_t sint;
 
@@ -806,7 +793,6 @@ vmbus_dma_alloc(struct vmbus_softc *sc)
 {
 	bus_dma_tag_t parent_dtag;
 	uint8_t *evtflags;
-	int cpu;
 
 	parent_dtag = bus_get_dma_tag(sc->vmbus_dev);
     for (auto cpu : sched::cpus) {
@@ -816,18 +802,18 @@ vmbus_dma_alloc(struct vmbus_softc *sc)
 		 * Per-cpu messages and event flags.
 		 */
 		ptr = hyperv_dmamem_alloc(parent_dtag, PAGE_SIZE, 0,
-		    PAGE_SIZE, VMBUS_PCPU_PTR(sc, message_dma, cpu),
+		    PAGE_SIZE, VMBUS_PCPU_PTR(sc, message_dma, cpu->id),
 		    BUS_DMA_WAITOK | BUS_DMA_ZERO);
 		if (ptr == NULL)
 			return ENOMEM;
-		VMBUS_PCPU_GET(sc, message, cpu) = ptr;
+		VMBUS_PCPU_GET(sc, message, cpu->id) = reinterpret_cast<vmbus_message*>(ptr);
 
 		ptr = hyperv_dmamem_alloc(parent_dtag, PAGE_SIZE, 0,
-		    PAGE_SIZE, VMBUS_PCPU_PTR(sc, event_flags_dma, cpu),
+		    PAGE_SIZE, VMBUS_PCPU_PTR(sc, event_flags_dma, cpu->id),
 		    BUS_DMA_WAITOK | BUS_DMA_ZERO);
 		if (ptr == NULL)
 			return ENOMEM;
-		VMBUS_PCPU_GET(sc, event_flags, cpu) = ptr;
+		VMBUS_PCPU_GET(sc, event_flags, cpu->id) = reinterpret_cast<vmbus_evtflags*>(ptr);
 	}
 
 	evtflags = reinterpret_cast<uint8_t *>(hyperv_dmamem_alloc(parent_dtag, PAGE_SIZE, 0,
@@ -855,8 +841,6 @@ vmbus_dma_alloc(struct vmbus_softc *sc)
 static void
 vmbus_dma_free(struct vmbus_softc *sc)
 {
-	int cpu;
-
 	if (sc->vmbus_evtflags != NULL) {
 		hyperv_dmamem_free(&sc->vmbus_evtflags_dma, sc->vmbus_evtflags);
 		sc->vmbus_evtflags = NULL;
@@ -873,17 +857,17 @@ vmbus_dma_free(struct vmbus_softc *sc)
 	}
 
     for (auto cpu : sched::cpus) {
-		if (VMBUS_PCPU_GET(sc, message, cpu) != NULL) {
+		if (VMBUS_PCPU_GET(sc, message, cpu->id) != NULL) {
 			hyperv_dmamem_free(
-			    VMBUS_PCPU_PTR(sc, message_dma, cpu),
-			    VMBUS_PCPU_GET(sc, message, cpu));
-			VMBUS_PCPU_GET(sc, message, cpu) = NULL;
+			    VMBUS_PCPU_PTR(sc, message_dma, cpu->id),
+			    VMBUS_PCPU_GET(sc, message, cpu->id));
+			VMBUS_PCPU_GET(sc, message, cpu->id) = NULL;
 		}
-		if (VMBUS_PCPU_GET(sc, event_flags, cpu) != NULL) {
+		if (VMBUS_PCPU_GET(sc, event_flags, cpu->id) != NULL) {
 			hyperv_dmamem_free(
-			    VMBUS_PCPU_PTR(sc, event_flags_dma, cpu),
-			    VMBUS_PCPU_GET(sc, event_flags, cpu));
-			VMBUS_PCPU_GET(sc, event_flags, cpu) = NULL;
+			    VMBUS_PCPU_PTR(sc, event_flags_dma, cpu->id),
+			    VMBUS_PCPU_GET(sc, event_flags, cpu->id));
+			VMBUS_PCPU_GET(sc, event_flags, cpu->id) = NULL;
 		}
 	}
 }
@@ -891,39 +875,37 @@ vmbus_dma_free(struct vmbus_softc *sc)
 static int
 vmbus_intr_setup(struct vmbus_softc *sc)
 {
-	int cpu;
-
-    for (auto cpu : sched::cpus) {
+   for (auto cpu : sched::cpus) {
 		char buf[MAXCOMLEN + 1];
 		cpuset_t cpu_mask;
 
 		/* Allocate an interrupt counter for Hyper-V interrupt */
-		snprintf(buf, sizeof(buf), "cpu%d:hyperv", cpu);
-		intrcnt_add(buf, VMBUS_PCPU_PTR(sc, intr_cnt, cpu));
+		snprintf(buf, sizeof(buf), "cpu%d:hyperv", cpu->id);
+		intrcnt_add(buf, VMBUS_PCPU_PTR(sc, intr_cnt, cpu->id));
 
 		/*
 		 * Setup taskqueue to handle events.  Task will be per-
 		 * channel.
 		 */
-		VMBUS_PCPU_GET(sc, event_tq, cpu) = taskqueue_create_fast(
+		VMBUS_PCPU_GET(sc, event_tq, cpu->id) = taskqueue_create_fast(
 		    "hyperv event", M_WAITOK, taskqueue_thread_enqueue,
-		    VMBUS_PCPU_PTR(sc, event_tq, cpu));
+		    VMBUS_PCPU_PTR(sc, event_tq, cpu->id));
 		CPU_SETOF(cpu, &cpu_mask);
 		taskqueue_start_threads_cpuset(
-		    VMBUS_PCPU_PTR(sc, event_tq, cpu), 1, PI_NET, &cpu_mask,
-		    "hvevent%d", cpu);
+		    VMBUS_PCPU_PTR(sc, event_tq, cpu->id), 1, PI_NET, &cpu_mask,
+		    "hvevent%d", cpu->id);
 
 		/*
 		 * Setup tasks and taskqueues to handle messages.
 		 */
-		VMBUS_PCPU_GET(sc, message_tq, cpu) = taskqueue_create_fast(
+		VMBUS_PCPU_GET(sc, message_tq, cpu->id) = taskqueue_create_fast(
 		    "hyperv msg", M_WAITOK, taskqueue_thread_enqueue,
-		    VMBUS_PCPU_PTR(sc, message_tq, cpu));
-		CPU_SETOF(cpu, &cpu_mask);
+		    VMBUS_PCPU_PTR(sc, message_tq, cpu->id));
+		CPU_SETOF(cpu->id, &cpu_mask);
 		taskqueue_start_threads_cpuset(
-		    VMBUS_PCPU_PTR(sc, message_tq, cpu), 1, PI_NET, &cpu_mask,
-		    "hvmsg%d", cpu);
-		TASK_INIT(VMBUS_PCPU_PTR(sc, message_task, cpu), 0,
+		    VMBUS_PCPU_PTR(sc, message_tq, cpu->id), 1, PI_NET, &cpu_mask,
+		    "hvmsg%d", cpu->id);
+		TASK_INIT(VMBUS_PCPU_PTR(sc, message_task, cpu->id), 0,
 		    vmbus_msg_task, sc);
 	}
 
@@ -944,34 +926,32 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 static void
 vmbus_intr_teardown(struct vmbus_softc *sc)
 {
-	int cpu;
-
 	if (sc->vmbus_idtvec >= 0) {
 		lapic_ipi_free(sc->vmbus_idtvec);
 		sc->vmbus_idtvec = -1;
 	}
 
     for (auto cpu : sched::cpus) {
-		if (VMBUS_PCPU_GET(sc, event_tq, cpu) != NULL) {
-			taskqueue_free(VMBUS_PCPU_GET(sc, event_tq, cpu));
-			VMBUS_PCPU_GET(sc, event_tq, cpu) = NULL;
+		if (VMBUS_PCPU_GET(sc, event_tq, cpu->id) != NULL) {
+			taskqueue_free(VMBUS_PCPU_GET(sc, event_tq, cpu->id));
+			VMBUS_PCPU_GET(sc, event_tq, cpu->id) = NULL;
 		}
-		if (VMBUS_PCPU_GET(sc, message_tq, cpu) != NULL) {
-			taskqueue_drain(VMBUS_PCPU_GET(sc, message_tq, cpu),
-			    VMBUS_PCPU_PTR(sc, message_task, cpu));
-			taskqueue_free(VMBUS_PCPU_GET(sc, message_tq, cpu));
-			VMBUS_PCPU_GET(sc, message_tq, cpu) = NULL;
+		if (VMBUS_PCPU_GET(sc, message_tq, cpu->id) != NULL) {
+			taskqueue_drain(VMBUS_PCPU_GET(sc, message_tq, cpu->id),
+			    VMBUS_PCPU_PTR(sc, message_task, cpu->id));
+			taskqueue_free(VMBUS_PCPU_GET(sc, message_tq, cpu->id));
+			VMBUS_PCPU_GET(sc, message_tq, cpu->id) = NULL;
 		}
 	}
 }
 
-static int
+int
 vmbus_read_ivar(device_t dev, device_t child, int index, uintptr_t *result)
 {
 	return (ENOENT);
 }
 
-static int
+int
 vmbus_child_pnpinfo_str(device_t dev, device_t child, char *buf, size_t buflen)
 {
 	const struct vmbus_channel *chan;
@@ -1115,7 +1095,7 @@ vmbus_map_msi(device_t bus, device_t dev, int irq, uint64_t *addr,
 }
 #endif
 
-static uint32_t
+uint32_t
 vmbus_get_version_method(device_t bus, device_t dev)
 {
 	struct vmbus_softc *sc = reinterpret_cast<struct vmbus_softc *>(device_get_softc(bus));
@@ -1123,7 +1103,7 @@ vmbus_get_version_method(device_t bus, device_t dev)
 	return sc->vmbus_version;
 }
 
-static int
+int
 vmbus_probe_guid_method(device_t bus, device_t dev,
     const struct hyperv_guid *guid)
 {
@@ -1134,7 +1114,7 @@ vmbus_probe_guid_method(device_t bus, device_t dev,
 	return ENXIO;
 }
 
-static uint32_t
+uint32_t
 vmbus_get_vcpu_id_method(device_t bus, device_t dev, int cpu)
 {
 	const struct vmbus_softc *sc = reinterpret_cast<const struct vmbus_softc *>(device_get_softc(bus));
@@ -1142,7 +1122,7 @@ vmbus_get_vcpu_id_method(device_t bus, device_t dev, int cpu)
 	return (VMBUS_PCPU_GET(sc, vcpuid, cpu));
 }
 
-static struct taskqueue *
+struct taskqueue *
 vmbus_get_eventtq_method(device_t bus, device_t dev __unused, int cpu)
 {
 	const struct vmbus_softc *sc = reinterpret_cast<const struct vmbus_softc *>(device_get_softc(bus));
@@ -1286,7 +1266,7 @@ vmbus_free_mmio_res(device_t dev)
 #endif	/* NEW_PCIB */
 #endif
 
-static int
+int
 vmbus_probe(device_t dev)
 {
 	char *id[] = { "VMBUS", NULL };
@@ -1316,8 +1296,10 @@ vmbus_probe(device_t dev)
 static int
 vmbus_doattach(struct vmbus_softc *sc)
 {
+#ifdef SYSCTL_ENABLED
 	struct sysctl_oid_list *child;
 	struct sysctl_ctx_list *ctx;
+#endif
 	int ret;
 
 	if (sc->vmbus_flags & VMBUS_FLAG_ATTACHED)
@@ -1431,7 +1413,7 @@ vmbus_intrhook(void *xsc)
 
 #endif	/* EARLY_AP_STARTUP */
 
-static int
+int
 vmbus_attach(device_t dev)
 {
 	vmbus_sc = reinterpret_cast<struct vmbus_softc *>(device_get_softc(dev));
@@ -1466,7 +1448,7 @@ vmbus_attach(device_t dev)
 	return (0);
 }
 
-static int
+int
 vmbus_detach(device_t dev)
 {
 	struct vmbus_softc *sc = reinterpret_cast<struct vmbus_softc *>(device_get_softc(dev));
@@ -1504,7 +1486,7 @@ vmbus_detach(device_t dev)
 
 #ifndef EARLY_AP_STARTUP
 
-static void
+void
 vmbus_sysinit(void *arg __unused)
 {
 	struct vmbus_softc *sc = vmbus_get_softc();
@@ -1526,6 +1508,6 @@ vmbus_sysinit(void *arg __unused)
  * We have to start as the last step of SI_SUB_SMP, i.e. after SMP is
  * initialized.
  */
-SYSINIT(vmbus_initialize, SI_SUB_SMP, SI_ORDER_ANY, vmbus_sysinit, NULL);
+//SYSINIT(vmbus_initialize, SI_SUB_SMP, SI_ORDER_ANY, vmbus_sysinit, NULL);
 
 #endif	/* !EARLY_AP_STARTUP */
