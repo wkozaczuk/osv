@@ -125,15 +125,27 @@ static int			vmbus_chan_printf(const struct vmbus_channel *,
 /*
  * Vmbus channel message processing.
  */
-static const vmbus_chanmsg_proc_t
-vmbus_chan_msgprocs[VMBUS_CHANMSG_TYPE_MAX] = {
+static vmbus_chanmsg_proc_t
+vmbus_chan_msgprocs[VMBUS_CHANMSG_TYPE_MAX] = {}; /*
+ * WALDEK: This is C-99 style of initializing of sparse arrays which is not
+ * supported in C++ -> needs to add a function that would initialize it
+ * = {
 	VMBUS_CHANMSG_PROC(CHOFFER,	vmbus_chan_msgproc_choffer),
 	VMBUS_CHANMSG_PROC(CHRESCIND,	vmbus_chan_msgproc_chrescind),
 
 	VMBUS_CHANMSG_PROC_WAKEUP(CHOPEN_RESP),
 	VMBUS_CHANMSG_PROC_WAKEUP(GPADL_CONNRESP),
 	VMBUS_CHANMSG_PROC_WAKEUP(GPADL_DISCONNRESP)
-};
+};*/
+void vmbus_chan_msgprocs_initialize()
+{
+    vmbus_chan_msgprocs[VMBUS_CHANMSG_TYPE_CHOFFER] = vmbus_chan_msgproc_choffer;
+    vmbus_chan_msgprocs[VMBUS_CHANMSG_TYPE_CHRESCIND] = vmbus_chan_msgproc_chrescind;
+
+    vmbus_chan_msgprocs[VMBUS_CHANMSG_TYPE_CHOPEN_RESP] = vmbus_msghc_wakeup;
+    vmbus_chan_msgprocs[VMBUS_CHANMSG_TYPE_GPADL_CONNRESP] = vmbus_msghc_wakeup;
+    vmbus_chan_msgprocs[VMBUS_CHANMSG_TYPE_GPADL_DISCONNRESP] = vmbus_msghc_wakeup;
+}
 
 /*
  * Notify host that there are data pending on our TX bufring.

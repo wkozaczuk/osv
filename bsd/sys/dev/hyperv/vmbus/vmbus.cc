@@ -890,7 +890,7 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 		VMBUS_PCPU_GET(sc, event_tq, cpu->id) = taskqueue_create_fast(
 		    "hyperv event", M_WAITOK, taskqueue_thread_enqueue,
 		    VMBUS_PCPU_PTR(sc, event_tq, cpu->id));
-		CPU_SETOF(cpu, &cpu_mask);
+		CPU_SETOF(cpu->id, &cpu_mask);
 		taskqueue_start_threads_cpuset(
 		    VMBUS_PCPU_PTR(sc, event_tq, cpu->id), 1, PI_NET, &cpu_mask,
 		    "hvevent%d", cpu->id);
