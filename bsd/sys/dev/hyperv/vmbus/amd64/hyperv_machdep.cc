@@ -27,27 +27,36 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <bsd/porting/netport.h>
+#include <bsd/porting/bus.h>
+#include <bsd/porting/mmu.h>
+#include <bsd/porting/synch.h>
+#include <bsd/porting/kthread.h>
+#include <bsd/porting/callout.h>
+
 #include <sys/param.h>
-#include <sys/conf.h>
-#include <sys/fcntl.h>
-#include <sys/kernel.h>
-#include <sys/systm.h>
-#include <sys/timetc.h>
+//#include <sys/conf.h>
+//#include <sys/fcntl.h>
+//#include <sys/kernel.h>
+//#include <sys/systm.h>
+//#include <sys/timetc.h>
 //#include <sys/vdso.h>
 
-#include <machine/cpufunc.h>
+//#include <machine/cpufunc.h>
 //#include <machine/cputypes.h>
 //#include <machine/md_var.h>
 //#include <machine/specialreg.h>
 
-#include <vm/vm.h>
+//#include <vm/vm.h>
 
-#include <dev/hyperv/include/hyperv.h>
-#include <dev/hyperv/include/hyperv_busdma.h>
+//#include <dev/hyperv/include/hyperv.h>
+//#include <dev/hyperv/include/hyperv_busdma.h>
 #include <dev/hyperv/vmbus/hyperv_machdep.h>
-#include <dev/hyperv/vmbus/hyperv_reg.h>
-#include <dev/hyperv/vmbus/hyperv_var.h>
+//#include <dev/hyperv/vmbus/hyperv_reg.h>
+//#include <dev/hyperv/vmbus/hyperv_var.h>
 
+//Disable Time Stamp Counter driver as OSv provides support for HPET (https://en.wikipedia.org/wiki/High_Precision_Event_Timer)
+#ifdef TSC_ENABLED
 struct hyperv_reftsc_ctx {
 	struct hyperv_reftsc	*tsc_ref;
 	struct hyperv_dma	tsc_ref_dma;
@@ -77,6 +86,7 @@ static struct cdevsw		hyperv_tsc_cdevsw = {
 };
 
 static struct hyperv_reftsc_ctx	hyperv_ref_tsc;
+#endif
 
 uint64_t
 hypercall_md(volatile void *hc_addr, uint64_t in_val,
@@ -90,6 +100,7 @@ hypercall_md(volatile void *hc_addr, uint64_t in_val,
 	return (status);
 }
 
+#ifdef TSC_ENABLED
 static int
 hyperv_tsc_open(struct cdev *dev __unused, int oflags, int devtype __unused,
     struct thread *td __unused)
@@ -231,3 +242,4 @@ hyperv_tsc_tcinit(void *dummy __unused)
 }
 SYSINIT(hyperv_tsc_init, SI_SUB_DRIVERS, SI_ORDER_FIRST, hyperv_tsc_tcinit,
     NULL);
+#endif
