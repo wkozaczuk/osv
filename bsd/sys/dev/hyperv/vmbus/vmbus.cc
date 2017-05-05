@@ -924,6 +924,7 @@ vmbus_intr_setup(struct vmbus_softc *sc)
     //TODO: //TODO: Does not compile because inthand_t function type changed in sys/amd64/include/intr_machdep.h
     // and lapic_ipi_alloc does not exist is OSv -> should interrupt handler be changed
     // to some OSv construct?
+    // Here is where lapic_api_alloc are defined - ../freebsd/sys/x86/include/apicvar.h
 	sc->vmbus_idtvec = lapic_ipi_alloc(IDTVEC(vmbus_isr));
 	if (sc->vmbus_idtvec < 0) {
 		device_printf(sc->vmbus_dev, "cannot find free IDT vector\n");
@@ -1001,7 +1002,7 @@ vmbus_add_child(struct vmbus_channel *chan)
 		return (ENXIO);
 	}
 	device_set_ivars(chan->ch_dev, chan);
-	device_probe_and_attach(chan->ch_dev);
+	device_probe_and_attach(chan->ch_dev); //WALDEK: TODO- this uses wrong device_probe_and_attach from XEN
 
 	//mtx_unlock(&Giant); //WALDEK: Do we need equivalent locking mechanism or is it unnecessary?
 	return (0);

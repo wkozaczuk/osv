@@ -35,6 +35,7 @@ __FBSDID("$FreeBSD$");
 #include <bsd/porting/synch.h>
 #include <bsd/porting/kthread.h>
 #include <bsd/porting/callout.h>
+#include <bsd/porting/pcpu.h>
 
 #include <sys/param.h>
 #include <sys/bus.h>
@@ -1297,8 +1298,15 @@ vmbus_chan_poll_task(void *xchan, int pending __unused)
 
 	KASSERT(chan->ch_poll_intvl != 0,
 	    ("chan%u: polling in interrupt mode", chan->ch_id));
+	//
+	// callout_reset_sbt_curcpu is the on current CPU -> callout_reset_sbt_on ( PCPU_GET(cpuid) )
+	/* WALDEK: Not sure if what I am doing is actually equivalent
 	callout_reset_sbt_curcpu(&chan->ch_poll_timeo, chan->ch_poll_intvl, 0,
-	    vmbus_chan_poll_timeout, chan, chan->ch_poll_flags);
+	    vmbus_chan_poll_timeout, chan, chan->ch_poll_flags);*/
+
+	callout_reset_on(&chan->ch_poll_timeo, chan->ch_poll_intvl, //0, //No precision
+					vmbus_chan_poll_timeout, chan, /*chan->ch_poll_flags*,*/ PCPU_GET(cpuid));
+
 	chan->ch_cb(chan, chan->ch_cbarg);
 }
 
@@ -1308,7 +1316,7 @@ vmbus_chan_pollcfg_task(void *xarg, int pending __unused)
 	const struct vmbus_chan_pollarg *arg = reinterpret_cast<const struct vmbus_chan_pollarg *>(xarg);
 	struct vmbus_channel *chan = arg->poll_chan;
 	sbintime_t intvl;
-	int poll_flags;
+	//int poll_flags;
 
 	/*
 	 * Save polling interval.
@@ -1323,10 +1331,12 @@ vmbus_chan_pollcfg_task(void *xarg, int pending __unused)
 	chan->ch_poll_intvl = intvl;
 
 	/* Adjust callout flags. */
+	/** WALDEK: These flags are not supported by OSv callouts -> so ignoring for now
 	poll_flags = C_DIRECT_EXEC;
 	if (arg->poll_hz <= hz)
 		poll_flags |= C_HARDCLOCK;
 	chan->ch_poll_flags = poll_flags;
+	 */
 
 	/*
 	 * Disconnect this channel from the channel map to make sure that
@@ -2103,14 +2113,18 @@ vmbus_chan_printf(const struct vmbus_channel *chan, const char *fmt, ...)
 	device_t dev;
 	int retval;
 
-	if (chan->ch_dev == NULL || !device_is_alive(chan->ch_dev))
+    //WALDEK: device.state is not really modified besides the XEN version of device_probe_and_attach
+    // SO I am commenting out call to device_is_alive
+	if (chan->ch_dev == NULL )// || !device_is_alive(chan->ch_dev))
 		dev = chan->ch_vmbus->vmbus_dev;
 	else
 		dev = chan->ch_dev;
 
-	retval = device_print_prettyname(dev);
+	if(dev && dev->name)
+		debugf("%s",devtoname(dev));
+
 	va_start(ap, fmt);
-	retval += vprintf(fmt, ap);
+	retval = vprintf(fmt, ap);
 	va_end(ap);
 
 	return (retval);
