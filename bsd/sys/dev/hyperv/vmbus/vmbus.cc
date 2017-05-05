@@ -72,6 +72,9 @@ __FBSDID("$FreeBSD$");
 //#include "pcib_if.h" //PCI_PASS_THROUGH
 #include "vmbus_if.h"
 
+#include <osv/mutex.h>
+#include <osv/preempt-lock.hh>
+
 #define VMBUS_GPADL_START		0xe1e10
 
 struct vmbus_msghc {
@@ -125,6 +128,8 @@ static void			vmbus_event_proc_dummy(struct vmbus_softc *,
 
 static struct vmbus_softc	*vmbus_sc;
 
+//TODO: Does not compile because inthand_t function type changed in sys/amd64/include/intr_machdep.h
+// to void (void) - https://github.com/freebsd/freebsd/commit/eb986c64f5239300e8fa17a18d24d0d3c574a259#diff-c3e776380b821ff58f1486eb38389a9f
 extern inthand_t IDTVEC(vmbus_isr);
 
 static const uint32_t		vmbus_version[] = {
@@ -134,6 +139,8 @@ static const uint32_t		vmbus_version[] = {
 	VMBUS_VERSION_WS2008
 };
 
+//TODO: Sparse array initialization not supported in C++ -> needs to convert
+//by adding some sort of initialization function
 static const vmbus_chanmsg_proc_t
 vmbus_chanmsg_handlers[VMBUS_CHANMSG_TYPE_MAX] = {
 	VMBUS_CHANMSG_PROC(CHOFFER_DONE, vmbus_scan_done),
@@ -284,6 +291,7 @@ vmbus_msghc_exec_noresult(struct vmbus_msghc *mh)
 		if (status == HYPERCALL_STATUS_SUCCESS)
 			return 0;
 
+		//DOES Not exist -> what to change to https://github.com/freebsd/freebsd/blob/master/sys/kern/kern_synch.c#L301-L334
 		pause_sbt("hcpmsg", time, 0, C_HARDCLOCK);
 		if (time < SBT_1S * 2)
 			time *= 2;
@@ -661,7 +669,7 @@ vmbus_handle_intr1(struct vmbus_softc *sc, struct trapframe *frame, int cpu)
 		    VMBUS_PCPU_PTR(sc, message_task, cpu));
 	}
 
-	return (FILTER_HANDLED);
+	return (FILTER_HANDLED); //OSV equivalent that interrupt was handled
 }
 
 void
@@ -673,19 +681,19 @@ vmbus_handle_intr(struct trapframe *trap_frame)
 	/*
 	 * Disable preemption.
 	 */
-	critical_enter();
+	//critical_enter();
+	WITH_LOCK(preempt_lock) {
+		/*
+		 * Do a little interrupt counting.
+		 */
+		(*VMBUS_PCPU_GET(sc, intr_cnt, cpu))++;
 
-	/*
-	 * Do a little interrupt counting.
-	 */
-	(*VMBUS_PCPU_GET(sc, intr_cnt, cpu))++;
-
-	vmbus_handle_intr1(sc, trap_frame, cpu);
-
+		vmbus_handle_intr1(sc, trap_frame, cpu);
+	}
 	/*
 	 * Enable preemption.
 	 */
-	critical_exit();
+	//critical_exit();
 }
 
 static void
@@ -913,6 +921,9 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 	 * All Hyper-V ISR required resources are setup, now let's find a
 	 * free IDT vector for Hyper-V ISR and set it up.
 	 */
+    //TODO: //TODO: Does not compile because inthand_t function type changed in sys/amd64/include/intr_machdep.h
+    // and lapic_ipi_alloc does not exist is OSv -> should interrupt handler be changed
+    // to some OSv construct?
 	sc->vmbus_idtvec = lapic_ipi_alloc(IDTVEC(vmbus_isr));
 	if (sc->vmbus_idtvec < 0) {
 		device_printf(sc->vmbus_dev, "cannot find free IDT vector\n");
@@ -1271,8 +1282,9 @@ vmbus_probe(device_t dev)
 {
 	char *id[] = { "VMBUS", NULL };
 
+    /* WALDEK: For now disable logic related to detecting if OSv is running on Hyper/V*/
 	if (ACPI_ID_PROBE(device_get_parent(dev), dev, id) == NULL ||
-	    device_get_unit(dev) != 0 || vm_guest != VM_GUEST_HV ||
+	    device_get_unit(dev) != 0 || //vm_guest != VM_GUEST_HV ||
 	    (hyperv_features & CPUID_HV_MSR_SYNIC) == 0)
 		return (ENXIO);
 
@@ -1441,8 +1453,10 @@ vmbus_attach(device_t dev)
 	 * cold set to zero, we just call the driver
 	 * initialization directly.
 	 */
-	if (!cold)
-		vmbus_doattach(vmbus_sc);
+    //I do not think cold boot applies to OSv
+	//if (!cold)
+	//	vmbus_doattach(vmbus_sc);
+    vmbus_doattach(vmbus_sc);
 #endif	/* EARLY_AP_STARTUP */
 
 	return (0);
@@ -1491,7 +1505,9 @@ vmbus_sysinit(void *arg __unused)
 {
 	struct vmbus_softc *sc = vmbus_get_softc();
 
-	if (vm_guest != VM_GUEST_HV || sc == NULL)
+    /* WALDEK: For now disable logic related to detecting if OSv is running on Hyper/V*/
+	//if (vm_guest != VM_GUEST_HV || sc == NULL)
+    if (sc == NULL)
 		return;
 
 	/* 
@@ -1500,8 +1516,10 @@ vmbus_sysinit(void *arg __unused)
 	 * global cold set to zero, we just call the driver
 	 * initialization directly.
 	 */
-	if (!cold) 
-		vmbus_doattach(sc);
+    /* I think cold boot does not apply in OSv */
+	//if (!cold)
+	//	vmbus_doattach(sc);
+    vmbus_doattach(sc);
 }
 /*
  * NOTE:

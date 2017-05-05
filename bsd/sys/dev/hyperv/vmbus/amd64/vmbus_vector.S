@@ -29,7 +29,7 @@
 #include <machine/asmacros.h>
 #include <machine/specialreg.h>
 
-#include "assym.s"
+//#include "assym.s"
 
 /*
  * This is the Hyper-V vmbus channel direct callback interrupt.
