@@ -112,6 +112,10 @@ inline static void CPU_SET(size_t n, cpu_set_t *cpuset) {
     cpuset->__bits[__cpuset_word(n)] |= __cpuset_mask(n);
 }
 
+inline static void CPU_SETOF(size_t n, cpu_set_t *cpuset) {
+    cpuset->__bits[__cpuset_word(n)] = __cpuset_mask(n);
+}
+
 inline static void CPU_CLR(size_t n, cpu_set_t *cpuset) {
     cpuset->__bits[__cpuset_word(n)] &= ~__cpuset_mask(n);
 }

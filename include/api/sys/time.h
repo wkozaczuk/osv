@@ -18,6 +18,9 @@ int gettimeofday (struct timeval *__restrict, struct timezone *__restrict);
 #define ITIMER_VIRTUAL 1
 #define ITIMER_PROF    2
 
+#define SBT_1S  ((sbintime_t)1 << 32)
+#define	SBT_1MS	(SBT_1S / 1000)
+
 struct itimerval
 {
 	struct timeval it_interval;
