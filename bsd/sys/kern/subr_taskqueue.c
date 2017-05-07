@@ -37,6 +37,7 @@
 #include <bsd/sys/sys/queue.h>
 #include <bsd/sys/sys/priority.h>
 #include <bsd/sys/sys/taskqueue.h>
+#include <bsd/sys/sys/mutex.h>
 
 
 struct taskqueue_busy {
@@ -119,6 +120,14 @@ taskqueue_create(const char *name, int mflags,
 {
 	return _taskqueue_create(name, mflags, enqueue, context,
 			MTX_DEF, "taskqueue");
+}
+
+struct taskqueue *
+taskqueue_create_fast(const char *name, int mflags,
+					  taskqueue_enqueue_fn enqueue, void *context)
+{
+	return _taskqueue_create(name, mflags, enqueue, context,
+							 MTX_SPIN, "fast_taskqueue");
 }
 
 /*
