@@ -128,6 +128,15 @@ static void			vmbus_event_proc_dummy(struct vmbus_softc *,
 
 static struct vmbus_softc	*vmbus_sc;
 
+/*
+ * WALDEK: What left?
+ * 1. Interrupt handlers (IPI - Inter Processor Interrupts), allocation of the vector
+ * 2. pause_sbt() missing
+ * 3. Setup of interrupt handlers - taskqueue_start_threads_cpuset() missing
+ * 4. smp_rendezvous() missing
+ * 5, bus_generic_detach() missing
+ */
+
 //INTERRUPST: Does not compile because inthand_t function type changed in sys/amd64/include/intr_machdep.h
 // to void (void) - https://github.com/freebsd/freebsd/commit/eb986c64f5239300e8fa17a18d24d0d3c574a259#diff-c3e776380b821ff58f1486eb38389a9f
 extern inthand_t IDTVEC(vmbus_isr); //FIXME
@@ -903,9 +912,9 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 		 */
 		VMBUS_PCPU_GET(sc, event_tq, cpu->id) = taskqueue_create_fast(
 		    "hyperv event", M_WAITOK, taskqueue_thread_enqueue,
-		    VMBUS_PCPU_PTR(sc, event_tq, cpu->id)); //FIXME - taskqueue_create_fast does not exist
-		CPU_SETOF(cpu->id, &cpu_mask); //FIXME - cpumask and CPU_SETOF does not exist
-		taskqueue_start_threads_cpuset(
+		    VMBUS_PCPU_PTR(sc, event_tq, cpu->id));
+		CPU_SETOF(cpu->id, &cpu_mask);
+		taskqueue_start_threads_cpuset( // WALDEK: Essentially requires version that would start a thread pinned to this cpu
 		    VMBUS_PCPU_PTR(sc, event_tq, cpu->id), 1, PI_NET, &cpu_mask,
 		    "hvevent%d", cpu->id); //FIXME taskqueue_start_threads_cpuset does not exist
 
@@ -927,7 +936,7 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 	 * All Hyper-V ISR required resources are setup, now let's find a
 	 * free IDT vector for Hyper-V ISR and set it up.
 	 */
-    //TODO: //TODO: Does not compile because inthand_t function type changed in sys/amd64/include/intr_machdep.h
+    // Does not compile because inthand_t function type changed in sys/amd64/include/intr_machdep.h
     // and lapic_ipi_alloc does not exist is OSv -> should interrupt handler be changed
     // to some OSv construct?
     // Here is where lapic_api_alloc are defined - ../freebsd/sys/x86/include/apicvar.h
