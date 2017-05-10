@@ -51,6 +51,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/systm.h>
 #include <sys/taskqueue.h>
 #include <sys/sys/kobj.h>
+#include <sys/conf.h>
 
 //#include <machine/bus.h> //PCI_PASS_THROUGH
 #include <machine/intr_machdep.h>
@@ -540,8 +541,10 @@ vmbus_scan(struct vmbus_softc *sc)
 	//while (!sc->vmbus_scandone)
 	//	mtx_sleep(&sc->vmbus_scandone, &Giant, 0, "vmbusdev", 0);
 
-	device_printf(sc->vmbus_dev, "device scan, probe and attach "
-		"done\n");
+	if (bootverbose) {
+		device_printf(sc->vmbus_dev, "device scan, probe and attach "
+				"done\n");
+	}
 	return (0);
 }
 
@@ -945,8 +948,10 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 		device_printf(sc->vmbus_dev, "cannot find free IDT vector\n");
 		return ENXIO;
 	}
-    device_printf(sc->vmbus_dev, "vmbus IDT vector %d\n",
-        sc->vmbus_idtvec);
+	if (bootverbose) {
+		device_printf(sc->vmbus_dev, "vmbus IDT vector %d\n",
+					  sc->vmbus_idtvec);
+	}
 	return 0;
 }
 
@@ -1219,14 +1224,15 @@ vmbus_get_crs(device_t dev, device_t vmbus_dev, enum parse_pass pass)
 	struct parse_context pc;
 	ACPI_STATUS status;
 
-    device_printf(dev, "walking _CRS, pass=%d\n", pass);
+	if (bootverbose)
+    	device_printf(dev, "walking _CRS, pass=%d\n", pass);
 
 	pc.vmbus_dev = vmbus_dev;
 	pc.pass = pass;
 	status = AcpiWalkResources(acpi_get_handle(dev), "_CRS",
 			parse_crs, &pc);
 
-	if (ACPI_FAILURE(status))
+	if (bootverbose && ACPI_FAILURE(status))
 		device_printf(dev, "_CRS: not found, pass=%d\n", pass);
 }
 
@@ -1377,7 +1383,8 @@ vmbus_doattach(struct vmbus_softc *sc)
 	 * Setup SynIC.
 	 */
 	/** WALDEK: That seems to be irrelant at the moment
-	device_printf(sc->vmbus_dev, "smp_started = %d\n", smp_started); */
+	if (bootverbose)
+	    device_printf(sc->vmbus_dev, "smp_started = %d\n", smp_started); */
 	smp_rendezvous(NULL, vmbus_synic_setup, NULL, sc); //FIXME - smp_rendezvous does not exist
 	sc->vmbus_flags |= VMBUS_FLAG_SYNIC;
 
@@ -1435,7 +1442,8 @@ vmbus_intrhook(void *xsc)
 {
 	struct vmbus_softc *sc = xsc;
 
-	device_printf(sc->vmbus_dev, "intrhook\n");
+	if (bootverbose)
+		device_printf(sc->vmbus_dev, "intrhook\n");
 	vmbus_doattach(sc);
 	config_intrhook_disestablish(&sc->vmbus_intrhook);
 }

@@ -608,7 +608,6 @@ bsd += bsd/sys/dev/xen/netfront/netfront.o
 bsd += bsd/sys/dev/xen/blkfront/blkfront.o
 endif
 
-#In general restore bootverbose -> include sys/conf.h
 #bsd += bsd/sys/dev/hyperv/storvsc/hv_storvsc_drv_freebsd.o #1373 lines of errors - relies on CAM
 bsd += bsd/sys/dev/hyperv/vmbus/vmbus_chan.o
 bsd += bsd/sys/dev/hyperv/vmbus/vmbus_xact.o 

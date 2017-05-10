@@ -47,6 +47,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/smp.h>
 #include <sys/sysctl.h>
 #include <sys/systm.h>
+#include <sys/conf.h>
 
 #include <machine/atomic.h>
 #include <machine/stdarg.h>
@@ -539,7 +540,8 @@ vmbus_chan_open_br(struct vmbus_channel *chan, const struct vmbus_chan_br *cbr,
 	vmbus_msghc_put(sc, mh);
 
 	if (status == 0) {
-		vmbus_chan_printf(chan, "chan%u opened\n", chan->ch_id);
+		if (bootverbose)
+			vmbus_chan_printf(chan, "chan%u opened\n", chan->ch_id);
 		return (0);
 	}
 
@@ -693,8 +695,10 @@ vmbus_chan_gpadl_connect(struct vmbus_channel *chan, bus_addr_t paddr,
 
 	/* Done; commit the GPADL id. */
 	*gpadl0 = gpadl;
-	vmbus_chan_printf(chan, "gpadl_conn(chan%u) succeeded\n",
-		chan->ch_id);
+	if (bootverbose) {
+		vmbus_chan_printf(chan, "gpadl_conn(chan%u) succeeded\n",
+						  chan->ch_id);
+	}
 	return 0;
 }
 
@@ -789,8 +793,10 @@ vmbus_chan_detach(struct vmbus_channel *chan)
 		/*
 		 * Detach the target channel.
 		 */
-		vmbus_chan_printf(chan, "chan%u detached\n",
-			chan->ch_id);
+		if (bootverbose) {
+			vmbus_chan_printf(chan, "chan%u detached\n",
+							  chan->ch_id);
+		}
 		taskqueue_enqueue(chan->ch_mgmt_tq, &chan->ch_detach_task);
 	}
 }
@@ -857,8 +863,10 @@ vmbus_chan_close_internal(struct vmbus_channel *chan)
 	}
 	if ((old_stflags & VMBUS_CHAN_ST_OPENED) == 0) {
 		/* Not opened yet; done */
-		vmbus_chan_printf(chan, "chan%u not opened\n",
-			chan->ch_id);
+		if (bootverbose) {
+			vmbus_chan_printf(chan, "chan%u not opened\n",
+							  chan->ch_id);
+		}
 		return (0);
 	}
 
@@ -911,7 +919,8 @@ vmbus_chan_close_internal(struct vmbus_channel *chan)
 		goto disconnect;
 	}
 
-	vmbus_chan_printf(chan, "chan%u closed\n", chan->ch_id);
+	if (bootverbose)
+		vmbus_chan_printf(chan, "chan%u closed\n", chan->ch_id);
 
 disconnect:
 	/*
@@ -1504,9 +1513,11 @@ vmbus_chan_update_evtflagcnt(struct vmbus_softc *sc,
 		if (old_flag_cnt >= flag_cnt)
 			break;
 		if (atomic_cmpset_int(reinterpret_cast<volatile u_int*>(flag_cnt_ptr), old_flag_cnt, flag_cnt)) {
-			vmbus_chan_printf(chan,
-				"chan%u update cpu%d flag_cnt to %d\n",
-				chan->ch_id, chan->ch_cpuid, flag_cnt);
+			if (bootverbose) {
+				vmbus_chan_printf(chan,
+								  "chan%u update cpu%d flag_cnt to %d\n",
+								  chan->ch_id, chan->ch_cpuid, flag_cnt);
+			}
 			break;
 		}
 	}
@@ -1662,8 +1673,10 @@ done:
 	vmbus_chan_ins_list(sc, newchan);
 	mtx_unlock(&sc->vmbus_chan_lock);
 
-	vmbus_chan_printf(newchan, "chan%u subidx%u offer\n",
-		newchan->ch_id, newchan->ch_subidx);
+	if (bootverbose) {
+		vmbus_chan_printf(newchan, "chan%u subidx%u offer\n",
+						  newchan->ch_id, newchan->ch_subidx);
+	}
 
 	/* Select default cpu for this channel. */
 	vmbus_chan_cpu_default(newchan);
@@ -1685,9 +1698,11 @@ vmbus_chan_cpu_set(struct vmbus_channel *chan, int cpu)
 	chan->ch_cpuid = cpu;
 	chan->ch_vcpuid = VMBUS_PCPU_GET(chan->ch_vmbus, vcpuid, cpu);
 
-	vmbus_chan_printf(chan,
-		"chan%u assigned to cpu%u [vcpu%u]\n",
-		chan->ch_id, chan->ch_cpuid, chan->ch_vcpuid);
+	if (bootverbose) {
+		vmbus_chan_printf(chan,
+						  "chan%u assigned to cpu%u [vcpu%u]\n",
+						  chan->ch_id, chan->ch_cpuid, chan->ch_vcpuid);
+	}
 }
 
 void
@@ -1851,7 +1866,8 @@ vmbus_chan_msgproc_chrescind(struct vmbus_softc *sc,
 		vmbus_xact_ctx_orphan(chan->ch_orphan_xact);
 	sx_xunlock(&chan->ch_orphan_lock);
 
-	vmbus_chan_printf(chan, "chan%u revoked\n", note->chm_chanid);
+	if (bootverbose)
+		vmbus_chan_printf(chan, "chan%u revoked\n", note->chm_chanid);
 	vmbus_chan_detach(chan);
 }
 
@@ -1883,7 +1899,8 @@ vmbus_chan_release(struct vmbus_channel *chan)
 		    "chfree(chan%u) msg hypercall exec failed: %d\n",
 		    chan->ch_id, error);
 	} else {
-		vmbus_chan_printf(chan, "chan%u freed\n", chan->ch_id);
+		if (bootverbose)
+			vmbus_chan_printf(chan, "chan%u freed\n", chan->ch_id);
 	}
 	return (error);
 }

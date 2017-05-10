@@ -38,6 +38,7 @@ __FBSDID("$FreeBSD$");
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/timetc.h>
+#include <sys/conf.h>
 
 #include <dev/hyperv/include/hyperv.h>
 #include <dev/hyperv/include/hyperv_busdma.h>
@@ -212,16 +213,21 @@ hyperv_identify(void)
 
 	regs = processor::cpuid(CPUID_LEAF_HV_RECOMMENDS);
 	hyperv_recommends = regs.a;
-	debug("  Recommends: %08x %08x\n", regs.a, regs.b);
+	if (bootverbose)
+		printf("  Recommends: %08x %08x\n", regs.a, regs.b);
 
 	regs = processor::cpuid(CPUID_LEAF_HV_LIMITS);
-	debug("  Limits: Vcpu:%d Lcpu:%d Int:%d\n",
-		regs.a, regs.b, regs.c);
+	if (bootverbose) {
+		printf("  Limits: Vcpu:%d Lcpu:%d Int:%d\n",
+			   regs.a, regs.b, regs.c);
+	}
 
 	if (maxleaf >= CPUID_LEAF_HV_HWFEATURES) {
 		regs = processor::cpuid(CPUID_LEAF_HV_HWFEATURES);
-		debug("  HW Features: %08x, AMD: %08x\n",
-			  regs.a, regs.d);
+		if (bootverbose) {
+			printf("  HW Features: %08x, AMD: %08x\n",
+				  regs.a, regs.d);
+		}
 	}
 
 	return (true);
@@ -313,7 +319,8 @@ hypercall_create(void *arg __unused)
 		*/
 		return;
 	}
-	debug("hyperv: Hypercall created\n");
+	if (bootverbose)
+		printf("hyperv: Hypercall created\n");
 }
 SYSINIT(hypercall_ctor, SI_SUB_DRIVERS, SI_ORDER_FIRST, hypercall_create, NULL);
 
@@ -330,7 +337,8 @@ hypercall_destroy(void *arg __unused)
     processor::wrmsr(MSR_HV_HYPERCALL, (hc & MSR_HV_HYPERCALL_RSVD_MASK));
 	hypercall_memfree();
 
-	debug("hyperv: Hypercall destroyed\n");
+	if (bootverbose)
+		printf("hyperv: Hypercall destroyed\n");
 }
 SYSUNINIT(hypercall_dtor, SI_SUB_DRIVERS, SI_ORDER_FIRST, hypercall_destroy,
     NULL);
