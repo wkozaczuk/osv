@@ -140,7 +140,7 @@ static struct vmbus_softc	*vmbus_sc;
 
 //INTERRUPST: Does not compile because inthand_t function type changed in sys/amd64/include/intr_machdep.h
 // to void (void) - https://github.com/freebsd/freebsd/commit/eb986c64f5239300e8fa17a18d24d0d3c574a259#diff-c3e776380b821ff58f1486eb38389a9f
-extern inthand_t IDTVEC(vmbus_isr); //FIXME
+//extern inthand_t IDTVEC(vmbus_isr); //FIXME
 
 static const uint32_t		vmbus_version[] = {
 	VMBUS_VERSION_WIN8_1,
@@ -151,7 +151,7 @@ static const uint32_t		vmbus_version[] = {
 
 //Sparse array initialization not supported in C++ -> needs to convert
 //by adding some sort of initialization function
-static const vmbus_chanmsg_proc_t
+static vmbus_chanmsg_proc_t
 vmbus_chanmsg_handlers[VMBUS_CHANMSG_TYPE_MAX] = {}; /*{
 	VMBUS_CHANMSG_PROC(CHOFFER_DONE, vmbus_scan_done),
 	VMBUS_CHANMSG_PROC_WAKEUP(CONNECT_RESP)
@@ -308,7 +308,7 @@ vmbus_msghc_exec_noresult(struct vmbus_msghc *mh)
 
 		//pause_sbt and C_HARDCLOCK does NOT exist ->
         // what to change to https://github.com/freebsd/freebsd/blob/master/sys/kern/kern_synch.c#L301-L334
-		pause_sbt("hcpmsg", time, 0, C_HARDCLOCK); //FIXME
+		//pause_sbt("hcpmsg", time, 0, C_HARDCLOCK); //FIXME
         if (time < SBT_1S * 2)
 			time *= 2;
 
@@ -687,7 +687,7 @@ vmbus_handle_intr1(struct vmbus_softc *sc, struct trapframe *frame, int cpu)
 		    VMBUS_PCPU_PTR(sc, message_task, cpu));
 	}
 
-	return (FILTER_HANDLED); //FIXME: OSV equivalent that interrupt was handled - FILTER_HANDLED does not exist
+	return 0;//(FILTER_HANDLED); //FIXME: OSV equivalent that interrupt was handled - FILTER_HANDLED does not exist
 }
 
 void
@@ -917,10 +917,11 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 		    "hyperv event", M_WAITOK, taskqueue_thread_enqueue,
 		    VMBUS_PCPU_PTR(sc, event_tq, cpu->id));
 		CPU_SETOF(cpu->id, &cpu_mask);
+        /*
 		taskqueue_start_threads_cpuset( // WALDEK: Essentially requires version that would start a thread pinned to this cpu
 		    VMBUS_PCPU_PTR(sc, event_tq, cpu->id), 1, PI_NET, &cpu_mask,
 		    "hvevent%d", cpu->id); //FIXME taskqueue_start_threads_cpuset does not exist
-
+        */
 		/*
 		 * Setup tasks and taskqueues to handle messages.
 		 */
@@ -928,9 +929,11 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 		    "hyperv msg", M_WAITOK, taskqueue_thread_enqueue,
 		    VMBUS_PCPU_PTR(sc, message_tq, cpu->id));
 		CPU_SETOF(cpu->id, &cpu_mask);
-		taskqueue_start_threads_cpuset(
+		/*
+        taskqueue_start_threads_cpuset(
 		    VMBUS_PCPU_PTR(sc, message_tq, cpu->id), 1, PI_NET, &cpu_mask,
 		    "hvmsg%d", cpu->id);
+		*/
 		TASK_INIT(VMBUS_PCPU_PTR(sc, message_task, cpu->id), 0,
 		    vmbus_msg_task, sc);
 	}
@@ -943,7 +946,7 @@ vmbus_intr_setup(struct vmbus_softc *sc)
     // and lapic_ipi_alloc does not exist is OSv -> should interrupt handler be changed
     // to some OSv construct?
     // Here is where lapic_api_alloc are defined - ../freebsd/sys/x86/include/apicvar.h
-	sc->vmbus_idtvec = lapic_ipi_alloc(IDTVEC(vmbus_isr)); //FIXME lapic_ipi_alloc does not exist as well
+	//sc->vmbus_idtvec = lapic_ipi_alloc(IDTVEC(vmbus_isr)); //FIXME lapic_ipi_alloc does not exist as well
 	if (sc->vmbus_idtvec < 0) {
 		device_printf(sc->vmbus_dev, "cannot find free IDT vector\n");
 		return ENXIO;
@@ -959,7 +962,7 @@ static void
 vmbus_intr_teardown(struct vmbus_softc *sc)
 {
 	if (sc->vmbus_idtvec >= 0) {
-		lapic_ipi_free(sc->vmbus_idtvec); //FIXME lapic_ipi_free does not exist
+		//lapic_ipi_free(sc->vmbus_idtvec); //FIXME lapic_ipi_free does not exist
 		sc->vmbus_idtvec = -1;
 	}
 
@@ -1302,17 +1305,19 @@ vmbus_free_mmio_res(device_t dev)
 int
 vmbus_probe(device_t dev)
 {
-	char *id[] = { "VMBUS", NULL };
+	//char *id[] = { "VMBUS", NULL };
 
     /* WALDEK: For now disable logic related to detecting if OSv is running on Hyper/V*/
+    /*
 	if (ACPI_ID_PROBE(device_get_parent(dev), dev, id) == NULL || //FIXME - ACPI_ID_PROBE does not exist
 	    device_get_unit(dev) != 0 || //vm_guest != VM_GUEST_HV ||
 	    (hyperv_features & CPUID_HV_MSR_SYNIC) == 0)
 		return (ENXIO);
+    */
 
 	device_set_desc(dev, "Hyper-V Vmbus");
 
-	return (BUS_PROBE_DEFAULT); //FIXME - BUS_PROBE_DEFAULT does not exist
+	return 0;//(BUS_PROBE_DEFAULT); //FIXME - BUS_PROBE_DEFAULT does not exist
 }
 
 /**
@@ -1385,7 +1390,8 @@ vmbus_doattach(struct vmbus_softc *sc)
 	/** WALDEK: That seems to be irrelant at the moment
 	if (bootverbose)
 	    device_printf(sc->vmbus_dev, "smp_started = %d\n", smp_started); */
-	smp_rendezvous(NULL, vmbus_synic_setup, NULL, sc); //FIXME - smp_rendezvous does not exist
+	//smp_rendezvous(NULL, vmbus_synic_setup, NULL, sc); //FIXME - smp_rendezvous does not exist
+    vmbus_synic_setup(0); //FIXME: This is just to make compiler happy
 	sc->vmbus_flags |= VMBUS_FLAG_SYNIC;
 
 	/*
@@ -1492,7 +1498,7 @@ vmbus_detach(device_t dev)
 {
 	struct vmbus_softc *sc = reinterpret_cast<struct vmbus_softc *>(device_get_softc(dev));
 
-	bus_generic_detach(dev); //FIXME: bus_generic_detach missing
+	//bus_generic_detach(dev); //FIXME: bus_generic_detach missing
 	vmbus_chan_destroy_all(sc);
 
 	vmbus_scan_teardown(sc);
@@ -1501,7 +1507,8 @@ vmbus_detach(device_t dev)
 
 	if (sc->vmbus_flags & VMBUS_FLAG_SYNIC) {
 		sc->vmbus_flags &= ~VMBUS_FLAG_SYNIC;
-		smp_rendezvous(NULL, vmbus_synic_teardown, NULL, NULL); //FIXME: smp_rendezvous missing
+        vmbus_synic_teardown(0); //FIXME: Just to make compiler happy
+		//smp_rendezvous(NULL, vmbus_synic_teardown, NULL, NULL); //FIXME: smp_rendezvous missing
 	}
 
 	vmbus_intr_teardown(sc);
