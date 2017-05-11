@@ -43,7 +43,7 @@
 #define CPUID_HV_MSR_SYNTIMER		0x0008	/* MSRs for SynTimer */
 #define CPUID_HV_MSR_APIC		0x0010	/* MSR_HV_{EOI,ICR,TPR} */
 #define CPUID_HV_MSR_HYPERCALL		0x0020	/* MSR_HV_GUEST_OS_ID
-						 * MSR_HV_HYPERCALL */
+                         * MSR_HV_HYPERCALL */
 #define CPUID_HV_MSR_VP_INDEX		0x0040	/* MSR_HV_VP_INDEX */
 #define CPUID_HV_MSR_REFERENCE_TSC	0x0200	/* MSR_HV_REFERENCE_TSC */
 #define CPUID_HV_MSR_GUEST_IDLE		0x0400	/* MSR_HV_GUEST_IDLE */
@@ -62,10 +62,10 @@
  * Hyper-V Reference TSC
  */
 struct hyperv_reftsc {
-	volatile uint32_t		tsc_seq;
-	volatile uint32_t		tsc_rsvd1;
-	volatile uint64_t		tsc_scale;
-	volatile int64_t		tsc_ofs;
+    volatile uint32_t		tsc_seq;
+    volatile uint32_t		tsc_rsvd1;
+    volatile uint64_t		tsc_scale;
+    volatile int64_t		tsc_ofs;
 } __packed __aligned(PAGE_SIZE);
 #ifdef CTASSERT
 CTASSERT(sizeof(struct hyperv_reftsc) == PAGE_SIZE);
@@ -74,7 +74,7 @@ CTASSERT(sizeof(struct hyperv_reftsc) == PAGE_SIZE);
 #ifdef _KERNEL
 
 struct hyperv_guid {
-	uint8_t				hv_guid[16];
+    uint8_t				hv_guid[16];
 } __packed;
 
 #define HYPERV_GUID_STRLEN		40
@@ -82,7 +82,7 @@ struct hyperv_guid {
 typedef uint64_t			(*hyperv_tc64_t)(void);
 
 int			hyperv_guid2str(const struct hyperv_guid *, char *,
-			    size_t);
+                size_t);
 
 /*
  * hyperv_tc64 could be NULL, if there were no suitable Hyper-V

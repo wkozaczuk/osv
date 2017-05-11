@@ -46,9 +46,9 @@
 #define MSR_HV_GUESTID_OSTYPE_SHIFT	56
 #define MSR_HV_GUESTID_OPENSRC		0x8000000000000000ULL
 #define MSR_HV_GUESTID_OSTYPE_LINUX	\
-	((0x01ULL << MSR_HV_GUESTID_OSTYPE_SHIFT) | MSR_HV_GUESTID_OPENSRC)
+    ((0x01ULL << MSR_HV_GUESTID_OSTYPE_SHIFT) | MSR_HV_GUESTID_OPENSRC)
 #define MSR_HV_GUESTID_OSTYPE_FREEBSD	\
-	((0x02ULL << MSR_HV_GUESTID_OSTYPE_SHIFT) | MSR_HV_GUESTID_OPENSRC)
+    ((0x02ULL << MSR_HV_GUESTID_OSTYPE_SHIFT) | MSR_HV_GUESTID_OPENSRC)
 
 #define MSR_HV_HYPERCALL		0x40000001
 #define MSR_HV_HYPERCALL_ENABLE		0x0001ULL
@@ -85,7 +85,7 @@
 #define MSR_HV_SINT_AUTOEOI		0x00020000ULL
 #define MSR_HV_SINT_RSVD2_MASK		0xfffffffffffc0000ULL
 #define MSR_HV_SINT_RSVD_MASK		(MSR_HV_SINT_RSVD1_MASK |	\
-					 MSR_HV_SINT_RSVD2_MASK)
+                     MSR_HV_SINT_RSVD2_MASK)
 
 #define MSR_HV_STIMER0_CONFIG		0x400000b0
 #define MSR_HV_STIMER_CFG_ENABLE	0x0001ULL
@@ -117,11 +117,11 @@
 /* EDX: features3 */
 #define CPUID3_HV_MWAIT			0x0001	/* MWAIT */
 #define CPUID3_HV_XMM_HYPERCALL		0x0010	/* Hypercall input through
-						 * XMM regs */
+                         * XMM regs */
 #define CPUID3_HV_GUEST_IDLE		0x0020	/* guest idle */
 #define CPUID3_HV_NUMA			0x0080	/* NUMA distance query */
 #define CPUID3_HV_TIME_FREQ		0x0100	/* timer frequency query
-						 * (TSC, LAPIC) */
+                         * (TSC, LAPIC) */
 #define CPUID3_HV_MSR_CRASH		0x0400	/* MSRs for guest crash */
 
 #define CPUID_LEAF_HV_RECOMMENDS	0x40000004
@@ -132,9 +132,9 @@
  * Hyper-V Monitor Notification Facility
  */
 struct hyperv_mon_param {
-	uint32_t	mp_connid;
-	uint16_t	mp_evtflag_ofs;
-	uint16_t	mp_rsvd;
+    uint32_t	mp_connid;
+    uint16_t	mp_evtflag_ofs;
+    uint16_t	mp_rsvd;
 } __packed;
 
 /*
@@ -176,11 +176,11 @@ struct hyperv_mon_param {
 #define HYPERCALL_POSTMSGIN_SIZE	256
 
 struct hypercall_postmsg_in {
-	uint32_t	hc_connid;
-	uint32_t	hc_rsvd;
-	uint32_t	hc_msgtype;	/* HYPERV_MSGTYPE_ */
-	uint32_t	hc_dsize;
-	uint8_t		hc_data[HYPERCALL_POSTMSGIN_DSIZE_MAX];
+    uint32_t	hc_connid;
+    uint32_t	hc_rsvd;
+    uint32_t	hc_msgtype;	/* HYPERV_MSGTYPE_ */
+    uint32_t	hc_dsize;
+    uint8_t		hc_data[HYPERCALL_POSTMSGIN_DSIZE_MAX];
 } __packed;
 CTASSERT(sizeof(struct hypercall_postmsg_in) == HYPERCALL_POSTMSGIN_SIZE);
 

@@ -35,12 +35,12 @@
  * This is the Hyper-V vmbus channel direct callback interrupt.
  * Only used when it is running on Hyper-V.
  */
-	.text
-	SUPERALIGN_TEXT
+    .text
+    SUPERALIGN_TEXT
 IDTVEC(vmbus_isr)
-	PUSH_FRAME
-	FAKE_MCOUNT(TF_RIP(%rsp))
-	movq	%rsp, %rdi
-	call	vmbus_handle_intr
-	MEXITCOUNT
-	jmp	doreti
+    PUSH_FRAME
+    FAKE_MCOUNT(TF_RIP(%rsp))
+    movq	%rsp, %rdi
+    call	vmbus_handle_intr
+    MEXITCOUNT
+    jmp	doreti

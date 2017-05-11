@@ -39,8 +39,8 @@
 typedef int             boolean_t;
 
 struct vmbus_br {
-	struct vmbus_bufring	*vbr;
-	uint32_t		vbr_dsize;	/* total data size */
+    struct vmbus_bufring	*vbr;
+    uint32_t		vbr_dsize;	/* total data size */
 };
 
 #define vbr_windex		vbr->br_windex
@@ -49,8 +49,8 @@ struct vmbus_br {
 #define vbr_data		vbr->br_data
 
 struct vmbus_rxbr {
-	struct mtx		rxbr_lock;
-	struct vmbus_br		rxbr;
+    struct mtx		rxbr_lock;
+    struct vmbus_br		rxbr;
 };
 
 #define rxbr_windex		rxbr.vbr_windex
@@ -60,8 +60,8 @@ struct vmbus_rxbr {
 #define rxbr_dsize		rxbr.vbr_dsize
 
 struct vmbus_txbr {
-	struct mtx		txbr_lock;
-	struct vmbus_br		txbr;
+    struct mtx		txbr_lock;
+    struct vmbus_br		txbr;
 };
 
 #define txbr_windex		txbr.vbr_windex
@@ -77,49 +77,49 @@ static __inline int
 vmbus_txbr_maxpktsz(const struct vmbus_txbr *tbr)
 {
 
-	/*
-	 * - 64 bits for the trailing start index (- sizeof(uint64_t)).
-	 * - The rindex and windex can't be same (- 1).  See
-	 *   the comment near vmbus_bufring.br_{r,w}index.
-	 */
-	return (tbr->txbr_dsize - sizeof(uint64_t) - 1);
+    /*
+     * - 64 bits for the trailing start index (- sizeof(uint64_t)).
+     * - The rindex and windex can't be same (- 1).  See
+     *   the comment near vmbus_bufring.br_{r,w}index.
+     */
+    return (tbr->txbr_dsize - sizeof(uint64_t) - 1);
 }
 
 static __inline bool
 vmbus_txbr_empty(const struct vmbus_txbr *tbr)
 {
 
-	return (tbr->txbr_windex == tbr->txbr_rindex ? true : false);
+    return (tbr->txbr_windex == tbr->txbr_rindex ? true : false);
 }
 
 static __inline bool
 vmbus_rxbr_empty(const struct vmbus_rxbr *rbr)
 {
 
-	return (rbr->rxbr_windex == rbr->rxbr_rindex ? true : false);
+    return (rbr->rxbr_windex == rbr->rxbr_rindex ? true : false);
 }
 
 static __inline int
 vmbus_br_nelem(int br_size, int elem_size)
 {
 
-	/* Strip bufring header */
-	br_size -= sizeof(struct vmbus_bufring);
-	/* Add per-element trailing index */
-	elem_size += sizeof(uint64_t);
-	return (br_size / elem_size);
+    /* Strip bufring header */
+    br_size -= sizeof(struct vmbus_bufring);
+    /* Add per-element trailing index */
+    elem_size += sizeof(uint64_t);
+    return (br_size / elem_size);
 }
 
 void		vmbus_br_sysctl_create(struct sysctl_ctx_list *ctx,
-		    struct sysctl_oid *br_tree, struct vmbus_br *br,
-		    const char *name);
+            struct sysctl_oid *br_tree, struct vmbus_br *br,
+            const char *name);
 
 void		vmbus_rxbr_init(struct vmbus_rxbr *rbr);
 void		vmbus_rxbr_deinit(struct vmbus_rxbr *rbr);
 void		vmbus_rxbr_setup(struct vmbus_rxbr *rbr, void *buf, int blen);
 int		vmbus_rxbr_peek(struct vmbus_rxbr *rbr, void *data, int dlen);
 int		vmbus_rxbr_read(struct vmbus_rxbr *rbr, void *data, int dlen,
-		    uint32_t skip);
+            uint32_t skip);
 void		vmbus_rxbr_intr_mask(struct vmbus_rxbr *rbr);
 uint32_t	vmbus_rxbr_intr_unmask(struct vmbus_rxbr *rbr);
 
@@ -127,6 +127,6 @@ void		vmbus_txbr_init(struct vmbus_txbr *tbr);
 void		vmbus_txbr_deinit(struct vmbus_txbr *tbr);
 void		vmbus_txbr_setup(struct vmbus_txbr *tbr, void *buf, int blen);
 int		vmbus_txbr_write(struct vmbus_txbr *tbr,
-		    const struct iovec iov[], int iovlen, boolean_t *need_sig);
+            const struct iovec iov[], int iovlen, boolean_t *need_sig);
 
 #endif  /* _VMBUS_BRVAR_H_ */

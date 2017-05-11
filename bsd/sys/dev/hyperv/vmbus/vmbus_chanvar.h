@@ -46,112 +46,112 @@
 #include <dev/hyperv/vmbus/vmbus_brvar.h>
 
 struct vmbus_channel {
-	/*
-	 * NOTE:
-	 * Fields before ch_txbr are only accessed on this channel's
-	 * target CPU.
-	 */
-	uint32_t			ch_flags;	/* VMBUS_CHAN_FLAG_ */
-	int				ch_poll_flags;	/* callout flags */
+    /*
+     * NOTE:
+     * Fields before ch_txbr are only accessed on this channel's
+     * target CPU.
+     */
+    uint32_t			ch_flags;	/* VMBUS_CHAN_FLAG_ */
+    int				ch_poll_flags;	/* callout flags */
 
-	/*
-	 * RX bufring; immediately following ch_txbr.
-	 */
-	struct vmbus_rxbr		ch_rxbr;
+    /*
+     * RX bufring; immediately following ch_txbr.
+     */
+    struct vmbus_rxbr		ch_rxbr;
 
-	struct taskqueue		*ch_tq;
-	struct task			ch_task;
-	struct task			ch_poll_task;
-	sbintime_t			ch_poll_intvl;
-	struct callout			ch_poll_timeo;
-	vmbus_chan_callback_t		ch_cb;
-	void				*ch_cbarg;
+    struct taskqueue		*ch_tq;
+    struct task			ch_task;
+    struct task			ch_poll_task;
+    sbintime_t			ch_poll_intvl;
+    struct callout			ch_poll_timeo;
+    vmbus_chan_callback_t		ch_cb;
+    void				*ch_cbarg;
 
-	/*
-	 * TX bufring; at the beginning of ch_bufring.
-	 *
-	 * NOTE:
-	 * Put TX bufring and the following MNF/evtflag to a new
-	 * cacheline, since they will be accessed on all CPUs by
-	 * locking ch_txbr first.
-	 *
-	 * XXX
-	 * TX bufring and following MNF/evtflags do _not_ fit in
-	 * one 64B cacheline.
-	 */
-	struct vmbus_txbr		ch_txbr __aligned(CACHE_LINE_SIZE);
-	uint32_t			ch_txflags;	/* VMBUS_CHAN_TXF_ */
+    /*
+     * TX bufring; at the beginning of ch_bufring.
+     *
+     * NOTE:
+     * Put TX bufring and the following MNF/evtflag to a new
+     * cacheline, since they will be accessed on all CPUs by
+     * locking ch_txbr first.
+     *
+     * XXX
+     * TX bufring and following MNF/evtflags do _not_ fit in
+     * one 64B cacheline.
+     */
+    struct vmbus_txbr		ch_txbr __aligned(CACHE_LINE_SIZE);
+    uint32_t			ch_txflags;	/* VMBUS_CHAN_TXF_ */
 
-	/*
-	 * These are based on the vmbus_chanmsg_choffer.chm_montrig.
-	 * Save it here for easy access.
-	 */
-	uint32_t			ch_montrig_mask;/* MNF trig mask */
-	volatile uint32_t		*ch_montrig;	/* MNF trigger loc. */
+    /*
+     * These are based on the vmbus_chanmsg_choffer.chm_montrig.
+     * Save it here for easy access.
+     */
+    uint32_t			ch_montrig_mask;/* MNF trig mask */
+    volatile uint32_t		*ch_montrig;	/* MNF trigger loc. */
 
-	/*
-	 * These are based on the vmbus_chanmsg_choffer.chm_chanid.
-	 * Save it here for easy access.
-	 */
-	u_long				ch_evtflag_mask;/* event flag */
-	volatile u_long			*ch_evtflag;	/* event flag loc. */
+    /*
+     * These are based on the vmbus_chanmsg_choffer.chm_chanid.
+     * Save it here for easy access.
+     */
+    u_long				ch_evtflag_mask;/* event flag */
+    volatile u_long			*ch_evtflag;	/* event flag loc. */
 
-	/*
-	 * Rarely used fields.
-	 */
+    /*
+     * Rarely used fields.
+     */
 
-	struct hyperv_mon_param		*ch_monprm;
-	struct hyperv_dma		ch_monprm_dma;
+    struct hyperv_mon_param		*ch_monprm;
+    struct hyperv_dma		ch_monprm_dma;
 
-	uint32_t			ch_id;		/* channel id */
-	device_t			ch_dev;
-	struct vmbus_softc		*ch_vmbus;
+    uint32_t			ch_id;		/* channel id */
+    device_t			ch_dev;
+    struct vmbus_softc		*ch_vmbus;
 
-	int				ch_cpuid;	/* owner cpu */
-	/*
-	 * Virtual cpuid for ch_cpuid; it is used to communicate cpuid
-	 * related information w/ Hyper-V.  If MSR_HV_VP_INDEX does not
-	 * exist, ch_vcpuid will always be 0 for compatibility.
-	 */
-	uint32_t			ch_vcpuid;
+    int				ch_cpuid;	/* owner cpu */
+    /*
+     * Virtual cpuid for ch_cpuid; it is used to communicate cpuid
+     * related information w/ Hyper-V.  If MSR_HV_VP_INDEX does not
+     * exist, ch_vcpuid will always be 0 for compatibility.
+     */
+    uint32_t			ch_vcpuid;
 
-	/*
-	 * If this is a primary channel, ch_subchan* fields
-	 * contain sub-channels belonging to this primary
-	 * channel.
-	 */
-	struct mtx			ch_subchan_lock;
-	TAILQ_HEAD(, vmbus_channel)	ch_subchans;
-	int				ch_subchan_cnt;
+    /*
+     * If this is a primary channel, ch_subchan* fields
+     * contain sub-channels belonging to this primary
+     * channel.
+     */
+    struct mtx			ch_subchan_lock;
+    TAILQ_HEAD(, vmbus_channel)	ch_subchans;
+    int				ch_subchan_cnt;
 
-	/* If this is a sub-channel */
-	TAILQ_ENTRY(vmbus_channel)	ch_sublink;	/* sub-channel link */
-	struct vmbus_channel		*ch_prichan;	/* owner primary chan */
+    /* If this is a sub-channel */
+    TAILQ_ENTRY(vmbus_channel)	ch_sublink;	/* sub-channel link */
+    struct vmbus_channel		*ch_prichan;	/* owner primary chan */
 
-	void				*ch_bufring;	/* TX+RX bufrings */
-	struct hyperv_dma		ch_bufring_dma;
-	uint32_t			ch_bufring_gpadl;
+    void				*ch_bufring;	/* TX+RX bufrings */
+    struct hyperv_dma		ch_bufring_dma;
+    uint32_t			ch_bufring_gpadl;
 
-	struct task			ch_attach_task;	/* run in ch_mgmt_tq */
-	struct task			ch_detach_task;	/* run in ch_mgmt_tq */
-	struct taskqueue		*ch_mgmt_tq;
+    struct task			ch_attach_task;	/* run in ch_mgmt_tq */
+    struct task			ch_detach_task;	/* run in ch_mgmt_tq */
+    struct taskqueue		*ch_mgmt_tq;
 
-	/* If this is a primary channel */
-	TAILQ_ENTRY(vmbus_channel)	ch_prilink;	/* primary chan link */
+    /* If this is a primary channel */
+    TAILQ_ENTRY(vmbus_channel)	ch_prilink;	/* primary chan link */
 
-	TAILQ_ENTRY(vmbus_channel)	ch_link;	/* channel link */
-	uint32_t			ch_subidx;	/* subchan index */
-	volatile uint32_t		ch_stflags;	/* atomic-op */
-							/* VMBUS_CHAN_ST_ */
-	struct hyperv_guid		ch_guid_type;
-	struct hyperv_guid		ch_guid_inst;
+    TAILQ_ENTRY(vmbus_channel)	ch_link;	/* channel link */
+    uint32_t			ch_subidx;	/* subchan index */
+    volatile uint32_t		ch_stflags;	/* atomic-op */
+                            /* VMBUS_CHAN_ST_ */
+    struct hyperv_guid		ch_guid_type;
+    struct hyperv_guid		ch_guid_inst;
 
-	struct sx			ch_orphan_lock;
-	struct vmbus_xact_ctx		*ch_orphan_xact;
+    struct sx			ch_orphan_lock;
+    struct vmbus_xact_ctx		*ch_orphan_xact;
 
-	int				ch_refs;
+    int				ch_refs;
 
-	struct sysctl_ctx_list		ch_sysctl_ctx;
+    struct sysctl_ctx_list		ch_sysctl_ctx;
 } __aligned(CACHE_LINE_SIZE);
 
 #define VMBUS_CHAN_ISPRIMARY(chan)	((chan)->ch_subidx == 0)
@@ -185,7 +185,7 @@ struct vmbus_message;
 void		vmbus_event_proc(struct vmbus_softc *, int);
 void		vmbus_event_proc_compat(struct vmbus_softc *, int);
 void		vmbus_chan_msgproc(struct vmbus_softc *,
-		    const struct vmbus_message *);
+            const struct vmbus_message *);
 void		vmbus_chan_destroy_all(struct vmbus_softc *);
 
 #endif	/* !_VMBUS_CHANVAR_H_ */
