@@ -34,7 +34,9 @@
 #include <sys/param.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
-#include <sys/_iovec.h>
+#include <sys/uio.h>
+
+typedef int             boolean_t;
 
 struct vmbus_br {
     struct vmbus_bufring        *vbr;

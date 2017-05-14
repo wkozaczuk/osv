@@ -32,11 +32,11 @@
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/taskqueue.h>
-#include <sys/rman.h>
+//#include <sys/rman.h> //PCI_PASS_THROUGH
 
 #include <dev/hyperv/include/hyperv_busdma.h>
-#include <dev/pci/pcivar.h>
-#include <dev/pci/pcib_private.h>
+//#include <dev/pci/pcivar.h> //PCI_PASS_THROUGH
+//#include <dev/pci/pcib_private.h> //PCI_PASS_THROUGH
 
 /*
  * NOTE: DO NOT CHANGE THIS.

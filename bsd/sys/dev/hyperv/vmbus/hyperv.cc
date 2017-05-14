@@ -32,10 +32,13 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <bsd/porting/netport.h>
+
 #include <sys/param.h>
 #include <sys/kernel.h>
 #include <sys/systm.h>
 #include <sys/timetc.h>
+#include <sys/conf.h>
 
 #include <dev/hyperv/include/hyperv.h>
 #include <dev/hyperv/include/hyperv_busdma.h>
@@ -43,6 +46,9 @@ __FBSDID("$FreeBSD$");
 #include <dev/hyperv/vmbus/hyperv_reg.h>
 #include <dev/hyperv/vmbus/hyperv_var.h>
 
+#include <osv/debug.hh>
+
+/*
 #define HYPERV_FREEBSD_BUILD            0ULL
 #define HYPERV_FREEBSD_VERSION          ((uint64_t)__FreeBSD_version)
 #define HYPERV_FREEBSD_OSID             0ULL
@@ -61,7 +67,7 @@ __FBSDID("$FreeBSD$");
      MSR_HV_GUESTID_VERSION_FREEBSD | \
      MSR_HV_GUESTID_OSID_FREEBSD |      \
      MSR_HV_GUESTID_OSTYPE_FREEBSD)
-
+*/
 struct hypercall_ctx {
     void                        *hc_addr;
     struct hyperv_dma   hc_dma;
@@ -95,14 +101,14 @@ static struct hypercall_ctx     hypercall_context;
 static u_int
 hyperv_get_timecount(struct timecounter *tc __unused)
 {
-    return rdmsr(MSR_HV_TIME_REF_COUNT);
+    return processor::rdmsr(MSR_HV_TIME_REF_COUNT);
 }
 
 static uint64_t
 hyperv_tc64_rdmsr(void)
 {
 
-    return (rdmsr(MSR_HV_TIME_REF_COUNT));
+    return (processor::rdmsr(MSR_HV_TIME_REF_COUNT));
 }
 
 uint64_t
@@ -135,36 +141,38 @@ hyperv_guid2str(const struct hyperv_guid *guid, char *buf, size_t sz)
 static bool
 hyperv_identify(void)
 {
-    u_int regs[4];
+    struct processor::cpuid_result regs;
     unsigned int maxleaf;
 
+    /* INVESTIGATE: How do I know that OSv is running on Hyper-V?
     if (vm_guest != VM_GUEST_HV)
         return (false);
+     */
 
-    do_cpuid(CPUID_LEAF_HV_MAXLEAF, regs);
-    maxleaf = regs[0];
+    regs = processor::cpuid(CPUID_LEAF_HV_MAXLEAF);
+    maxleaf = regs.a;
     if (maxleaf < CPUID_LEAF_HV_LIMITS)
         return (false);
 
-    do_cpuid(CPUID_LEAF_HV_INTERFACE, regs);
-    if (regs[0] != CPUID_HV_IFACE_HYPERV)
+    regs = processor::cpuid(CPUID_LEAF_HV_INTERFACE);
+    if (regs.a != CPUID_HV_IFACE_HYPERV)
         return (false);
 
-    do_cpuid(CPUID_LEAF_HV_FEATURES, regs);
-    if ((regs[0] & CPUID_HV_MSR_HYPERCALL) == 0) {
+    regs = processor::cpuid(CPUID_LEAF_HV_FEATURES);
+    if ((regs.a & CPUID_HV_MSR_HYPERCALL) == 0) {
         /*
          * Hyper-V w/o Hypercall is impossible; someone
          * is faking Hyper-V.
          */
         return (false);
     }
-    hyperv_features = regs[0];
-    hyperv_pm_features = regs[2];
-    hyperv_features3 = regs[3];
+    hyperv_features = regs.a;
+    hyperv_pm_features = regs.c;
+    hyperv_features3 = regs.d;
 
-    do_cpuid(CPUID_LEAF_HV_IDENTITY, regs);
+    regs = processor::cpuid(CPUID_LEAF_HV_IDENTITY);
     printf("Hyper-V Version: %d.%d.%d [SP%d]\n",
-        regs[1] >> 16, regs[1] & 0xffff, regs[0], regs[2]);
+        regs.b >> 16, regs.b & 0xffff, regs.a, regs.c);
 
     printf("  Features=0x%b\n", hyperv_features,
         "\020"
@@ -203,40 +211,44 @@ hyperv_identify(void)
         "\015NPIEP"             /* NPIEP */
         "\016HVDIS");   /* disabling hypervisor */
 
-    do_cpuid(CPUID_LEAF_HV_RECOMMENDS, regs);
-    hyperv_recommends = regs[0];
+    regs = processor::cpuid(CPUID_LEAF_HV_RECOMMENDS);
+    hyperv_recommends = regs.a;
     if (bootverbose)
-        printf("  Recommends: %08x %08x\n", regs[0], regs[1]);
+        printf("  Recommends: %08x %08x\n", regs.a, regs.b);
 
-    do_cpuid(CPUID_LEAF_HV_LIMITS, regs);
+    regs = processor::cpuid(CPUID_LEAF_HV_LIMITS);
     if (bootverbose) {
         printf("  Limits: Vcpu:%d Lcpu:%d Int:%d\n",
-            regs[0], regs[1], regs[2]);
+               regs.a, regs.b, regs.c);
     }
 
     if (maxleaf >= CPUID_LEAF_HV_HWFEATURES) {
-        do_cpuid(CPUID_LEAF_HV_HWFEATURES, regs);
+        regs = processor::cpuid(CPUID_LEAF_HV_HWFEATURES);
         if (bootverbose) {
             printf("  HW Features: %08x, AMD: %08x\n",
-                regs[0], regs[3]);
+                  regs.a, regs.d);
         }
     }
 
     return (true);
 }
 
-static void
+void
 hyperv_init(void *dummy __unused)
 {
     if (!hyperv_identify()) {
         /* Not Hyper-V; reset guest id to the generic one. */
+        /* INVESTIGATE: For now disable logic related to detecting if OSv is running on Hyper/V
         if (vm_guest == VM_GUEST_HV)
             vm_guest = VM_GUEST_VM;
+
+        */
         return;
     }
 
     /* Set guest id */
-    wrmsr(MSR_HV_GUEST_OS_ID, MSR_HV_GUESTID_FREEBSD);
+    // INVESTIGATE
+    //processor::wrmsr(MSR_HV_GUEST_OS_ID, MSR_HV_GUESTID_FREEBSD);
 
     if (hyperv_features & CPUID_HV_MSR_TIME_REFCNT) {
         /* Register Hyper-V timecounter */
@@ -260,25 +272,29 @@ hypercall_memfree(void)
     hypercall_context.hc_addr = NULL;
 }
 
-static void
+void
 hypercall_create(void *arg __unused)
 {
     uint64_t hc, hc_orig;
 
+    /* INVESTIGATE: For now disable logic related to detecting if OSv is running on Hyper/V
     if (vm_guest != VM_GUEST_HV)
         return;
+    */
 
     hypercall_context.hc_addr = hyperv_dmamem_alloc(NULL, PAGE_SIZE, 0,
         PAGE_SIZE, &hypercall_context.hc_dma, BUS_DMA_WAITOK);
     if (hypercall_context.hc_addr == NULL) {
         printf("hyperv: Hypercall page allocation failed\n");
         /* Can't perform any Hyper-V specific actions */
+        /* INVESTIGATE: For now disable logic related to detecting if OSv is running on Hyper/V
         vm_guest = VM_GUEST_VM;
+        */
         return;
     }
 
     /* Get the 'reserved' bits, which requires preservation. */
-    hc_orig = rdmsr(MSR_HV_HYPERCALL);
+    hc_orig = processor::rdmsr(MSR_HV_HYPERCALL);
 
     /*
      * Setup the Hypercall page.
@@ -289,17 +305,19 @@ hypercall_create(void *arg __unused)
         MSR_HV_HYPERCALL_PGSHIFT) |
         (hc_orig & MSR_HV_HYPERCALL_RSVD_MASK) |
         MSR_HV_HYPERCALL_ENABLE;
-    wrmsr(MSR_HV_HYPERCALL, hc);
+    processor::wrmsr(MSR_HV_HYPERCALL, hc);
 
     /*
      * Confirm that Hypercall page did get setup.
      */
-    hc = rdmsr(MSR_HV_HYPERCALL);
+    hc = processor::rdmsr(MSR_HV_HYPERCALL);
     if ((hc & MSR_HV_HYPERCALL_ENABLE) == 0) {
         printf("hyperv: Hypercall setup failed\n");
         hypercall_memfree();
         /* Can't perform any Hyper-V specific actions */
+        /* INVESTIGATE: For now disable logic related to detecting if OSv is running on Hyper/V
         vm_guest = VM_GUEST_VM;
+        */
         return;
     }
     if (bootverbose)
@@ -307,7 +325,7 @@ hypercall_create(void *arg __unused)
 }
 SYSINIT(hypercall_ctor, SI_SUB_DRIVERS, SI_ORDER_FIRST, hypercall_create, NULL);
 
-static void
+void
 hypercall_destroy(void *arg __unused)
 {
     uint64_t hc;
@@ -316,8 +334,8 @@ hypercall_destroy(void *arg __unused)
         return;
 
     /* Disable Hypercall */
-    hc = rdmsr(MSR_HV_HYPERCALL);
-    wrmsr(MSR_HV_HYPERCALL, (hc & MSR_HV_HYPERCALL_RSVD_MASK));
+    hc = processor::rdmsr(MSR_HV_HYPERCALL);
+    processor::wrmsr(MSR_HV_HYPERCALL, (hc & MSR_HV_HYPERCALL_RSVD_MASK));
     hypercall_memfree();
 
     if (bootverbose)

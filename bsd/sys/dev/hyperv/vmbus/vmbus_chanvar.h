@@ -29,14 +29,16 @@
 #ifndef _VMBUS_CHANVAR_H_
 #define _VMBUS_CHANVAR_H_
 
+#include <bsd/porting/callout.h>
+
 #include <sys/param.h>
-#include <sys/callout.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/queue.h>
 #include <sys/sysctl.h>
 #include <sys/sx.h>
 #include <sys/taskqueue.h>
+#include <bsd/sys/sys/sysctl.h>
 
 #include <dev/hyperv/include/hyperv.h>
 #include <dev/hyperv/include/hyperv_busdma.h>

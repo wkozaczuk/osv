@@ -65,6 +65,9 @@ typedef void (*taskqueue_enqueue_fn)(void *context);
 struct taskqueue *taskqueue_create(const char *name, int mflags,
 				    taskqueue_enqueue_fn enqueue,
 				    void *context);
+struct taskqueue *taskqueue_create_fast(const char *name, int mflags,
+										taskqueue_enqueue_fn enqueue,
+										void *context);
 int	taskqueue_start_threads(struct taskqueue **tqp, int count, int pri,
 				const char *name, ...) __printflike(4, 5);
 int	taskqueue_enqueue(struct taskqueue *queue, struct task *task);

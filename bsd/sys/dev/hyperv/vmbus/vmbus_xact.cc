@@ -84,7 +84,7 @@ vmbus_xact_alloc(struct vmbus_xact_ctx *ctx, bus_dma_tag_t parent_dtag)
 {
     struct vmbus_xact *xact;
 
-    xact = malloc(sizeof(*xact), M_DEVBUF, M_WAITOK | M_ZERO);
+    xact = reinterpret_cast<struct vmbus_xact *>(malloc(sizeof(*xact), M_DEVBUF, M_WAITOK | M_ZERO));
     xact->x_ctx = ctx;
 
     /* XXX assume that page aligned is enough */
@@ -145,7 +145,7 @@ vmbus_xact_ctx_create(bus_dma_tag_t dtag, size_t req_size, size_t resp_size,
     KASSERT(req_size > 0, ("request size is 0"));
     KASSERT(resp_size > 0, ("response size is 0"));
 
-    ctx = malloc(sizeof(*ctx), M_DEVBUF, M_WAITOK | M_ZERO);
+    ctx = reinterpret_cast<struct vmbus_xact_ctx *>(malloc(sizeof(*ctx), M_DEVBUF, M_WAITOK | M_ZERO));
     ctx->xc_req_size = req_size;
     ctx->xc_resp_size = resp_size;
     ctx->xc_priv_size = priv_size;
@@ -325,7 +325,7 @@ vmbus_xact_wait1(struct vmbus_xact *xact, size_t *resp_len,
                 "wxact", 0);
         } else {
             mtx_unlock(&ctx->xc_lock);
-            DELAY(1000);
+            sched::thread::sleep(std::chrono::microseconds(1000));
             mtx_lock(&ctx->xc_lock);
         }
     }

@@ -29,11 +29,20 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <bsd/porting/netport.h>
+#include <bsd/porting/bus.h>
+#include <bsd/porting/mmu.h>
+#include <bsd/porting/synch.h>
+#include <bsd/porting/kthread.h>
+#include <bsd/porting/callout.h>
+
 #include <sys/param.h>
 #include <sys/lock.h>
 #include <sys/mutex.h>
 #include <sys/sysctl.h>
+#include <sys/types.h>
 
+#include <bsd/sys/sys/param.h>
 #include <dev/hyperv/vmbus/vmbus_reg.h>
 #include <dev/hyperv/vmbus/vmbus_brvar.h>
 
@@ -44,6 +53,7 @@ __FBSDID("$FreeBSD$");
 /* Increase bufing index */
 #define VMBUS_BR_IDXINC(idx, inc, sz)   (((idx) + (inc)) % (sz))
 
+#if OSV_SYSCTL_ENABLED
 static int                      vmbus_br_sysctl_state(SYSCTL_HANDLER_ARGS);
 static int                      vmbus_br_sysctl_state_bin(SYSCTL_HANDLER_ARGS);
 static void                     vmbus_br_setup(struct vmbus_br *, void *, int);
@@ -118,6 +128,7 @@ vmbus_br_sysctl_create(struct sysctl_ctx_list *ctx, struct sysctl_oid *br_tree,
         CTLTYPE_OPAQUE | CTLFLAG_RD | CTLFLAG_MPSAFE,
         br, 0, vmbus_br_sysctl_state_bin, "IU", desc);
 }
+#endif
 
 void
 vmbus_rxbr_intr_mask(struct vmbus_rxbr *rbr)
@@ -156,7 +167,7 @@ vmbus_rxbr_intr_unmask(struct vmbus_rxbr *rbr)
 static void
 vmbus_br_setup(struct vmbus_br *br, void *buf, int blen)
 {
-    br->vbr = buf;
+    br->vbr = reinterpret_cast<vmbus_bufring*>(buf);
     br->vbr_dsize = blen - sizeof(struct vmbus_bufring);
 }
 
@@ -216,7 +227,7 @@ vmbus_txbr_need_signal(const struct vmbus_txbr *tbr, uint32_t old_windex)
     if (tbr->txbr_imask)
         return (FALSE);
 
-    __compiler_membar();
+    std::atomic_signal_fence(std::memory_order_seq_cst);
 
     /*
      * This is the only case we need to signal when the
@@ -244,7 +255,7 @@ static __inline uint32_t
 vmbus_txbr_copyto(const struct vmbus_txbr *tbr, uint32_t windex,
     const void *src0, uint32_t cplen)
 {
-    const uint8_t *src = src0;
+    const uint8_t *src = reinterpret_cast<const uint8_t *>(src0);
     uint8_t *br_data = tbr->txbr_data;
     uint32_t br_dsize = tbr->txbr_dsize;
 
@@ -316,7 +327,7 @@ vmbus_txbr_write(struct vmbus_txbr *tbr, const struct iovec iov[], int iovlen,
      * Update the write index _after_ the channel packet
      * is copied.
      */
-    __compiler_membar();
+    std::atomic_signal_fence(std::memory_order_seq_cst);
     tbr->txbr_windex = windex;
 
     mtx_unlock_spin(&tbr->txbr_lock);
@@ -330,7 +341,7 @@ static __inline uint32_t
 vmbus_rxbr_copyfrom(const struct vmbus_rxbr *rbr, uint32_t rindex,
     void *dst0, int cplen)
 {
-    uint8_t *dst = dst0;
+    uint8_t *dst = reinterpret_cast<uint8_t *>(dst0);
     const uint8_t *br_data = rbr->rxbr_data;
     uint32_t br_dsize = rbr->rxbr_dsize;
 
@@ -398,7 +409,7 @@ vmbus_rxbr_read(struct vmbus_rxbr *rbr, void *data, int dlen, uint32_t skip)
     /*
      * Update the read index _after_ the channel packet is fetched.
      */
-    __compiler_membar();
+    std::atomic_signal_fence(std::memory_order_seq_cst);
     rbr->rxbr_rindex = rindex;
 
     mtx_unlock_spin(&rbr->rxbr_lock);

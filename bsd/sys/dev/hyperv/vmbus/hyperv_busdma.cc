@@ -40,7 +40,7 @@ __FBSDID("$FreeBSD$");
 void
 hyperv_dma_map_paddr(void *arg, bus_dma_segment_t *segs, int nseg, int error)
 {
-    bus_addr_t *paddr = arg;
+    bus_addr_t *paddr = reinterpret_cast<bus_addr_t *>(arg);
 
     if (error)
         return;

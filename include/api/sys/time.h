@@ -24,6 +24,9 @@ struct itimerval
 	struct timeval it_value;
 };
 
+#define SBT_1S  ((sbintime_t)1 << 32)
+#define	SBT_1MS	(SBT_1S / 1000)
+
 int getitimer (int, struct itimerval *);
 int setitimer (int, const struct itimerval *__restrict, struct itimerval *__restrict);
 int utimes (const char *, const struct timeval [2]);
