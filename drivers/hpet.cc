@@ -105,17 +105,6 @@ void __attribute__((constructor(init_prio::hpet))) hpet_init()
     {
         auto c = clock::get();
 
-        /*{
-            uint64_t _wall;
-            auto r = new rtc();
-            debug_early("--> IN HPET: After new rtc()\n");
-            irq_save_lock_type irq_lock;
-            WITH_LOCK(irq_lock) {
-                _wall = r->wallclock_ns();
-            }
-            debug_early_u64("--> IN HPET: Boot time in ns: ",_wall);
-        }*/
-
         // HPET should be only used as a fallback, if no other pvclocks
         // are present
         if (c != nullptr) {

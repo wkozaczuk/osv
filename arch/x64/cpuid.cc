@@ -5,6 +5,7 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
+#include <include/osv/debug.h>
 #include "cpuid.hh"
 #include "processor.hh"
 #include "xen.hh"
