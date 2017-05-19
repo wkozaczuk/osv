@@ -72,8 +72,9 @@ hyperv_dmamem_alloc(bus_dma_tag_t parent_dtag, bus_size_t alignment,
     if (error)
         return NULL;
 
-    error = bus_dmamem_alloc(dma->hv_dtag, &ret,
-        (flags & HYPERV_DMA_MASK) | BUS_DMA_COHERENT, &dma->hv_dmap);
+    error = 0;/*OSV_TEMP: bus_dmamem_alloc(dma->hv_dtag, &ret,
+        (flags & HYPERV_DMA_MASK) | BUS_DMA_COHERENT, &dma->hv_dmap)*/;
+    ret = 0; //TEMP
     if (error) {
         bus_dma_tag_destroy(dma->hv_dtag);
         return NULL;
@@ -82,7 +83,7 @@ hyperv_dmamem_alloc(bus_dma_tag_t parent_dtag, bus_size_t alignment,
     error = bus_dmamap_load(dma->hv_dtag, dma->hv_dmap, ret, size,
         hyperv_dma_map_paddr, &dma->hv_paddr, BUS_DMA_NOWAIT);
     if (error) {
-        bus_dmamem_free(dma->hv_dtag, ret, dma->hv_dmap);
+        //OSV_TEMP bus_dmamem_free(dma->hv_dtag, ret, dma->hv_dmap);
         bus_dma_tag_destroy(dma->hv_dtag);
         return NULL;
     }
@@ -93,6 +94,6 @@ void
 hyperv_dmamem_free(struct hyperv_dma *dma, void *ptr)
 {
     bus_dmamap_unload(dma->hv_dtag, dma->hv_dmap);
-    bus_dmamem_free(dma->hv_dtag, ptr, dma->hv_dmap);
+    //OSV_TEMP: bus_dmamem_free(dma->hv_dtag, ptr, dma->hv_dmap);
     bus_dma_tag_destroy(dma->hv_dtag);
 }

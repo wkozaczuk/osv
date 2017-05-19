@@ -74,7 +74,7 @@ struct hypercall_ctx {
 };
 
 static u_int                    hyperv_get_timecount(struct timecounter *);
-static bool                     hyperv_identify(void);
+bool                     hyperv_identify(void);
 static void                     hypercall_memfree(void);
 
 u_int                           hyperv_features;
@@ -104,7 +104,7 @@ hyperv_get_timecount(struct timecounter *tc __unused)
     return processor::rdmsr(MSR_HV_TIME_REF_COUNT);
 }
 
-static uint64_t
+uint64_t
 hyperv_tc64_rdmsr(void)
 {
 
@@ -138,7 +138,7 @@ hyperv_guid2str(const struct hyperv_guid *guid, char *buf, size_t sz)
         d[10], d[11], d[12], d[13], d[14], d[15]);
 }
 
-static bool
+bool
 hyperv_identify(void)
 {
     struct processor::cpuid_result regs;
@@ -171,63 +171,63 @@ hyperv_identify(void)
     hyperv_features3 = regs.d;
 
     regs = processor::cpuid(CPUID_LEAF_HV_IDENTITY);
-    printf("Hyper-V Version: %d.%d.%d [SP%d]\n",
-        regs.b >> 16, regs.b & 0xffff, regs.a, regs.c);
-
-    printf("  Features=0x%b\n", hyperv_features,
-        "\020"
-        "\001VPRUNTIME" /* MSR_HV_VP_RUNTIME */
-        "\002TMREFCNT"  /* MSR_HV_TIME_REF_COUNT */
-        "\003SYNIC"             /* MSRs for SynIC */
-        "\004SYNTM"             /* MSRs for SynTimer */
-        "\005APIC"              /* MSR_HV_{EOI,ICR,TPR} */
-        "\006HYPERCALL" /* MSR_HV_{GUEST_OS_ID,HYPERCALL} */
-        "\007VPINDEX"   /* MSR_HV_VP_INDEX */
-        "\010RESET"             /* MSR_HV_RESET */
-        "\011STATS"             /* MSR_HV_STATS_ */
-        "\012REFTSC"    /* MSR_HV_REFERENCE_TSC */
-        "\013IDLE"              /* MSR_HV_GUEST_IDLE */
-        "\014TMFREQ"    /* MSR_HV_{TSC,APIC}_FREQUENCY */
-        "\015DEBUG");   /* MSR_HV_SYNTH_DEBUG_ */
-    printf("  PM Features=0x%b [C%u]\n",
-        (hyperv_pm_features & ~CPUPM_HV_CSTATE_MASK),
-        "\020"
-        "\005C3HPET",   /* HPET is required for C3 state */
-        CPUPM_HV_CSTATE(hyperv_pm_features));
-    printf("  Features3=0x%b\n", hyperv_features3,
-        "\020"
-        "\001MWAIT"             /* MWAIT */
-        "\002DEBUG"             /* guest debug support */
-        "\003PERFMON"   /* performance monitor */
-        "\004PCPUDPE"   /* physical CPU dynamic partition event */
-        "\005XMMHC"             /* hypercall input through XMM regs */
-        "\006IDLE"              /* guest idle support */
-        "\007SLEEP"             /* hypervisor sleep support */
-        "\010NUMA"              /* NUMA distance query support */
-        "\011TMFREQ"    /* timer frequency query (TSC, LAPIC) */
-        "\012SYNCMC"    /* inject synthetic machine checks */
-        "\013CRASH"             /* MSRs for guest crash */
-        "\014DEBUGMSR"  /* MSRs for guest debug */
-        "\015NPIEP"             /* NPIEP */
-        "\016HVDIS");   /* disabling hypervisor */
+//    printf("Hyper-V Version: %d.%d.%d [SP%d]\n",
+//        regs.b >> 16, regs.b & 0xffff, regs.a, regs.c);
+//
+//    printf("  Features=0x%b\n", hyperv_features,
+//        "\020"
+//        "\001VPRUNTIME" /* MSR_HV_VP_RUNTIME */
+//        "\002TMREFCNT"  /* MSR_HV_TIME_REF_COUNT */
+//        "\003SYNIC"             /* MSRs for SynIC */
+//        "\004SYNTM"             /* MSRs for SynTimer */
+//        "\005APIC"              /* MSR_HV_{EOI,ICR,TPR} */
+//        "\006HYPERCALL" /* MSR_HV_{GUEST_OS_ID,HYPERCALL} */
+//        "\007VPINDEX"   /* MSR_HV_VP_INDEX */
+//        "\010RESET"             /* MSR_HV_RESET */
+//        "\011STATS"             /* MSR_HV_STATS_ */
+//        "\012REFTSC"    /* MSR_HV_REFERENCE_TSC */
+//        "\013IDLE"              /* MSR_HV_GUEST_IDLE */
+//        "\014TMFREQ"    /* MSR_HV_{TSC,APIC}_FREQUENCY */
+//        "\015DEBUG");   /* MSR_HV_SYNTH_DEBUG_ */
+//    printf("  PM Features=0x%b [C%u]\n",
+//        (hyperv_pm_features & ~CPUPM_HV_CSTATE_MASK),
+//        "\020"
+//        "\005C3HPET",   /* HPET is required for C3 state */
+//        CPUPM_HV_CSTATE(hyperv_pm_features));
+//    printf("  Features3=0x%b\n", hyperv_features3,
+//        "\020"
+//        "\001MWAIT"             /* MWAIT */
+//        "\002DEBUG"             /* guest debug support */
+//        "\003PERFMON"   /* performance monitor */
+//        "\004PCPUDPE"   /* physical CPU dynamic partition event */
+//        "\005XMMHC"             /* hypercall input through XMM regs */
+//        "\006IDLE"              /* guest idle support */
+//        "\007SLEEP"             /* hypervisor sleep support */
+//        "\010NUMA"              /* NUMA distance query support */
+//        "\011TMFREQ"    /* timer frequency query (TSC, LAPIC) */
+//        "\012SYNCMC"    /* inject synthetic machine checks */
+//        "\013CRASH"             /* MSRs for guest crash */
+//        "\014DEBUGMSR"  /* MSRs for guest debug */
+//        "\015NPIEP"             /* NPIEP */
+//        "\016HVDIS");   /* disabling hypervisor */
 
     regs = processor::cpuid(CPUID_LEAF_HV_RECOMMENDS);
     hyperv_recommends = regs.a;
-    if (bootverbose)
-        printf("  Recommends: %08x %08x\n", regs.a, regs.b);
+//    if (bootverbose)
+//        printf("  Recommends: %08x %08x\n", regs.a, regs.b);
 
     regs = processor::cpuid(CPUID_LEAF_HV_LIMITS);
-    if (bootverbose) {
-        printf("  Limits: Vcpu:%d Lcpu:%d Int:%d\n",
-               regs.a, regs.b, regs.c);
-    }
+//    if (bootverbose) {
+//        printf("  Limits: Vcpu:%d Lcpu:%d Int:%d\n",
+//               regs.a, regs.b, regs.c);
+//    }
 
     if (maxleaf >= CPUID_LEAF_HV_HWFEATURES) {
         regs = processor::cpuid(CPUID_LEAF_HV_HWFEATURES);
-        if (bootverbose) {
-            printf("  HW Features: %08x, AMD: %08x\n",
-                  regs.a, regs.d);
-        }
+//        if (bootverbose) {
+//            printf("  HW Features: %08x, AMD: %08x\n",
+//                  regs.a, regs.d);
+//        }
     }
 
     return (true);
@@ -252,7 +252,8 @@ hyperv_init(void *dummy __unused)
 
     if (hyperv_features & CPUID_HV_MSR_TIME_REFCNT) {
         /* Register Hyper-V timecounter */
-        tc_init(&hyperv_timecounter);
+        //tc_init(&hyperv_timecounter);
+        hyperv_timecounter.tc_flags = 0;
 
         /*
          * Install 64 bits timecounter method for other modules

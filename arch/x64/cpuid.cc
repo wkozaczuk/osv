@@ -9,6 +9,8 @@
 #include "processor.hh"
 #include "xen.hh"
 
+bool hyperv_identify(void);
+
 namespace processor {
 
 const features_type& features()
@@ -111,10 +113,20 @@ void process_xen_bits(features_type &features)
 
 void process_cpuid(features_type& features)
 {
+    bool hyperv_identified = false;
+
     for (unsigned i = 0; i < nr_cpuid_bits; ++i) {
         process_cpuid_bit(features, cpuid_bits[i]);
     }
+    debug_early("--> In process_cpuid\n");
     process_xen_bits(features);
+    hyperv_identified = hyperv_identify();
+    debug_early_u64("--> On Hyper/V? - ", static_cast<unsigned long long>(hyperv_identified));
+    debug_early("--> After hyperv_identify()\n");
+
+    if(hyperv_identified) {
+        features.hyperv_clocksource = true;
+    }
 }
 
 }

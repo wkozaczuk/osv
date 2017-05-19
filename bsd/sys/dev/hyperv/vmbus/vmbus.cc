@@ -645,7 +645,7 @@ vmbus_handle_intr1(struct vmbus_softc *sc, struct trapframe *frame, int cpu)
     if (msg->msg_type == HYPERV_MSGTYPE_TIMER_EXPIRED) {
         msg->msg_type = HYPERV_MSGTYPE_NONE;
 
-        vmbus_et_intr(frame);
+        //vmbus_et_intr(frame);
 
         /*
          * Make sure the write to msg_type (i.e. set to
@@ -901,15 +901,16 @@ vmbus_intr_setup(struct vmbus_softc *sc)
 
         /* Allocate an interrupt counter for Hyper-V interrupt */
         snprintf(buf, sizeof(buf), "cpu%d:hyperv", cpu->id);
-        intrcnt_add(buf, VMBUS_PCPU_PTR(sc, intr_cnt, cpu->id));
+        //intrcnt_add(buf, VMBUS_PCPU_PTR(sc, intr_cnt, cpu->id));
 
         /*
          * Setup taskqueue to handle events.  Task will be per-
          * channel.
          */
+        /*
         VMBUS_PCPU_GET(sc, event_tq, cpu->id) = taskqueue_create_fast(
             "hyperv event", M_WAITOK, taskqueue_thread_enqueue,
-            VMBUS_PCPU_PTR(sc, event_tq, cpu->id));
+            VMBUS_PCPU_PTR(sc, event_tq, cpu->id));*/
         CPU_SETOF(cpu->id, &cpu_mask);
         /*
         taskqueue_start_threads_cpuset( // Essentially requires version that would start a thread pinned to this cpu
@@ -919,9 +920,10 @@ vmbus_intr_setup(struct vmbus_softc *sc)
         /*
          * Setup tasks and taskqueues to handle messages.
          */
+        /*
         VMBUS_PCPU_GET(sc, message_tq, cpu->id) = taskqueue_create_fast(
             "hyperv msg", M_WAITOK, taskqueue_thread_enqueue,
-            VMBUS_PCPU_PTR(sc, message_tq, cpu->id));
+            VMBUS_PCPU_PTR(sc, message_tq, cpu->id)); */
         CPU_SETOF(cpu->id, &cpu_mask);
         /* FIXME:
         taskqueue_start_threads_cpuset(
