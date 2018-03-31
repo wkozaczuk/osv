@@ -172,8 +172,9 @@ __dprintf(const char *file, const char *func, int line, const char *fmt, ...)
 	 * arg2 = line number
 	 * arg3 = message
 	 */
-	DTRACE_PROBE4(zfs__dprintf,
-	    char *, newfile, char *, func, int, line, char *, buf);
+	//DTRACE_PROBE4(zfs__dprintf,
+	//    char *, newfile, char *, func, int, line, char *, buf);
+        printf( "-->ZFS: %s:%d %s %s", newfile, line, func, buf);
 }
 
 static void

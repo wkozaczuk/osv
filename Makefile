@@ -753,6 +753,7 @@ zfs += bsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs/lz4.o
 solaris += $(zfs)
 
 $(zfs:%=$(out)/%): CFLAGS+= \
+        -DDEBUG=1 -DZFS_DEBUG=1 \
 	-DBUILDING_ZFS \
 	-Wno-array-bounds \
 	-Ibsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs \

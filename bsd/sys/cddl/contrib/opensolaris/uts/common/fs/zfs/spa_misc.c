@@ -237,7 +237,7 @@ int spa_mode_global;
 
 #ifdef ZFS_DEBUG
 /* Everything except dprintf is on by default in debug builds */
-int zfs_flags = ~ZFS_DEBUG_DPRINTF;
+int zfs_flags = ZFS_DEBUG_DPRINTF;
 #else
 int zfs_flags = 0;
 #endif

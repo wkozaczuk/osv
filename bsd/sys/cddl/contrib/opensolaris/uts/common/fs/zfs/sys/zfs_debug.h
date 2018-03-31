@@ -62,6 +62,7 @@ extern void __dprintf(const char *file, const char *func,
 #define	dprintf(...) \
 	if (zfs_flags & ZFS_DEBUG_DPRINTF) \
 		__dprintf(__FILE__, __func__, __LINE__, __VA_ARGS__)
+	//printf(__VA_ARGS__)
 #else
 #define	dprintf(...) ((void)0)
 #endif /* ZFS_DEBUG */
