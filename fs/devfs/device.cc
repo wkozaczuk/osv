@@ -198,6 +198,7 @@ void device_register(struct device *dev, const char *name, int flags)
 struct device *
 device_create(struct driver *drv, const char *name, int flags)
 {
+    printf("Device %s creating ...\n", name);
 	struct device *dev;
 	size_t len;
 
@@ -332,11 +333,13 @@ device_open(const char *name, int mode, struct device **devp)
 	sched_lock();
 	if ((dev = device_lookup(name)) == NULL) {
 		sched_unlock();
+                printf("Wow-> device %s NOT found\n", name);
 		return ENXIO;
 	}
 	error = device_reference(dev);
 	if (error) {
 		sched_unlock();
+                printf("Wow-> device %s could not be referenced\n", name);
 		return error;
 	}
 	sched_unlock();

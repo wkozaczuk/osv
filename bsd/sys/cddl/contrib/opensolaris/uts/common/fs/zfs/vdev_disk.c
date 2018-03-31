@@ -54,6 +54,7 @@ static int
 vdev_disk_open(vdev_t *vd, uint64_t *psize, uint64_t *max_psize,
     uint64_t *ashift)
 {
+        dprintf("--> In\n");
 	struct vdev_disk *dvd;
 	int error;
 
@@ -62,6 +63,7 @@ vdev_disk_open(vdev_t *vd, uint64_t *psize, uint64_t *max_psize,
 	 */
 	if (vd->vdev_path == NULL || vd->vdev_path[0] != '/') {
 		vd->vdev_stat.vs_aux = VDEV_AUX_BAD_LABEL;
+                dprintf("--> Error\n");
 		return (EINVAL);
 	}
 
@@ -69,11 +71,14 @@ vdev_disk_open(vdev_t *vd, uint64_t *psize, uint64_t *max_psize,
 	 * Open the device if it's not currently open, otherwise just update
 	 * the physical size of the device.
 	 */
+        dprintf("--> Opening device %s\n", vd->vdev_path);
 	if (vd->vdev_tsd == NULL) {
 		dvd = vd->vdev_tsd = kmem_zalloc(sizeof(struct vdev_disk), KM_SLEEP);
 
-		error = device_open(vd->vdev_path + 5, DO_RDWR, &dvd->device);
+		//error = device_open(vd->vdev_path + 5, DO_RDWR, &dvd->device);
+		error = device_open("vblk0.1", DO_RDWR, &dvd->device);
 		if (error) {
+                        dprintf("--> Error\n");
 			vd->vdev_stat.vs_aux = VDEV_AUX_OPEN_FAILED;
 			return error;
 		}

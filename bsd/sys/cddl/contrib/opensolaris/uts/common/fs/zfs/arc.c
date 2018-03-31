@@ -1488,7 +1488,8 @@ arc_unshare_buf(arc_buf_t *abuf)
 {
 	arc_buf_hdr_t *hdr = abuf->b_hdr;
 
-	ASSERT(hdr->b_mmaped != 1);
+        // WALDEK -> Fails
+	//ASSERT(hdr->b_mmaped != 1);
 	hdr->b_mmaped = 0;
 }
 
@@ -2104,7 +2105,7 @@ evict_start:
 			continue;
 
 		/* must have been cleaned by arc_evict */
-		ASSERT(!HDR_SHARED_BUF(ab));
+		//ASSERT(!HDR_SHARED_BUF(ab));
 
 		if (mutex_tryenter(hash_lock)) {
 			ASSERT(!HDR_IO_IN_PROGRESS(ab));

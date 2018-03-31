@@ -1081,6 +1081,7 @@ vdev_uses_zvols(vdev_t *vd)
 void
 vdev_open_children(vdev_t *vd)
 {
+        dprintf("In\n");
 	taskq_t *tq;
 	int children = vd->vdev_children;
 
@@ -1145,8 +1146,9 @@ vdev_open(vdev_t *vd)
 		vdev_set_state(vd, B_TRUE, VDEV_STATE_OFFLINE, VDEV_AUX_NONE);
 		return (ENXIO);
 	}
-
+ 
 	error = vd->vdev_ops->vdev_op_open(vd, &osize, &max_osize, &ashift);
+        dprintf("vdev_op_open %d\n", error);
 
 	/*
 	 * Reset the vdev_reopening flag so that we actually close
@@ -1167,6 +1169,7 @@ vdev_open(vdev_t *vd)
 	}
 
 	vd->vdev_removed = B_FALSE;
+        dprintf("hola\n");
 
 	/*
 	 * Recheck the faulted flag now that we have confirmed that
@@ -1180,6 +1183,7 @@ vdev_open(vdev_t *vd)
 		    vd->vdev_label_aux);
 		return (ENXIO);
 	}
+        dprintf("hola\n");
 
 	if (vd->vdev_degraded) {
 		ASSERT(vd->vdev_children == 0);
@@ -1195,6 +1199,7 @@ vdev_open(vdev_t *vd)
 	if (vd->vdev_ishole || vd->vdev_ops == &vdev_missing_ops)
 		return (0);
 
+        dprintf("hola\n");
 	for (int c = 0; c < vd->vdev_children; c++) {
 		if (vd->vdev_child[c]->vdev_state != VDEV_STATE_HEALTHY) {
 			vdev_set_state(vd, B_TRUE, VDEV_STATE_DEGRADED,
@@ -1238,6 +1243,7 @@ vdev_open(vdev_t *vd)
 		    VDEV_AUX_BAD_LABEL);
 		return (EINVAL);
 	}
+        dprintf("hola\n");
 
 	if (vd->vdev_asize == 0) {
 		/*
@@ -1280,6 +1286,7 @@ vdev_open(vdev_t *vd)
 		    VDEV_AUX_ERR_EXCEEDED);
 		return (error);
 	}
+        dprintf("hola\n");
 
 	/*
 	 * If a leaf vdev has a DTL, and seems healthy, then kick off a

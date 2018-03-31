@@ -2096,6 +2096,7 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
     spa_load_state_t state, spa_import_type_t type, boolean_t mosconfig,
     char **ereport)
 {
+        dprintf("Starting\n");
 	int error = 0;
 	nvlist_t *nvroot = NULL;
 	nvlist_t *label;
@@ -2154,6 +2155,7 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	spa_config_enter(spa, SCL_ALL, FTAG, RW_WRITER);
 	error = vdev_open(rvd);
 	spa_config_exit(spa, SCL_ALL, FTAG);
+        dprintf("vdev_open: %d\n", error);
 	if (error != 0)
 		return (error);
 
@@ -2174,6 +2176,7 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		spa_config_enter(spa, SCL_ALL, FTAG, RW_WRITER);
 		error = vdev_validate(rvd, mosconfig);
 		spa_config_exit(spa, SCL_ALL, FTAG);
+                dprintf("vdev_validate: %d\n", error);
 
 		if (error != 0)
 			return (error);
@@ -2190,6 +2193,7 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	/*
 	 * If we weren't able to find a single valid uberblock, return failure.
 	 */
+        dprintf("AFTER vdev_uberblock_load\n");
 	if (ub->ub_txg == 0) {
 		nvlist_free(label);
 		return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA, ENXIO));
@@ -2210,9 +2214,11 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		 * If we weren't able to find what's necessary for reading the
 		 * MOS in the label, return failure.
 		 */
+                dprintf("point\n");
 		if (label == NULL || nvlist_lookup_nvlist(label,
 		    ZPOOL_CONFIG_FEATURES_FOR_READ, &features) != 0) {
 			nvlist_free(label);
+                        dprintf("point\n");
 			return (spa_vdev_err(rvd, VDEV_AUX_CORRUPT_DATA,
 			    ENXIO));
 		}
@@ -2374,6 +2380,7 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 			    ENOTSUP));
 		}
 	}
+        dprintf("point\n");
 
 	spa->spa_is_initializing = B_TRUE;
 	error = dsl_pool_open(spa->spa_dsl_pool);
@@ -2860,6 +2867,7 @@ spa_open_common(const char *pool, spa_t **spapp, void *tag, nvlist_t *nvpolicy,
 	if ((spa = spa_lookup(pool)) == NULL) {
 		if (locked)
 			mutex_exit(&spa_namespace_lock);
+                dprintf("spa_open_common: spa_lookup FAILED\n");
 		return (ENOENT);
 	}
 
@@ -2895,6 +2903,7 @@ spa_open_common(const char *pool, spa_t **spapp, void *tag, nvlist_t *nvpolicy,
 			spa_remove(spa);
 			if (locked)
 				mutex_exit(&spa_namespace_lock);
+                        dprintf("spa_open_common: EBADF\n");
 			return (ENOENT);
 		}
 
@@ -2917,6 +2926,7 @@ spa_open_common(const char *pool, spa_t **spapp, void *tag, nvlist_t *nvpolicy,
 			if (locked)
 				mutex_exit(&spa_namespace_lock);
 			*spapp = NULL;
+                        dprintf("spa_open_common: ERROR: %d\n", error);
 			return (error);
 		}
 	}
