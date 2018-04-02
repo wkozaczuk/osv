@@ -75,8 +75,8 @@ vdev_disk_open(vdev_t *vd, uint64_t *psize, uint64_t *max_psize,
 	if (vd->vdev_tsd == NULL) {
 		dvd = vd->vdev_tsd = kmem_zalloc(sizeof(struct vdev_disk), KM_SLEEP);
 
-		//error = device_open(vd->vdev_path + 5, DO_RDWR, &dvd->device);
-		error = device_open("vblk0.1", DO_RDWR, &dvd->device);
+		error = device_open(vd->vdev_path + 5, DO_RDWR, &dvd->device);
+		//error = device_open("vblk0.1", DO_RDWR, &dvd->device);
 		if (error) {
                         dprintf("--> Error\n");
 			vd->vdev_stat.vs_aux = VDEV_AUX_OPEN_FAILED;

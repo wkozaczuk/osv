@@ -1783,6 +1783,7 @@ do_import(nvlist_t *config, const char *newname, const char *mntopts,
 	uint64_t state;
 	uint64_t version;
 
+        printf("-> IMPORTING %s with options [%s]...\n", newname, mntopts );
 	verify(nvlist_lookup_string(config, ZPOOL_CONFIG_POOL_NAME,
 	    &name) == 0);
 
@@ -1922,6 +1923,10 @@ zpool_do_import(int argc, char **argv)
 	char *cachefile = NULL;
 	importargs_t idata = { 0 };
 	char *endptr;
+
+        printf("-> IMPORTING ...\n" );
+        for( int __i = 0; __i < argc; __i++)
+            printf("-->>>>>> %s\n", argv[__i]);
 
 	/* check options */
 	while ((c = getopt(argc, argv, ":aCc:d:DEfFmnNo:rR:T:VX")) != -1) {
@@ -2109,7 +2114,9 @@ zpool_do_import(int argc, char **argv)
 	idata.guid = searchguid;
 	idata.cachefile = cachefile;
 
+        printf("Before search_import: poolname:%s\n", idata.poolname);
 	pools = zpool_search_import(g_zfs, &idata);
+        printf("After search_import: poolname:%s\n", idata.poolname);
 
 	if (pools != NULL && idata.exists &&
 	    (argc == 1 || strcmp(argv[0], argv[1]) == 0)) {
@@ -3073,6 +3080,7 @@ zpool_get_vdev_by_name(nvlist_t *nv, char *name)
 	uint_t c, children;
 	nvlist_t *match;
 	char *path;
+        dprintf("-> Getting vdev %s by name\n", name );
 
 	if (nvlist_lookup_nvlist_array(nv, ZPOOL_CONFIG_CHILDREN,
 	    &child, &children) != 0) {

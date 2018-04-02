@@ -59,6 +59,7 @@ vdev_file_open(vdev_t *vd, uint64_t *psize, uint64_t *max_psize,
 	vdev_file_t *vf;
 	struct file *fp;
 	int error;
+        dprintf("ALE ... \n");
 
 	/*
 	 * We must have a pathname, and it must be absolute.

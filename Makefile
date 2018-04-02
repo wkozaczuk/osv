@@ -2022,7 +2022,7 @@ $(libzfs-objects): CFLAGS += -D_GNU_SOURCE
 
 $(libzfs-objects): CFLAGS += -Wno-switch -D__va_list=__builtin_va_list '-DTEXT_DOMAIN=""' \
 			-Wno-maybe-uninitialized -Wno-unused-variable -Wno-unknown-pragmas -Wno-unused-function \
-			-D_OPENSOLARIS_SYS_UIO_H_
+			-D_OPENSOLARIS_SYS_UIO_H_ -DDEBUG=1 -DZFS_DEBUG=1
 
 # Note: zfs_prop.c and zprop_common.c are also used by the kernel, thus the manual targets.
 $(out)/bsd/cddl/contrib/opensolaris/lib/libzfs/common/zfs_prop.o: bsd/sys/cddl/contrib/opensolaris/common/zfs/zfs_prop.c | generated-headers

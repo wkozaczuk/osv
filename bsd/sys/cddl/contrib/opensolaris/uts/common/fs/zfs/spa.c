@@ -2155,7 +2155,7 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	spa_config_enter(spa, SCL_ALL, FTAG, RW_WRITER);
 	error = vdev_open(rvd);
 	spa_config_exit(spa, SCL_ALL, FTAG);
-        dprintf("vdev_open: %d\n", error);
+        dprintf("vdev_open: ERROR %d\n", error);
 	if (error != 0)
 		return (error);
 
@@ -2176,7 +2176,7 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 		spa_config_enter(spa, SCL_ALL, FTAG, RW_WRITER);
 		error = vdev_validate(rvd, mosconfig);
 		spa_config_exit(spa, SCL_ALL, FTAG);
-                dprintf("vdev_validate: %d\n", error);
+                dprintf("vdev_validate ERROR: %d\n", error);
 
 		if (error != 0)
 			return (error);
@@ -2867,7 +2867,7 @@ spa_open_common(const char *pool, spa_t **spapp, void *tag, nvlist_t *nvpolicy,
 	if ((spa = spa_lookup(pool)) == NULL) {
 		if (locked)
 			mutex_exit(&spa_namespace_lock);
-                dprintf("spa_open_common: spa_lookup FAILED\n");
+                dprintf("spa_open_common: spa_lookup of [%s] FAILED\n", pool);
 		return (ENOENT);
 	}
 
@@ -4790,6 +4790,7 @@ spa_vdev_add(spa_t *spa, nvlist_t *nvroot)
 int
 spa_vdev_attach(spa_t *spa, uint64_t guid, nvlist_t *nvroot, int replacing)
 {
+        dprintf("$$$ in spa_vdev_attach\n");
 	uint64_t txg, dtl_max_txg;
 	vdev_t *rvd = spa->spa_root_vdev;
 	vdev_t *oldvd, *newvd, *newrootvd, *pvd, *tvd;

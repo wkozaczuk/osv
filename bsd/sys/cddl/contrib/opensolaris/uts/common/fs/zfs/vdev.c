@@ -359,6 +359,7 @@ vdev_alloc(spa_t *spa, vdev_t **vdp, nvlist_t *nv, vdev_t *parent, uint_t id,
 
 	if ((ops = vdev_getops(type)) == NULL)
 		return (EINVAL);
+        dprintf("Allocating vdev of type %s\n", type);
 
 	/*
 	 * If this is a load, get the vdev guid from the nvlist.
@@ -451,6 +452,8 @@ vdev_alloc(spa_t *spa, vdev_t **vdp, nvlist_t *nv, vdev_t *parent, uint_t id,
 		vd->vdev_physpath = spa_strdup(vd->vdev_physpath);
 	if (nvlist_lookup_string(nv, ZPOOL_CONFIG_FRU, &vd->vdev_fru) == 0)
 		vd->vdev_fru = spa_strdup(vd->vdev_fru);
+        dprintf( "vdev_path: %s, vdev_devid: %s, vdev_physpath: %s\n",
+           vd->vdev_path, vd->vdev_devid, vd->vdev_physpath);  
 
 	/*
 	 * Set the whole_disk property.  If it's not specified, leave the value
@@ -1081,9 +1084,9 @@ vdev_uses_zvols(vdev_t *vd)
 void
 vdev_open_children(vdev_t *vd)
 {
-        dprintf("In\n");
 	taskq_t *tq;
 	int children = vd->vdev_children;
+        dprintf("In - children: %d\n", children);
 
 	/*
 	 * in order to handle pools on top of zvols, do the opens
@@ -1148,7 +1151,7 @@ vdev_open(vdev_t *vd)
 	}
  
 	error = vd->vdev_ops->vdev_op_open(vd, &osize, &max_osize, &ashift);
-        dprintf("vdev_op_open %d\n", error);
+        dprintf("vdev_op_open ERROR %d with osize=%d\n", error, osize);
 
 	/*
 	 * Reset the vdev_reopening flag so that we actually close
@@ -1215,6 +1218,7 @@ vdev_open(vdev_t *vd)
 		if (osize < SPA_MINDEVSIZE) {
 			vdev_set_state(vd, B_TRUE, VDEV_STATE_CANT_OPEN,
 			    VDEV_AUX_TOO_SMALL);
+                        dprintf("OVERFLOW 1\n");
 			return (EOVERFLOW);
 		}
 		psize = osize;
@@ -1226,6 +1230,7 @@ vdev_open(vdev_t *vd)
 		    (VDEV_LABEL_START_SIZE + VDEV_LABEL_END_SIZE)) {
 			vdev_set_state(vd, B_TRUE, VDEV_STATE_CANT_OPEN,
 			    VDEV_AUX_TOO_SMALL);
+                        dprintf("OVERFLOW 2\n");
 			return (EOVERFLOW);
 		}
 		psize = 0;
@@ -1238,12 +1243,13 @@ vdev_open(vdev_t *vd)
 	/*
 	 * Make sure the allocatable size hasn't shrunk.
 	 */
+        dprintf("HOLA 1\n");
 	if (asize < vd->vdev_min_asize) {
 		vdev_set_state(vd, B_TRUE, VDEV_STATE_CANT_OPEN,
 		    VDEV_AUX_BAD_LABEL);
 		return (EINVAL);
 	}
-        dprintf("hola\n");
+        dprintf("HOLA 2\n");
 
 	if (vd->vdev_asize == 0) {
 		/*

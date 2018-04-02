@@ -1047,6 +1047,7 @@ zpool_open_func(void *arg)
 
 	if (rn->rn_nozpool)
 		return;
+        printf("zpool_open_func: trying %s\n", rn->rn_name);
 	if ((fd = openat64(rn->rn_dfd, rn->rn_name, O_RDONLY)) < 0) {
 		/* symlink to a device that's no longer there */
 		if (errno == ENOENT)
@@ -1076,6 +1077,7 @@ zpool_open_func(void *arg)
 		check_slices(rn->rn_avl, fd, rn->rn_name);
 	}
 
+        printf("zpool_open_func: reading label\n");
 	if ((zpool_read_label(fd, &config)) != 0) {
 		(void) close(fd);
 		(void) no_memory(rn->rn_hdl);
@@ -1130,6 +1132,7 @@ zpool_clear_label(int fd)
 static nvlist_t *
 zpool_find_import_impl(libzfs_handle_t *hdl, importargs_t *iarg)
 {
+        printf( "zpool_find_import_impl\n" );
 	int i, dirs = iarg->paths;
 	DIR *dirp = NULL;
 	struct dirent64 *dp;
@@ -1234,6 +1237,7 @@ zpool_find_import_impl(libzfs_handle_t *hdl, importargs_t *iarg)
 		 */
 		while ((dp = readdir64(dirp)) != NULL) {
 			const char *name = dp->d_name;
+                        printf("Looking at ... [%s] of %s\n", name, rdsk );
 			if (name[0] == '.' &&
 			    (name[1] == 0 || (name[1] == '.' && name[2] == 0)))
 				continue;

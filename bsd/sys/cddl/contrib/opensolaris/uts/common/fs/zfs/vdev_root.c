@@ -57,7 +57,7 @@ static int
 vdev_root_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
     uint64_t *ashift)
 {
-        dprintf("--> In\n");
+        dprintf("--> Opening at vdev_path:[%s]\n", vd->vdev_path);
 	int lasterror = 0;
 	int numerrors = 0;
 

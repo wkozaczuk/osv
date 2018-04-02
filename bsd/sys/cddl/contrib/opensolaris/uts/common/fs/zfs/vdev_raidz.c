@@ -1450,6 +1450,7 @@ vdev_raidz_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
 	int c;
 	int lasterror = 0;
 	int numerrors = 0;
+        dprintf("Ale raidze\n");
 
 	ASSERT(nparity > 0);
 
