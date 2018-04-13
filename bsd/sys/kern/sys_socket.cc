@@ -66,6 +66,7 @@ socket_file::socket_file(unsigned flags, socket* _so)
     , so(_so)
 {
     so->fp = this;
+    debug("---> Created socket_file\n");
 }
 
 socket_file::socket_file(unsigned flags, unique_ptr<socket, socket_closer>&& so)

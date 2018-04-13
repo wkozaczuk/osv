@@ -37,7 +37,8 @@
 // server() opens a listening TCP server on port 1234, accepts one connection,
 // and writes to it with a large optionally non-blocking write()
 static constexpr short LISTEN_TCP_PORT = 1234;
-static constexpr int nlines = 10000;
+//static constexpr int nlines = 10000;
+static constexpr int nlines = 10;
 static int server(bool nonblock)
 {
     int listenfd;
@@ -115,13 +116,18 @@ static int client()
 
     constexpr int bufsize = 4096;
     char buf[bufsize];
+    char all[nlines * 60 + 1];
     int size = 0;
     int r;
     while ((r = read(sock, buf, bufsize)) > 0) {
+        memcpy(all + size, buf, r);
         size += r;
     }
     close(sock);
-    printf("Client total: read %d\n", size);
+    printf("Client total: read %d with last bytes read count: %d\n", size, r);
+    all[nlines * 60] = 0;
+    //if(size != (nlines * 60))
+        printf("Client received: [\n%s]", all );
     return size;
 }
 
@@ -148,7 +154,7 @@ static void report(bool ok, const char* msg)
 int main(int argc, char **argv)
 {
     report(test(false), "Test with blocking write()");
-    report(test(true), "Test with non-blocking write()");
+    //report(test(true), "Test with non-blocking write()");
     printf("SUMMARY: %d tests, %d failures\n", tests, fails);
     return fails;
 }
