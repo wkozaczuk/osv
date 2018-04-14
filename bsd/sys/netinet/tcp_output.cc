@@ -223,6 +223,7 @@ static inline bool tcp_tso_send_now(struct tcpcb *tp, long len,
 int
 tcp_output(struct tcpcb *tp)
 {
+	debugf("|-----> tcp_output: START\n");
 	struct socket *so = tp->t_inpcb->inp_socket;
 	long len, recwin, sendwin;
 	int off, flags, error = 0;	/* Keep compiler happy */
@@ -283,6 +284,8 @@ again:
 	tso = 0;
 	mtu = 0;
 	off = tp->snd_nxt - tp->snd_una;
+    debugf("|-----> tcp_output: off 1 = %d, tp->snd_nxt = %ld, tp->snd_una = %ld\n",
+           off, tp->snd_nxt, tp->snd_una);
 	sendwin = bsd_min(tp->snd_wnd, tp->snd_cwnd);
 
 	flags = tcp_outflags[tp->get_state()];
@@ -328,12 +331,15 @@ again:
 				/* Can rexmit part of the current hole */
 				len = ((long)ulmin(cwin,
 						   tp->snd_recover - p->rxmit));
+                debugf("|-----> tcp_output: 1 len = %d\n", len);
 			}
 		} else {
 			trace_tcp_output_ret(14);
 			len = ((long)ulmin(cwin, p->end - p->rxmit));
+            debugf("|-----> tcp_output: 2 len = %d\n", len);
 		}
 		off = p->rxmit - tp->snd_una;
+        debugf("|-----> tcp_output: off 2 = %d\n", off);
 		KASSERT(off >= 0,("%s: sack block to the left of una : %d",
 		    __func__, off));
 		if (len > 0) {
@@ -344,6 +350,7 @@ again:
 			    bsd_min(len, tp->t_maxseg));
 		}
 	}
+    debugf("|-----> tcp_output: Before after_sack_rexmit with len = %d\n", len);
 after_sack_rexmit:
 	/*
 	 * Get standard flags, and add SYN or FIN if requested by 'hidden'
@@ -407,6 +414,8 @@ after_sack_rexmit:
 		if (sack_bytes_rxmt == 0) {
 			trace_tcp_output_ret(15);
 			len = ((long)ulmin(so->so_snd.sb_cc, sendwin) - off);
+            debugf("|-----> tcp_output: 3 len = %d, sb_cc = %d, sendwin = %d, off = %d\n",
+                   len, so->so_snd.sb_cc, sendwin, off);
 		} else {
 			long cwin = 0;
 
@@ -418,6 +427,7 @@ after_sack_rexmit:
 			trace_tcp_output_ret(16);
 			len = ((long)ulmin(so->so_snd.sb_cc, tp->snd_wnd) 
 			       - off);
+            debugf("|-----> tcp_output: 4 len = %d\n", len);
 			/*
 			 * Don't remove this (len > 0) check !
 			 * We explicitly check for len > 0 here (although it 
@@ -434,6 +444,7 @@ after_sack_rexmit:
 					cwin = 0;
 				trace_tcp_output_ret(17);
 				len = lmin(len, cwin);
+                debugf("|-----> tcp_output: 5 len = %d\n", len);
 			}
 		}
 	}
@@ -484,6 +495,7 @@ after_sack_rexmit:
 
 	/* len will be >= 0 after this point. */
 	KASSERT(len >= 0, ("[%s:%d]: len < 0", __func__, __LINE__));
+    debugf("|-----> tcp_output: After KASSERT with len = %d\n", len);
 
 	/*
 	 * Automatic sizing of send socket buffer.  Often the send buffer
@@ -771,7 +783,7 @@ just_return:
 	return (0);
 
 send:
-        debugf("|---> tcp_output: send\n");
+    debugf("|------> tcp_output: send\n");
 	SOCK_LOCK_ASSERT(so);
 	/*
 	 * Before ESTABLISHED, force sending of initial options
@@ -929,6 +941,7 @@ send:
 	 * the template for sends on this connection.
 	 */
 	if (len) {
+        debugf("|------> tcp_output: sending DATA segment of size = %d\n", len);
 		struct mbuf *mb;
 		u_int moff;
 
@@ -994,6 +1007,7 @@ send:
 		if (off + len == so->so_snd.sb_cc)
 			flags |= TH_PUSH;
 	} else {
+        debugf("|------> tcp_output: sending NON-data segment\n");
 		if (tp->t_flags & TF_ACKNOW)
 			TCPSTAT_INC(tcps_sndacks);
 		else if (flags & (TH_SYN|TH_FIN|TH_RST))
