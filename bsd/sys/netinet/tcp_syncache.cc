@@ -582,6 +582,7 @@ void syncache_unreach(struct in_conninfo *inc, struct tcphdr *th)
 static struct socket *
 syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 {
+        debugf("*** in syncache_socket\n");
 	struct inpcb *inp = NULL;
 	struct socket *so;
 	struct tcpcb *tp;

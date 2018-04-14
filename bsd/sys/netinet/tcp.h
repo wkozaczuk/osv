@@ -41,7 +41,7 @@
 
 class tcp_seq {
 public:
-	tcp_seq() {}
+	tcp_seq() { _raw = 0;}
 	explicit tcp_seq(u_int32_t raw) : _raw(raw) {}
 	tcp_seq& operator=(const tcp_seq&) = default;
 	u_int32_t raw() const { return _raw; }
