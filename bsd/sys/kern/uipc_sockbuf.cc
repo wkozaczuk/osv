@@ -199,6 +199,10 @@ sblock(socket* so, struct sockbuf *sb, int flags)
 
 	if (flags & SBL_WAIT) {
 		sb->sb_iolock.lock(SOCK_MTX_REF(so));
+                if( so->so_rcv.sb_mb )
+                  debugf("<----> sblock(), mh_len = %d\n", so->so_rcv.sb_mb->m_hdr.mh_len);
+                else
+                  debugf("<----> sblock(), sb_mb empty\n");
 		return (0);
 	} else {
 		if (!sb->sb_iolock.try_lock(SOCK_MTX_REF(so)))

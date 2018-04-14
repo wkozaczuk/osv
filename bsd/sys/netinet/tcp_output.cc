@@ -168,6 +168,7 @@ static inline bool tcp_tso_send_now(struct tcpcb *tp, long len,
 				    long sendwin)
 {
 	DEBUG_ASSERT(len > tp->t_maxseg, "Called for non-TSO case");
+        debugf("|---> tcp_tso_send_now: sending %d\n", len);
 
 	// TSO_FLUSH fired - send!
 	if (tp->t_flags & TF_TSO_NOW) {
@@ -770,6 +771,7 @@ just_return:
 	return (0);
 
 send:
+        debugf("|---> tcp_output: send\n");
 	SOCK_LOCK_ASSERT(so);
 	/*
 	 * Before ESTABLISHED, force sending of initial options

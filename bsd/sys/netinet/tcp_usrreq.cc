@@ -759,6 +759,7 @@ tcp_usr_send(struct socket *so, int flags, struct mbuf *m,
 	int isipv6;
 #endif
 	TCPDEBUG0;
+        debug( "|---> tcp_usr_send: mbuf length=%d\n", m->m_hdr.mh_len);
 
 	/*
 	 * We require the pcbinfo lock if we will close the socket as part of

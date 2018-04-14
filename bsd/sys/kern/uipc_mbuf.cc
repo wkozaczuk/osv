@@ -1823,6 +1823,7 @@ m_uiotombuf(struct uio *uio, int how, int len, int align, int min_size,
 		total = bsd_min(uio->uio_resid, len);
 	else
 		total = uio->uio_resid;
+        debugf("|--->  m_uiotombuf copying %d bytes\n", total);
 
 	/*
 	 * The smallest unit returned by m_getm2() is a single mbuf

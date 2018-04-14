@@ -38,7 +38,7 @@
 // and writes to it with a large optionally non-blocking write()
 static constexpr short LISTEN_TCP_PORT = 1234;
 //static constexpr int nlines = 10000;
-static constexpr int nlines = 10;
+static constexpr int nlines = 1;
 static int server(bool nonblock)
 {
     int listenfd;
