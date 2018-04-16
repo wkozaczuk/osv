@@ -249,6 +249,7 @@ tcp_twstart(struct tcpcb *tp)
 		tw->ts_offset = 0;
 	}
 
+	debugf("WALDEK 7\n");
 	tw->snd_nxt = tp->snd_nxt;
 	tw->rcv_nxt = tp->rcv_nxt;
 	tw->iss     = tp->iss;

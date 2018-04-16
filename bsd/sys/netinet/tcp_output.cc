@@ -1252,6 +1252,7 @@ send:
 		/*
 		 * Advance snd_nxt over sequence space of this segment.
 		 */
+		debugf("WALDEK 1\n");
 		if (flags & (TH_SYN|TH_FIN)) {
 			if (flags & TH_SYN)
 				tp->snd_nxt++;
@@ -1263,6 +1264,7 @@ send:
 		if (sack_rxmit)
 			goto timer;
 		tp->snd_nxt += len;
+		debugf("WALDEK 2\n");
 		if (tp->snd_nxt > tp->snd_max) {
 			tp->snd_max = tp->snd_nxt;
 			/*
