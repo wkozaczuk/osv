@@ -225,7 +225,8 @@ static inline bool tcp_tso_send_now(struct tcpcb *tp, long len,
 int
 tcp_output(struct tcpcb *tp)
 {
-	debugf("%03d|-----> tcp_output: [%p] START\n", sched::thread::current()->id(), tp);
+	debugf("%03d|-----> tcp_output: [%p] START _______________\n", sched::thread::current()->id(), tp);
+        usleep(10 * 1000);
 	db_print_tcpcb(tp, "tcpcb", 0);
 	struct socket *so = tp->t_inpcb->inp_socket;
 	long len, recwin, sendwin;

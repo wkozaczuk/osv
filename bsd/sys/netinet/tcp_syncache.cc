@@ -584,7 +584,7 @@ void syncache_unreach(struct in_conninfo *inc, struct tcphdr *th)
 static struct socket *
 syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 {
-	debugf("%03d|-----> syncache_socket: START\n",
+	debugf("%03d|-----> syncache_socket: START _______________\n",
 		   sched::thread::current()->id());
 
 	struct inpcb *inp = NULL;

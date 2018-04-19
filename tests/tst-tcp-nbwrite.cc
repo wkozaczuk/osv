@@ -90,6 +90,7 @@ static int server(bool nonblock)
             abort();
         }
     }
+    //usleep(10 * 1000);
     auto count = write(fd, buf, size);
     close(fd);
     close(listenfd);

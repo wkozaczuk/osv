@@ -733,6 +733,7 @@ relocked:
 	 * held in this case.
 	 */
 	if (so->so_options & SO_ACCEPTCONN) {
+	        debugf("%03d|-----> tcp_input: [%p] ACCEPTing connection\n", sched::thread::current()->id(), tp);
 		struct in_conninfo inc;
 
 		KASSERT(tp->get_state() == TCPS_LISTEN, ("%s: so accepting but "
@@ -764,6 +765,7 @@ relocked:
 			 * NB: syncache_expand() doesn't unlock
 			 * inp and tcpinfo locks.
 			 */
+	                debugf("%03d|-----> tcp_input: [%p] syncache_expand\n", sched::thread::current()->id(), tp);
 			if (!syncache_expand(&inc, &to, th, &so, m)) {
 				/*
 				 * No syncache entry or ACK was not
@@ -804,6 +806,7 @@ relocked:
 			 * created socket and update the tp variable.
 			 */
 			INP_UNLOCK(inp);	/* listen socket */
+	                debugf("%03d|-----> tcp_input: [%p] socket should be in state SYN_RECEIVED\n", sched::thread::current()->id(), tp);
 			inp = sotoinpcb(so);
 			INP_LOCK(inp);		/* new connection */
 			tp = intotcpcb(inp);
@@ -816,8 +819,10 @@ relocked:
 			 * the mbuf chain.
 			 */
 			bool want_close;
+	                debugf("%03d|-----> tcp_input: [%p] BEFORE tcp_do_segment\n", sched::thread::current()->id(), tp);
 			tcp_do_segment(m, th, so, tp, drop_hdrlen, tlen,
 			    iptos, ti_locked, want_close);
+	                debugf("%03d|-----> tcp_input: [%p] AFTER tcp_do_segment\n", sched::thread::current()->id(), tp);
 			INP_INFO_UNLOCK_ASSERT(&V_tcbinfo);
 			// if tcp_close() indeed closes, it also unlocks
 			if (!want_close || tcp_close(tp)) {
@@ -1034,7 +1039,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 	thflags = th->th_flags;
 	tp->sackhint.last_sack_ack = tcp_seq(0);
 
-	debugf("%03d|-----> tcp_do_segment: [%p] START\n", sched::thread::current()->id(), tp);
+	debugf("%03d|-----> tcp_do_segment: [%p] START _______________\n", sched::thread::current()->id(), tp);
     db_print_tcpcb(tp, "tcpcb", 0);
 
 	/*

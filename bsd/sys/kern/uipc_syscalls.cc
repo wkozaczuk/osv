@@ -209,6 +209,7 @@ int
 kern_accept(int s, struct bsd_sockaddr *name,
     socklen_t *namelen, struct file **out_fp, int *out_fd)
 {
+        debugf("%03d| ---> kern_accept START _______________\n", sched::thread::current()->id());
 	struct file *headfp, *nfp = NULL;
 	struct bsd_sockaddr *sa = NULL;
 	int error;
@@ -283,6 +284,7 @@ kern_accept(int s, struct bsd_sockaddr *name,
 		fsetown(pgid, &so->so_sigio);
 #endif
 	try {
+            debugf("%03d| ---> kern_accept making new socket file\n", sched::thread::current()->id());
 	    auto nf = make_file<socket_file>(fflag, so);
 	    nfp = nf.get();  // want nf.release()
 	    fhold(nfp);
