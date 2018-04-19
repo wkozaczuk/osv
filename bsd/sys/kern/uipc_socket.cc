@@ -946,7 +946,7 @@ int
 sosend_generic(struct socket *so, struct bsd_sockaddr *addr, struct uio *uio,
     struct mbuf *top, struct mbuf *control, int flags, struct thread *td)
 {
-        debugf("|---> sosend_generic(), is top: %d\n", top != NULL);
+    debugf("|---> sosend_generic(), is top: %d\n", top != NULL);
 
 	long space;
 	ssize_t resid;
@@ -979,13 +979,13 @@ sosend_generic(struct socket *so, struct bsd_sockaddr *addr, struct uio *uio,
 		clen = control->m_hdr.mh_len;
 
 	SOCK_LOCK(so);
-        debugf("|---> sosend_generic(), sblock\n");
+    debugf("|---> sosend_generic(), sblock\n");
 	error = sblock(so, &so->so_snd, SBLOCKWAIT(flags));
 	if (error)
 		goto out;
 
 restart:
-        debugf("|---> sosend_generic(), restart\n");
+    debugf("|---> sosend_generic(), restart\n");
 	flush_net_channel(so);
 	do {
 		if (so->so_snd.sb_state & SBS_CANTSENDMORE) {
@@ -1103,13 +1103,13 @@ restart:
 	} while (resid);
 
 release:
-        debugf("|---> sosend_generic(), release\n");
+    debugf("|---> sosend_generic(), release\n");
 	sbunlock(so, &so->so_snd);
 out:
-        debugf("|---> sosend_generic(), out\n");
+    debugf("|---> sosend_generic(), out\n");
 	SOCK_UNLOCK(so);
 out_unlocked:
-        debugf("|---> sosend_generic(), out_unlocked\n");
+    debugf("|---> sosend_generic(), out_unlocked\n");
 	if (top != NULL)
 		m_freem(top);
 	if (control != NULL)
@@ -1153,7 +1153,7 @@ zsend(struct socket *so, struct uio *uio, struct zmsghdr *zm, int flags)
 	    (so->so_proto->pr_flags & PR_ATOMIC);
 
 	SOCK_LOCK(so);
-        debugf("|---> zsend(), sblock\n");
+    debugf("|---> zsend(), sblock\n");
 	error = sblock(so, &so->so_snd, SBLOCKWAIT(flags));
 	if (error)
 		goto out;
@@ -1394,7 +1394,7 @@ soreceive_generic(struct socket *so, struct bsd_sockaddr **psa, struct uio *uio,
 	int moff, type = 0;
 	ssize_t orig_resid = uio->uio_resid;
 
-        debugf("<---| soreceive_generic(), mp0: %d, bytes to copy: %d\n", mp0 != NULL, uio->uio_resid);
+    debugf("<---| soreceive_generic(), mp0: %d, bytes to copy: %d\n", mp0 != NULL, uio->uio_resid);
 	mp = mp0;
 	if (psa != NULL)
 		*psa = NULL;
@@ -1415,7 +1415,7 @@ soreceive_generic(struct socket *so, struct bsd_sockaddr **psa, struct uio *uio,
 	}
 
 	SOCK_LOCK(so);
-        debugf("<---| soreceive_generic(), sblock\n");
+    debugf("<---| soreceive_generic(), sblock\n");
 	error = sblock(so, &so->so_rcv, SBLOCKWAIT(flags));
 	if (error)
 		goto out;
@@ -1423,10 +1423,10 @@ soreceive_generic(struct socket *so, struct bsd_sockaddr **psa, struct uio *uio,
 restart:
 	flush_net_channel(so);
 	m = so->so_rcv.sb_mb;
-        if( m != NULL)
-           debugf("<---| soreceive_generic(), restart mh_len = %d\n", m->m_hdr.mh_len);
-        else
-           debugf("<---| soreceive_generic(), restart -> NO m buffer\n");
+    if( m != NULL)
+       debugf("<---| soreceive_generic(), restart mh_len = %d\n", m->m_hdr.mh_len);
+    else
+       debugf("<---| soreceive_generic(), restart -> NO m buffer\n");
 	/*
 	 * If we have less data than requested, block awaiting more (subject
 	 * to any timeout) if:
@@ -1481,7 +1481,7 @@ restart:
 		goto restart;
 	}
 dontblock:
-        debugf("<---| soreceive_generic(), dontblock mh_len = %d\n", m->m_hdr.mh_len);
+    debugf("<---| soreceive_generic(), dontblock mh_len = %d\n", m->m_hdr.mh_len);
 	/*
 	 * From this point onward, we maintain 'nextrecord' as a cache of the
 	 * pointer to the next record in the socket buffer.  We must keep the
@@ -1627,13 +1627,13 @@ dontblock:
 			("m->m_hdr.mh_type == %d", m->m_hdr.mh_type));
 		so->so_rcv.sb_state &= ~SBS_RCVATMARK;
 		len = uio->uio_resid;
-                debugf("<---| soreceive_generic(), len 1: %d\n", len);
+        debugf("<---| soreceive_generic(), len 1: %d\n", len);
 		if (so->so_oobmark && len > so->so_oobmark - offset)
 			len = so->so_oobmark - offset;
-                debugf("<---| soreceive_generic(), len 2: %d\n", len);
+        debugf("<---| soreceive_generic(), len 2: %d\n", len);
 		if (len > m->m_hdr.mh_len - moff)
 			len = m->m_hdr.mh_len - moff;
-                debugf("<---| soreceive_generic(), len 3: %d, mh_len: %d, moff: %d\n", len, m->m_hdr.mh_len, moff);
+        debugf("<---| soreceive_generic(), len 3: %d, mh_len: %d, moff: %d\n", len, m->m_hdr.mh_len, moff);
 		/*
 		 * If mp is set, just pass back the mbufs.  Otherwise copy
 		 * them out via the uio, then free.  Sockbuf must be
@@ -1645,7 +1645,7 @@ dontblock:
 			SOCK_LOCK_ASSERT(so);
 			SBLASTRECORDCHK(&so->so_rcv);
 			SBLASTMBUFCHK(&so->so_rcv);
-                        debugf("<---| soreceive_generic(), uiomove %d bytes\n", len);
+            debugf("<---| soreceive_generic(), uiomove %d bytes\n", len);
 			error = uiomove(mtod(m, char *) + moff, (int)len, uio);
 			if (error) {
 				/*
@@ -1820,10 +1820,10 @@ dontblock:
 	if (flagsp != NULL)
 		*flagsp |= flags;
 release:
-        debugf("<---| soreceive_generic(), release\n");
+    debugf("<---| soreceive_generic(), release\n");
 	sbunlock(so, &so->so_rcv);
 out:
-        debugf("<---| soreceive_generic(), out\n");
+    debugf("<---| soreceive_generic(), out\n");
 	SOCK_UNLOCK(so);
 	return (error);
 }

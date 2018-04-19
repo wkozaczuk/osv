@@ -1034,8 +1034,8 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 	thflags = th->th_flags;
 	tp->sackhint.last_sack_ack = tcp_seq(0);
 
-	debugf("|-----> tcp_do_segment: [%p] START\n", tp);
-        db_print_tcpcb(tp, "tcpcb", 0);
+	debugf("%03d|-----> tcp_do_segment: [%p] START\n", sched::thread::current()->id(), tp);
+    db_print_tcpcb(tp, "tcpcb", 0);
 
 	/*
 	 * If this is either a state-changing packet or current state isn't
@@ -1548,7 +1548,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 			 */
 			tp->t_flags |= (TF_ACKNOW | TF_NEEDSYN);
 			tcp_timer_activate(tp, TT_REXMT, 0);
-                        debugf("tcp_input: sets to TCPS_SYN_RECEIVED\n");
+            debugf("%03d|tcp_input: sets to TCPS_SYN_RECEIVED\n", sched::thread::current()->id());
 			tp->set_state(TCPS_SYN_RECEIVED);
 		}
 

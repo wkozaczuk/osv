@@ -759,7 +759,8 @@ tcp_usr_send(struct socket *so, int flags, struct mbuf *m,
 	int isipv6;
 #endif
 	TCPDEBUG0;
-        debug( "|---> tcp_usr_send: mbuf length=%d\n", m->m_hdr.mh_len);
+    debug( "%03d|---> tcp_usr_send: mbuf length=%d\n",
+		   sched::thread::current()->id(), m->m_hdr.mh_len);
 
 	/*
 	 * We require the pcbinfo lock if we will close the socket as part of
@@ -1909,7 +1910,7 @@ db_print_tcpcb(struct tcpcb *tp, const char *name, int indent)
 {
 
 	db_print_indent(indent);
-	debugf("%s at %p\n", name, tp);
+	debugf("%03d|%s at %p\n", sched::thread::current()->id(), name, tp);
 
 	indent += 2;
 

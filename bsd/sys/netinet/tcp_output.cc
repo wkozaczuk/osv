@@ -170,7 +170,7 @@ static inline bool tcp_tso_send_now(struct tcpcb *tp, long len,
 				    long sendwin)
 {
 	DEBUG_ASSERT(len > tp->t_maxseg, "Called for non-TSO case");
-        debugf("|---> tcp_tso_send_now: sending %d\n", len);
+    debugf("%0sd|---> tcp_tso_send_now: sending %d\n", sched::thread::current()->id(), len);
 
 	// TSO_FLUSH fired - send!
 	if (tp->t_flags & TF_TSO_NOW) {
@@ -225,8 +225,8 @@ static inline bool tcp_tso_send_now(struct tcpcb *tp, long len,
 int
 tcp_output(struct tcpcb *tp)
 {
-	debugf("|-----> tcp_output: [%p] START\n", tp);
-        db_print_tcpcb(tp, "tcpcb", 0);
+	debugf("%03d|-----> tcp_output: [%p] START\n", sched::thread::current()->id(), tp);
+	db_print_tcpcb(tp, "tcpcb", 0);
 	struct socket *so = tp->t_inpcb->inp_socket;
 	long len, recwin, sendwin;
 	int off, flags, error = 0;	/* Keep compiler happy */
@@ -287,8 +287,8 @@ again:
 	tso = 0;
 	mtu = 0;
 	off = tp->snd_nxt - tp->snd_una;
-        debugf("|-----> tcp_output: [%p] off 1 = %d, tp->snd_una = %zu, tp->snd_nxt = %zu\n", tp,
-           off, tp->snd_una.raw(), tp->snd_nxt.raw());
+    debugf("%03d|-----> tcp_output: [%p] off 1 = %d, tp->snd_una = %zu, tp->snd_nxt = %zu\n",
+           sched::thread::current()->id(), tp, off, tp->snd_una.raw(), tp->snd_nxt.raw());
 	sendwin = bsd_min(tp->snd_wnd, tp->snd_cwnd);
 
 	flags = tcp_outflags[tp->get_state()];
@@ -334,15 +334,15 @@ again:
 				/* Can rexmit part of the current hole */
 				len = ((long)ulmin(cwin,
 						   tp->snd_recover - p->rxmit));
-                debugf("|-----> tcp_output: [%p] 1 len = %d\n", tp, len);
+                debugf("%03d|-----> tcp_output: [%p] 1 len = %d\n", sched::thread::current()->id(), tp, len);
 			}
 		} else {
 			trace_tcp_output_ret(14);
 			len = ((long)ulmin(cwin, p->end - p->rxmit));
-            debugf("|-----> tcp_output: [%p] 2 len = %d\n", tp, len);
+            debugf("%03d|-----> tcp_output: [%p] 2 len = %d\n", sched::thread::current()->id(), tp, len);
 		}
 		off = p->rxmit - tp->snd_una;
-        debugf("|-----> tcp_output: [%p] off 2 = %d\n", tp, off);
+        debugf("%03d|-----> tcp_output: [%p] off 2 = %d\n", sched::thread::current()->id(), tp, off);
 		KASSERT(off >= 0,("%s: sack block to the left of una : %d",
 		    __func__, off));
 		if (len > 0) {
@@ -353,7 +353,7 @@ again:
 			    bsd_min(len, tp->t_maxseg));
 		}
 	}
-    debugf("|-----> tcp_output: [%p] Before after_sack_rexmit with len = %d\n", tp, len);
+    debugf("%03d|-----> tcp_output: [%p] Before after_sack_rexmit with len = %d\n", sched::thread::current()->id(), tp, len);
 after_sack_rexmit:
 	/*
 	 * Get standard flags, and add SYN or FIN if requested by 'hidden'
@@ -417,7 +417,8 @@ after_sack_rexmit:
 		if (sack_bytes_rxmt == 0) {
 			trace_tcp_output_ret(15);
 			len = ((long)ulmin(so->so_snd.sb_cc, sendwin) - off);
-            debugf("|-----> tcp_output: [%p] 3 len = %d, sb_cc = %d, sendwin = %d, off = %d\n", tp,
+            debugf("%03d|-----> tcp_output: [%p] 3 len = %d, sb_cc = %d, sendwin = %d, off = %d\n",
+                   sched::thread::current()->id(), tp,
                    len, so->so_snd.sb_cc, sendwin, off);
 		} else {
 			long cwin = 0;
@@ -430,7 +431,8 @@ after_sack_rexmit:
 			trace_tcp_output_ret(16);
 			len = ((long)ulmin(so->so_snd.sb_cc, tp->snd_wnd) 
 			       - off);
-            debugf("|-----> tcp_output: [%p] 4 len = %d\n", tp, len);
+            debugf("%03d|-----> tcp_output: [%p] 4 len = %d\n",
+                   sched::thread::current()->id(), tp, len);
 			/*
 			 * Don't remove this (len > 0) check !
 			 * We explicitly check for len > 0 here (although it 
@@ -447,7 +449,8 @@ after_sack_rexmit:
 					cwin = 0;
 				trace_tcp_output_ret(17);
 				len = lmin(len, cwin);
-                debugf("|-----> tcp_output: [%p] 5 len = %d\n", tp, len);
+                debugf("%03d|-----> tcp_output: [%p] 5 len = %d\n",
+                       sched::thread::current()->id(), tp, len);
 			}
 		}
 	}
@@ -498,7 +501,8 @@ after_sack_rexmit:
 
 	/* len will be >= 0 after this point. */
 	KASSERT(len >= 0, ("[%s:%d]: len < 0", __func__, __LINE__));
-    debugf("|-----> tcp_output: [%p] After KASSERT with len = %d\n", tp, len);
+    debugf("%03d|-----> tcp_output: [%p] After KASSERT with len = %d\n",
+            sched::thread::current()->id(), tp, len);
 
 	/*
 	 * Automatic sizing of send socket buffer.  Often the send buffer
@@ -786,7 +790,7 @@ just_return:
 	return (0);
 
 send:
-    debugf("|-----> tcp_output: [%p] send\n", tp);
+    debugf("%03d|-----> tcp_output: [%p] send\n", sched::thread::current()->id(), tp);
 	SOCK_LOCK_ASSERT(so);
 	/*
 	 * Before ESTABLISHED, force sending of initial options
@@ -944,7 +948,8 @@ send:
 	 * the template for sends on this connection.
 	 */
 	if (len) {
-        debugf("|-----> tcp_output: [%p] sending DATA segment of size = %d\n", tp, len);
+        debugf("%03d|-----> tcp_output: [%p] sending DATA segment of size = %d\n",
+               sched::thread::current()->id(), tp, len);
 		struct mbuf *mb;
 		u_int moff;
 
@@ -1010,7 +1015,8 @@ send:
 		if (off + len == so->so_snd.sb_cc)
 			flags |= TH_PUSH;
 	} else {
-        debugf("|-----> tcp_output: [%p] sending NON-data segment\n", tp);
+        debugf("%03d|-----> tcp_output: [%p] sending NON-data segment\n",
+               sched::thread::current()->id(), tp);
 		if (tp->t_flags & TF_ACKNOW)
 			TCPSTAT_INC(tcps_sndacks);
 		else if (flags & (TH_SYN|TH_FIN|TH_RST))

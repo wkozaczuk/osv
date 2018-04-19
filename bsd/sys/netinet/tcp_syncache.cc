@@ -584,6 +584,9 @@ void syncache_unreach(struct in_conninfo *inc, struct tcphdr *th)
 static struct socket *
 syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 {
+	debugf("%03d|-----> syncache_socket: START\n",
+		   sched::thread::current()->id());
+
 	struct inpcb *inp = NULL;
 	struct socket *so;
 	struct tcpcb *tp;
@@ -750,6 +753,8 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 	INP_HASH_WUNLOCK(&V_tcbinfo);
 	tp = intotcpcb(inp);
 	tp->set_state(TCPS_SYN_RECEIVED);
+	debugf("%03d|-----> syncache_socket: SET TCPS_SYN_RECEIVED\n",
+		   sched::thread::current()->id());
 	tp->iss = sc->sc_iss;
 	tp->irs = sc->sc_irs;
 	tcp_rcvseqinit(tp);
@@ -757,7 +762,6 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 	tp->snd_wl1 = sc->sc_irs;
 	tp->snd_max = tp->iss + 1;
 	tp->snd_nxt = tp->iss + 1;
-	debugf("WALDEK 5\n");
 	tp->rcv_up = sc->sc_irs + 1;
 	tp->rcv_wnd = sc->sc_wnd;
 	tp->rcv_adv += tp->rcv_wnd;
@@ -811,8 +815,7 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 	tp->t_keepcnt = sototcpcb(lso) ->t_keepcnt;
 	tcp_timer_activate(tp, TT_KEEP, TP_KEEPINIT(tp));
 
-	debugf("|-----> syncache_socket: [%p] START\n", tp);
-        db_print_tcpcb(tp, "tcpcb", 0);
+    db_print_tcpcb(tp, "tcpcb", 0);
 
 	INP_UNLOCK(inp);
 
