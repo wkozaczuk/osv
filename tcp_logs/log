@@ -1,0 +1,485 @@
+OSv v0.24-515-gc6d4b9f
+4 CPUs detected
+Firmware vendor: SeaBIOS
+bsd: initializing - done
+VFS: mounting ramfs at /
+VFS: mounting devfs at /dev
+net: initializing - done
+vga: Add VGA device instance
+eth0: ethernet address: 52:54:00:12:34:56
+virtio-blk: Add blk device instances 0 as vblk0, devsize=14196224
+random: virtio-rng registered as a source.
+random: <Software, Yarrow> initialized
+VFS: unmounting /dev
+VFS: mounting rofs at /rofs
+VFS: mounting devfs at /dev
+VFS: mounting procfs at /proc
+VFS: mounting ramfs at /tmp
+[I/42 dhcp]: Broadcasting DHCPDISCOVER message with xid: [572265994]
+[I/42 dhcp]: Waiting for IP...
+[I/53 dhcp]: Received DHCPOFFER message from DHCP server: 192.168.122.1 regarding offerred IP address: 192.168.122.15
+[I/53 dhcp]: Broadcasting DHCPREQUEST message with xid: [572265994] to SELECT offered IP: 192.168.122.15
+[I/53 dhcp]: Received DHCPACK message from DHCP server: 192.168.122.1 regarding offerred IP address: 192.168.122.15
+[I/53 dhcp]: Server acknowledged IP 192.168.122.15 for interface eth0 with time to lease in seconds: 86400
+eth0: 192.168.122.15
+[I/53 dhcp]: Configuring eth0: ip 192.168.122.15 subnet mask 255.255.255.0 gateway 192.168.122.1 MTU 1500
+|---> sosend_generic(), is top: 1
+|---> sosend_generic(), sblock
+<----> sblock(), sb_mb empty
+|---> sosend_generic(), restart
+|---> sosend_generic(), release
+|---> sosend_generic(), out
+|---> sosend_generic(), out_unlocked
+socket(domain=2, type=1, protocol=0)
+---> Created socket_file
+setsockopt(fd=3, level=1, optname=2, (*(int)optval)=1, optlen=4)
+bind(fd=3, ...)
+listen(fd=3, backlog=10)
+accept(fd=3, ...)
+random: device unblocked.
+socket(domain=2, type=1, protocol=0)
+---> Created socket_file
+connect(fd=4, ...)
+|-----> tcp_output: [0xffffa000025af800] START
+tcpcb at 0xffffa000025af800
+  t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+  t_state: 2 (TCPS_SYN_SENT)
+  t_flags: 0x2a0 (TF_REQ_SCALE, TF_REQ_TSTMP, TF_SACK_PERMIT)
+  snd_una: 0xeb724a66   snd_max: 0xeb724a66   snd_nxt: x0eb724a66
+  snd_up: 0xeb724a66   snd_wl1: 0x00000000   snd_wl2: 0x00000000
+  iss: 0xeb724a66   irs: 0x00000000   rcv_nxt: 0x00000000
+  rcv_adv: 0x00000000   rcv_wnd: 0   rcv_up: 0x00000000
+  snd_wnd: 0   snd_cwnd: 1073725440
+  snd_ssthresh: 1073725440   snd_recover: 0xeb724a66
+  t_maxopd: 536   t_rcvtime: 1155   t_startime: 0
+  t_rttime: 0   t_rtsq: 0x00000000
+  t_rxtcur: 3000   t_maxseg: 536   t_srtt: 0
+  t_rttvar: 12000   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 0
+  t_rttupdated: 0   max_sndwnd: 0   t_softerror: 0
+  t_oobflags: 0x0 ()   t_iobc: 0x00
+  snd_scale: 0   rcv_scale: 0   request_r_scale: 6
+  ts_recent: 0   ts_recent_age: 0
+  ts_offset: 0   last_ack_sent: 0x00000000   snd_cwnd_prev: 0
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+  snd_numholes: 0  snd_holes first: 0
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  t_rttlow: 0   rfbuf_ts: 0   rfbuf_cnt: 0
+|-----> tcp_output: [0xffffa000025af800] off 1 = 0, tp->snd_una = 3950135910, tp->snd_nxt = 3950135910
+|-----> tcp_output: [0xffffa000025af800] Before after_sack_rexmit with len = 0
+|-----> tcp_output: [0xffffa000025af800] 3 len = 0, sb_cc = 0, sendwin = 0, off = 0
+|-----> tcp_output: [0xffffa000025af800] After KASSERT with len = 0
+|-----> tcp_output: [0xffffa000025af800] send
+|-----> tcp_output: [0xffffa000025af800] sending NON-data segment
+WALDEK 1
+WALDEK 2
+|-----> tcp_output: [0xffffa000025af800] START
+tcpcb at 0xffffa000025af800
+  t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+  t_state: 4 (TCPS_ESTABLISHED)
+  t_flags: 0x3e1 (TF_ACKNOW, TF_REQ_SCALE, TF_RECVD_SCALE, TF_REQ_TSTMP, TF_RCVD_TSTMP, TF_SACK_PERMIT)
+  snd_una: 0xeb724a67   snd_max: 0xeb724a67   snd_nxt: x0eb724a67
+  snd_up: 0xeb724a66   snd_wl1: 0x0b00d3f6   snd_wl2: 0xeb724a67
+  iss: 0xeb724a66   irs: 0x0b00d3f5   rcv_nxt: 0x0b00d3f6
+  rcv_adv: 0x0b01ebf6   rcv_wnd: 71680   rcv_up: 0x0b00d3f6
+  snd_wnd: 65535   snd_cwnd: 28672
+  snd_ssthresh: 1073725440   snd_recover: 0xeb724a66
+  t_maxopd: 16344   t_rcvtime: 1187   t_startime: 1187
+  t_rttime: 0   t_rtsq: 0xeb724a66
+  t_rxtcur: 230   t_maxseg: 14336   t_srtt: 320
+  t_rttvar: 80   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 400
+  t_rttupdated: 1   max_sndwnd: 65535   t_softerror: 0
+  t_oobflags: 0x0 ()   t_iobc: 0x00
+  snd_scale: 6   rcv_scale: 6   request_r_scale: 6
+  ts_recent: 3415991480   ts_recent_age: 1187
+  ts_offset: 0   last_ack_sent: 0x00000000   snd_cwnd_prev: 0
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+  snd_numholes: 0  snd_holes first: 0
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  t_rttlow: 9   rfbuf_ts: 0   rfbuf_cnt: 0
+|-----> tcp_output: [0xffffa000025af800] off 1 = 0, tp->snd_una = 3950135911, tp->snd_nxt = 3950135911
+|-----> tcp_output: [0xffffa000025af800] Before after_sack_rexmit with len = 0
+|-----> tcp_output: [0xffffa000025af800] 3 len = 0, sb_cc = 0, sendwin = 28672, off = 0
+|-----> tcp_output: [0xffffa000025af800] After KASSERT with len = 0
+|-----> tcp_output: [0xffffa000025af800] send
+|-----> tcp_output: [0xffffa000025af800] sending NON-data segment
+WALDEK 1
+WALDEK 2
+<---| soreceive_generic(), mp0: 0, bytes to copy: 4096
+<---| soreceive_generic(), sblock
+<----> sblock(), sb_mb empty
+<---| soreceive_generic(), restart -> NO m buffer
+*** in syncache_socket
+WALDEK 5
+---> Created socket_file
+|---> sosend_generic(), is top: 0
+|---> sosend_generic(), sblock
+<----> sblock(), sb_mb empty
+|---> sosend_generic(), restart
+|--->  m_uiotombuf copying 60 bytes
+|---> tcp_usr_send: mbuf length=60
+|-----> tcp_output: [0xffffa000025afc00] START
+tcpcb at 0xffffa000025afc00
+  t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+  t_state: 3 (TCPS_SYN_RECEIVED)
+  t_flags: 0x3e0 (TF_REQ_SCALE, TF_RECVD_SCALE, TF_REQ_TSTMP, TF_RCVD_TSTMP, TF_SACK_PERMIT)
+  snd_una: 0x0b00d3f5   snd_max: 0x0b00d3f6   snd_nxt: x00b00d3f6
+  snd_up: 0x0b00d3f5   snd_wl1: 0xeb724a66   snd_wl2: 0x00000000
+  iss: 0x0b00d3f5   irs: 0xeb724a66   rcv_nxt: 0xeb724a67
+  rcv_adv: 0xeb734a66   rcv_wnd: 65535   rcv_up: 0xeb724a67
+  snd_wnd: 0   snd_cwnd: 1073725440
+  snd_ssthresh: 1073725440   snd_recover: 0x0b00d3f5
+  t_maxopd: 16344   t_rcvtime: 1227   t_startime: 0
+  t_rttime: 0   t_rtsq: 0x00000000
+  t_rxtcur: 3000   t_maxseg: 14336   t_srtt: 0
+  t_rttvar: 12000   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 0
+  t_rttupdated: 0   max_sndwnd: 0   t_softerror: 0
+  t_oobflags: 0x0 ()   t_iobc: 0x00
+  snd_scale: 6   rcv_scale: 0   request_r_scale: 6
+  ts_recent: 1180   ts_recent_age: 1228
+  ts_offset: 3415990295   last_ack_sent: 0xeb724a67   snd_cwnd_prev: 0
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+  snd_numholes: 0  snd_holes first: 0
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  t_rttlow: 0   rfbuf_ts: 0   rfbuf_cnt: 0
+|-----> tcp_output: [0xffffa000025afc00] off 1 = 1, tp->snd_una = 184603637, tp->snd_nxt = 184603638
+|-----> tcp_output: [0xffffa000025afc00] Before after_sack_rexmit with len = 0
+|-----> tcp_output: [0xffffa000025afc00] 3 len = -1, sb_cc = 60, sendwin = 0, off = 1
+|-----> tcp_output: [0xffffa000025afc00] After KASSERT with len = 0
+|-----> tcp_output: [0xffffa000025afc00] send
+|-----> tcp_output: [0xffffa000025afc00] sending NON-data segment
+WALDEK 1
+WALDEK 2
+|---> sosend_generic(), release
+|---> sosend_generic(), out
+|---> sosend_generic(), out_unlocked
+|-----> tcp_output: [0xffffa000025afc00] START
+tcpcb at 0xffffa000025afc00
+  t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+  t_state: 4 (TCPS_ESTABLISHED)
+  t_flags: 0x3e0 (TF_REQ_SCALE, TF_RECVD_SCALE, TF_REQ_TSTMP, TF_RCVD_TSTMP, TF_SACK_PERMIT)
+  snd_una: 0x0b00d3f6   snd_max: 0x0b00d3f6   snd_nxt: x00b00d3f6
+  snd_up: 0x0b00d3f5   snd_wl1: 0xeb724a67   snd_wl2: 0x0b00d3f6
+  iss: 0x0b00d3f5   irs: 0xeb724a66   rcv_nxt: 0xeb724a67
+  rcv_adv: 0xeb734a66   rcv_wnd: 71680   rcv_up: 0xeb724a67
+  snd_wnd: 71680   snd_cwnd: 28673
+  snd_ssthresh: 1073725440   snd_recover: 0x0b00d3f6
+  t_maxopd: 16344   t_rcvtime: 1259   t_startime: 1259
+  t_rttime: 0   t_rtsq: 0x00000000
+  t_rxtcur: 428   t_maxseg: 14336   t_srtt: 2432
+  t_rttvar: 608   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 3040
+  t_rttupdated: 1   max_sndwnd: 71680   t_softerror: 0
+  t_oobflags: 0x0 ()   t_iobc: 0x00
+  snd_scale: 6   rcv_scale: 6   request_r_scale: 6
+  ts_recent: 1221   ts_recent_age: 1259
+  ts_offset: 3415990295   last_ack_sent: 0xeb724a67   snd_cwnd_prev: 0
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+  snd_numholes: 0  snd_holes first: 0
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  t_rttlow: 75   rfbuf_ts: 0   rfbuf_cnt: 0
+|-----> tcp_output: [0xffffa000025afc00] off 1 = 0, tp->snd_una = 184603638, tp->snd_nxt = 184603638
+|-----> tcp_output: [0xffffa000025afc00] Before after_sack_rexmit with len = 0
+|-----> tcp_output: [0xffffa000025afc00] 3 len = 59, sb_cc = 59, sendwin = 28673, off = 0
+|-----> tcp_output: [0xffffa000025afc00] After KASSERT with len = 59
+|-----> tcp_output: [0xffffa000025afc00] send
+|-----> tcp_output: [0xffffa000025afc00] sending DATA segment of size = 59
+WALDEK 1
+WALDEK 2
+|-----> tcp_output: [0xffffa000025afc00] START
+tcpcb at 0xffffa000025afc00
+  t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+  t_state: 6 (TCPS_FIN_WAIT_1)
+  t_flags: 0x3e0 (TF_REQ_SCALE, TF_RECVD_SCALE, TF_REQ_TSTMP, TF_RCVD_TSTMP, TF_SACK_PERMIT)
+  snd_una: 0x0b00d3f6   snd_max: 0x0b00d431   snd_nxt: x00b00d431
+  snd_up: 0x0b00d3f6   snd_wl1: 0xeb724a67   snd_wl2: 0x0b00d3f6
+  iss: 0x0b00d3f5   irs: 0xeb724a66   rcv_nxt: 0xeb724a67
+  rcv_adv: 0xeb736267   rcv_wnd: 71680   rcv_up: 0xeb724a67
+  snd_wnd: 71680   snd_cwnd: 28673
+  snd_ssthresh: 1073725440   snd_recover: 0x0b00d3f6
+  t_maxopd: 16344   t_rcvtime: 1259   t_startime: 1259
+  t_rttime: 1280   t_rtsq: 0x0b00d3f6
+  t_rxtcur: 428   t_maxseg: 14336   t_srtt: 2432
+  t_rttvar: 608   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 3040
+  t_rttupdated: 1   max_sndwnd: 71680   t_softerror: 0
+  t_oobflags: 0x0 ()   t_iobc: 0x00
+  snd_scale: 6   rcv_scale: 6   request_r_scale: 6
+  ts_recent: 1221   ts_recent_age: 1259
+  ts_offset: 3415990295   last_ack_sent: 0xeb724a67   snd_cwnd_prev: 0
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+  snd_numholes: 0  snd_holes first: 0
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  t_rttlow: 75   rfbuf_ts: 1279   rfbuf_cnt: 0
+|-----> tcp_output: [0xffffa000025afc00] off 1 = 59, tp->snd_una = 184603638, tp->snd_nxt = 184603697
+|-----> tcp_output: [0xffffa000025afc00] Before after_sack_rexmit with len = 0
+|-----> tcp_output: [0xffffa000025afc00] 3 len = 0, sb_cc = 59, sendwin = 28673, off = 59
+|-----> tcp_output: [0xffffa000025afc00] After KASSERT with len = 0
+|-----> tcp_output: [0xffffa000025afc00] send
+|-----> tcp_output: [0xffffa000025afc00] sending NON-data segment
+WALDEK 1
+WALDEK 2
+|-----> tcp_output: [0xffffa000025af800] START
+tcpcb at 0xffffa000025af800
+  t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+  t_state: 4 (TCPS_ESTABLISHED)
+  t_flags: 0x3e1 (TF_ACKNOW, TF_REQ_SCALE, TF_RECVD_SCALE, TF_REQ_TSTMP, TF_RCVD_TSTMP, TF_SACK_PERMIT)
+  snd_una: 0xeb724a67   snd_max: 0xeb724a67   snd_nxt: x0eb724a67
+  snd_up: 0xeb724a67   snd_wl1: 0x0b00d3f6   snd_wl2: 0xeb724a67
+  iss: 0xeb724a66   irs: 0x0b00d3f5   rcv_nxt: 0x0b00d3f6
+  rcv_adv: 0x0b01ebf6   rcv_wnd: 71680   rcv_up: 0x0b00d3f6
+ |-----> tcp_output: [0xffffa000025afc00] START
+ tcpcb at 0xffffa000025afc00
+snd_wnd: 4194240   snd_cwnd: 28672
+    t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+snd_ssthresh: 1073725440   snd_recover: 0xeb724a66
+    t_state: 6 (t_maxopd: 16344   t_rcvtime: 1304   t_startime: 1187
+TCPS_FIN_WAIT_1 )
+  t_rttime: 0   t_rtsq: 0xeb724a66
+  t_flags: 0x3f0 ( TF_SENTFINt_rxtcur: 230   t_maxseg: 14336   t_srtt: 320
+, TF_REQ_SCALE , TF_RECVD_SCALE , TF_REQ_TSTMPt_rttvar: 80   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 400
+, TF_RCVD_TSTMP , TF_SACK_PERMIT )
+t_rttupdated: 1   max_sndwnd: 4194240   t_softerror: 0
+    snd_una: 0x0b00d3f6   snd_max: 0x0b00d432   snd_nxt: x00b00d432
+t_oobflags: 0x0 ( )   t_iobc: 0x00
+  snd_up: 0x0b00d3f6   snd_wl1: 0xeb724a67   snd_wl2: 0x0b00d3f6
+  snd_scale: 6   rcv_scale: 6   request_r_scale: 6
+  iss: 0x0b00d3f5   irs: 0xeb724a66   rcv_nxt: 0xeb724a67
+  ts_recent: 3415991552   ts_recent_age: 1304
+  rcv_adv: 0xeb736267   rcv_wnd: 71680   rcv_up: 0xeb724a67
+  ts_offset: 0   last_ack_sent: 0x0b00d3f6   snd_cwnd_prev: 0
+  snd_wnd: 71680   snd_cwnd: 28673
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+  snd_ssthresh: 1073725440   snd_recover: 0x0b00d3f6
+  snd_numholes: 0  snd_holes first: 0
+  t_maxopd: 16344   t_rcvtime: 1259   t_startime: 1259
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  t_rttime: 1280   t_rtsq: 0x0b00d3f6
+  t_rttlow: 9   rfbuf_ts: 0   rfbuf_cnt: 0
+ |-----> tcp_output: [0xffffa000025af800] off 1 = 0, tp->snd_una = 3950135911, tp->snd_nxt = 3950135911
+t_rxtcur: 428   t_maxseg: 14336   t_srtt: 2432
+|-----> tcp_output: [0xffffa000025af800] Before after_sack_rexmit with len = 0
+ |-----> tcp_output: [0xffffa000025af800] 3 len = 0, sb_cc = 0, sendwin = 28672, off = 0
+ |-----> tcp_output: [0xffffa000025af800] After KASSERT with len = 0
+t_rttvar: 608   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 3040
+|-----> tcp_output: [0xffffa000025af800] send
+ |-----> tcp_output: [0xffffa000025af800] sending NON-data segment
+ WALDEK 1
+t_rttupdated: 1   max_sndwnd: 71680   t_softerror: 0
+WALDEK 2
+ <---| soreceive_generic(), restart mh_len = 59
+<---| soreceive_generic(), dontblock mh_len = 59
+<---| soreceive_generic(), len 1: 4096
+<---| soreceive_generic(), len 2: 4096
+<---| soreceive_generic(), len 3: 59, mh_len: 59, moff: 0
+<---| soreceive_generic(), uiomove 59 bytes
+ |-----> tcp_output: [0xffffa000025af800] START
+t_oobflags: 0x0 (tcpcb at 0xffffa000025af800
+)   t_iobc: 0x00
+    t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+snd_scale: 6   rcv_scale: 6   request_r_scale: 6
+    t_state: 4 (ts_recent: 1221   ts_recent_age: 1259
+TCPS_ESTABLISHED )
+  ts_offset: 3415990295   last_ack_sent: 0xeb724a67   snd_cwnd_prev: 0
+  t_flags: 0x3e0 ( TF_REQ_SCALEsnd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+, TF_RECVD_SCALE , TF_REQ_TSTMP , TF_RCVD_TSTMPsnd_numholes: 0  snd_holes first: 0
+, TF_SACK_PERMIT )
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  snd_una: 0xeb724a67   snd_max: 0xeb724a67   snd_nxt: x0eb724a67
+  t_rttlow: 75   rfbuf_ts: 1279   rfbuf_cnt: 0
+ |-----> tcp_output: [0xffffa000025afc00] off 1 = 60, tp->snd_una = 184603638, tp->snd_nxt = 184603698
+snd_up: 0xeb724a67   snd_wl1: 0x0b00d3f6   snd_wl2: 0xeb724a67
+|-----> tcp_output: [0xffffa000025afc00] Before after_sack_rexmit with len = 0
+ |-----> tcp_output: [0xffffa000025afc00] 3 len = -1, sb_cc = 59, sendwin = 28673, off = 60
+ |-----> tcp_output: [0xffffa000025afc00] After KASSERT with len = 0
+iss: 0xeb724a66   irs: 0x0b00d3f5   rcv_nxt: 0x0b00d431
+  rcv_adv: 0x0b01ebf6   rcv_wnd: 71680   rcv_up: 0x0b00d3f6
+  snd_wnd: 4194240   snd_cwnd: 28672
+  snd_ssthresh: 1073725440   snd_recover: 0xeb724a66
+  t_maxopd: 16344   t_rcvtime: 1385   t_startime: 1187
+  t_rttime: 0   t_rtsq: 0xeb724a66
+  t_rxtcur: 230   t_maxseg: 14336   t_srtt: 320
+  t_rttvar: 80   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 400
+  t_rttupdated: 1   max_sndwnd: 4194240   t_softerror: 0
+  t_oobflags: 0x0 ()   t_iobc: 0x00
+  snd_scale: 6   rcv_scale: 6   request_r_scale: 6
+  ts_recent: 3415991574   ts_recent_age: 1385
+  ts_offset: 0   last_ack_sent: 0x0b00d3f6   snd_cwnd_prev: 0
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+  snd_numholes: 0  snd_holes first: 0
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  t_rttlow: 9   rfbuf_ts: 0   rfbuf_cnt: 0
+|-----> tcp_output: [0xffffa000025af800] off 1 = 0, tp->snd_una = 3950135911, tp->snd_nxt = 3950135911
+|-----> tcp_output: [0xffffa000025af800] Before after_sack_rexmit with len = 0
+|-----> tcp_output: [0xffffa000025af800] 3 len = 0, sb_cc = 0, sendwin = 28672, off = 0
+|-----> tcp_output: [0xffffa000025af800] After KASSERT with len = 0
+|-----> tcp_output: [0xffffa000025af800] START
+tcpcb at 0xffffa000025af800
+  t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+  t_state: 5 (TCPS_CLOSE_WAIT)
+  t_flags: 0x3e1 (TF_ACKNOW, TF_REQ_SCALE, TF_RECVD_SCALE, TF_REQ_TSTMP, TF_RCVD_TSTMP, TF_SACK_PERMIT)
+  snd_una: 0xeb724a67   snd_max: 0xeb724a67   snd_nxt: x0eb724a67
+  snd_up: 0xeb724a67   snd_wl1: 0x0b00d431   snd_wl2: 0xeb724a67
+  iss: 0xeb724a66   irs: 0x0b00d3f5   rcv_nxt: 0x0b00d432
+  rcv_adv: 0x0b01ebf6   rcv_wnd: 71680   rcv_up: 0x0b00d431
+  snd_wnd: 71680   snd_cwnd: 28672
+  snd_ssthresh: 1073725440   snd_recover: 0xeb724a66
+  t_maxopd: 16344   t_rcvtime: 1444   t_startime: 1187
+  t_rttime: 0   t_rtsq: 0xeb724a66
+  t_rxtcur: 230   t_maxseg: 14336   t_srtt: 320
+  t_rttvar: 80   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 400
+  t_rttupdated: 1   max_sndwnd: 4194240   t_softerror: 0
+  t_oobflags: 0x0 ()   t_iobc: 0x00
+  snd_scale: 6   rcv_scale: 6   request_r_scale: 6
+  ts_recent: 3415991574   ts_recent_age: 1385
+  ts_offset: 0   last_ack_sent: 0x0b00d3f6   snd_cwnd_prev: 0
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+  snd_numholes: 0  snd_holes first: 0
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  t_rttlow: 9   rfbuf_ts: 0   rfbuf_cnt: 0
+|-----> tcp_output: [0xffffa000025af800] off 1 = 0, tp->snd_una = 3950135911, tp->snd_nxt = 3950135911
+|-----> tcp_output: [0xffffa000025af800] Before after_sack_rexmit with len = 0
+|-----> tcp_output: [0xffffa000025af800] 3 len = 0, sb_cc = 0, sendwin = 28672, off = 0
+|-----> tcp_output: [0xffffa000025af800] After KASSERT with len = 0
+|-----> tcp_output: [0xffffa000025af800] send
+|-----> tcp_output: [0xffffa000025af800] sending NON-data segment
+WALDEK 1
+WALDEK 2
+|-----> tcp_output: [0xffffa000025afc00] START
+tcpcb at 0xffffa000025afc00
+  t_segq first: 0   t_segqlen: 0   t_dupacks: 1
+  t_state: 6 (TCPS_FIN_WAIT_1)
+  t_flags: 0x3f0 (TF_SENTFIN, TF_REQ_SCALE, TF_RECVD_SCALE, TF_REQ_TSTMP, TF_RCVD_TSTMP, TF_SACK_PERMIT)
+  snd_una: 0x0b00d3f6   snd_max: 0x0b00d432   snd_nxt: x00b00d432
+  snd_up: 0x0b00d3f6   snd_wl1: 0xeb724a67   snd_wl2: 0x0b00d3f6
+  iss: 0x0b00d3f5   irs: 0xeb724a66   rcv_nxt: 0xeb724a67
+  rcv_adv: 0xeb736267   rcv_wnd: 71680   rcv_up: 0xeb724a67
+  snd_wnd: 71680   snd_cwnd: 14396
+  snd_ssthresh: 1073725440   snd_recover: 0x0b00d3f6
+  t_maxopd: 16344   t_rcvtime: 1463   t_startime: 1259
+  t_rttime: 1280   t_rtsq: 0x0b00d3f6
+  t_rxtcur: 428   t_maxseg: 14336   t_srtt: 2432
+  t_rttvar: 608   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 3040
+  t_rttupdated: 1   max_sndwnd: 71680   t_softerror: 0
+<---| soreceive_generic(), release
+ <---| soreceive_generic(), out
+ <---| soreceive_generic(), mp0: 0, bytes to copy: 4096
+t_oobflags: 0x0 (<---| soreceive_generic(), sblock
+)   t_iobc: 0x00
+<----> sblock(), sb_mb empty
+ <---| soreceive_generic(), restart -> NO m buffer
+ <---| soreceive_generic(), release
+snd_scale: 6   rcv_scale: 6   request_r_scale: 6
+<---| soreceive_generic(), out
+  ts_recent: 1381   ts_recent_age: 1463
+  ts_offset: 3415990295   last_ack_sent: 0xeb724a67   snd_cwnd_prev: 0
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+  snd_numholes: 0  snd_holes first: 0
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  t_rttlow: 75   rfbuf_ts: 0   rfbuf_cnt: 0
+|-----> tcp_output: [0xffffa000025afc00] off 1 = 60, tp->snd_una = 184603638, tp->snd_nxt = 184603698
+|-----> tcp_output: [0xffffa000025afc00] Before after_sack_rexmit with len = 0
+|-----> tcp_output: [0xffffa000025afc00] 3 len = -1, sb_cc = 59, sendwin = 14396, off = 60
+|-----> tcp_output: [0xffffa000025afc00] After KASSERT with len = 0
+|-----> tcp_output: [0xffffa000025af800] START
+tcpcb at 0xffffa000025af800
+  t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+  t_state: 8 (TCPS_LAST_ACK)
+  t_flags: 0x3e0 (TF_REQ_SCALE, TF_RECVD_SCALE, TF_REQ_TSTMP, TF_RCVD_TSTMP, TF_SACK_PERMIT)
+  snd_una: 0xeb724a67   snd_max: 0xeb724a67   snd_nxt: x0eb724a67
+  snd_up: 0xeb724a67   snd_wl1: 0x0b00d431   snd_wl2: 0xeb724a67
+  iss: 0xeb724a66   irs: 0x0b00d3f5   rcv_nxt: 0x0b00d432
+  rcv_adv: 0x0b01ec32   rcv_wnd: 71680   rcv_up: 0x0b00d431
+  snd_wnd: 71680   snd_cwnd: 28672
+  snd_ssthresh: 1073725440   snd_recover: 0xeb724a66
+  t_maxopd: 16344   t_rcvtime: 1444   t_startime: 1187
+  t_rttime: 0   t_rtsq: 0xeb724a66
+  t_rxtcur: 230   t_maxseg: 14336   t_srtt: 320
+  t_rttvar: 80   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 400
+  t_rttupdated: 1   max_sndwnd: 4194240   t_softerror: 0
+  t_oobflags: 0x0 ()   t_iobc: 0x00
+  snd_scale: 6   rcv_scale: 6   request_r_scale: 6
+  ts_recent: 3415991574   ts_recent_age: 1385
+  ts_offset: 0   last_ack_sent: 0x0b00d432   snd_cwnd_prev: 0
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+  snd_numholes: 0  snd_holes first: 0
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  t_rttlow: 9   rfbuf_ts: 1463   rfbuf_cnt: 0
+|-----> tcp_output: [0xffffa000025af800] off 1 = 0, tp->snd_una = 3950135911, tp->snd_nxt = 3950135911
+|-----> tcp_output: [0xffffa000025af800] Before after_sack_rexmit with len = 0
+|-----> tcp_output: [0xffffa000025af800] 3 len = 0, sb_cc = 0, sendwin = 28672, off = 0
+|-----> tcp_output: [0xffffa000025af800] After KASSERT with len = 0
+|-----> tcp_output: [0xffffa000025af800] send
+|-----> tcp_output: [0xffffa000025af800] sending NON-data segment
+WALDEK 1
+WALDEK 2
+|-----> tcp_output: [0xffffa000025af800] START
+tcpcb at 0xffffa000025af800
+  t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+  t_state: 8 (TCPS_LAST_ACK)
+  t_flags: 0x3f0 (TF_SENTFIN, TF_REQ_SCALE, TF_RECVD_SCALE, TF_REQ_TSTMP, TF_RCVD_TSTMP, TF_SACK_PERMIT)
+  snd_una: 0xeb724a67   snd_max: 0xeb724a68   snd_nxt: x0eb724a68
+  snd_up: 0xeb724a67   snd_wl1: 0x0b00d431   snd_wl2: 0xeb724a67
+  iss: 0xeb724a66   irs: 0x0b00d3f5   rcv_nxt: 0x0b00d432
+  rcv_adv: 0x0b01ec32   rcv_wnd: 71680   rcv_up: 0x0b00d431
+  snd_wnd: 71680   snd_cwnd: 28672
+  snd_ssthresh: 1073725440   snd_recover: 0xeb724a66
+  t_maxopd: 16344   t_rcvtime: 1444   t_startime: 1187
+  t_rttime: 1516   t_rtsq: 0xeb724a67
+  t_rxtcur: 230   t_maxseg: 14336   t_srtt: 320
+  t_rttvar: 80   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 400
+  t_rttupdated: 1   max_sndwnd: 4194240   t_softerror: 0
+  t_oobflags: 0x0 ()   t_iobc: 0x00
+  snd_scale: 6   rcv_scale: 6   request_r_scale: 6
+  ts_recent: 3415991574   ts_recent_age: 1385
+  ts_offset: 0   last_ack_sent: 0x0b00d432   snd_cwnd_prev: 0
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+  snd_numholes: 0  snd_holes first: 0
+  snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+  t_rttlow: 9   rfbuf_ts: 1463   rfbuf_cnt: 0
+|-----> tcp_output: [0xffffa000025af800] off 1 = 1, tp->snd_una = 3950135911, tp->snd_nxt = 3950135912
+|-----> tcp_output: [0xffffa000025af800] Before after_sack_rexmit with len = 0
+|-----> tcp_output: [0xffffa000025af800] 3 len = -1, sb_cc = 0, sendwin = 28672, off = 1
+|-----> tcp_output: [0xffffa000025af800] After KASSERT with len = 0
+|-----> tcp_output: [0xffffa000025afc00] START
+tcpcb at 0xffffa000025afc00
+  t_segq first: 0   t_segqlen: 0   t_dupacks: 0
+  t_state: 9 (TCPS_FIN_WAIT_2)
+  t_flags: 0x3f0 (TF_SENTFIN, TF_REQ_SCALE, TF_RECVD_SCALE, TF_REQ_TSTMP, TF_RCVD_TSTMP, TF_SACK_PERMIT)
+  snd_una: 0x0b00d432   snd_max: 0x0b00d432   snd_nxt: x00b00d432
+  snd_up: 0x0b00d3f6   snd_wl1: 0xeb724a67   snd_wl2: 0x0b00d432
+  iss: 0x0b00d3f5   irs: 0xeb724a66   rcv_nxt: 0xeb724a67
+  rcv_adv: 0xeb736267   rcv_wnd: 71680   rcv_up: 0xeb724a67
+  snd_wnd: 71680   snd_cwnd: 28733
+  snd_ssthresh: 1073725440   snd_recover: 0x0b00d432
+  t_maxopd: 16344   t_rcvtime: 1536   t_startime: 1259
+  t_rttime: 0   t_rtsq: 0x0b00d3f6
+  t_rxtcur: 593   t_maxseg: 14336   t_srtt: 3156
+  t_rttvar: 1180   t_rxtshift: 0   t_rttmin: 30   t_rttbest: 3040
+Client total: read 59 with last bytes read count: 0 
+ Client received: [
+t_rttupdated: 2   max_sndwnd: 71680   t_softerror: 0
+000001 xxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxxx
+  t_oobflags: 0x0 ()   t_iobc: 0x00
+  snd_scale: 6   rcv_scale: 6   request_r_scale: 6
+  ts_recent: 1463   ts_recent_age: 1536
+  ts_offset: 3415990295   last_ack_sent: 0xeb724a67   snd_cwnd_prev: 0
+  snd_ssthresh_prev: 0   snd_recover_prev: 0x00000000   t_badrxtwin: 0
+]Server thinks it sent 60, client received 59 
+ FAIL: Test with blocking write()snd_numholes: 0  snd_holes first: 0
+
+ SUMMARY: 1 tests, 1  failures
+snd_fack: 0x00000000   rcv_numsacks: 0   sack_newdata: 0x00000000
+program /tests/tst-tcp-nbwrite.so returned 1
+  t_rttlow: 75   rfbuf_ts: 0   rfbuf_cnt: 0
+|-----> tcp_output: [0xffffa000025afc00] off 1 = 0, tp->snd_una = 184603698, tp->snd_nxt = 184603698
+|-----> tcp_output: [0xffffa000025afc00] Before after_sack_rexmit with len = 0
+|-----> tcp_output: [0xffffa000025afc00] 3 len = 0, sb_cc = 0, sendwin = 28733, off = 0
+|-----> tcp_output: [0xffffa000025afc00] After KASSERT with len = 0
+WALDEK 7
+[I/0 dhcp]: Unicasting DHCPRELEASE message with xid: [203872125] from client: 192.168.122.15 to server: 192.168.122.1
+VFS: unmounting /dev
+VFS: unmounting /proc
+VFS: unmounting /
+ROFS: spent 3.79 ms reading from disk
+ROFS: read 161 512-byte blocks from disk
+ROFS: allocated 158 512-byte blocks of cache memory
+ROFS: hit ratio is 89.47%
+Powering off.
