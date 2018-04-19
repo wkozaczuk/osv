@@ -219,6 +219,8 @@ kmod_tcpstat_inc(int statnum)
 	(*((u_long *)&V_tcpstat + statnum))++;
 }
 
+void
+db_print_tcpcb(struct tcpcb *tp, const char *name, int indent);
 /*
  * CC wrapper hook functions
  */
@@ -1032,6 +1034,9 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 	thflags = th->th_flags;
 	tp->sackhint.last_sack_ack = tcp_seq(0);
 
+	debugf("|-----> tcp_do_segment: [%p] START\n", tp);
+        db_print_tcpcb(tp, "tcpcb", 0);
+
 	/*
 	 * If this is either a state-changing packet or current state isn't
 	 * established, we require a write lock on tcbinfo.  Otherwise, we
@@ -1543,6 +1548,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 			 */
 			tp->t_flags |= (TF_ACKNOW | TF_NEEDSYN);
 			tcp_timer_activate(tp, TT_REXMT, 0);
+                        debugf("tcp_input: sets to TCPS_SYN_RECEIVED\n");
 			tp->set_state(TCPS_SYN_RECEIVED);
 		}
 

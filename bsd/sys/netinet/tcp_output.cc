@@ -164,6 +164,8 @@ static inline void tcp_cancel_tso_flush_timer(struct tcpcb *tp)
  *
  *		len > tp->t_maxseg
  */
+void
+db_print_tcpcb(struct tcpcb *tp, const char *name, int indent);
 static inline bool tcp_tso_send_now(struct tcpcb *tp, long len,
 				    long sendwin)
 {
@@ -224,6 +226,7 @@ int
 tcp_output(struct tcpcb *tp)
 {
 	debugf("|-----> tcp_output: [%p] START\n", tp);
+        db_print_tcpcb(tp, "tcpcb", 0);
 	struct socket *so = tp->t_inpcb->inp_socket;
 	long len, recwin, sendwin;
 	int off, flags, error = 0;	/* Keep compiler happy */

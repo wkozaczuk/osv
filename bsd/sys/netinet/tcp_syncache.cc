@@ -209,6 +209,8 @@ syncache_head::syncache_head()
 	TAILQ_INIT(&sch_bucket);
 }
 
+void
+db_print_tcpcb(struct tcpcb *tp, const char *name, int indent);
 void syncache_init(void)
 {
 	V_tcp_syncache.cache_count = 0;
@@ -582,7 +584,6 @@ void syncache_unreach(struct in_conninfo *inc, struct tcphdr *th)
 static struct socket *
 syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 {
-        debugf("*** in syncache_socket\n");
 	struct inpcb *inp = NULL;
 	struct socket *so;
 	struct tcpcb *tp;
@@ -809,6 +810,9 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 	tp->t_keepintvl = sototcpcb(lso) ->t_keepintvl;
 	tp->t_keepcnt = sototcpcb(lso) ->t_keepcnt;
 	tcp_timer_activate(tp, TT_KEEP, TP_KEEPINIT(tp));
+
+	debugf("|-----> syncache_socket: [%p] START\n", tp);
+        db_print_tcpcb(tp, "tcpcb", 0);
 
 	INP_UNLOCK(inp);
 
