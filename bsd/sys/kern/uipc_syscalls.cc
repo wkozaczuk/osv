@@ -231,6 +231,7 @@ kern_accept(int s, struct bsd_sockaddr *name,
 		goto done;
 	}
 	ACCEPT_LOCK();
+        debugf("%03d| ---> kern_accept ACCEPT_LOCKed _______________\n", sched::thread::current()->id());
 	if ((head->so_state & SS_NBIO) && TAILQ_EMPTY(&head->so_comp)) {
 		ACCEPT_UNLOCK();
 		error = EWOULDBLOCK;
@@ -273,6 +274,7 @@ kern_accept(int s, struct bsd_sockaddr *name,
 
 	SOCK_UNLOCK(so);
 	ACCEPT_UNLOCK();
+        debugf("%03d| ---> kern_accept ACCEPT_UNLOCKed _______________\n", sched::thread::current()->id());
 
 	/* FIXME: OSv - Implement... select/poll */
 #if 0

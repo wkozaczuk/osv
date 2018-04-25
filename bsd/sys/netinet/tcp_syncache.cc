@@ -821,6 +821,8 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 
 	SOCK_LOCK(so);
 	soisconnected(so);
+	debugf("%03d|-----> syncache_socket: soisconnected\n",
+		   sched::thread::current()->id());
 
 	TCPSTAT_INC(tcps_accepts);
 	return (so);

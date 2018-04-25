@@ -3429,6 +3429,8 @@ soisconnecting(struct socket *so)
 void
 soisconnected(struct socket *so)
 {
+	debugf("%03d|-----> soisconnected: START _______________\n",
+		   sched::thread::current()->id());
 	struct socket *head;	
 	int ret;
 
@@ -3449,6 +3451,7 @@ restart:
 			head->so_qlen++;
 			so->so_qstate |= SQ_COMP;
 			ACCEPT_UNLOCK();
+    debugf("%03d||-----> soisconnected(), ACCEPT_UNLOCKED, moved from so_incomp to so_comp\n", sched::thread::current()->id());
 			sorwakeup(head);
 			wakeup_one(&head->so_timeo);
 		} else {
@@ -3467,6 +3470,9 @@ restart:
 		}
 		return;
 	}
+        else {
+            debugf("%03d||-----> soisconnected(), NO incoming\n", sched::thread::current()->id());
+        }
 	ACCEPT_UNLOCK();
 	wakeup(&so->so_timeo);
 	sorwakeup(so);

@@ -1499,6 +1499,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 		if (thflags & TH_ACK) {
 			TCPSTAT_INC(tcps_connects);
 			soisconnected(so);
+	                debugf("%03d|-----> tcp_do_segment: [%p] In TCPS_SYN_SENT -> AFTER soisconnected\n", sched::thread::current()->id(), tp);
 			/* Do window scaling on this connection? */
 			if ((tp->t_flags & (TF_RCVD_SCALE|TF_REQ_SCALE)) ==
 				(TF_RCVD_SCALE|TF_REQ_SCALE)) {
@@ -1926,6 +1927,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 
 		TCPSTAT_INC(tcps_connects);
 		soisconnected(so);
+	        debugf("%03d|-----> tcp_do_segment: [%p] In TCPS_SYN_RECEIVED -> AFTER soisconnected\n", sched::thread::current()->id(), tp);
 		/* Do window scaling? */
 		if ((tp->t_flags & (TF_RCVD_SCALE|TF_REQ_SCALE)) ==
 			(TF_RCVD_SCALE|TF_REQ_SCALE)) {
