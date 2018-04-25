@@ -677,7 +677,6 @@ tcp_sack_adjust(struct tcpcb *tp)
 		if (tp->snd_nxt >= p->start)
 			cur = p;
 		else {
-			debugf("WALDEK 3\n");
 			tp->snd_nxt = p->start;
 			return;
 		}
@@ -685,5 +684,4 @@ tcp_sack_adjust(struct tcpcb *tp)
 	if (tp->snd_nxt < cur->end)
 		return;
 	tp->snd_nxt = tp->snd_fack;
-	debugf("WALDEK 4\n");
 }

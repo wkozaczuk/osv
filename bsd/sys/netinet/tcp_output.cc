@@ -226,7 +226,7 @@ int
 tcp_output(struct tcpcb *tp)
 {
 	debugf("%03d|-----> tcp_output: [%p] START _______________\n", sched::thread::current()->id(), tp);
-        usleep(10 * 1000);
+        //usleep(10 * 1000);
 	db_print_tcpcb(tp, "tcpcb", 0);
 	struct socket *so = tp->t_inpcb->inp_socket;
 	long len, recwin, sendwin;
@@ -1262,7 +1262,8 @@ send:
 		/*
 		 * Advance snd_nxt over sequence space of this segment.
 		 */
-		debugf("WALDEK 1\n");
+                debugf("%03d|-----> tcp_output: [%p] Advance snd_nxt over sequence space of this segment\n",
+                   sched::thread::current()->id(), tp);
 		if (flags & (TH_SYN|TH_FIN)) {
 			if (flags & TH_SYN)
 				tp->snd_nxt++;
@@ -1274,7 +1275,8 @@ send:
 		if (sack_rxmit)
 			goto timer;
 		tp->snd_nxt += len;
-		debugf("WALDEK 2\n");
+                debugf("%03d|-----> tcp_output: [%p] Advance snd_nxt by len: %d\n",
+                   sched::thread::current()->id(), tp, len);
 		if (tp->snd_nxt > tp->snd_max) {
 			tp->snd_max = tp->snd_nxt;
 			/*

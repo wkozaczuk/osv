@@ -614,6 +614,7 @@ tcp_usr_accept(struct socket *so, struct bsd_sockaddr **nam)
 	 */
 	port = inp->inp_fport;
 	addr = inp->inp_faddr;
+	debugf("%03d|-----> tcp_usr_accept: ACCEPTing connection on port %d\n", sched::thread::current()->id(), port);
 
 out:
 	TCPDEBUG2(PRU_ACCEPT);
