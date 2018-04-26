@@ -1926,6 +1926,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 	case TCPS_SYN_RECEIVED:
 
 		TCPSTAT_INC(tcps_connects);
+                SOCK_LOCK(so);
 		soisconnected(so);
 	        debugf("%03d|-----> tcp_do_segment: [%p] In TCPS_SYN_RECEIVED -> AFTER soisconnected\n", sched::thread::current()->id(), tp);
 		/* Do window scaling? */
