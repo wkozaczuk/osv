@@ -50,7 +50,9 @@ inline uint32_t events_epoll_to_poll(uint32_t e)
 }
 inline uint32_t events_poll_to_epoll(uint32_t e)
 {
-    assert (!(e & ~SUPPORTED_EVENTS));
+    if (e & ~SUPPORTED_EVENTS) {
+        abort("unexpected return from poll 0x%x - 0x%x\n", e, e & ~SUPPORTED_EVENTS);
+    }
     return e;
 }
 

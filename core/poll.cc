@@ -74,8 +74,10 @@ int poll_no_poll(int events)
      * functionality is present without hard-coding knowledge
      * of specific filesystem implementations.
      */
-    if (events & ~POLLSTANDARD)
+    if (events & ~POLLSTANDARD) {
+        debugf("POLLNVAL: poll_no_poll: Not standard - 0x%x - 0x%x\n", events, events & ~POLLSTANDARD);
         return (POLLNVAL);
+    }
 
     return (events & (POLLIN | POLLOUT | POLLRDNORM | POLLWRNORM));
 }
@@ -119,6 +121,7 @@ int poll_scan(std::vector<poll_file>& _pfd)
         if (!fp) {
             entry->revents |= POLLNVAL;
             nr_events++;
+            debugf("POLLNVAL: poll_scan: No file\n");
             continue;
         }
 
@@ -336,6 +339,7 @@ static int poll_one(struct pollfd& pfd, file::timeout_t timeout)
     auto fref = fileref_from_fd(pfd.fd);
 
     if (!fref) {
+        debugf("POLLNVAL: poll_one: No file\n");
         pfd.revents = POLLNVAL;
         return 1;
     }
