@@ -68,9 +68,13 @@ int pipe_file::poll(int events)
 {
     // One end of the pipe is read-only, the other write-only:
     if (f_flags & FWRITE) {
-        return writer->buf->write_events() & events;
+        auto ret = writer->buf->write_events() & events;
+        debugf("pipe_file::poll(): events - [0x%x], ret - [0x%x]\n", events, ret);
+        return ret;
     } else {
-        return reader->buf->read_events() & events;
+        auto ret = reader->buf->read_events() & events;
+        debugf("pipe_file::poll(): events - [0x%x], ret - [0x%x]\n", events, ret);
+        return ret;
     }
 }
 

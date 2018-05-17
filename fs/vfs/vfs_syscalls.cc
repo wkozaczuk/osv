@@ -55,6 +55,8 @@
 #include <osv/vfs_file.hh>
 #include "vfs.h"
 #include <fs/fs.hh>
+#include <osv/debug.hh>
+
 
 extern struct task *main_task;
 
@@ -201,6 +203,7 @@ sys_open(char *path, int flags, mode_t mode, struct file **fpp)
 
 	try {
 	    fileref f = make_file<vfs_file>(flags);
+		debugf("sysopen(): %s]\n", path );
 	    fp = f.get();
 	    fhold(fp);
 	} catch (int err) {

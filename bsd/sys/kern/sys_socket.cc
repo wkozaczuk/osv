@@ -260,7 +260,10 @@ socket_file::poll(int events)
         so->so_nc->process_queue();
     }
     SOCK_UNLOCK(so);
-    return (sopoll(so, events, 0, 0));
+    auto ret = sopoll(so, events, 0, 0);
+    debugf("%d:socket_file::poll: events - [0x%x], sopoll - [0x%x]\n",
+           sched::thread::current()->id(), events, ret);
+    return ret;
 }
 
 int

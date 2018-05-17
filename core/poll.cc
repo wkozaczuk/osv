@@ -75,11 +75,14 @@ int poll_no_poll(int events)
      * of specific filesystem implementations.
      */
     if (events & ~POLLSTANDARD) {
-        debugf("POLLNVAL: poll_no_poll: Not standard - 0x%x - 0x%x\n", events, events & ~POLLSTANDARD);
+        debugf("%d:-->poll_no_poll: POLLNVAL: - 0x%x - 0x%x\n",
+               sched::thread::current()->id(), events, events & ~POLLSTANDARD);
         return (POLLNVAL);
     }
 
-    return (events & (POLLIN | POLLOUT | POLLRDNORM | POLLWRNORM));
+    auto ret = (events & (POLLIN | POLLOUT | POLLRDNORM | POLLWRNORM));
+    debugf("-->poll_no_poll:Normal - 0x%x - 0x%x\n", events, ret);
+    return ret;
 }
 
 /* Drain the poll link list from the file... */
@@ -121,7 +124,7 @@ int poll_scan(std::vector<poll_file>& _pfd)
         if (!fp) {
             entry->revents |= POLLNVAL;
             nr_events++;
-            debugf("POLLNVAL: poll_scan: No file\n");
+            debugf("-->poll_scan: POLLNVAL: No file\n");
             continue;
         }
 
@@ -339,7 +342,7 @@ static int poll_one(struct pollfd& pfd, file::timeout_t timeout)
     auto fref = fileref_from_fd(pfd.fd);
 
     if (!fref) {
-        debugf("POLLNVAL: poll_one: No file\n");
+        debugf("-->poll_one: POLLNVAL: No file\n");
         pfd.revents = POLLNVAL;
         return 1;
     }

@@ -123,7 +123,9 @@ int vfs_file::stat(struct stat *st)
 
 int vfs_file::poll(int events)
 {
-	return poll_no_poll(events);
+    debugf("%d:-->vfs_file::poll() - 0x%x\n",
+           sched::thread::current()->id(), events);
+    return poll_no_poll(events);
 }
 
 int vfs_file::truncate(off_t len)

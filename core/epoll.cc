@@ -189,7 +189,12 @@ public:
                 epoll_event& evt = found->second;
                 int active = 0;
                 if (evt.events) {
-                    active = key._file->poll(events_epoll_to_poll(evt.events));
+                    auto poll_events = events_epoll_to_poll(evt.events);
+                    debugf("%d:epoll_file::process_activity(): BEFORE file->poll(): [0x%x -> 0x%x]\n",
+                           sched::thread::current()->id(), evt.events, poll_events );
+                    active = key._file->poll(poll_events);
+                    debugf("%d:epoll_file::process_activity(): active from file->poll(): [0x%x -> 0x%x]\n",
+                           sched::thread::current()->id(), poll_events, active );
                 }
                 active = events_poll_to_epoll(active);
                 if (!active || (evt.events & EPOLLET)) {

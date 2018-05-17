@@ -80,7 +80,9 @@ int af_local::write(uio* data, int flags)
 
 int af_local::poll(int events)
 {
-    return (receive->read_events() | send->write_events()) & events;
+    auto ret = (receive->read_events() | send->write_events()) & events;
+    debugf("af_local::poll(): events - [0x%x], ret - [0x%x]\n", events, ret);
+    return ret;
 }
 
 int af_local::close()
