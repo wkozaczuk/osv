@@ -614,8 +614,9 @@ struct vnops nfs_vnops = {
     nfs_op_inactive,         /* inactive */
     nfs_op_truncate,         /* truncate */
     nfs_op_link,             /* link */
-    (vnop_cache_t) nullptr, /* arc */
+    (vnop_cache_t) nullptr,  /* arc */
     nfs_op_fallocate,        /* fallocate */
     nfs_op_readlink,         /* read link */
     nfs_op_symlink,          /* symbolic link */
+    (vnop_get_page_address_t) nullptr /* get memory page address from cache */
 };

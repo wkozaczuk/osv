@@ -635,5 +635,6 @@ struct vnops ramfs_vnops = {
         ramfs_fallocate,        /* fallocate */
         ramfs_readlink,         /* read link */
         ramfs_symlink,          /* symbolic link */
+        (vnop_get_page_addr_t) nullptr, /* get page address */
 };
 

@@ -12,6 +12,7 @@
 #include <include/osv/uio.h>
 #include <osv/debug.h>
 #include <osv/sched.hh>
+#include <sys/mman.h>
 
 /*
  * From cache perspective let us divide each file into sequence of contiguous 32K segments.
@@ -56,7 +57,15 @@ public:
         this->starting_block = _starting_block;
         this->block_count = _block_count;
         this->data_ready = false;   // Data has to be loaded from disk
-        this->data = malloc(_cache->sb->block_size * _block_count);
+        // Ideally it would be nice to protect this memory from writing to but unfortunately
+        // mmap/mprotect cannot be used as it results in assert violation
+        // in mmu.cc:virt_to_phys() -> possibly because drivers need to operate on non-mmaped memory (why?)
+        //this->data = malloc(_cache->sb->block_size * _block_count);
+        //this->data = mmap(NULL, cache->sb->block_size * _block_count, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED | MAP_POPULATE, -1, 0);
+        // Because the cache may be used to directly back mmap-access we need page-aligned block of memory
+        //TODO: Replace 4096 with system constant
+        this->data = aligned_alloc(4096, _cache->sb->block_size * _block_count);
+        assert(this->data > 0);
 #if defined(ROFS_DIAGNOSTICS_ENABLED)
         rofs_block_allocated += block_count;
 #endif
@@ -68,6 +77,10 @@ public:
 
     uint64_t length() {
         return this->block_count * this->cache->sb->block_size;
+    }
+
+    void* memory_address(off_t offset) {
+        return this->data + offset;
     }
 
     bool is_data_ready() {
@@ -100,6 +113,8 @@ public:
         if (error) {
             print("!!!!! Error reading from disk\n");
         }
+        //Cannot mprotect something that was malloc-ed or mem-aligned
+        //mprotect( this->data, this->cache->sb->block_size * this->block_count, PROT_READ | PROT_EXEC);
         return error;
     }
 };
@@ -269,6 +284,49 @@ cache_read(struct rofs_inode *inode, struct device *device, struct rofs_super_bl
     print("[rofs] [%d] rofs_cache_read completed for i-node [%d]\n", sched::thread::current()->id(),
           inode->inode_no);
     return error;
+}
+
+int
+cache_get_page_address(struct rofs_inode *inode, struct device *device, struct rofs_super_block *sb, off_t offset, void **addr)
+{
+    //
+    // Find existing one or create new file cache
+    struct file_cache *cache = get_or_create_file_cache(inode, sb);
+
+    struct uio _uio;
+    _uio.uio_offset = offset;
+    _uio.uio_resid = 4096;
+    //
+    // Prepare list of cache transactions (copy from memory
+    // or read from disk into cache memory and then copy into memory)
+    // --> THERE SHOULD BE ONLY one TRANSACTION
+    auto segment_transactions = plan_cache_transactions(cache, &_uio);
+    print("[rofs] [%d] rofs_get_page_address called for i-node [%d] at %d with %d ops\n",
+          sched::thread::current()->id(), inode->inode_no, offset, segment_transactions.size());
+
+    int error = 0;
+
+    auto it = segment_transactions.begin();
+    assert(it != segment_transactions.end()); // There should be at least ONE transaction
+    auto transaction = *it;
+#if defined(ROFS_DIAGNOSTICS_ENABLED)
+    rofs_cache_reads += 1;
+#endif
+    if (transaction.transaction_type == CacheTransactionType::READ_FROM_DISK) {
+        // Read from disk into segment missing in cache or empty segment that was in cache but had not data because
+        // of failure to read
+        error = transaction.segment->read_from_disk(device);
+#if defined(ROFS_DIAGNOSTICS_ENABLED)
+        rofs_cache_misses += 1;
+#endif
+   }
+
+   if( !error)
+       *addr = transaction.segment->memory_address(transaction.segment_offset);
+   else
+       *addr = nullptr;
+
+   return error;
 }
 
 }

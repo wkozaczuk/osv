@@ -438,6 +438,7 @@ vnops procfs_vnops = {
     (vnop_fallocate_t) vop_nullop, // vop_fallocate
     (vnop_readlink_t)  vop_nullop, // vop_readlink
     (vnop_symlink_t)   vop_nullop, // vop_symlink
+    (vnop_get_page_addr_t) nullptr // vop_get_page_addr
 };
 
 vfsops procfs_vfsops = {

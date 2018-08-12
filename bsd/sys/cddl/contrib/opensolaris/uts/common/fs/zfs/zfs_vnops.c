@@ -5114,4 +5114,5 @@ struct vnops zfs_vnops = {
 	zfs_fallocate,			/* fallocate */
 	zfs_readlink,			/* read link */
 	zfs_symlink,			/* symbolic link */
+        (vnop_get_page_addr_t) NULL, /* get page address */
 };
