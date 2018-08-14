@@ -64,7 +64,8 @@ public:
         //this->data = mmap(NULL, cache->sb->block_size * _block_count, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED | MAP_POPULATE, -1, 0);
         // Because the cache may be used to directly back mmap-access we need page-aligned block of memory
         //TODO: Replace 4096 with system constant
-        this->data = aligned_alloc(4096, _cache->sb->block_size * _block_count);
+        this->data = aligned_alloc(mmu::page_size, _cache->sb->block_size * _block_count);
+        memset(this->data, 0, _cache->sb->block_size * _block_count);
         assert(this->data > 0);
 #if defined(ROFS_DIAGNOSTICS_ENABLED)
         rofs_block_allocated += block_count;
@@ -80,6 +81,7 @@ public:
     }
 
     void* memory_address(off_t offset) {
+        assert( offset % mmu::page_size == 0);
         return this->data + offset;
     }
 
@@ -295,7 +297,8 @@ cache_get_page_address(struct rofs_inode *inode, struct device *device, struct r
 
     struct uio _uio;
     _uio.uio_offset = offset;
-    _uio.uio_resid = 4096;
+    _uio.uio_resid = std::min<uint64_t>(cache->inode->file_size - offset, mmu::page_size);
+    //_uio.uio_resid = mmu::page_size;
     //
     // Prepare list of cache transactions (copy from memory
     // or read from disk into cache memory and then copy into memory)
@@ -321,8 +324,11 @@ cache_get_page_address(struct rofs_inode *inode, struct device *device, struct r
 #endif
    }
 
-   if( !error)
+   if( !error) {
        *addr = transaction.segment->memory_address(transaction.segment_offset);
+       //assert( *addr % mmu::page_size == 0 );
+       assert( offset % mmu::page_size == 0 );
+   }
    else
        *addr = nullptr;
 
