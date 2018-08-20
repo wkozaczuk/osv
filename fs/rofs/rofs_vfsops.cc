@@ -203,13 +203,13 @@ static int rofs_statfs(struct mount *mp, struct statfs *statp)
 static int
 rofs_unmount(struct mount *mp, int flags)
 {
-    struct rofs_info *rofs = (struct rofs_info *) mp->m_data;
-    struct rofs_super_block *sb = rofs->sb;
+    //struct rofs_info *rofs = (struct rofs_info *) mp->m_data;
+    //struct rofs_super_block *sb = rofs->sb;
     struct device *dev = mp->m_dev;
 
     int error = device_close(dev);
-    delete sb;
-    delete rofs;
+    //delete sb;
+    //delete rofs;
 
 #if defined(ROFS_DIAGNOSTICS_ENABLED)
     debugf("ROFS: spent %.2f ms reading from disk\n", ((double) rofs_block_read_ms.load()) / 1000);

@@ -39,11 +39,14 @@ void test_namespaces_environment_isolation()
 
 int main(int argc, char **argv)
 {
-    run_variables_isolation_tests();
+    //run_variables_isolation_tests(); //DZIALA
 
-    test_namespaces_environment_isolation();
+    test_namespaces_environment_isolation(); // FAILS with free_batch - common error
+    debug("-->After test1\n");
 
-    run_merging_environment_test(true);
+    run_merging_environment_test(true); // FAILS with free_batch - common error
+    // If last 2 active - missing ELF tag
+    debug("-->After test2\n");
 
     return 0;
 }

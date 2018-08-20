@@ -64,8 +64,11 @@ public:
         //this->data = mmap(NULL, cache->sb->block_size * _block_count, PROT_READ | PROT_WRITE, MAP_ANONYMOUS | MAP_SHARED | MAP_POPULATE, -1, 0);
         // Because the cache may be used to directly back mmap-access we need page-aligned block of memory
         //TODO: Replace 4096 with system constant
-        this->data = aligned_alloc(mmu::page_size, _cache->sb->block_size * _block_count);
-        memset(this->data, 0, _cache->sb->block_size * _block_count);
+        //auto mem_block_count = (_block_count / 8) * 8 + (_block_count % 8 > 0 ? 8 : 0);
+        //assert(mem_block_count % 8 == 0);
+        //this->data = aligned_alloc(mmu::page_size, _cache->sb->block_size * mem_block_count);
+        //memset(this->data, 0, _cache->sb->block_size * mem_block_count);
+        this->data = aligned_alloc(mmu::page_size, _cache->sb->block_size * CACHE_SEGMENT_SIZE_IN_BLOCKS);
         assert(this->data > 0);
 #if defined(ROFS_DIAGNOSTICS_ENABLED)
         rofs_block_allocated += block_count;

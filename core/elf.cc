@@ -1239,6 +1239,7 @@ void program::remove_object(object *ef)
 {
     SCOPE_LOCK(_mutex);
     trace_elf_unload(ef->pathname().c_str());
+    debug("program::remove_object - %s\n", ef->pathname().c_str());
 
     // ensure that any module rcu callbacks are completed before static destructors
     osv::rcu_flush();

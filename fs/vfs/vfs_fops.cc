@@ -147,21 +147,39 @@ bool vfs_file::map_page(uintptr_t off, mmu::hw_ptep<0> ptep, mmu::pt_element<0> 
         vn_lock(vp);
         //TODO: This requires better error handling than assert
         assert(VOP_GET_PAGE_ADDR(vp, off, &page_address) == 0);
-        //vn_unlock(vp);
-        assert(page_address != 0);
-        //debugf("vfs_file::map_page got page at %08x\n", page_address);
-        auto ret = mmu::write_pte(page_address, ptep, pte);
         vn_unlock(vp);
-        return ret;
-        //return mmu::write_pte(page_address, ptep, mmu::pte_mark_cow(pte, true));
+        assert(page_address != 0);
+        if(write) {
+            // cow of private page from write cache
+            void* page = memory::alloc_page();
+            debugf("vfs_file::map_page path=%s, offset:0x%08x, got page at 0x%08x for WRITING to share:%d\n",
+                   fp->f_dentry->d_path, off, page, shared);
+            memcpy(page, page_address, mmu::page_size);
+            return mmu::write_pte(page, ptep, pte);
+        }
+        else {
+            //return mmu::write_pte(page_address, ptep, pte);
+            debugf("vfs_file::map_page path=%s, offset:0x%08x, got page at 0x%08x for reading to share:%d\n",
+                   fp->f_dentry->d_path, off, page_address, shared);
+            return mmu::write_pte(page_address, ptep, mmu::pte_mark_cow(pte, true));
+        }
     }
-    else
+    else {
+        if( write)
+            debugf("vfs_file::map_page path=%s, offset:0x%08x for WRITING to share:%d\n",
+                   fp->f_dentry->d_path, off, shared);
+        else
+            debugf("vfs_file::map_page path=%s, offset:0x%08x for reading to share:%d\n",
+                   fp->f_dentry->d_path, off, shared);
         return pagecache::get(this, off, ptep, pte, write, shared);
+    }
 }
 
 bool vfs_file::put_page(void *addr, uintptr_t off, mmu::hw_ptep<0> ptep)
 {
     auto fp = this;
+    debugf("vfs_file::put_page path=%s, offset:0x%08x, address at 0x%08x\n",
+           fp->f_dentry->d_path, off, addr);
     struct vnode *vp = fp->f_dentry->d_vnode;
     if (vp->v_op->vop_get_page_addr) {
         //Not sure if this is enough
@@ -175,6 +193,7 @@ bool vfs_file::put_page(void *addr, uintptr_t off, mmu::hw_ptep<0> ptep)
 
 void vfs_file::sync(off_t start, off_t end)
 {
+    debugf("vfs_file::sync start:0x%08x and end:0x%08x\n", start, end);
     pagecache::sync(this, start, end);
 }
 
@@ -209,6 +228,8 @@ std::unique_ptr<mmu::file_vma> vfs_file::mmap(addr_range range, unsigned flags, 
 	struct vnode *vp = fp->f_dentry->d_vnode;
 	//TODO: In case of ROFS there should be some check to prevent caller from
     //mmap-ing writable vma (only read/execute should be possible)
+    debugf("vfs_file::mmap     path=%s, offset=0x%08x, range=[0x%08x-0x%08x], flags=0x%02x, perm=0x%01x\n",
+           fp->f_dentry->d_path, offset, range.start(), range.end(), flags, perm);
 	if ((!vp->v_op->vop_cache && !vp->v_op->vop_get_page_addr) || (vp->v_size < (off_t)mmu::page_size)) {
 		return mmu::default_file_mmap(this, range, flags, perm, offset);
 	}

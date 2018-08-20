@@ -20,6 +20,11 @@ os.environ["LANG"]="C"
 blacklist= [
     "tst-dns-resolver.so",
     "tst-feexcept.so",
+    "tst-bsd-tcp1-zsnd.so",
+#    "tst-libc-locking.so",
+#    "tst-namespace.so",
+    "tst-pthread-affinity-inherit.so",
+    "tst-rcu-list.so",
 ]
 
 add_tests([
