@@ -543,8 +543,10 @@ void early_init()
 {
     ACPI_STATUS status;
 
+    debug_early("ACPI early_init() \n");
     status = AcpiInitializeTables(TableArray, ACPI_MAX_INIT_TABLES, TRUE);
     if (ACPI_FAILURE(status)) {
+        debug_early("ACPI failed 1 \n");
         acpi_e("AcpiInitializeTables failed: %s\n", AcpiFormatException(status));
         return;
     }
@@ -552,6 +554,7 @@ void early_init()
     // Initialize ACPICA subsystem
     status = AcpiInitializeSubsystem();
     if (ACPI_FAILURE(status)) {
+        debug_early("ACPI failed 2 \n");
         acpi_e("AcpiInitializeSubsystem failed: %s\n", AcpiFormatException(status));
         return;
     }
@@ -559,6 +562,7 @@ void early_init()
     // Copy the root table list to dynamic memory
     status = AcpiReallocateRootTable();
     if (ACPI_FAILURE(status)) {
+        debug_early("ACPI failed 3 \n");
         acpi_e("AcpiReallocateRootTable failed: %s\n", AcpiFormatException(status));
         return;
     }
@@ -566,9 +570,11 @@ void early_init()
     // Create the ACPI namespace from ACPI tables
     status = AcpiLoadTables();
     if (ACPI_FAILURE(status)) {
+        debug_early("ACPI failed 4 \n");
         acpi_e("AcpiLoadTables failed: %s\n", AcpiFormatException(status));
         return;
     }
+    debug_early("ACPI early_init() completed\n");
 }
 
 UINT32 acpi_poweroff(void *unused)

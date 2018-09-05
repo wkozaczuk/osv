@@ -100,6 +100,7 @@ void premain()
     debug_early("OSv " OSV_VERSION "\n");
 
     arch_init_premain();
+    debug_early("After arch_init_premain\n");
 
     auto inittab = elf::get_init(elf_header);
 
@@ -109,10 +110,15 @@ void premain()
     }
 
     setup_tls(inittab);
+    debug_early("After setup_tls\n");
     boot_time.event(3,"TLS initialization");
     for (auto init = inittab.start; init < inittab.start + inittab.count; ++init) {
-        (*init)();
+        //debug_early_u64("--> Init ", (u64)init);
+        debug_early_u64("----> Init ", (u64)(*init));
+        //if( ((u64)init) != 0x0000000000aede60 && ((u64)init) != 0x0000000000aede80)
+          (*init)();
     }
+    debug_early("After init functions\n");
     boot_time.event(".init functions");
 }
 

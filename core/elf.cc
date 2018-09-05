@@ -1467,7 +1467,9 @@ init_table get_init(Elf64_Ehdr* header)
             };
             relocate_table(&ret, rela, nrela);
             relocate_table(&ret, jmp, njmp);
+            debug_early("Dynamic\n");
         } else if (phdr->p_type == PT_TLS) {
+            debug_early("Non-dynamic\n");
             ret.tls.start = reinterpret_cast<void*>(phdr->p_vaddr);
             ret.tls.filesize = phdr->p_filesz;
             ret.tls.size = phdr->p_memsz;
