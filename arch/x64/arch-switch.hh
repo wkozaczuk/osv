@@ -11,6 +11,7 @@
 #include "msr.hh"
 #include <osv/barrier.hh>
 #include <string.h>
+#include <sys/mman.h>
 
 //
 // The last 16 bytes of the syscall stack are reserved for -
@@ -26,12 +27,12 @@
 // of tiny stack.
 // All application threads pre-allocate tiny syscall stack so there
 // is a tiny penalty with this solution.
-#define TINY_SYSCALL_STACK_SIZE 1024
+#define TINY_SYSCALL_STACK_SIZE PAGE_SIZE
 #define TINY_SYSCALL_STACK_DEPTH (TINY_SYSCALL_STACK_SIZE - SYSCALL_STACK_RESERVED_SPACE_SIZE)
 //
 // The large syscall stack is setup and switched to on first
 // execution of SYSCALL instruction for given application thread.
-#define LARGE_SYSCALL_STACK_SIZE (16 * PAGE_SIZE)
+#define LARGE_SYSCALL_STACK_SIZE (64 * PAGE_SIZE)
 #define LARGE_SYSCALL_STACK_DEPTH (LARGE_SYSCALL_STACK_SIZE - SYSCALL_STACK_RESERVED_SPACE_SIZE)
 
 #define SET_SYSCALL_STACK_TYPE_INDICATOR(value) \
@@ -200,7 +201,9 @@ void thread::setup_large_syscall_stack()
     assert(GET_SYSCALL_STACK_TYPE_INDICATOR() == TINY_SYSCALL_STACK_INDICATOR);
     //
     // Allocate LARGE syscall stack
-    void* large_syscall_stack_begin = malloc(LARGE_SYSCALL_STACK_SIZE);
+    //void* large_syscall_stack_begin = malloc(LARGE_SYSCALL_STACK_SIZE);
+    void* large_syscall_stack_begin = mmap(NULL, LARGE_SYSCALL_STACK_SIZE, PROT_READ|PROT_WRITE|PROT_EXEC, MAP_POPULATE|MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+    assert(large_syscall_stack_begin != MAP_FAILED );
     void* large_syscall_stack_top = large_syscall_stack_begin + LARGE_SYSCALL_STACK_DEPTH;
     //
     // Copy all of the tiny stack to the are of last 1024 bytes of large stack.
@@ -223,6 +226,7 @@ void thread::setup_large_syscall_stack()
     // Switch syscall stack address value in TCB to the top of the LARGE one
     _tcb->syscall_stack_top = large_syscall_stack_top;
     SET_SYSCALL_STACK_TYPE_INDICATOR(LARGE_SYSCALL_STACK_INDICATOR);
+    assert(0 == mprotect(large_syscall_stack_begin, 4096, PROT_READ));
 }
 
 void thread::free_tiny_syscall_stack()
@@ -249,10 +253,14 @@ void thread::free_tcb()
     }
 
     if (_tcb->syscall_stack_top) {
-        void* syscall_stack_begin = GET_SYSCALL_STACK_TYPE_INDICATOR() == TINY_SYSCALL_STACK_INDICATOR ?
+        if(GET_SYSCALL_STACK_TYPE_INDICATOR() == TINY_SYSCALL_STACK_INDICATOR)
+           free(_tcb->syscall_stack_top - TINY_SYSCALL_STACK_DEPTH);
+        else
+           assert(0 == munmap(_tcb->syscall_stack_top - LARGE_SYSCALL_STACK_DEPTH, LARGE_SYSCALL_STACK_SIZE));
+        /*void* syscall_stack_begin = GET_SYSCALL_STACK_TYPE_INDICATOR() == TINY_SYSCALL_STACK_INDICATOR ?
             _tcb->syscall_stack_top - TINY_SYSCALL_STACK_DEPTH :
             _tcb->syscall_stack_top - LARGE_SYSCALL_STACK_DEPTH;
-        free(syscall_stack_begin);
+        free(syscall_stack_begin);*/
     }
 }
 
