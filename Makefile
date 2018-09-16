@@ -441,12 +441,16 @@ $(out)/loader.img: $(out)/boot.bin $(out)/lzloader.elf
 	$(call quiet, scripts/imgedit.py setsize "-f raw $@" $(image-size), IMGEDIT $@)
 	$(call quiet, scripts/imgedit.py setargs "-f raw $@" $(cmdline), IMGEDIT $@)
 
-$(out)/loader.bin: $(out)/arch/x64/boot32.o arch/x64/loader32.ld
+$(out)/loader.bin: $(out)/arch/x64/boot32.o $(out)/arch/x64/multiboot.o arch/x64/loader32.ld
 	$(call quiet, $(LD) -nostartfiles -static -nodefaultlibs -o $@ \
 	                $(filter-out %.bin, $(^:%.ld=-T %.ld)), LD $@)
 
 $(out)/arch/x64/boot32.o: $(out)/loader-stripped.elf
-$(out)/arch/x64/boot32.o: ASFLAGS += -I$(out)
+$(out)/arch/x64/boot32.o: ASFLAGS += -I$(out) -m32
+
+$(out)/arch/x64/multiboot.o: arch/x64/multiboot.cc | generated-headers
+	$(makedir)
+	$(call quiet, $(CXX) $(CXXFLAGS) -O0 -m32 -fno-instrument-functions -o $@ -c arch/x64/multiboot.cc, CXX $<)
 
 $(out)/fastlz/fastlz.o:
 	$(makedir)

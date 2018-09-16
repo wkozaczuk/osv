@@ -5,6 +5,7 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
+OUTPUT_ARCH(i386)
 OUTPUT_FORMAT(elf32-i386)
 
 SECTIONS
