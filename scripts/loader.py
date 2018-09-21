@@ -1271,20 +1271,36 @@ def set_leak(val):
     gdb.parse_and_eval('memory::tracker_enabled=%s' % val)
 
 def show_leak():
+    def writefn(str):
+        gdb.write(str)
+    def flushfn():
+        gdb.flush()
+    write_leak(writefn,flushfn)
+
+def dump_leak():
+    file = open("/tmp/leak", "w+")
+    def writefn(str):
+        file.write(str)
+    def flushfn():
+        file.flush()
+    write_leak(writefn,flushfn)
+    file.close()
+
+def write_leak(writefn,flushfn):
     tracker = gdb.parse_and_eval('memory::tracker')
     size_allocations = to_int(tracker['size_allocations'])
     allocations = tracker['allocations']
     # Build a list of allocations to be sorted lexicographically by call chain
     # and summarize allocations with the same call chain:
     percent = '   '
-    gdb.write('Fetching data from qemu/osv: %s' % percent)
-    gdb.flush()
+    writefn('Fetching data from qemu/osv: %s' % percent)
+    flushfn()
     allocs = []
     for i in range(size_allocations):
         newpercent = '%2d%%' % round(100.0*i/(size_allocations-1))
         if newpercent != percent:
             percent = newpercent
-            gdb.write('\b\b\b%s' % newpercent)
+            writefn('\b\b\b%s' % newpercent)
             gdb.flush()
         a = allocations[i]
         addr = ulong(a['addr'])
@@ -1296,11 +1312,11 @@ def show_leak():
         for j in range(nbacktrace):
             callchain.append(ulong(backtrace[nbacktrace-1-j]))
         allocs.append((i, callchain))
-    gdb.write('\n')
+    writefn('\n')
 
-    gdb.write('Merging %d allocations by identical call chain... ' %
+    writefn('Merging %d allocations by identical call chain... ' %
               len(allocs))
-    gdb.flush()
+    flushfn()
     allocs.sort(key=lambda entry: entry[1])
 
     import collections
@@ -1356,29 +1372,29 @@ def show_leak():
         cur_last_seq = -1
         cur_max_size = -1
         cur_min_size = -1
-    gdb.write('generated %d records.\n' % len(records))
+    writefn('generated %d records.\n' % len(records))
 
     # Now sort the records by total number of bytes
     records.sort(key=lambda r: r.bytes, reverse=True)
 
-    gdb.write('\nAllocations still in memory at this time (seq=%d):\n\n' %
+    writefn('\nAllocations still in memory at this time (seq=%d):\n\n' %
               tracker['current_seq'])
     for r in records:
-        gdb.write('Found %d bytes in %d allocations [size ' % (r.bytes, r.allocations))
+        writefn('Found %d bytes in %d allocations [size ' % (r.bytes, r.allocations))
         if r.minsize != r.maxsize:
-            gdb.write('%d/%.1f/%d' % (r.minsize, r.avgsize, r.maxsize))
+            writefn('%d/%.1f/%d' % (r.minsize, r.avgsize, r.maxsize))
         else:
-            gdb.write('%d' % r.minsize)
-        gdb.write(', birth ')
+            writefn('%d' % r.minsize)
+        writefn(', birth ')
         if r.minbirth != r.maxbirth:
-            gdb.write('%d/%.1f/%d' % (r.minbirth, r.avgbirth, r.maxbirth))
+            writefn('%d/%.1f/%d' % (r.minbirth, r.avgbirth, r.maxbirth))
         else:
-            gdb.write('%d' % r.minbirth)
-        gdb.write(']\nfrom:\n')
+            writefn('%d' % r.minbirth)
+        writefn(']\nfrom:\n')
         for f in reversed(r.callchain):
             si = syminfo(f)
-            gdb.write('\t%s\n' % (si,))
-        gdb.write('\n')
+            writefn('\t%s\n' % (si,))
+        writefn('\n')
 
 def drivers():
     drvman = gdb.lookup_global_symbol('hw::driver_manager::_instance').value()
@@ -1438,6 +1454,12 @@ class osv_leak_show(gdb.Command):
         gdb.Command.__init__(self, 'osv leak show', gdb.COMMAND_USER, gdb.COMPLETE_NONE)
     def invoke(self, arg, from_tty):
         show_leak()
+
+class osv_leak_dump(gdb.Command):
+    def __init__(self):
+        gdb.Command.__init__(self, 'osv leak dump', gdb.COMMAND_USER, gdb.COMPLETE_NONE)
+    def invoke(self, arg, from_tty):
+        dump_leak()
 
 class osv_leak_on(gdb.Command):
     def __init__(self):
@@ -1575,6 +1597,7 @@ osv_trace_save()
 osv_trace_file()
 osv_leak()
 osv_leak_show()
+osv_leak_dump()
 osv_leak_on()
 osv_leak_off()
 osv_pagetable()
