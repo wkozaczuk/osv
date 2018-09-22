@@ -1277,8 +1277,9 @@ def show_leak():
         gdb.flush()
     write_leak(writefn,flushfn)
 
-def dump_leak():
-    file = open("/tmp/leak", "w+")
+def dump_leak(file_path):
+    gdb.write("Dumping memory allocations to %s\n" % file_path)
+    file = open(file_path, "w+")
     def writefn(str):
         file.write(str)
     def flushfn():
@@ -1459,7 +1460,12 @@ class osv_leak_dump(gdb.Command):
     def __init__(self):
         gdb.Command.__init__(self, 'osv leak dump', gdb.COMMAND_USER, gdb.COMPLETE_NONE)
     def invoke(self, arg, from_tty):
-        dump_leak()
+        args_list = arg.split()
+        if len(args_list) == 0:
+            dump_file_path = '/tmp/osv_memory_dump.log'
+        else:
+            dump_file_path = args_list[0]
+        dump_leak(dump_file_path)
 
 class osv_leak_on(gdb.Command):
     def __init__(self):
