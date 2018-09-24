@@ -1,0 +1,49 @@
+void* malloc(size_t size) at line 1738
+{
+    static_assert(alignof(max_align_t) >= 2 * sizeof(size_t),
+                  "alignof(max_align_t) smaller than glibc alignment guarantee");
+    auto alignment = alignof(max_align_t);
+    if (alignment > size) {
+        alignment = 1ul << ilog2_roundup(size);
+    }
+#if CONF_debug_memory == 0
+    void* buf = std_malloc(size, alignment);
+#else
+    void* buf = dbg::malloc(size, alignment);
+#endif
+
+    trace_memory_malloc(buf, size, alignment);
+    return buf;
+}
+
+** similar to posix_memalign at line 1774
+-----
+- allocates whole page when smp_allocator false
+#0  memory::untracked_alloc_page () at core/mempool.cc:1440
+#1  0x00000000005991ba in memory::alloc_page () at core/mempool.cc:1451
+#2  0x0000000000599572 in std_malloc (size=8, alignment=8) at core/mempool.cc:1557
+#3  0x0000000000599d3f in malloc (size=8) at core/mempool.cc:1744
+#4  0x0000000000711ea8 in operator new(unsigned long) ()
+
+OR
+
+#0  memory::page_range_allocator::alloc<true> (this=0x13ac540 <memory::free_page_ranges>, size=4096)
+    at core/mempool.cc:721
+#1  0x00000000005990c0 in memory::early_alloc_page () at core/mempool.cc:1426
+#2  0x0000000000599185 in memory::untracked_alloc_page () at core/mempool.cc:1441
+#3  0x00000000005991ba in memory::alloc_page () at core/mempool.cc:1451
+#4  0x0000000000599572 in std_malloc (size=1952, alignment=64) at core/mempool.cc:1557
+#5  0x0000000000599e18 in posix_memalign (memptr=0x1358c00, alignment=64, size=1952) at core/mempool.cc:1781
+#6  0x0000000000599eb1 in aligned_alloc (alignment=64, size=1952) at core/mempool.cc:1800
+#7  0x00000000005c8311 in sched::thread::setup_tcb (this=0xffff800001654040) at arch/x64/arch-switch.hh:170
+#8  0x00000000005cb657 in sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (
+    this=0xffff800001654040, func=..., attr=..., main=false, app=<optimized out>) at core/sched.cc:934
+#9  0x000000000059ae40 in sched::thread::make<memory::reclaimer::reclaimer()::<lambda()>, sched::thread::attr&>(memory::reclaimer::<lambda()> &&, sched::thread::attr &) (args#0=..., args#1=...) at include/osv/sched.hh:420
+#10 0x0000000000597db4 in memory::reclaimer::reclaimer (this=0x13ac4a0 <memory::reclaimer_thread>)
+    at core/mempool.cc:960
+#11 0x00000000005a098d in __static_initialization_and_destruction_0 (__initialize_p=1, __priority=116)
+    at core/mempool.cc:430
+#12 0x00000000005a0b3d in _GLOBAL__sub_I.00116_smp_allocator_cnt(void) () at core/mempool.cc:1839
+#13 0x000000000020340b in premain () at loader.cc:114
+#14 0x00000000002030b2 in start64 () at arch/x64/boot.S:104
+

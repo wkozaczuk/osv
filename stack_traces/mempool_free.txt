@@ -1,0 +1,41 @@
+void free(void* object) at line 1622
+-----
+{
+    trace_memory_free(object);
+    if (!object) {
+        return;
+    }
+    memory::tracker_forget(object);
+    switch (mmu::get_mem_area(object)) {
+    case mmu::mem_area::page:
+        object = mmu::translate_mem_area(mmu::mem_area::page,
+                                         mmu::mem_area::main, object);
+#       return memory::free_page(object);
+    case mmu::mem_area::main:
+#        return memory::free_large(object);
+    case mmu::mem_area::mempool:
+        object = mmu::translate_mem_area(mmu::mem_area::mempool,
+                                         mmu::mem_area::main, object);
+#       return memory::pool::from_object(object)->free(object);
+    case mmu::mem_area::debug:
+#       return dbg::free(object);
+    default:
+        abort();
+    }
+}
+---
+--- example stacktrace
+584	            _free[order].push_front(pr);
+(gdb) bt
+#0  memory::page_range_allocator::insert<true> (this=0x13ac540 <memory::free_page_ranges>, pr=...)
+    at core/mempool.cc:584
+#1  0x00000000005974ab in memory::page_range_allocator::free (this=0x13ac540 <memory::free_page_ranges>, 
+    pr=0xffff800001429000) at core/mempool.cc:777
+#2  0x0000000000598362 in memory::free_page_range_locked (range=0xffff800001429000) at core/mempool.cc:1043
+#3  0x00000000005983a6 in memory::free_page_range (range=0xffff800001429000) at core/mempool.cc:1051
+#4  0x0000000000599144 in memory::early_free_page (v=0xffff800001429000) at core/mempool.cc:1433
+#5  0x000000000059920e in memory::untracked_free_page (v=0xffff800001429000) at core/mempool.cc:1460
+#6  0x0000000000599236 in memory::free_page (v=0xffff800001429000) at core/mempool.cc:1467
+#7  0x0000000000599835 in free (object=0xffff800001429000) at core/mempool.cc:1630
+#8  0x000000000046abee in AcpiOsFree (Memory=0xffff900001429000) at drivers/acpi.cc:162
+

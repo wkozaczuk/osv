@@ -1,0 +1,13 @@
+static inline void untracked_free_page(void *v) at line 1456
+{
+    trace_memory_page_free(v);
+    if (!smp_allocator) {
+        return early_free_page(v);
+    }
+    page_pool::l1::free_page(v);
+}
+
+---- 
+used by:
+- pool::free_same_cpu(free_object* obj)
+- free_page() 

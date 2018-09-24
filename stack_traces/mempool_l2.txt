@@ -1,0 +1,19 @@
+class l2 global_l2;
+-------------------
+- void l2::fill_thread() at line 1340
+- void l2::refill() at line 1361
+
+#0  memory::page_pool::l2::refill (this=0x13ac6a0 <memory::page_pool::global_l2>) at core/mempool.cc:1375
+#1  0x00000000005a1e09 in memory::page_pool::l2::alloc_page_batch (this=0x13ac6a0 <memory::page_pool::global_l2>)
+    at core/mempool.cc:1176
+#2  0x00000000005986ba in memory::page_pool::l1::refill () at core/mempool.cc:1281
+#3  0x00000000005a1a71 in memory::page_pool::l1::alloc_page () at core/mempool.cc:1097
+#4  0x0000000000599190 in memory::untracked_alloc_page () at core/mempool.cc:1443
+#5  0x0000000000596642 in memory::pool::add_page (this=0x13ac368 <memory::malloc_pools+72>) at core/mempool.cc:255
+#6  0x0000000000596507 in memory::pool::alloc (this=0x13ac368 <memory::malloc_pools+72>) at core/mempool.cc:222
+#7  0x0000000000599508 in std_malloc (size=8, alignment=8) at core/mempool.cc:1552
+#8  0x0000000000599d3f in malloc (size=8) at core/mempool.cc:1744
+#9  0x0000000000711ea8 in operator new(unsigned long) ()
+
+- void l2::unfill() at line 1397
+- void l2::free_batch(page_batch& batch) at line 1410

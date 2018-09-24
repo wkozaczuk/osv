@@ -1,0 +1,20 @@
+PERCPU(l1*, percpu_l1);
+static inline l1& get_l1()
+{
+    return **percpu_l1;
+}
+----
+- void l1::fill_thread() at line 1255
+
+- void l1::refill() at line 1278
+
+#0  memory::page_pool::l1::refill () at core/mempool.cc:1278
+#1  0x00000000005a1a71 in memory::page_pool::l1::alloc_page () at core/mempool.cc:1097
+#2  0x0000000000599190 in memory::untracked_alloc_page () at core/mempool.cc:1443
+#3  0x0000000000596642 in memory::pool::add_page (this=0x13ac368 <memory::malloc_pools+72>) at core/mempool.cc:255
+#4  0x0000000000596507 in memory::pool::alloc (this=0x13ac368 <memory::malloc_pools+72>) at core/mempool.cc:222
+#5  0x0000000000599508 in std_malloc (size=8, alignment=8) at core/mempool.cc:1552
+#6  0x0000000000599d3f in malloc (size=8) at core/mempool.cc:1744
+#7  0x0000000000711ea8 in operator new(unsigned long) ()
+
+- void l1::unfill() at line 1299

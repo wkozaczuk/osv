@@ -1,0 +1,22 @@
+void* l1::alloc_page_local() at 1310
+{
+    SCOPE_LOCK(preempt_lock);
+    auto& pbuf = get_l1();
+    if (pbuf.nr < pbuf.watermark_lo) {
+        pbuf.wake_thread();
+    }
+    if (pbuf.nr == 0) {
+        return nullptr;
+    }
+    return pbuf.pop();
+}
+
+----
+#0  memory::page_pool::l1::alloc_page_local () at core/mempool.cc:1313
+#1  0x00000000005a1a5c in memory::page_pool::l1::alloc_page () at core/mempool.cc:1096
+#2  0x0000000000599190 in memory::untracked_alloc_page () at core/mempool.cc:1443
+#3  0x0000000000596642 in memory::pool::add_page (this=0x13ac3c8 <memory::malloc_pools+168>) at core/mempool.cc:255
+#4  0x0000000000596507 in memory::pool::alloc (this=0x13ac3c8 <memory::malloc_pools+168>) at core/mempool.cc:222
+#5  0x0000000000599508 in std_malloc (size=72, alignment=16) at core/mempool.cc:1552
+#6  0x0000000000599d3f in malloc (size=72) at core/mempool.cc:1744
+#7  0x000000000046abd4 in AcpiOsAllocate (Size=72) at drivers/acpi.cc:157

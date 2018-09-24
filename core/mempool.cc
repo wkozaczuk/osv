@@ -1554,6 +1554,9 @@ static inline void* std_malloc(size_t size, size_t alignment)
                                  ret);
         trace_memory_malloc_mempool(ret, size, 1 << n, alignment);
     } else if (size <= mmu::page_size && alignment <= mmu::page_size) {
+        if (alignment > size && size <= memory::pool::max_object_size) {
+            debugf("--> Whole page for size: %ld\n", size);
+        }
         ret = mmu::translate_mem_area(mmu::mem_area::main, mmu::mem_area::page,
                                        memory::alloc_page());
         trace_memory_malloc_page(ret, size, mmu::page_size, alignment);

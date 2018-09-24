@@ -1,0 +1,16 @@
+static void* untracked_alloc_page() at line 1436
+{
+    void* ret;
+
+    if (!smp_allocator) {
+        ret = early_alloc_page();
+    } else {
+        ret = page_pool::l1::alloc_page();
+    }
+    trace_memory_page_alloc(ret);
+    return ret;
+}
+
+--- used by:
+- pool:add_page()
+- alloc_page()

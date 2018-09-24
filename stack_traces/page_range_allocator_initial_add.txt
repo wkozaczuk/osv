@@ -1,0 +1,63 @@
+Breakpoint 8, memory::free_initial_memory_range (addr=0xffff8000013e9000, size=515854336) at core/mempool.cc:1523
+1523	    on_new_memory(size);
+(gdb) p size
+$11 = 515854336
+(gdb) p addr
+$12 = (void *) 0xffff8000013e9000
+(gdb) n
+Cannot remove breakpoints because program is no longer writable.
+Further execution is probably impossible.
+1525	    on_free(size);
+(gdb) br mempool.cc:782
+Breakpoint 9 at 0x5974f2: file core/mempool.cc, line 782.
+(gdb) cont
+Continuing.
+Cannot remove breakpoints because program is no longer writable.
+Further execution is probably impossible.
+
+Breakpoint 9, memory::page_range_allocator::initial_add (this=0x13ac540 <memory::free_page_ranges>, 
+    pr=0xffff8000013e9000) at core/mempool.cc:782
+782	    auto idx = get_bitmap_idx(*pr) + pr->size / page_size;
+(gdb) bt
+#0  memory::page_range_allocator::initial_add (this=0x13ac540 <memory::free_page_ranges>, pr=0xffff8000013e9000)
+    at core/mempool.cc:782
+#1  0x000000000059942f in memory::free_initial_memory_range (addr=0xffff8000013e9000, size=515854336)
+    at core/mempool.cc:1528
+#2  0x00000000003cb779 in mmu::free_initial_memory_range (addr=20873268, size=515858380) at core/mmu.cc:1847
+#3  0x000000000048278e in <lambda(e820ent)>::operator()(e820ent) const (__closure=0x0, ent=...)
+    at arch/x64/arch-setup.cc:146
+#4  0x00000000004827b1 in <lambda(e820ent)>::_FUN(e820ent) () at arch/x64/arch-setup.cc:147
+#5  0x000000000048255d in for_each_e820_entry (e820_buffer=0x1358d80, size=168, 
+    f=0x482796 <<lambda(e820ent)>::_FUN(e820ent)>) at arch/x64/arch-setup.cc:59
+#6  0x0000000000482c22 in arch_setup_free_memory () at arch/x64/arch-setup.cc:131
+#7  0x0000000000599465 in memory::setup () at core/mempool.cc:1533
+#8  0x000000000020340b in premain () at loader.cc:114
+#9  0x00000000002030b2 in start64 () at arch/x64/boot.S:104
+(gdb) p br
+No symbol "br" in current context.
+(gdb) p pr
+$13 = (memory::page_range *) 0xffff8000013e9000
+(gdb) p pr.size
+$14 = 515854336
+
+
+
+--- in free_page_ranges - page_range_allocator::insert()
+#0  memory::page_range_allocator::insert<false> (this=0x13ac540 <memory::free_page_ranges>, pr=...)
+    at core/mempool.cc:581
+#1  0x0000000000597603 in memory::page_range_allocator::initial_add (this=0x13ac540 <memory::free_page_ranges>, 
+    pr=0xffff8000013e9000) at core/mempool.cc:791
+#2  0x000000000059942f in memory::free_initial_memory_range (addr=0xffff8000013e9000, size=515854336)
+    at core/mempool.cc:1528
+#3  0x00000000003cb779 in mmu::free_initial_memory_range (addr=20873268, size=515858380) at core/mmu.cc:1847
+#4  0x000000000048278e in <lambda(e820ent)>::operator()(e820ent) const (__closure=0x0, ent=...)
+    at arch/x64/arch-setup.cc:146
+#5  0x00000000004827b1 in <lambda(e820ent)>::_FUN(e820ent) () at arch/x64/arch-setup.cc:147
+#6  0x000000000048255d in for_each_e820_entry (e820_buffer=0x1358d80, size=168, 
+    f=0x482796 <<lambda(e820ent)>::_FUN(e820ent)>) at arch/x64/arch-setup.cc:59
+#7  0x0000000000482c22 in arch_setup_free_memory () at arch/x64/arch-setup.cc:131
+#8  0x0000000000599465 in memory::setup () at core/mempool.cc:1533
+#9  0x000000000020340b in premain () at loader.cc:114
+#10 0x00000000002030b2 in start64 () at arch/x64/boot.S:104
+
+inserts into _free_huge because order (pr.size / page_size) is 16 and >= max_order

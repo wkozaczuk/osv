@@ -1,0 +1,11 @@
+(gdb) bt
+#0  memory::page_range_allocator::alloc<true> (this=0x13ac540 <memory::free_page_ranges>, size=16384)
+    at core/mempool.cc:710
+#1  0x000000000059777a in memory::malloc_large (size=16384, alignment=16, block=true) at core/mempool.cc:841
+#2  0x00000000005995c5 in std_malloc (size=14288, alignment=16) at core/mempool.cc:1561
+#3  0x0000000000599d3f in malloc (size=14288) at core/mempool.cc:1744
+#4  0x0000000000711ea8 in operator new(unsigned long) ()
+#5  0x000000000048c74d in parse_madt () at arch/x64/smp.cc:59
+#6  0x000000000048c4f3 in smp_init () at arch/x64/smp.cc:77
+#7  0x000000000020340b in premain () at loader.cc:114
+#8  0x00000000002030b2 in start64 () at arch/x64/boot.S:104

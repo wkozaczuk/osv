@@ -1,0 +1,23 @@
+bool l1::free_page_local(void* v) at 1325
+{
+    SCOPE_LOCK(preempt_lock);
+    auto& pbuf = get_l1();
+    if (pbuf.nr > pbuf.watermark_hi) {
+        pbuf.wake_thread();
+    }
+    if (pbuf.nr == pbuf.max) {
+        return false;
+    }
+    pbuf.push(v);
+    return true;
+}
+
+-----------------
+#0  memory::page_pool::l1::free_page_local (v=0xffff800001c6c000) at core/mempool.cc:1325
+#1  0x00000000005a1a91 in memory::page_pool::l1::free_page (v=0xffff800001c6c000) at core/mempool.cc:1104
+#2  0x000000000059921c in memory::untracked_free_page (v=0xffff800001c6c000) at core/mempool.cc:1462
+#3  0x00000000005968d5 in memory::pool::free_same_cpu (this=0x13ac368 <memory::malloc_pools+72>, obj=0xffff800001c6c028, 
+    cpu_id=0) at core/mempool.cc:292
+#4  0x0000000000596a88 in memory::pool::free (this=0x13ac368 <memory::malloc_pools+72>, object=0xffff800001c6c028)
+    at core/mempool.cc:329
+#5  0x000000000059987d in free (object=0xffff800001c6c028) at core/mempool.cc:1636
