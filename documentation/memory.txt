@@ -1,0 +1,86 @@
+mempool.cc interface:
+
+- pages:
+void* alloc_page()
+{
+    void *p = untracked_alloc_page();
+    tracker_remember(p, page_size);
+    return p;
+}
+
+void free_page(void* v)
+{
+    untracked_free_page(v);
+    tracker_forget(v);
+}
+
+- huge pages:
+void* alloc_huge_page(size_t N)
+void free_huge_page(void* v, size_t N)
+
+- boot
+void free_initial_memory_range(void* addr, size_t size)
+
+- standard
+void* malloc(size_t size);
+void* calloc(size_t nmemb, size_t size)
+void* realloc(void* obj, size_t size)
+
+int posix_memalign(void **memptr, size_t alignment, size_t size)
+void *aligned_alloc(size_t alignment, size_t size)
+void *memalign(size_t alignment, size_t size)
+{
+    return aligned_alloc(alignment, size);
+}
+
+void free(void* object);
+size_t malloc_usable_size(void *object);
+
+****
+memory::pool::max_object_size       - 1024
+memory::pool::min_object_size       - 8
+sizeof(memory::pool::page_header)   - 40
+
+0x0000100000000000 - memory area size
+
+0xffff800000000000 - main memory area base
+0xffff900000000000 - page memory area base
+0xffffa00000000000 - mempool memory area base
+0xffffb00000000000 - debug memory area base
+
+******************************************
+* 3 ways to allocate memory (from std_malloc)
+-------------------------------------------------------
+- malloc_pool::alloc() -    size <= 1024 (1/4 of page)
+-------------------------------------------------------
+calls memory::malloc_pools[n].alloc()
+ - which adds a page (4K) if none to given size-determined (log2) malloc pool
+    - pool::add_page():
+        - creates page header and builds linked-list of free objects
+        - adds new page to _free - list of free pages
+ - and finds page header and next available free object of size matching pool object size
+ - removes the page from _free if all objects allocated
+
+malloc_pool malloc_pools[ilog2_roundup_constexpr(page_size) + 1]
+
+-------------------------------------------------------
+- memory::alloc_page() -    1024 < size <= 4096 (page
+-------------------------------------------------------
+calls memory::untracked_alloc_page()
+    ..
+    if (!smp_allocator) {
+        ret = early_alloc_page();           // calls memory::free_page_ranges.alloc()
+    } else {
+        ret = page_pool::l1::alloc_page();  // PER_CPU -> calls l1::alloc_page_local()
+    }
+
+    per CPU l1 page buffer interact with global_l2 page buffer to fetch/free of pages
+    - page_batch* l2::alloc_page_batch() which ends up calling memory::free_page_ranges.alloc() when l2::refill()
+    - void l2::free_page_batch(page_batch* pb)
+    - --- page_batch has constant of 32 pages of memory
+    - --- l2 seems to be keeping at least 8 page batches (8 * 32 * 4K = 1B) per cpu
+
+-------------------------------------------------------
+- memory::malloc_large() -  size > page
+-------------------------------------------------------
+
