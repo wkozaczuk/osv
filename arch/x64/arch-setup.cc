@@ -86,6 +86,9 @@ extern elf::Elf64_Ehdr* elf_header;
 extern size_t elf_size;
 extern void* elf_start;
 extern boot_time_chart boot_time;
+namespace memory {
+extern long free_memory_after_memory_setup;
+}
 
 void arch_setup_free_memory()
 {
@@ -172,8 +175,10 @@ void arch_setup_free_memory()
         }
         mmu::free_initial_memory_range(ent.addr, ent.size);
     });
-    debugf("-> arch_setup_free_memory: free memory is %ld in pages\n",
-           memory::stats::free() / memory::page_size);
+    memory::free_memory_after_memory_setup = memory::stats::free();
+    auto free_in_pages = memory::stats::free() / memory::page_size;
+    debugf("-> arch_setup_free_memory: free memory is %ld in pages (%ld KB) starting at 0x%016x (%ld KB)\n",
+           free_in_pages, free_in_pages * 4, (void*)edata, edata / 1024);
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)

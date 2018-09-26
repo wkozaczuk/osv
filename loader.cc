@@ -90,6 +90,12 @@ extern "C" {
     void rofs_disable_cache();
 }
 
+long free_memory_after_at_the_end_of_premain;
+
+namespace memory {
+    extern long free_memory_after_memory_setup;
+}
+
 void premain()
 {
     arch_init_early_console();
@@ -114,8 +120,9 @@ void premain()
         (*init)();
     }
     boot_time.event(".init functions");
-    debugf("-> premain end: free memory is %ld in pages\n",
-           memory::stats::free() / memory::page_size);
+    free_memory_after_at_the_end_of_premain = memory::stats::free();
+    debugf("-> premain end: free memory is %ld in pages, used %ld KB\n",
+           memory::stats::free() / memory::page_size, (memory::free_memory_after_memory_setup - memory::stats::free()) / 1024);
 }
 
 int main(int loader_argc, char **loader_argv)
@@ -629,16 +636,19 @@ void main_cont(int loader_argc, char** loader_argv)
            memory::malloc_memory_pool_bytes_allocated.load(),
            memory::malloc_memory_pool_bytes_requested.load());
 
-    debugf("---------> free_page_ranges: In malloc_large requested %d pages and %d bytes\n",
+    debugf("-----> free_page_ranges: In malloc_large requested %d pages and %d bytes (%ld KB)\n",
            memory::malloc_large_bytes_requested.load() / memory::page_size,
-           memory::malloc_large_bytes_requested.load());
+           memory::malloc_large_bytes_requested.load(),
+           memory::malloc_large_bytes_requested.load() /1024);
 
-    debugf("---------> free_page_ranges: L2 pool allocated %d pages and %d bytes\n",
+    debugf("-----> free_page_ranges: L2 pool allocated %d pages and %d bytes (%ld KB)\n",
            memory::l2_refill_pages_allocated.load(),
-           memory::l2_refill_pages_allocated.load() * memory::page_size);
+           memory::l2_refill_pages_allocated.load() * memory::page_size,
+           memory::l2_refill_pages_allocated.load() * 4);
 
-    debugf("-> arch_setup_free_memory: free memory is %ld in pages and %ld in bytes\n",
-           memory::stats::free() / memory::page_size, memory::stats::free());
+    debugf("-> Free memory is %ld in pages and %ld in bytes, used %ld KB since end of premain\n",
+           memory::stats::free() / memory::page_size, memory::stats::free(),
+           (free_memory_after_at_the_end_of_premain - memory::stats::free()) / 1024);
 
     if (opt_noshutdown) {
         // If the --noshutdown option is given, continue running the system,

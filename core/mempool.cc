@@ -433,6 +433,8 @@ std::atomic<size_t> malloc_memory_pool_bytes_requested(0);
 std::atomic<size_t> malloc_large_bytes_requested(0);
 std::atomic<size_t> l2_refill_pages_allocated(0);
 
+long free_memory_after_memory_setup = 0;
+
 // At least two (x86) huge pages worth of size;
 static size_t constexpr min_emergency_pool_size = 4 << 20;
 
@@ -1591,10 +1593,9 @@ static inline void* std_malloc(size_t size, size_t alignment)
                                  ret);
         trace_memory_malloc_mempool(ret, size, 1 << n, alignment);
     } else if (size <= mmu::page_size && alignment <= mmu::page_size) {
-        //if (alignment > size && size <= memory::pool::max_object_size) {
-        //    debugf("--> Whole page for size: %ld\n", size);
-        //}
-        //debugf("--> std_malloc: allocating whole page for size: %ld\n", size);
+        if (alignment > size && size <= memory::pool::max_object_size && smp_allocator) {
+            debugf("--> Whole page for size: %ld\n", size);
+        }
         if(smp_allocator) {
             memory::malloc_smp_full_pages_allocated.fetch_add(1);
             memory::malloc_smp_full_pages_bytes_requested.fetch_add(size);
