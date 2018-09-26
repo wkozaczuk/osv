@@ -537,6 +537,7 @@ namespace memory {
     extern std::atomic<size_t> malloc_smp_full_pages_bytes_requested;
 
     extern std::atomic<size_t> malloc_non_smp_full_pages_allocated;
+    extern std::atomic<size_t> malloc_non_smp_full_pages_deallocated;
     extern std::atomic<size_t> malloc_non_smp_full_pages_bytes_requested;
 
     extern std::atomic<size_t> malloc_memory_pool_bytes_allocated;
@@ -544,6 +545,8 @@ namespace memory {
 
     extern std::atomic<size_t> malloc_large_bytes_requested;
     extern std::atomic<size_t> l2_refill_pages_allocated;
+
+    extern std::atomic<size_t> bitmap_allocator_allocate_count;
 }
 
 void main_cont(int loader_argc, char** loader_argv)
@@ -624,9 +627,12 @@ void main_cont(int loader_argc, char** loader_argv)
     void* retval;
     pthread_join(pthread, &retval);
 
-    debugf("---------> In non-SMP mode allocated %d pages in order to allocate %d bytes\n",
+    debugf("---------> Called free_page_ranges allocator %d times\n", memory::bitmap_allocator_allocate_count.load());
+
+    debugf("---------> In non-SMP mode allocated %d pages in order to allocate %d bytes AND deallocated %d\n",
            memory::malloc_non_smp_full_pages_allocated.load(),
-           memory::malloc_non_smp_full_pages_bytes_requested.load());
+           memory::malloc_non_smp_full_pages_bytes_requested.load(),
+           memory::malloc_non_smp_full_pages_deallocated.load());
 
     debugf("---------> In SMP mode allocated %d pages in order to allocate %d bytes\n",
            memory::malloc_smp_full_pages_allocated.load(),

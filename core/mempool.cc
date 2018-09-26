@@ -426,12 +426,15 @@ std::atomic<size_t> malloc_smp_full_pages_bytes_requested(0);
 
 std::atomic<size_t> malloc_non_smp_full_pages_allocated(0);
 std::atomic<size_t> malloc_non_smp_full_pages_bytes_requested(0);
+std::atomic<size_t> malloc_non_smp_full_pages_deallocated(0);
 
 std::atomic<size_t> malloc_memory_pool_bytes_allocated(0);
 std::atomic<size_t> malloc_memory_pool_bytes_requested(0);
 
 std::atomic<size_t> malloc_large_bytes_requested(0);
 std::atomic<size_t> l2_refill_pages_allocated(0);
+
+std::atomic<size_t> bitmap_allocator_allocate_count(0);
 
 long free_memory_after_memory_setup = 0;
 
@@ -683,6 +686,7 @@ T* page_range_allocator::bitmap_allocator<T>::allocate(size_t n)
 {
     auto size = get_size(n);
     on_alloc(size);
+    bitmap_allocator_allocate_count.fetch_add(1);
     mem_debug("-> page_range_allocator::bitmap_allocator<T>::allocate: allocating 0x%x bytes\n", n);
     auto pr = free_page_ranges.alloc<false>(size);
     return reinterpret_cast<T*>(pr);
@@ -1463,6 +1467,7 @@ static void early_free_page(void* v)
 {
     auto pr = new (v) page_range(page_size);
     free_page_range(pr);
+    memory::malloc_non_smp_full_pages_deallocated.fetch_add(1);
 }
 
 static void* untracked_alloc_page()
@@ -1593,9 +1598,9 @@ static inline void* std_malloc(size_t size, size_t alignment)
                                  ret);
         trace_memory_malloc_mempool(ret, size, 1 << n, alignment);
     } else if (size <= mmu::page_size && alignment <= mmu::page_size) {
-        if (alignment > size && size <= memory::pool::max_object_size && smp_allocator) {
-            debugf("--> Whole page for size: %ld\n", size);
-        }
+        //if (alignment > size && size <= memory::pool::max_object_size && smp_allocator) {
+        //    debugf("--> Whole page for size: %ld\n", size);
+        //}
         if(smp_allocator) {
             memory::malloc_smp_full_pages_allocated.fetch_add(1);
             memory::malloc_smp_full_pages_bytes_requested.fetch_add(size);
