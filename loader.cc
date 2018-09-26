@@ -114,6 +114,8 @@ void premain()
         (*init)();
     }
     boot_time.event(".init functions");
+    debugf("-> premain end: free memory is %ld in pages\n",
+           memory::stats::free() / memory::page_size);
 }
 
 int main(int loader_argc, char **loader_argv)
@@ -524,8 +526,17 @@ void* do_main_thread(void *_main_args)
 }
 
 namespace memory {
-extern std::atomic<size_t> pages_allocated;
-extern std::atomic<size_t> pages_allocated_bytes;
+    extern std::atomic<size_t> malloc_smp_full_pages_allocated;
+    extern std::atomic<size_t> malloc_smp_full_pages_bytes_requested;
+
+    extern std::atomic<size_t> malloc_non_smp_full_pages_allocated;
+    extern std::atomic<size_t> malloc_non_smp_full_pages_bytes_requested;
+
+    extern std::atomic<size_t> malloc_memory_pool_bytes_allocated;
+    extern std::atomic<size_t> malloc_memory_pool_bytes_requested;
+
+    extern std::atomic<size_t> malloc_large_bytes_requested;
+    extern std::atomic<size_t> l2_refill_pages_allocated;
 }
 
 void main_cont(int loader_argc, char** loader_argv)
@@ -605,7 +616,29 @@ void main_cont(int loader_argc, char** loader_argv)
     pthread_create(&pthread, &attr, do_main_thread, (void *) __app_cmdline);
     void* retval;
     pthread_join(pthread, &retval);
-    debugf("---------> Allocated %d pages in order to allocate %d bytes\n", memory::pages_allocated.load(), memory::pages_allocated_bytes.load());
+
+    debugf("---------> In non-SMP mode allocated %d pages in order to allocate %d bytes\n",
+           memory::malloc_non_smp_full_pages_allocated.load(),
+           memory::malloc_non_smp_full_pages_bytes_requested.load());
+
+    debugf("---------> In SMP mode allocated %d pages in order to allocate %d bytes\n",
+           memory::malloc_smp_full_pages_allocated.load(),
+           memory::malloc_smp_full_pages_bytes_requested.load());
+
+    debugf("---------> In memory pools allocated %d bytes for requested %d bytes\n",
+           memory::malloc_memory_pool_bytes_allocated.load(),
+           memory::malloc_memory_pool_bytes_requested.load());
+
+    debugf("---------> free_page_ranges: In malloc_large requested %d pages and %d bytes\n",
+           memory::malloc_large_bytes_requested.load() / memory::page_size,
+           memory::malloc_large_bytes_requested.load());
+
+    debugf("---------> free_page_ranges: L2 pool allocated %d pages and %d bytes\n",
+           memory::l2_refill_pages_allocated.load(),
+           memory::l2_refill_pages_allocated.load() * memory::page_size);
+
+    debugf("-> arch_setup_free_memory: free memory is %ld in pages and %ld in bytes\n",
+           memory::stats::free() / memory::page_size, memory::stats::free());
 
     if (opt_noshutdown) {
         // If the --noshutdown option is given, continue running the system,

@@ -172,6 +172,8 @@ void arch_setup_free_memory()
         }
         mmu::free_initial_memory_range(ent.addr, ent.size);
     });
+    debugf("-> arch_setup_free_memory: free memory is %ld in pages\n",
+           memory::stats::free() / memory::page_size);
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)
