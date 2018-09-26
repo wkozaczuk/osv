@@ -523,6 +523,11 @@ void* do_main_thread(void *_main_args)
     return nullptr;
 }
 
+namespace memory {
+extern std::atomic<size_t> pages_allocated;
+extern std::atomic<size_t> pages_allocated_bytes;
+}
+
 void main_cont(int loader_argc, char** loader_argv)
 {
     osv::firmware_probe();
@@ -600,6 +605,7 @@ void main_cont(int loader_argc, char** loader_argv)
     pthread_create(&pthread, &attr, do_main_thread, (void *) __app_cmdline);
     void* retval;
     pthread_join(pthread, &retval);
+    debugf("---------> Allocated %d pages in order to allocate %d bytes\n", memory::pages_allocated.load(), memory::pages_allocated_bytes.load());
 
     if (opt_noshutdown) {
         // If the --noshutdown option is given, continue running the system,

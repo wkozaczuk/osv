@@ -36,10 +36,18 @@ void *memalign(size_t alignment, size_t size)
 void free(void* object);
 size_t malloc_usable_size(void *object);
 
-****
+***************************************************
 memory::pool::max_object_size       - 1024
 memory::pool::min_object_size       - 8
 sizeof(memory::pool::page_header)   - 40
+
+    struct page_header {
+        pool* owner;
+        unsigned cpu_id;
+        unsigned nalloc; //number of objects allocated
+        bi::list_member_hook<> free_link;
+        free_object* local_free;  // free objects in this page -> if null means that page is full
+    };
 
 0x0000100000000000 - memory area size
 
@@ -49,7 +57,8 @@ sizeof(memory::pool::page_header)   - 40
 0xffffb00000000000 - debug memory area base
 
 ******************************************
-* 3 ways to allocate memory (from std_malloc)
+* 3 ways to allocate memory (from std_malloc) - in each case calls mmu::translate_mem_area() 
+  to translate from main memory area to main or mempool one (for large keeps main)
 -------------------------------------------------------
 - malloc_pool::alloc() -    size <= 1024 (1/4 of page)
 -------------------------------------------------------
@@ -81,6 +90,36 @@ calls memory::untracked_alloc_page()
     - --- l2 seems to be keeping at least 8 page batches (8 * 32 * 4K = 1B) per cpu
 
 -------------------------------------------------------
-- memory::malloc_large() -  size > page
+- memory::malloc_large() - size > page
 -------------------------------------------------------
 
+******************************************
+* 3 ways to free memory (from free) - calls mmu::get_mem_area(object) to read 44-46 bits of an address to determine how memory was allocated
+-------------------------------------------------------
+- memory::pool::from_object(object)->free(object) -    size <= 1024 (1/4 of page)
+-------------------------------------------------------
+pool* pool::from_object(void* object)
+{
+    auto header = to_header(static_cast<free_object*>(object));
+    return header->owner;
+}
+
+calls pool:free() which checks memory page header on which CPU memory was allocated
+- if same cpu it calls
+     void pool::free_same_cpu(free_object* obj, unsigned cpu_id) gets page header
+       * if page is empty (nalloc == 0) and there is at least another empty page it removes this page from the pool and calls untracked_free_page
+       * otherwise it adds freed object in the front of the single-linked list
+          obj->next = header->local_free;
+          header->local_free = obj;
+        - also pushes full page back in the _free list of pages otherwise brings it upfront
+- or calls
+     void pool::free_different_cpu(free_object* obj, unsigned obj_cpu, unsigned cur_cpu)
+       * finds a "sink" for that cpu and calls free on that sink object
+
+-------------------------------------------------------
+- memory::free_page() -    1024 < size <= 4096 (page
+-------------------------------------------------------
+
+-------------------------------------------------------
+- memory::free_large() -   size > page
+-------------------------------------------------------

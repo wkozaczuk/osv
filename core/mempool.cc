@@ -411,6 +411,8 @@ mutex free_page_ranges_lock;
 // and eventually hotplug in an hypothetical future
 static std::atomic<size_t> total_memory(0);
 static std::atomic<size_t> free_memory(0);
+std::atomic<size_t> pages_allocated(0);
+std::atomic<size_t> pages_allocated_bytes(0);
 static size_t watermark_lo(0);
 static std::atomic<size_t> current_jvm_heap_memory(0);
 
@@ -662,6 +664,7 @@ T* page_range_allocator::bitmap_allocator<T>::allocate(size_t n)
 {
     auto size = get_size(n);
     on_alloc(size);
+    debugf("-> page_range_allocator::bitmap_allocator<T>::allocate: allocating 0x%x bytes\n", n);
     auto pr = free_page_ranges.alloc<false>(size);
     return reinterpret_cast<T*>(pr);
 }
@@ -780,6 +783,7 @@ void page_range_allocator::free(page_range* pr)
 void page_range_allocator::initial_add(page_range* pr)
 {
     auto idx = get_bitmap_idx(*pr) + pr->size / page_size;
+    debugf("-> page_range_allocator:initial_add adding page range of address: 0x%016x and size %ld in pages\n", (void*)pr, pr->size / page_size);
     if (idx > _bitmap.size()) {
         auto prev_idx = get_bitmap_idx(*pr) - 1;
         if (_bitmap.size() > prev_idx && _bitmap[prev_idx]) {
@@ -836,8 +840,10 @@ static void* malloc_large(size_t size, size_t alignment, bool block = true)
             reclaimer_thread.wait_for_minimum_memory();
             page_range* ret_header;
             if (alignment > page_size) {
+                debugf("-> malloc_large: alloc_aligned allocating 0x%x bytes\n", size);
                 ret_header = free_page_ranges.alloc_aligned(size, page_size, alignment);
             } else {
+                debugf("-> malloc_large: alloc allocating 0x%x bytes\n", size);
                 ret_header = free_page_ranges.alloc(size);
             }
             if (ret_header) {
@@ -1040,6 +1046,7 @@ void reclaimer::_do_reclaim()
 static void free_page_range_locked(page_range *range)
 {
     on_free(range->size);
+    debugf("-> free_page_range_locked: freeing range at 0x%016x and size 0x%x bytes\n", (void*)range, range->size);
     free_page_ranges.free(range);
 }
 
@@ -1372,6 +1379,7 @@ void l2::refill()
                 reclaimer_thread.wait_for_memory(mmu::page_size);
             }
             auto total_size = 0;
+            debugf("-> l2::refill(): allocating batch of %d pages\n", page_batch::nr_pages);
             for (size_t i = 0 ; i < page_batch::nr_pages; i++) {
                 batch.pages[i] = free_page_ranges.alloc(page_size);
                 total_size += page_size;
@@ -1423,6 +1431,7 @@ static void* early_alloc_page()
 {
     WITH_LOCK(free_page_ranges_lock) {
         on_alloc(page_size);
+        debugf("-> early_alloc_page: allocating full page\n");
         return static_cast<void*>(free_page_ranges.alloc(page_size));
     }
 }
@@ -1476,6 +1485,7 @@ void free_page(void* v)
 void* alloc_huge_page(size_t N)
 {
     WITH_LOCK(free_page_ranges_lock) {
+        debugf("-> alloc_huge_page: allocating %d bytes\n", N);
         auto pr = free_page_ranges.alloc_aligned(N, 0, N, true);
         if (pr) {
             on_alloc(N);
@@ -1525,6 +1535,7 @@ void free_initial_memory_range(void* addr, size_t size)
     on_free(size);
 
     auto pr = new (addr) page_range(size);
+    debugf("-> free_initial_memory_range: registering page range of address: 0x%016x and size %ld in pages\n", addr, size / page_size);
     free_page_ranges.initial_add(pr);
 }
 
@@ -1549,14 +1560,19 @@ static inline void* std_malloc(size_t size, size_t alignment)
     if (size <= memory::pool::max_object_size && alignment <= size && smp_allocator) {
         size = std::max(size, memory::pool::min_object_size);
         unsigned n = ilog2_roundup(size);
+        //debugf("--> std_malloc: allocating 2^%d bytes for requested %ld bytes\n", n, size);
         ret = memory::malloc_pools[n].alloc();
         ret = translate_mem_area(mmu::mem_area::main, mmu::mem_area::mempool,
                                  ret);
         trace_memory_malloc_mempool(ret, size, 1 << n, alignment);
     } else if (size <= mmu::page_size && alignment <= mmu::page_size) {
-        if (alignment > size && size <= memory::pool::max_object_size) {
-            debugf("--> Whole page for size: %ld\n", size);
-        }
+        //if (alignment > size && size <= memory::pool::max_object_size) {
+        //    debugf("--> Whole page for size: %ld\n", size);
+        //}
+        //debugf("--> std_malloc: allocating whole page for size: %ld\n", size);
+        memory::pages_allocated.fetch_add(1);
+        memory::pages_allocated_bytes.fetch_add(size);
+
         ret = mmu::translate_mem_area(mmu::mem_area::main, mmu::mem_area::page,
                                        memory::alloc_page());
         trace_memory_malloc_page(ret, size, mmu::page_size, alignment);
