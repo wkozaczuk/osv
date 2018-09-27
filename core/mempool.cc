@@ -60,6 +60,8 @@ TRACEPOINT(trace_memory_wait, "allocation size=%d", size_t);
 #define mem_debug(...)
 #endif
 
+extern long free_memory_after_at_the_end_of_premain;
+
 namespace dbg {
 
 static size_t object_size(void* v);
@@ -80,7 +82,7 @@ std::atomic<size_t> tracker_forget_called(0);
 // Optionally track living allocations, and the call chain which led to each
 // allocation. Don't set tracker_enabled before tracker is fully constructed.
 alloc_tracker tracker;
-bool tracker_enabled = true;
+bool tracker_enabled = false;
 inline static void tracker_remember(void *addr, size_t size)
 {
     // Check if tracker_enabled is true, but expect (be quicker in the case)
@@ -430,6 +432,7 @@ std::atomic<size_t> malloc_smp_full_pages_bytes_requested(0);
 std::atomic<size_t> malloc_non_smp_full_pages_allocated(0);
 std::atomic<size_t> malloc_non_smp_full_pages_bytes_requested(0);
 std::atomic<size_t> malloc_non_smp_full_pages_deallocated(0);
+std::atomic<size_t> malloc_non_smp_full_pages_bytes_deallocated(0);
 
 std::atomic<size_t> malloc_memory_pool_bytes_allocated(0);
 std::atomic<size_t> malloc_memory_pool_bytes_requested(0);
@@ -1388,6 +1391,9 @@ void l2::fill_thread()
         debugf("*** l2::fill_thread: malloc_large called total %ld times, total: %ld\n",
                malloc_large_called.load(),
                malloc_large_bytes_requested.load());
+        debugf("*** l2::fill_thread: free memory is %ld in pages and %ld in bytes, used %ld KB since end of premain\n",
+               stats::free() / page_size, stats::free(),
+               (free_memory_after_at_the_end_of_premain - stats::free()) / 1024);
     }
 
     sched::thread::wait_until([] {return smp_allocator;});
@@ -1484,6 +1490,7 @@ static void early_free_page(void* v)
     auto pr = new (v) page_range(page_size);
     free_page_range(pr);
     memory::malloc_non_smp_full_pages_deallocated.fetch_add(1);
+    memory::malloc_non_smp_full_pages_bytes_deallocated.fetch_add(page_size);
 }
 
 static void* untracked_alloc_page()

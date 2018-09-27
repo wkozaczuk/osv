@@ -118,11 +118,14 @@ void premain()
 
     setup_tls(inittab);
     boot_time.event(3,"TLS initialization");
+    long init_count = 0;
     for (auto init = inittab.start; init < inittab.start + inittab.count; ++init) {
         (*init)();
+        init_count++;
     }
     boot_time.event(".init functions");
     free_memory_after_at_the_end_of_premain = memory::stats::free();
+    debugf("-> premain number of init functions called %ld\n", init_count );
     debugf("-> premain end: free memory is %ld in pages, used %ld KB\n",
            memory::stats::free() / memory::page_size,
            (memory::free_memory_after_memory_setup - memory::stats::free()) / 1024);
@@ -634,25 +637,25 @@ void main_cont(int loader_argc, char** loader_argv)
 
     debugf("---------> Called free_page_ranges allocator %d times\n", memory::bitmap_allocator_allocate_count.load());
 
-    debugf("---------> In non-SMP mode allocated %d pages in order to allocate %d bytes AND deallocated %d\n",
+    debugf("---------> In non-SMP mode allocated %ld pages in order to allocate %ld bytes AND deallocated %ld pages\n",
            memory::malloc_non_smp_full_pages_allocated.load(),
            memory::malloc_non_smp_full_pages_bytes_requested.load(),
            memory::malloc_non_smp_full_pages_deallocated.load());
 
-    debugf("---------> In SMP mode allocated %d pages in order to allocate %d bytes\n",
+    debugf("---------> In SMP mode allocated %ld pages in order to allocate %ld bytes\n",
            memory::malloc_smp_full_pages_allocated.load(),
            memory::malloc_smp_full_pages_bytes_requested.load());
 
-    debugf("---------> In memory pools allocated %d bytes for requested %d bytes\n",
+    debugf("---------> In memory pools allocated %ld bytes for requested %ld bytes\n",
            memory::malloc_memory_pool_bytes_allocated.load(),
            memory::malloc_memory_pool_bytes_requested.load());
 
-    debugf("-----> free_page_ranges: In malloc_large requested %d pages and %d bytes (%ld KB)\n",
+    debugf("-----> free_page_ranges: In malloc_large requested %ld pages and %ld bytes (%ld KB)\n",
            memory::malloc_large_bytes_requested.load() / memory::page_size,
            memory::malloc_large_bytes_requested.load(),
            memory::malloc_large_bytes_requested.load() /1024);
 
-    debugf("-----> free_page_ranges: L2 pool allocated %d pages and %d bytes (%ld KB)\n",
+    debugf("-----> free_page_ranges: L2 pool allocated %ld pages and %ld bytes (%ld KB)\n",
            memory::l2_refill_pages_allocated.load(),
            memory::l2_refill_pages_allocated.load() * memory::page_size,
            memory::l2_refill_pages_allocated.load() * 4);
