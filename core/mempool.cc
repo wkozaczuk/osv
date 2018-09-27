@@ -73,12 +73,15 @@ unsigned char *osv_reclaimer_thread;
 namespace memory {
 
 size_t phys_mem_size;
+std::atomic<size_t> tracker_remember_called(0);
+std::atomic<size_t> tracker_forget_called(0);
+
 
 // Optionally track living allocations, and the call chain which led to each
 // allocation. Don't set tracker_enabled before tracker is fully constructed.
 alloc_tracker tracker;
-bool tracker_enabled = false;
-static inline void tracker_remember(void *addr, size_t size)
+bool tracker_enabled = true;
+inline static void tracker_remember(void *addr, size_t size)
 {
     // Check if tracker_enabled is true, but expect (be quicker in the case)
     // that it is false.
@@ -86,7 +89,7 @@ static inline void tracker_remember(void *addr, size_t size)
         tracker.remember(addr, size);
     }
 }
-static inline void tracker_forget(void *addr)
+inline static void tracker_forget(void *addr)
 {
     if (__builtin_expect(tracker_enabled, false)) {
         tracker.forget(addr);
@@ -432,6 +435,7 @@ std::atomic<size_t> malloc_memory_pool_bytes_allocated(0);
 std::atomic<size_t> malloc_memory_pool_bytes_requested(0);
 
 std::atomic<size_t> malloc_large_bytes_requested(0);
+std::atomic<size_t> malloc_large_called(0);
 std::atomic<size_t> l2_refill_pages_allocated(0);
 
 std::atomic<size_t> bitmap_allocator_allocate_count(0);
@@ -864,6 +868,7 @@ static void* malloc_large(size_t size, size_t alignment, bool block = true)
             reclaimer_thread.wait_for_minimum_memory();
             page_range* ret_header;
             memory::malloc_large_bytes_requested.fetch_add(size);
+            memory::malloc_large_called.fetch_add(1);
             if (alignment > page_size) {
                 mem_debug("-> malloc_large: alloc_aligned allocating 0x%x bytes\n", size);
                 ret_header = free_page_ranges.alloc_aligned(size, page_size, alignment);
@@ -1273,6 +1278,10 @@ static sched::cpu::notifier _notifier([] () {
     // Switch to smp_allocator only when all the N + 1 threads are ready
     if (smp_allocator_cnt++ == sched::cpus.size()) {
         smp_allocator = true;
+        debugf("*** notifier: SMP allocator initialized - allocations so far: %ld, tracked called = (%ld,%ld)!!!\n",
+              malloc_non_smp_full_pages_allocated.load(),
+              tracker_remember_called.load(),
+              tracker_forget_called.load());
     }
 });
 static inline l1& get_l1()
@@ -1372,6 +1381,13 @@ void l2::fill_thread()
 {
     if (smp_allocator_cnt++ == sched::cpus.size()) {
         smp_allocator = true;
+        debugf("*** l2::fill_thread: SMP allocator initialized - allocations so far: %ld, tracker called: (%ld,%ld)!!!\n",
+              malloc_non_smp_full_pages_allocated.load(),
+               tracker_remember_called.load(),
+               tracker_forget_called.load());
+        debugf("*** l2::fill_thread: malloc_large called total %ld times, total: %ld\n",
+               malloc_large_called.load(),
+               malloc_large_bytes_requested.load());
     }
 
     sched::thread::wait_until([] {return smp_allocator;});
@@ -1486,7 +1502,7 @@ static void* untracked_alloc_page()
 void* alloc_page()
 {
     void *p = untracked_alloc_page();
-    tracker_remember(p, page_size);
+    //tracker_remember(p, page_size);
     return p;
 }
 

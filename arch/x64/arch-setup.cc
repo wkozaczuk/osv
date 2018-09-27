@@ -90,6 +90,10 @@ namespace memory {
 extern long free_memory_after_memory_setup;
 }
 
+namespace memory {
+    extern std::atomic<size_t> malloc_non_smp_full_pages_allocated;
+}
+
 void arch_setup_free_memory()
 {
     static ulong edata;
@@ -179,6 +183,9 @@ void arch_setup_free_memory()
     auto free_in_pages = memory::stats::free() / memory::page_size;
     debugf("-> arch_setup_free_memory: free memory is %ld in pages (%ld KB) starting at 0x%016x (%ld KB)\n",
            free_in_pages, free_in_pages * 4, (void*)edata, edata / 1024);
+
+    debugf("-> arch_setup_free_memory: non-SMP allocations so far: %ld\n",
+           memory::malloc_non_smp_full_pages_allocated.load());
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)

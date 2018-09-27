@@ -1,0 +1,4238 @@
+Fetching data from qemu/osv:     0% 1% 2% 3% 4% 5% 6% 7% 8% 9%10%11%12%13%14%15%16%17%18%19%20%21%22%23%24%25%26%27%28%29%30%31%32%33%34%35%36%37%38%39%40%41%42%43%44%45%46%47%48%49%50%51%52%53%54%55%56%57%58%59%60%61%62%63%64%65%66%67%68%69%70%71%72%73%74%75%76%77%78%79%80%81%82%83%84%85%86%87%88%89%90%91%92%93%94%95%96%97%98%99%100%
+Merging 1017 allocations by identical call chain... generated 528 records.
+
+Allocations still in memory at this time (seq=1409):
+
+Found 72704 bytes in 1 allocations [size 72704, birth 863]
+from:
+	_GLOBAL__sub_I_eh_alloc.cc (loader.elf)
+	start64 (arch/x64/boot.S:105)
+
+Found 65536 bytes in 1 allocations [size 65536, birth 33]
+from:
+	sched::thread::init_stack() (arch/x64/arch-switch.hh:141)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:979)
+	memory::page_pool::l2::l2() (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:1285)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 65536 bytes in 1 allocations [size 65536, birth 816]
+from:
+	sched::thread::init_stack() (arch/x64/arch-switch.hh:141)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:979)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:416)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 65536 bytes in 1 allocations [size 65536, birth 828]
+from:
+	sched::thread::init_stack() (arch/x64/arch-switch.hh:141)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:979)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:656)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 65536 bytes in 1 allocations [size 65536, birth 1305]
+from:
+	sched::thread::init_stack() (arch/x64/arch-switch.hh:141)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:979)
+	smp_launch() (arch/x64/smp.cc:118)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 65536 bytes in 1 allocations [size 65536, birth 1408]
+from:
+	sched::thread::init_stack() (arch/x64/arch-switch.hh:141)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:979)
+	sched::cpu::init_idle_thread() (/usr/include/c++/7/bits/std_function.h:275)
+	smp_launch() (arch/x64/smp.cc:120)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 65536 bytes in 1 allocations [size 65536, birth 1327]
+from:
+	sched::thread::init_stack() (arch/x64/arch-switch.hh:141)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:979)
+	osv::rcu::cpu_quiescent_state_thread::cpu_quiescent_state_thread(sched::cpu*) (/usr/include/c++/7/bits/std_function.h:275)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/vector.tcc:98)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 65536 bytes in 1 allocations [size 65536, birth 1348]
+from:
+	sched::thread::init_stack() (arch/x64/arch-switch.hh:141)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:979)
+	std::_Function_handler<void (), memory::page_pool::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 65536 bytes in 1 allocations [size 65536, birth 1366]
+from:
+	sched::thread::init_stack() (arch/x64/arch-switch.hh:141)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:979)
+	workman::pcpu_init() (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 65536 bytes in 1 allocations [size 65536, birth 1390]
+from:
+	sched::thread::init_stack() (arch/x64/arch-switch.hh:141)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:979)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 53248 bytes in 13 allocations [size 4096, birth 192/204.0/216]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 53248 bytes in 13 allocations [size 4096, birth 908/924.5/940]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	elf::program::program(void*) (/usr/include/c++/7/bits/stl_map.h:512)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 40960 bytes in 1 allocations [size 40960, birth 872]
+from:
+	sched::thread::init_stack() (arch/x64/arch-switch.hh:141)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:979)
+	sched::init(std::function<void ()>) (/usr/include/c++/7/bits/std_function.h:275)
+	main (/usr/include/c++/7/bits/std_function.h:275)
+	smpboot64 in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/boot.S:175)
+
+Found 20880 bytes in 1 allocations [size 20880, birth 20]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	memory::page_pool::l2::l2() (include/osv/sched.hh:417)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:1285)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 20880 bytes in 1 allocations [size 20880, birth 805]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	itimer::itimer(int, char const*) (include/osv/sched.hh:417)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:416)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 20880 bytes in 1 allocations [size 20880, birth 817]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	itimer::itimer(int, char const*) (include/osv/sched.hh:417)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:656)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 20880 bytes in 1 allocations [size 20880, birth 1397]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	sched::cpu::init_idle_thread() (include/osv/sched.hh:417)
+	smp_launch() (arch/x64/smp.cc:120)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 20880 bytes in 1 allocations [size 20880, birth 1294]
+from:
+	operator new(unsigned long) (loader.elf)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 20880 bytes in 1 allocations [size 20880, birth 1314]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	osv::rcu::cpu_quiescent_state_thread::cpu_quiescent_state_thread(sched::cpu*) (include/osv/sched.hh:417)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/vector.tcc:98)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 20880 bytes in 1 allocations [size 20880, birth 1337]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	std::_Function_handler<void (), memory::page_pool::{lambda()#1}>::_M_invoke(std::_Any_data const&) (include/osv/sched.hh:417)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 20880 bytes in 1 allocations [size 20880, birth 1355]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	workman::pcpu_init() (include/osv/sched.hh:417)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 20880 bytes in 1 allocations [size 20880, birth 1375]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (include/osv/sched.hh:417)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 16384 bytes in 4 allocations [size 4096, birth 914/922.5/936]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	elf::program::program(void*) (/usr/include/c++/7/bits/stl_tree.h:1187)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 16384 bytes in 4 allocations [size 4096, birth 890/895.0/904]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 12288 bytes in 3 allocations [size 4096, birth 21/24.3/29]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	memory::page_pool::l2::l2() (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:1285)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 12288 bytes in 3 allocations [size 4096, birth 806/809.3/814]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:416)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 12288 bytes in 3 allocations [size 4096, birth 818/821.3/826]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:656)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 12288 bytes in 3 allocations [size 4096, birth 1295/1298.3/1303]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	smp_launch() (arch/x64/smp.cc:118)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 12288 bytes in 3 allocations [size 4096, birth 1398/1401.3/1406]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::cpu::init_idle_thread() (/usr/include/c++/7/bits/std_function.h:275)
+	smp_launch() (arch/x64/smp.cc:120)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 12288 bytes in 3 allocations [size 4096, birth 1315/1318.3/1323]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	osv::rcu::cpu_quiescent_state_thread::cpu_quiescent_state_thread(sched::cpu*) (/usr/include/c++/7/bits/std_function.h:275)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/vector.tcc:98)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 12288 bytes in 3 allocations [size 4096, birth 1338/1341.3/1346]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	std::_Function_handler<void (), memory::page_pool::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 12288 bytes in 3 allocations [size 4096, birth 1356/1359.3/1364]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	workman::pcpu_init() (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 12288 bytes in 3 allocations [size 4096, birth 1380/1383.3/1388]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 0/1.0/2]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:214)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 4/5.0/6]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:215)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 8/9.0/10]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:216)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 12/13.0/14]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 34/35.0/36]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:47)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 38/39.0/40]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:48)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 42/43.0/44]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 46/47.0/48]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:50)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 50/51.0/52]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:51)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 54/55.0/56]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:52)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 58/59.0/60]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 62/63.0/64]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:54)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 66/67.0/68]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 70/71.0/72]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:56)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 74/75.0/76]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 78/79.0/80]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:58)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 82/83.0/84]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:59)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 86/87.0/88]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:60)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 90/91.0/92]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:61)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 94/95.0/96]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:62)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 98/99.0/100]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:63)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 102/103.0/104]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:64)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 106/107.0/108]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:65)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 118/119.0/120]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__Z9mmio_setbPVvh (core/mmio.cc:64)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 122/123.0/124]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_gdb_trace_function_entry (core/trace.cc:33)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 126/127.0/128]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_gdb_trace_function_entry (core/trace.cc:34)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 130/131.0/132]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_poll_no_poll (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 134/135.0/136]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_poll_no_poll (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 138/139.0/140]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_poll_no_poll (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 142/143.0/144]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_poll_no_poll (core/poll.cc:63)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 146/147.0/148]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_poll_no_poll (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 150/151.0/152]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_epoll_create (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 154/155.0/156]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_epoll_create (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 158/159.0/160]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_epoll_create (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 162/163.0/164]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_epoll_create (core/epoll.cc:354)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 166/167.0/168]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 170/171.0/172]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (core/percpu-worker.cc:15)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 174/175.0/176]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (core/percpu-worker.cc:16)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 178/179.0/180]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (core/percpu-worker.cc:17)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 182/183.0/184]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (core/percpu-worker.cc:18)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 186/187.0/188]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (core/percpu-worker.cc:19)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 218/219.0/220]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5sched11wait_objectI9waitqueueE3armEv (core/waitqueue.cc:12)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 222/223.0/224]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5sched11wait_objectI9waitqueueE3armEv (core/waitqueue.cc:13)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 226/227.0/228]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5sched11wait_objectI9waitqueueE3armEv (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 230/231.0/232]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:25)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 234/235.0/236]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:26)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 238/239.0/240]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 242/243.0/244]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:28)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 246/247.0/248]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:29)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 250/251.0/252]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:30)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 254/255.0/256]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:31)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 258/259.0/260]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:32)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 262/263.0/264]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:33)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 266/267.0/268]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 270/271.0/272]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 274/275.0/276]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:37)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 278/279.0/280]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 282/283.0/284]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:83)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 288/289.0/290]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZSt8distanceI13mbuf_iteratorENSt15iterator_traitsIT_E15difference_typeES2_S2_ (core/net_trace.cc:137)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 292/293.0/294]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZSt8distanceI13mbuf_iteratorENSt15iterator_traitsIT_E15difference_typeES2_S2_ (core/net_trace.cc:138)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 296/297.0/298]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZSt8distanceI13mbuf_iteratorENSt15iterator_traitsIT_E15difference_typeES2_S2_ (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 300/301.0/302]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:242)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 304/305.0/306]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:250)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 308/309.0/310]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:251)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 312/313.0/314]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 316/317.0/318]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:306)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 320/321.0/322]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:427)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 324/325.0/326]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:428)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 328/329.0/330]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 332/333.0/334]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:588)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 336/337.0/338]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 340/341.0/342]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:99)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 344/345.0/346]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:100)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 348/349.0/350]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:229)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 352/353.0/354]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:230)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 356/357.0/358]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:231)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 360/361.0/362]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 364/365.0/366]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:252)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 368/369.0/370]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:253)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 372/373.0/374]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 376/377.0/378]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:288)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 380/381.0/382]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:289)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 384/385.0/386]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 388/389.0/390]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:319)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 392/393.0/394]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:320)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 396/397.0/398]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 400/401.0/402]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:372)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 404/405.0/406]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:373)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 408/409.0/410]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 412/413.0/414]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:441)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 416/417.0/418]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:442)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 420/421.0/422]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 424/425.0/426]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:476)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 428/429.0/430]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:477)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 432/433.0/434]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:512)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 436/437.0/438]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:513)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 440/441.0/442]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:514)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 444/445.0/446]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 448/449.0/450]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:547)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 452/453.0/454]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:548)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 456/457.0/458]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 460/461.0/462]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:660)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 464/465.0/466]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:661)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 468/469.0/470]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:813)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 472/473.0/474]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:814)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 476/477.0/478]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:815)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 480/481.0/482]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:841)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 484/485.0/486]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:842)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 488/489.0/490]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:843)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 492/493.0/494]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:894)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 496/497.0/498]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:895)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 500/501.0/502]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:896)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 504/505.0/506]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:939)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 508/509.0/510]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:940)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 512/513.0/514]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:941)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 516/517.0/518]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:998)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 520/521.0/522]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:999)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 524/525.0/526]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1000)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 528/529.0/530]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1028)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 532/533.0/534]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1029)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 536/537.0/538]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1030)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 540/541.0/542]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1061)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 544/545.0/546]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1062)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 548/549.0/550]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1063)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 552/553.0/554]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1089)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 556/557.0/558]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1090)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 560/561.0/562]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1091)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 564/565.0/566]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1117)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 568/569.0/570]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1118)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 572/573.0/574]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1119)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 576/577.0/578]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1155)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 580/581.0/582]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1156)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 584/585.0/586]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1157)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 588/589.0/590]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 592/593.0/594]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1195)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 596/597.0/598]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1196)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 600/601.0/602]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 604/605.0/606]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1225)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 608/609.0/610]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1226)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 612/613.5/615]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 617/618.0/619]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1299)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 621/622.0/623]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1300)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 625/626.0/627]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1339)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 629/630.0/631]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1340)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 633/634.0/635]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1341)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 637/638.0/639]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1372)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 641/642.0/643]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1373)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 645/646.0/647]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1374)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 649/650.0/651]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1431)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 653/654.0/655]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1432)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 657/658.0/659]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1433)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 661/662.0/663]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 665/666.0/667]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1518)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 669/670.0/671]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1519)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 673/674.0/675]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1641)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 677/678.0/679]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1642)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 681/682.0/683]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1643)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 685/686.0/687]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 689/690.0/691]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1672)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 693/694.0/695]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1673)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 697/698.0/699]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 701/702.0/703]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1702)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 705/706.0/707]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1703)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 709/710.0/711]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 713/714.0/715]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1762)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 717/718.0/719]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1763)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 721/722.0/723]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1791)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 725/726.0/727]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1792)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 729/730.0/731]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1793)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 733/734.0/735]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1853)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 737/738.0/739]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1854)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 741/742.0/743]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1855)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 745/746.0/747]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1873)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 749/750.0/751]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1874)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 753/754.0/755]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1875)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 757/758.0/759]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1949)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 761/762.0/763]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1950)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 765/766.0/767]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1951)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 769/770.0/771]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 773/774.0/775]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1975)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 777/778.0/779]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 781/782.0/783]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 785/786.0/787]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN8vfs_fileC2Ej (fs/vfs/vfs_fops.cc:189)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 789/790.0/791]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__Z11procfs_initv (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 795/796.0/797]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN15pthread_private3tsdE (libc/pthread.cc:1137)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 799/800.0/801]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_program_invocation_name (libc/libc.cc:250)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 829/830.0/831]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 833/834.0/835]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 837/838.0/839]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (libc/mman.cc:21)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 841/842.0/843]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 845/846.0/847]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 849/850.0/851]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (libc/mman.cc:24)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 853/854.0/855]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 857/858.0/859]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_shmat (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 864/865.0/866]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::init(std::function<void ()>) (/usr/include/c++/7/bits/std_function.h:275)
+	main (/usr/include/c++/7/bits/std_function.h:275)
+	smpboot64 in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/boot.S:175)
+
+Found 8192 bytes in 2 allocations [size 4096, birth 896/897.0/898]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	elf::object::object(elf::program&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (core/elf.cc:113)
+	elf::memory_image::memory_image(elf::program&, void*) (/usr/include/c++/7/bits/basic_string.h:211)
+	elf::program::program(void*) (/usr/include/c++/7/bits/shared_ptr_base.h:727)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 5672 bytes in 1 allocations [size 5672, birth 614]
+from:
+	operator new(unsigned long) (loader.elf)
+	std::_Hashtable<std::tuple<std::type_info const*, unsigned long>, std::tuple<std::type_info const*, unsigned long>, std::allocator<std::tuple<std::type_info const*, unsigned long> >, std::__detail::_Identity, std::equal_to<std::tuple<std::type_info const*, unsigned long> >, std::hash<std::tuple<std::type_info const*, unsigned long> >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, true, true> >::_M_rehash(unsigned long, unsigned long const&) (/usr/include/c++/7/bits/hashtable.h:354)
+	tracepoint_base::tracepoint_base(unsigned int, std::type_info const&, char const*, char const*) (/usr/include/c++/7/bits/hashtable_policy.h:448)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4144 bytes in 2 allocations [size 32/2072.0/4112, birth 1307/1318.5/1330]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 16]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 25]
+from:
+	posix_memalign (core/mempool.cc:1841)
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	memory::page_pool::l2::l2() (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:1285)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 27]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	memory::page_pool::l2::l2() (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:1285)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 18]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:1285)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 116]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	interrupt_descriptor_table::register_interrupt_handler(std::function<bool ()>, std::function<void ()>, std::function<void ()>) (/usr/include/c++/7/bits/stl_vector.h:948)
+	interrupt_descriptor_table::register_handler(std::function<void ()>) (arch/x64/exceptions.cc:179)
+	interrupt_descriptor_table::register_interrupt(inter_processor_interrupt*) (arch/x64/exceptions.cc:184)
+	inter_processor_interrupt::inter_processor_interrupt(ipi_id, std::function<void ()>) (arch/x64/interrupt.cc:17)
+	_GLOBAL__sub_I_percpu_base (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 112]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	interrupt_descriptor_table::register_interrupt_handler(std::function<bool ()>, std::function<void ()>, std::function<void ()>) (/usr/include/c++/7/bits/stl_vector.h:941)
+	interrupt_descriptor_table::register_handler(std::function<void ()>) (arch/x64/exceptions.cc:179)
+	interrupt_descriptor_table::register_interrupt(inter_processor_interrupt*) (arch/x64/exceptions.cc:184)
+	inter_processor_interrupt::inter_processor_interrupt(ipi_id, std::function<void ()>) (arch/x64/interrupt.cc:17)
+	_GLOBAL__sub_I_percpu_base (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 114]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	interrupt_descriptor_table::register_interrupt_handler(std::function<bool ()>, std::function<void ()>, std::function<void ()>) (/usr/include/c++/7/bits/stl_vector.h:948)
+	interrupt_descriptor_table::register_handler(std::function<void ()>) (arch/x64/exceptions.cc:179)
+	interrupt_descriptor_table::register_interrupt(inter_processor_interrupt*) (arch/x64/exceptions.cc:184)
+	inter_processor_interrupt::inter_processor_interrupt(ipi_id, std::function<void ()>) (arch/x64/interrupt.cc:17)
+	_GLOBAL__sub_I_percpu_base (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 110]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	interrupt_descriptor_table::register_handler(std::function<void ()>) (arch/x64/exceptions.cc:179)
+	interrupt_descriptor_table::register_interrupt(inter_processor_interrupt*) (arch/x64/exceptions.cc:184)
+	inter_processor_interrupt::inter_processor_interrupt(ipi_id, std::function<void ()>) (arch/x64/interrupt.cc:17)
+	_GLOBAL__sub_I_percpu_base (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 190]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 286]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 793]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	pthread_private::pthread_register_tsd_dtor_notifier() (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 803]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	osv::signals_register_thread_notifier() (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 810]
+from:
+	posix_memalign (core/mempool.cc:1841)
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:416)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 812]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:416)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 822]
+from:
+	posix_memalign (core/mempool.cc:1841)
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:656)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 824]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:656)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 861]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	register_call_destructor() (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 868]
+from:
+	posix_memalign (core/mempool.cc:1841)
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	sched::init(std::function<void ()>) (/usr/include/c++/7/bits/std_function.h:275)
+	main (/usr/include/c++/7/bits/std_function.h:275)
+	smpboot64 in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/boot.S:175)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 870]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	sched::init(std::function<void ()>) (/usr/include/c++/7/bits/std_function.h:275)
+	main (/usr/include/c++/7/bits/std_function.h:275)
+	smpboot64 in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/boot.S:175)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 873]
+from:
+	void mmu::split_large_page<1>(mmu::hw_ptep<1>) (core/mmu.cc:208)
+	mmu::linear_map(void*, unsigned long, unsigned long, unsigned long, mmu::mattr) (core/mmu.cc:416)
+	dmi_probe() (arch/x64/dmi.cc:134)
+	main_cont(int, char**) (loader.cc:561)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 900]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	elf::program::program(void*) (/usr/include/c++/7/bits/shared_ptr_base.h:727)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 902]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	elf::program::program(void*) (/usr/include/c++/7/bits/basic_string.h:211)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 906]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	elf::program::program(void*) (/usr/include/c++/7/bits/vector.tcc:105)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 888]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1280]
+from:
+	malloc (core/mempool.cc:1804)
+	setenv (musl/src/env/setenv.c:21)
+	main_cont(int, char**) (/usr/include/c++/7/bits/basic_string.h:211)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1284]
+from:
+	malloc (core/mempool.cc:1804)
+	__putenv (musl/src/env/putenv.c:40)
+	setenv (musl/src/env/setenv.c:25)
+	main_cont(int, char**) (/usr/include/c++/7/bits/basic_string.h:211)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1282]
+from:
+	malloc (core/mempool.cc:1804)
+	calloc (core/mempool.cc:1635)
+	__putenv (musl/src/env/putenv.c:11)
+	setenv (musl/src/env/setenv.c:25)
+	main_cont(int, char**) (/usr/include/c++/7/bits/basic_string.h:211)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1286]
+from:
+	mmu::linear_map(void*, unsigned long, unsigned long, unsigned long, mmu::mattr) (/usr/include/c++/7/atomic:250)
+	smp_launch() (arch/x64/smp.cc:110)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1287]
+from:
+	mmu::linear_map(void*, unsigned long, unsigned long, unsigned long, mmu::mattr) (core/mmu.cc:407)
+	smp_launch() (arch/x64/smp.cc:110)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1299]
+from:
+	posix_memalign (core/mempool.cc:1841)
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	smp_launch() (arch/x64/smp.cc:118)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1301]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	smp_launch() (arch/x64/smp.cc:118)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1402]
+from:
+	posix_memalign (core/mempool.cc:1841)
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	sched::cpu::init_idle_thread() (/usr/include/c++/7/bits/std_function.h:275)
+	smp_launch() (arch/x64/smp.cc:120)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1404]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	sched::cpu::init_idle_thread() (/usr/include/c++/7/bits/std_function.h:275)
+	smp_launch() (arch/x64/smp.cc:120)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1319]
+from:
+	posix_memalign (core/mempool.cc:1841)
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	osv::rcu::cpu_quiescent_state_thread::cpu_quiescent_state_thread(sched::cpu*) (/usr/include/c++/7/bits/std_function.h:275)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/vector.tcc:98)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1321]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	osv::rcu::cpu_quiescent_state_thread::cpu_quiescent_state_thread(sched::cpu*) (/usr/include/c++/7/bits/std_function.h:275)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/vector.tcc:98)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1325]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	std::_Hashtable<unsigned int, std::pair<unsigned int const, sched::thread*>, std::allocator<std::pair<unsigned int const, sched::thread*> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_insert_unique_node(unsigned long, unsigned long, std::__detail::_Hash_node<std::pair<unsigned int const, sched::thread*>, false>*) (/usr/include/c++/7/bits/hashtable_policy.h:448)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/hashtable.h:1663)
+	osv::rcu::cpu_quiescent_state_thread::cpu_quiescent_state_thread(sched::cpu*) (/usr/include/c++/7/bits/std_function.h:275)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/vector.tcc:98)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1328]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:318)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1342]
+from:
+	posix_memalign (core/mempool.cc:1841)
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	std::_Function_handler<void (), memory::page_pool::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1344]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	std::_Function_handler<void (), memory::page_pool::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1360]
+from:
+	posix_memalign (core/mempool.cc:1841)
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	workman::pcpu_init() (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1362]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	workman::pcpu_init() (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1367]
+from:
+	posix_memalign (core/mempool.cc:1841)
+	aligned_alloc (core/mempool.cc:1860)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (include/osv/aligned_new.hh:31)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1378]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	std::function<void ()>::function(std::function<void ()> const&) (/usr/include/c++/7/bits/std_function.h:678)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (include/osv/sched.hh:295)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1384]
+from:
+	posix_memalign (core/mempool.cc:1841)
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1386]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4096 bytes in 1 allocations [size 4096, birth 1306]
+from:
+	malloc (core/mempool.cc:1804)
+	operator new(unsigned long) (loader.elf)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 1952 bytes in 1 allocations [size 1952, birth 26]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	memory::page_pool::l2::l2() (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:1285)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 1952 bytes in 1 allocations [size 1952, birth 811]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:416)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 1952 bytes in 1 allocations [size 1952, birth 823]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:656)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 1952 bytes in 1 allocations [size 1952, birth 869]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	sched::init(std::function<void ()>) (/usr/include/c++/7/bits/std_function.h:275)
+	main (/usr/include/c++/7/bits/std_function.h:275)
+	smpboot64 in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/boot.S:175)
+
+Found 1952 bytes in 1 allocations [size 1952, birth 1300]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	smp_launch() (arch/x64/smp.cc:118)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 1952 bytes in 1 allocations [size 1952, birth 1403]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	sched::cpu::init_idle_thread() (/usr/include/c++/7/bits/std_function.h:275)
+	smp_launch() (arch/x64/smp.cc:120)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 1952 bytes in 1 allocations [size 1952, birth 1320]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	osv::rcu::cpu_quiescent_state_thread::cpu_quiescent_state_thread(sched::cpu*) (/usr/include/c++/7/bits/std_function.h:275)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/vector.tcc:98)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 1952 bytes in 1 allocations [size 1952, birth 1343]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	std::_Function_handler<void (), memory::page_pool::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 1952 bytes in 1 allocations [size 1952, birth 1361]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	workman::pcpu_init() (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 1952 bytes in 1 allocations [size 1952, birth 1385]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	sched::thread::setup_tcb() (arch/x64/arch-switch.hh:170)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/stl_vector.h:671)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 1920 bytes in 1 allocations [size 1920, birth 1368]
+from:
+	aligned_alloc (core/mempool.cc:1860)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (include/osv/aligned_new.hh:31)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 1040 bytes in 13 allocations [size 80, birth 909/925.5/941]
+from:
+	operator new(unsigned long) (loader.elf)
+	elf::program::program(void*) (/usr/include/c++/7/bits/stl_map.h:512)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 1024 bytes in 4 allocations [size 32/256.0/504, birth 891/896.0/905]
+from:
+	operator new(unsigned long) (loader.elf)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 624 bytes in 13 allocations [size 48, birth 193/205.0/217]
+from:
+	operator new(unsigned long) (loader.elf)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 344 bytes in 1 allocations [size 344, birth 889]
+from:
+	operator new(unsigned long) (loader.elf)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 327 bytes in 1 allocations [size 327, birth 19]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:1285)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 280 bytes in 1 allocations [size 280, birth 901]
+from:
+	operator new(unsigned long) (loader.elf)
+	elf::program::program(void*) (/usr/include/c++/7/bits/shared_ptr_base.h:727)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 136 bytes in 1 allocations [size 136, birth 1326]
+from:
+	operator new(unsigned long) (loader.elf)
+	std::_Hashtable<unsigned int, std::pair<unsigned int const, sched::thread*>, std::allocator<std::pair<unsigned int const, sched::thread*> >, std::__detail::_Select1st, std::equal_to<unsigned int>, std::hash<unsigned int>, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<false, false, true> >::_M_insert_unique_node(unsigned long, unsigned long, std::__detail::_Hash_node<std::pair<unsigned int const, sched::thread*>, false>*) (/usr/include/c++/7/bits/hashtable_policy.h:448)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (/usr/include/c++/7/bits/hashtable.h:1663)
+	osv::rcu::cpu_quiescent_state_thread::cpu_quiescent_state_thread(sched::cpu*) (/usr/include/c++/7/bits/std_function.h:275)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/vector.tcc:98)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 112 bytes in 1 allocations [size 112, birth 111]
+from:
+	operator new(unsigned long) (loader.elf)
+	interrupt_descriptor_table::register_handler(std::function<void ()>) (arch/x64/exceptions.cc:179)
+	interrupt_descriptor_table::register_interrupt(inter_processor_interrupt*) (arch/x64/exceptions.cc:184)
+	inter_processor_interrupt::inter_processor_interrupt(ipi_id, std::function<void ()>) (arch/x64/interrupt.cc:17)
+	_GLOBAL__sub_I_percpu_base (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 101 bytes in 4 allocations [size 19/25.2/35, birth 915/923.5/937]
+from:
+	operator new(unsigned long) (loader.elf)
+	elf::program::program(void*) (/usr/include/c++/7/bits/stl_tree.h:1187)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 64 bytes in 1 allocations [size 64, birth 903]
+from:
+	operator new(unsigned long) (loader.elf)
+	elf::program::program(void*) (/usr/include/c++/7/bits/basic_string.h:211)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 1/2.0/3]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:214)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 5/6.0/7]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:215)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 9/10.0/11]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:216)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 13/14.0/15]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 3 allocations [size 8/18.7/24, birth 22/25.3/30]
+from:
+	operator new(unsigned long) (loader.elf)
+	memory::page_pool::l2::l2() (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:1285)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 35/36.0/37]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:47)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 39/40.0/41]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:48)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 43/44.0/45]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 47/48.0/49]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:50)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 51/52.0/53]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:51)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 55/56.0/57]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:52)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 59/60.0/61]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 63/64.0/65]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:54)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 67/68.0/69]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 71/72.0/73]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:56)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 75/76.0/77]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 79/80.0/81]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:58)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 83/84.0/85]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:59)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 87/88.0/89]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:60)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 91/92.0/93]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:61)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 95/96.0/97]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:62)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 99/100.0/101]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:63)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 103/104.0/105]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:64)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 107/108.0/109]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_percpu_base (core/sched.cc:65)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 119/120.0/121]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__Z9mmio_setbPVvh (core/mmio.cc:64)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 123/124.0/125]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_gdb_trace_function_entry (core/trace.cc:33)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 127/128.0/129]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_gdb_trace_function_entry (core/trace.cc:34)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 131/132.0/133]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_poll_no_poll (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 135/136.0/137]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_poll_no_poll (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 139/140.0/141]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_poll_no_poll (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 143/144.0/145]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_poll_no_poll (core/poll.cc:63)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 147/148.0/149]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_poll_no_poll (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 151/152.0/153]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_epoll_create (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 155/156.0/157]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_epoll_create (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 159/160.0/161]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_epoll_create (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 163/164.0/165]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_epoll_create (core/epoll.cc:354)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 167/168.0/169]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 171/172.0/173]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (core/percpu-worker.cc:15)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 175/176.0/177]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (core/percpu-worker.cc:16)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 179/180.0/181]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (core/percpu-worker.cc:17)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 183/184.0/185]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (core/percpu-worker.cc:18)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 187/188.0/189]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (core/percpu-worker.cc:19)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 219/220.0/221]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5sched11wait_objectI9waitqueueE3armEv (core/waitqueue.cc:12)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 223/224.0/225]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5sched11wait_objectI9waitqueueE3armEv (core/waitqueue.cc:13)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 227/228.0/229]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5sched11wait_objectI9waitqueueE3armEv (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 231/232.0/233]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:25)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 235/236.0/237]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:26)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 239/240.0/241]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 243/244.0/245]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:28)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 247/248.0/249]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:29)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 251/252.0/253]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:30)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 255/256.0/257]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:31)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 259/260.0/261]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:32)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 263/264.0/265]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:33)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 267/268.0/269]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 271/272.0/273]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 275/276.0/277]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:37)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 279/280.0/281]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 283/284.0/285]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (core/async.cc:83)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 289/290.0/291]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZSt8distanceI13mbuf_iteratorENSt15iterator_traitsIT_E15difference_typeES2_S2_ (core/net_trace.cc:137)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 293/294.0/295]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZSt8distanceI13mbuf_iteratorENSt15iterator_traitsIT_E15difference_typeES2_S2_ (core/net_trace.cc:138)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 297/298.0/299]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZSt8distanceI13mbuf_iteratorENSt15iterator_traitsIT_E15difference_typeES2_S2_ (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 301/302.0/303]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:242)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 305/306.0/307]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:250)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 309/310.0/311]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:251)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 313/314.0/315]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 317/318.0/319]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:306)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 321/322.0/323]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:427)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 325/326.0/327]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:428)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 329/330.0/331]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 333/334.0/335]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I___libc_stack_end (core/app.cc:588)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 337/338.0/339]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 341/342.0/343]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:99)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 345/346.0/347]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:100)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 349/350.0/351]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:229)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 353/354.0/355]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:230)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 357/358.0/359]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:231)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 361/362.0/363]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 365/366.0/367]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:252)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 369/370.0/371]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:253)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 373/374.0/375]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 377/378.0/379]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:288)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 381/382.0/383]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:289)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 385/386.0/387]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 389/390.0/391]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:319)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 393/394.0/395]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:320)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 397/398.0/399]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 401/402.0/403]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:372)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 405/406.0/407]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:373)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 409/410.0/411]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 413/414.0/415]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:441)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 417/418.0/419]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:442)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 421/422.0/423]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 425/426.0/427]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:476)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 429/430.0/431]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:477)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 433/434.0/435]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:512)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 437/438.0/439]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:513)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 441/442.0/443]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:514)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 445/446.0/447]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 449/450.0/451]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:547)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 453/454.0/455]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:548)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 457/458.0/459]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 461/462.0/463]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:660)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 465/466.0/467]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:661)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 469/470.0/471]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:813)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 473/474.0/475]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:814)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 477/478.0/479]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:815)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 481/482.0/483]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:841)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 485/486.0/487]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:842)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 489/490.0/491]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:843)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 493/494.0/495]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:894)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 497/498.0/499]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:895)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 501/502.0/503]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:896)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 505/506.0/507]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:939)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 509/510.0/511]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:940)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 513/514.0/515]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:941)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 517/518.0/519]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:998)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 521/522.0/523]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:999)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 525/526.0/527]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1000)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 529/530.0/531]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1028)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 533/534.0/535]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1029)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 537/538.0/539]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1030)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 541/542.0/543]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1061)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 545/546.0/547]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1062)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 549/550.0/551]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1063)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 553/554.0/555]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1089)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 557/558.0/559]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1090)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 561/562.0/563]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1091)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 565/566.0/567]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1117)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 569/570.0/571]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1118)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 573/574.0/575]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1119)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 577/578.0/579]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1155)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 581/582.0/583]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1156)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 585/586.0/587]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1157)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 589/590.0/591]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 593/594.0/595]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1195)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 597/598.0/599]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1196)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 601/602.0/603]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 605/606.0/607]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1225)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 609/610.0/611]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1226)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 613/614.5/616]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 618/619.0/620]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1299)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 622/623.0/624]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1300)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 626/627.0/628]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1339)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 630/631.0/632]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1340)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 634/635.0/636]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1341)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 638/639.0/640]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1372)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 642/643.0/644]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1373)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 646/647.0/648]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1374)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 650/651.0/652]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1431)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 654/655.0/656]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1432)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 658/659.0/660]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1433)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 662/663.0/664]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 666/667.0/668]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1518)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 670/671.0/672]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1519)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 674/675.0/676]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1641)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 678/679.0/680]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1642)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 682/683.0/684]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1643)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 686/687.0/688]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 690/691.0/692]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1672)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 694/695.0/696]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1673)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 698/699.0/700]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 702/703.0/704]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1702)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 706/707.0/708]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1703)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 710/711.0/712]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 714/715.0/716]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1762)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 718/719.0/720]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1763)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 722/723.0/724]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1791)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 726/727.0/728]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1792)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 730/731.0/732]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1793)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 734/735.0/736]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1853)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 738/739.0/740]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1854)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 742/743.0/744]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1855)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 746/747.0/748]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1873)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 750/751.0/752]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1874)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 754/755.0/756]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1875)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 758/759.0/760]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1949)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 762/763.0/764]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1950)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 766/767.0/768]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1951)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 770/771.0/772]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 774/775.0/776]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (fs/vfs/main.cc:1975)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 778/779.0/780]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 782/783.0/784]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_global_umask (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 786/787.0/788]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN8vfs_fileC2Ej (fs/vfs/vfs_fops.cc:189)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 790/791.0/792]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__Z11procfs_initv (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 796/797.0/798]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN15pthread_private3tsdE (libc/pthread.cc:1137)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 800/801.0/802]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_program_invocation_name (libc/libc.cc:250)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 3 allocations [size 8/18.7/24, birth 807/810.3/815]
+from:
+	operator new(unsigned long) (loader.elf)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:416)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 3 allocations [size 8/18.7/24, birth 819/822.3/827]
+from:
+	operator new(unsigned long) (loader.elf)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:656)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 830/831.0/832]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 834/835.0/836]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 838/839.0/840]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (libc/mman.cc:21)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 842/843.0/844]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 846/847.0/848]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 850/851.0/852]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (libc/mman.cc:24)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 854/855.0/856]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_jvm_heap_size (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 2 allocations [size 24/28.0/32, birth 858/859.0/860]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_shmat (include/osv/trace.hh:342)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 56 bytes in 3 allocations [size 8/18.7/24, birth 1296/1299.3/1304]
+from:
+	operator new(unsigned long) (loader.elf)
+	smp_launch() (arch/x64/smp.cc:118)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 56 bytes in 3 allocations [size 8/18.7/24, birth 1399/1402.3/1407]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::cpu::init_idle_thread() (/usr/include/c++/7/bits/std_function.h:275)
+	smp_launch() (arch/x64/smp.cc:120)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 56 bytes in 3 allocations [size 8/18.7/24, birth 1316/1319.3/1324]
+from:
+	operator new(unsigned long) (loader.elf)
+	osv::rcu::cpu_quiescent_state_thread::cpu_quiescent_state_thread(sched::cpu*) (/usr/include/c++/7/bits/std_function.h:275)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/vector.tcc:98)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 56 bytes in 3 allocations [size 8/18.7/24, birth 1339/1342.3/1347]
+from:
+	operator new(unsigned long) (loader.elf)
+	std::_Function_handler<void (), memory::page_pool::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 56 bytes in 3 allocations [size 8/18.7/24, birth 1357/1360.3/1365]
+from:
+	operator new(unsigned long) (loader.elf)
+	workman::pcpu_init() (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 56 bytes in 3 allocations [size 8/18.7/24, birth 1381/1384.3/1389]
+from:
+	operator new(unsigned long) (loader.elf)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 48 bytes in 1 allocations [size 48, birth 794]
+from:
+	operator new(unsigned long) (loader.elf)
+	pthread_private::pthread_register_tsd_dtor_notifier() (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 48 bytes in 1 allocations [size 48, birth 804]
+from:
+	operator new(unsigned long) (loader.elf)
+	osv::signals_register_thread_notifier() (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 48 bytes in 1 allocations [size 48, birth 862]
+from:
+	operator new(unsigned long) (loader.elf)
+	register_call_destructor() (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 33 bytes in 1 allocations [size 33, birth 1281]
+from:
+	setenv (musl/src/env/setenv.c:21)
+	main_cont(int, char**) (/usr/include/c++/7/bits/basic_string.h:211)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 32 bytes in 1 allocations [size 32, birth 117]
+from:
+	operator new(unsigned long) (loader.elf)
+	interrupt_descriptor_table::register_interrupt_handler(std::function<bool ()>, std::function<void ()>, std::function<void ()>) (/usr/include/c++/7/bits/stl_vector.h:948)
+	interrupt_descriptor_table::register_handler(std::function<void ()>) (arch/x64/exceptions.cc:179)
+	interrupt_descriptor_table::register_interrupt(inter_processor_interrupt*) (arch/x64/exceptions.cc:184)
+	inter_processor_interrupt::inter_processor_interrupt(ipi_id, std::function<void ()>) (arch/x64/interrupt.cc:17)
+	_GLOBAL__sub_I_percpu_base (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 32 bytes in 1 allocations [size 32, birth 115]
+from:
+	operator new(unsigned long) (loader.elf)
+	interrupt_descriptor_table::register_interrupt_handler(std::function<bool ()>, std::function<void ()>, std::function<void ()>) (/usr/include/c++/7/bits/stl_vector.h:948)
+	interrupt_descriptor_table::register_handler(std::function<void ()>) (arch/x64/exceptions.cc:179)
+	interrupt_descriptor_table::register_interrupt(inter_processor_interrupt*) (arch/x64/exceptions.cc:184)
+	inter_processor_interrupt::inter_processor_interrupt(ipi_id, std::function<void ()>) (arch/x64/interrupt.cc:17)
+	_GLOBAL__sub_I_percpu_base (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 32 bytes in 2 allocations [size 8/16.0/24, birth 865/866.0/867]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::init(std::function<void ()>) (/usr/include/c++/7/bits/std_function.h:275)
+	main (/usr/include/c++/7/bits/std_function.h:275)
+	smpboot64 in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/boot.S:175)
+
+Found 32 bytes in 2 allocations [size 8/16.0/24, birth 897/898.0/899]
+from:
+	operator new(unsigned long) (loader.elf)
+	elf::object::object(elf::program&, std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >) (core/elf.cc:113)
+	elf::memory_image::memory_image(elf::program&, void*) (/usr/include/c++/7/bits/basic_string.h:211)
+	elf::program::program(void*) (/usr/include/c++/7/bits/shared_ptr_base.h:727)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 24 bytes in 1 allocations [size 24, birth 17]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I_smp_allocator_cnt (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 24 bytes in 1 allocations [size 24, birth 191]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN7workman13_cpu_notifierE (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 24 bytes in 1 allocations [size 24, birth 287]
+from:
+	operator new(unsigned long) (loader.elf)
+	_GLOBAL__sub_I__ZN5async10timer_taskC2ERN8lockfree5mutexEOSt8functionIFvvEE (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 24 bytes in 1 allocations [size 24, birth 1379]
+from:
+	operator new(unsigned long) (loader.elf)
+	std::function<void ()>::function(std::function<void ()> const&) (/usr/include/c++/7/bits/std_function.h:678)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (include/osv/sched.hh:295)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 16 bytes in 1 allocations [size 16, birth 1285]
+from:
+	__putenv (musl/src/env/putenv.c:40)
+	setenv (musl/src/env/setenv.c:25)
+	main_cont(int, char**) (/usr/include/c++/7/bits/basic_string.h:211)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 16 bytes in 1 allocations [size 16, birth 1283]
+from:
+	calloc (core/mempool.cc:1635)
+	__putenv (musl/src/env/putenv.c:11)
+	setenv (musl/src/env/setenv.c:25)
+	main_cont(int, char**) (/usr/include/c++/7/bits/basic_string.h:211)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 8 bytes in 1 allocations [size 8, birth 28]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	memory::page_pool::l2::l2() (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I_smp_allocator_cnt (core/mempool.cc:1285)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8 bytes in 1 allocations [size 8, birth 813]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:416)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8 bytes in 1 allocations [size 8, birth 825]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	itimer::itimer(int, char const*) (/usr/include/c++/7/bits/std_function.h:275)
+	_GLOBAL__sub_I__ZN3osv18thread_signal_maskE (libc/signal.cc:656)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+
+Found 8 bytes in 1 allocations [size 8, birth 871]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	sched::init(std::function<void ()>) (/usr/include/c++/7/bits/std_function.h:275)
+	main (/usr/include/c++/7/bits/std_function.h:275)
+	smpboot64 in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/boot.S:175)
+
+Found 8 bytes in 1 allocations [size 8, birth 907]
+from:
+	operator new(unsigned long) (loader.elf)
+	elf::program::program(void*) (/usr/include/c++/7/bits/vector.tcc:105)
+	elf::create_main_program() (core/elf.cc:1042)
+	main_cont(int, char**) (loader.cc:567)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 8 bytes in 1 allocations [size 8, birth 1302]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	smp_launch() (arch/x64/smp.cc:118)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 8 bytes in 1 allocations [size 8, birth 1405]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	sched::cpu::init_idle_thread() (/usr/include/c++/7/bits/std_function.h:275)
+	smp_launch() (arch/x64/smp.cc:120)
+	main_cont(int, char**) (/usr/include/c++/7/bits/stl_vector.h:671)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 8 bytes in 1 allocations [size 8, birth 1322]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	osv::rcu::cpu_quiescent_state_thread::cpu_quiescent_state_thread(sched::cpu*) (/usr/include/c++/7/bits/std_function.h:275)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/vector.tcc:98)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 8 bytes in 1 allocations [size 8, birth 1329]
+from:
+	operator new(unsigned long) (loader.elf)
+	std::_Function_handler<void (), osv::rcu::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:318)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 8 bytes in 1 allocations [size 8, birth 1345]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	std::_Function_handler<void (), memory::page_pool::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 8 bytes in 1 allocations [size 8, birth 1363]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	workman::pcpu_init() (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 8 bytes in 1 allocations [size 8, birth 1387]
+from:
+	operator new(unsigned long) (loader.elf)
+	sched::thread::thread(std::function<void ()>, sched::thread::attr, bool, bool) (core/sched.cc:938)
+	std::_Function_handler<void (), async::{lambda()#1}>::_M_invoke(std::_Any_data const&) (/usr/include/c++/7/bits/std_function.h:275)
+	sched::cpu::notifier::fire() (/usr/include/c++/7/bits/stl_list.h:162)
+	sched::cpu::load_balance() (core/sched.cc:1453)
+	thread_main_c (arch/x64/arch-switch.hh:269)
+	call_signal_handler_thunk in section .text of /home/wkozaczuk/projects/waldek-osv/build/release.x64/loader.elf (arch/x64/entry.S:140)
+
+Found 4 bytes in 1 allocations [size 4, birth 113]
+from:
+	operator new(unsigned long) (loader.elf)
+	interrupt_descriptor_table::register_interrupt_handler(std::function<bool ()>, std::function<void ()>, std::function<void ()>) (/usr/include/c++/7/bits/stl_vector.h:941)
+	interrupt_descriptor_table::register_handler(std::function<void ()>) (arch/x64/exceptions.cc:179)
+	interrupt_descriptor_table::register_interrupt(inter_processor_interrupt*) (arch/x64/exceptions.cc:184)
+	inter_processor_interrupt::inter_processor_interrupt(ipi_id, std::function<void ()>) (arch/x64/interrupt.cc:17)
+	_GLOBAL__sub_I_percpu_base (/usr/include/c++/7/bits/std_function.h:275)
+	premain (loader.cc:121)
+	start64 (arch/x64/boot.S:105)
+

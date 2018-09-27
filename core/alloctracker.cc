@@ -13,6 +13,9 @@
 
 namespace memory {
 
+extern std::atomic<size_t> tracker_remember_called;
+extern std::atomic<size_t> tracker_forget_called;
+
 __thread alloc_tracker::in_tracker_t alloc_tracker::in_tracker;
 
 void alloc_tracker::remember(void *addr, int size)
@@ -20,6 +23,7 @@ void alloc_tracker::remember(void *addr, int size)
     if (in_tracker)
         return;
     std::lock_guard<in_tracker_t> intracker(in_tracker);
+    tracker_remember_called.fetch_add(1);
 
     int index;
 
@@ -99,6 +103,7 @@ void alloc_tracker::forget(void *addr)
     if (in_tracker)
         return;
     std::lock_guard<in_tracker_t> intracker(in_tracker);
+    tracker_forget_called.fetch_add(1);
     std::lock_guard<mutex> guard(lock);
     if (!allocations) {
         return;

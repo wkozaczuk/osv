@@ -94,6 +94,8 @@ long free_memory_after_at_the_end_of_premain;
 
 namespace memory {
     extern long free_memory_after_memory_setup;
+    extern std::atomic<size_t> malloc_non_smp_full_pages_allocated;
+    extern std::atomic<size_t> malloc_non_smp_full_pages_deallocated;
 }
 
 void premain()
@@ -122,7 +124,12 @@ void premain()
     boot_time.event(".init functions");
     free_memory_after_at_the_end_of_premain = memory::stats::free();
     debugf("-> premain end: free memory is %ld in pages, used %ld KB\n",
-           memory::stats::free() / memory::page_size, (memory::free_memory_after_memory_setup - memory::stats::free()) / 1024);
+           memory::stats::free() / memory::page_size,
+           (memory::free_memory_after_memory_setup - memory::stats::free()) / 1024);
+
+    debugf("-> premain end: non-SMP allocations and deallocations so far: (%ld,%ld)\n",
+           memory::malloc_non_smp_full_pages_allocated.load(),
+           memory::malloc_non_smp_full_pages_deallocated.load());
 }
 
 int main(int loader_argc, char **loader_argv)
@@ -536,8 +543,6 @@ namespace memory {
     extern std::atomic<size_t> malloc_smp_full_pages_allocated;
     extern std::atomic<size_t> malloc_smp_full_pages_bytes_requested;
 
-    extern std::atomic<size_t> malloc_non_smp_full_pages_allocated;
-    extern std::atomic<size_t> malloc_non_smp_full_pages_deallocated;
     extern std::atomic<size_t> malloc_non_smp_full_pages_bytes_requested;
 
     extern std::atomic<size_t> malloc_memory_pool_bytes_allocated;
