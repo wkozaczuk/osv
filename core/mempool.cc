@@ -439,6 +439,8 @@ std::atomic<size_t> malloc_memory_pool_bytes_requested(0);
 
 std::atomic<size_t> malloc_large_bytes_requested(0);
 std::atomic<size_t> malloc_large_called(0);
+std::atomic<size_t> free_large_bytes_released(0);
+std::atomic<size_t> free_large_called(0);
 std::atomic<size_t> l2_refill_pages_allocated(0);
 
 std::atomic<size_t> tracepoints_instantiated(0);
@@ -1103,7 +1105,9 @@ static void free_page_range(void *addr, size_t size)
 
 static void free_large(void* obj)
 {
+    free_large_called.fetch_add(1);
     obj = align_down(obj - 1, page_size);
+    free_large_bytes_released.fetch_add((static_cast<page_range*>(obj))->size);
     free_page_range(static_cast<page_range*>(obj));
 }
 

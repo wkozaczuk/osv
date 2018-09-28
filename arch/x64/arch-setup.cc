@@ -182,7 +182,7 @@ void arch_setup_free_memory()
     });
     memory::free_memory_after_memory_setup = memory::stats::free();
     auto free_in_pages = memory::stats::free() / memory::page_size;
-    debugf("-> arch_setup_free_memory: free memory is %ld in pages (%ld KB) starting at 0x%016x (%ld KB)\n",
+    debugf("-> arch_setup_free_memory: free memory is (%ld pages, %ld KB) and starts at 0x%016x (%ld KB)\n",
            free_in_pages, free_in_pages * 4, (void*)edata, edata / 1024);
 
     debugf("-> arch_setup_free_memory: non-SMP allocations so far: %ld\n",

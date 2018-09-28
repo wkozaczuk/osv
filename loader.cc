@@ -126,14 +126,14 @@ void premain()
     boot_time.event(".init functions");
     free_memory_after_at_the_end_of_premain = memory::stats::free();
     debugf("-> premain number of init functions called %ld\n", init_count );
-    debugf("-> premain end: free memory is %ld in pages, used %ld KB\n",
+    debugf("-> premain end: free memory is %ld in pages, used %ld KB since arch_setup_free_memory\n",
            memory::stats::free() / memory::page_size,
            (memory::free_memory_after_memory_setup - memory::stats::free()) / 1024);
 
-    debugf("-> premain end: non-SMP allocations and deallocations so far: (%ld,%ld) - (%ld,%ld)KB\n",
+    debugf("-> premain end: In non-SMP mode has allocated %ld pages (%ld KB) and deallocated %ld pages (%ld KB) since arch_setup_free_memory\n",
            memory::malloc_non_smp_full_pages_allocated.load(),
-           memory::malloc_non_smp_full_pages_deallocated.load(),
            memory::malloc_non_smp_full_pages_allocated.load() * 4,
+           memory::malloc_non_smp_full_pages_deallocated.load(),
            memory::malloc_non_smp_full_pages_deallocated.load() * 4
     );
 }
@@ -555,6 +555,7 @@ namespace memory {
     extern std::atomic<size_t> malloc_memory_pool_bytes_requested;
 
     extern std::atomic<size_t> malloc_large_bytes_requested;
+    extern std::atomic<size_t> free_large_bytes_released;
     extern std::atomic<size_t> l2_refill_pages_allocated;
 
     extern std::atomic<size_t> bitmap_allocator_allocate_count;
@@ -638,27 +639,32 @@ void main_cont(int loader_argc, char** loader_argv)
     void* retval;
     pthread_join(pthread, &retval);
 
-    debugf("---------> Called free_page_ranges allocator %d times\n", memory::bitmap_allocator_allocate_count.load());
+    debugf("----> Called free_page_ranges allocator %d times\n", memory::bitmap_allocator_allocate_count.load());
 
-    debugf("---------> In non-SMP mode allocated %ld pages in order to allocate %ld bytes AND deallocated %ld pages\n",
+    debugf("----> Since setup in non-SMP mode allocated %ld pages in order to allocate %ld bytes AND deallocated %ld pages\n",
            memory::malloc_non_smp_full_pages_allocated.load(),
            memory::malloc_non_smp_full_pages_bytes_requested.load(),
            memory::malloc_non_smp_full_pages_deallocated.load());
 
-    debugf("---------> In SMP mode allocated %ld pages in order to allocate %ld bytes\n",
+    debugf("----> Since setup in SMP mode allocated %ld pages in order to allocate %ld bytes\n",
            memory::malloc_smp_full_pages_allocated.load(),
            memory::malloc_smp_full_pages_bytes_requested.load());
 
-    debugf("---------> In memory pools allocated %ld bytes for requested %ld bytes\n",
+    debugf("----> Since setup in memory pool mode allocated %ld bytes for requested %ld bytes\n",
            memory::malloc_memory_pool_bytes_allocated.load(),
            memory::malloc_memory_pool_bytes_requested.load());
 
-    debugf("-----> free_page_ranges: In malloc_large requested %ld pages and %ld bytes (%ld KB)\n",
+    debugf("----> Since setup malloc_large requested %ld pages and %ld bytes (%ld KB)\n",
            memory::malloc_large_bytes_requested.load() / memory::page_size,
            memory::malloc_large_bytes_requested.load(),
            memory::malloc_large_bytes_requested.load() /1024);
 
-    debugf("-----> free_page_ranges: L2 pool allocated %ld pages and %ld bytes (%ld KB)\n",
+    debugf("----> Since setup free_large released %ld pages and %ld bytes (%ld KB)\n",
+           memory::free_large_bytes_released.load() / memory::page_size,
+           memory::free_large_bytes_released.load(),
+           memory::free_large_bytes_released.load() /1024);
+
+    debugf("----> Since setup L2 pool allocated %ld pages and %ld bytes (%ld KB)\n",
            memory::l2_refill_pages_allocated.load(),
            memory::l2_refill_pages_allocated.load() * memory::page_size,
            memory::l2_refill_pages_allocated.load() * 4);

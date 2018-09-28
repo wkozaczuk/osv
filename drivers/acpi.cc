@@ -589,10 +589,10 @@ void early_init()
         return;
     }
     auto delta = memory::malloc_non_smp_full_pages_allocated.load() - pages;
-    debugf("---acpi::early_init---> In non-SMP mode allocated %ld pages in order to allocate %ld bytes AND deallocated %ld pages (delta %ld)\n",
-           memory::malloc_non_smp_full_pages_allocated.load(),
+    debugf("---acpi::early_init---> In non-SMP mode allocated %ld pages (delta %ld) in order to allocate %ld bytes AND deallocated %ld pages\n",
+           memory::malloc_non_smp_full_pages_allocated.load(), delta,
            memory::malloc_non_smp_full_pages_bytes_requested.load(),
-           memory::malloc_non_smp_full_pages_deallocated.load(), delta);
+           memory::malloc_non_smp_full_pages_deallocated.load());
 }
 
 UINT32 acpi_poweroff(void *unused)
