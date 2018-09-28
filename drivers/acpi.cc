@@ -533,6 +533,24 @@ void AcpiOsVprintf(const char *Format, va_list Args)
     acpi_i(msg);
 }
 
+namespace memory {
+    extern long free_memory_after_memory_setup;
+    extern std::atomic<size_t> malloc_non_smp_full_pages_allocated;
+    extern std::atomic<size_t> malloc_non_smp_full_pages_deallocated;
+    extern std::atomic<size_t> malloc_smp_full_pages_allocated;
+    extern std::atomic<size_t> malloc_smp_full_pages_bytes_requested;
+
+    extern std::atomic<size_t> malloc_non_smp_full_pages_bytes_requested;
+
+    extern std::atomic<size_t> malloc_memory_pool_bytes_allocated;
+    extern std::atomic<size_t> malloc_memory_pool_bytes_requested;
+
+    extern std::atomic<size_t> malloc_large_bytes_requested;
+    extern std::atomic<size_t> l2_refill_pages_allocated;
+
+    extern std::atomic<size_t> bitmap_allocator_allocate_count;
+}
+
 namespace acpi {
 
 #define ACPI_MAX_INIT_TABLES 16
@@ -542,6 +560,7 @@ static ACPI_TABLE_DESC TableArray[ACPI_MAX_INIT_TABLES];
 void early_init()
 {
     ACPI_STATUS status;
+    auto pages = memory::malloc_non_smp_full_pages_allocated.load();
 
     status = AcpiInitializeTables(TableArray, ACPI_MAX_INIT_TABLES, TRUE);
     if (ACPI_FAILURE(status)) {
@@ -569,6 +588,11 @@ void early_init()
         acpi_e("AcpiLoadTables failed: %s\n", AcpiFormatException(status));
         return;
     }
+    auto delta = memory::malloc_non_smp_full_pages_allocated.load() - pages;
+    debugf("---acpi::early_init---> In non-SMP mode allocated %ld pages in order to allocate %ld bytes AND deallocated %ld pages (delta %ld)\n",
+           memory::malloc_non_smp_full_pages_allocated.load(),
+           memory::malloc_non_smp_full_pages_bytes_requested.load(),
+           memory::malloc_non_smp_full_pages_deallocated.load(), delta);
 }
 
 UINT32 acpi_poweroff(void *unused)

@@ -1,0 +1,43 @@
+(gdb) bt
+#0  std_malloc (size=size@entry=72, alignment=alignment@entry=16) at core/mempool.cc:1612
+#1  0x00000000003e0ae7 in malloc (size=72) at core/mempool.cc:1823
+#2  0x00000000004940dc in operator new(unsigned long) ()
+#3  0x000000000037b0ad in AcpiOsCreateSemaphore () at drivers/acpi.cc:115
+#4  0x00000000003b2979 in AcpiUtCreateMutex (MutexId=<optimized out>) at external/x64/acpica/source/components/utilities/utmutex.c:267
+#5  AcpiUtMutexInitialize () at external/x64/acpica/source/components/utilities/utmutex.c:164
+#6  0x00000000003b3bdc in AcpiInitializeSubsystem () at external/x64/acpica/source/components/utilities/utxfinit.c:176
+#7  0x000000000037b891 in acpi::early_init () at drivers/acpi.cc:553
+#8  0x00000000002294a2 in premain () at loader.cc:123
+#9  0x0000000000228f3e in start64 () at arch/x64/boot.S:104
+(gdb) cont
+Continuing.
+
+Breakpoint 2, std_malloc (size=size@entry=72, alignment=alignment@entry=16) at core/mempool.cc:1612
+1612	    if (size <= memory::pool::max_object_size && alignment <= size && smp_allocator) {
+(gdb) bt
+#0  std_malloc (size=size@entry=72, alignment=alignment@entry=16) at core/mempool.cc:1612
+#1  0x00000000003e0ae7 in malloc (size=72) at core/mempool.cc:1823
+#2  0x00000000004940dc in operator new(unsigned long) ()
+#3  0x000000000037b0ad in AcpiOsCreateSemaphore () at drivers/acpi.cc:115
+#4  0x00000000003b2979 in AcpiUtCreateMutex (MutexId=<optimized out>) at external/x64/acpica/source/components/utilities/utmutex.c:267
+#5  AcpiUtMutexInitialize () at external/x64/acpica/source/components/utilities/utmutex.c:164
+#6  0x00000000003b3bdc in AcpiInitializeSubsystem () at external/x64/acpica/source/components/utilities/utxfinit.c:176
+#7  0x000000000037b891 in acpi::early_init () at drivers/acpi.cc:553
+#8  0x00000000002294a2 in premain () at loader.cc:123
+#9  0x0000000000228f3e in start64 () at arch/x64/boot.S:104
+(gdb) cont
+Continuing.
+
+Breakpoint 2, std_malloc (size=size@entry=72, alignment=alignment@entry=16) at core/mempool.cc:1612
+1612	    if (size <= memory::pool::max_object_size && alignment <= size && smp_allocator) {
+(gdb) bt
+#0  std_malloc (size=size@entry=72, alignment=alignment@entry=16) at core/mempool.cc:1612
+#1  0x00000000003e0ae7 in malloc (size=72) at core/mempool.cc:1823
+#2  0x00000000004940dc in operator new(unsigned long) ()
+#3  0x000000000037b0ad in AcpiOsCreateSemaphore () at drivers/acpi.cc:115
+#4  0x00000000003b2979 in AcpiUtCreateMutex (MutexId=<optimized out>) at external/x64/acpica/source/components/utilities/utmutex.c:267
+#5  AcpiUtMutexInitialize () at external/x64/acpica/source/components/utilities/utmutex.c:164
+#6  0x00000000003b3bdc in AcpiInitializeSubsystem () at external/x64/acpica/source/components/utilities/utxfinit.c:176
+#7  0x000000000037b891 in acpi::early_init () at drivers/acpi.cc:553
+#8  0x00000000002294a2 in premain () at loader.cc:123
+#9  0x0000000000228f3e in start64 () at arch/x64/boot.S:104

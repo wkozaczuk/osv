@@ -92,6 +92,7 @@ extern long free_memory_after_memory_setup;
 
 namespace memory {
     extern std::atomic<size_t> malloc_non_smp_full_pages_allocated;
+    extern bool tracker_enabled;
 }
 
 void arch_setup_free_memory()
@@ -186,6 +187,7 @@ void arch_setup_free_memory()
 
     debugf("-> arch_setup_free_memory: non-SMP allocations so far: %ld\n",
            memory::malloc_non_smp_full_pages_allocated.load());
+    memory::tracker_enabled = true;
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)
