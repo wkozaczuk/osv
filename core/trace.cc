@@ -46,6 +46,10 @@ struct tracepoint_patch_site {
     void* slow_path;
 };
 
+namespace memory {
+    extern std::atomic<size_t> tracepoints_instantiated;
+}
+
 extern "C" tracepoint_patch_site
     __tracepoint_patch_sites_start[], __tracepoint_patch_sites_end[];
 
@@ -209,6 +213,7 @@ tracepoint_base::tracepoint_base(unsigned _id, const std::type_info& tp_type,
         abort();
     }
     probes_ptr.assign(new std::vector<probe*>);
+    memory::tracepoints_instantiated.fetch_add(1);
     tp_list.push_back(*this);
     try_enable();
 }

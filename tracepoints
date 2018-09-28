@@ -1,0 +1,37 @@
+Breakpoint 3, std_malloc (size=size@entry=24, alignment=alignment@entry=16) at core/mempool.cc:1616
+1616	    if (size <= memory::pool::max_object_size && alignment <= size && smp_allocator) {
+(gdb) bt
+#0  std_malloc (size=size@entry=24, alignment=alignment@entry=16) at core/mempool.cc:1616
+#1  0x00000000003e3717 in malloc (size=24) at core/mempool.cc:1827
+#2  0x0000000000497778 in operator new(unsigned long) ()
+#3  0x00000000003fc95c in tracepoint_base::tracepoint_base (this=0xb2b2a0 <_ZN3mmuL15trace_clear_pteE>, 
+    _id=<optimized out>, tp_type=..., _name=<optimized out>, _format=<optimized out>) at core/trace.cc:215
+#4  0x0000000000202e85 in (anonymous namespace)::tracepointv<1, std::tuple<void*, bool, long unsigned int>(void*, bool, long unsigned int), identity_assign<void*, bool, long unsigned int> >::tracepointv (
+    format=0x6b786f "ptep=%p, cow=%d, pte=%x", name=<optimized out>, 
+    this=0xb2b2a0 <_ZN3mmuL15trace_clear_pteE>) at include/osv/trace.hh:341
+#5  __static_initialization_and_destruction_0 (__initialize_p=1, __priority=65535)
+    at include/osv/mmu.hh:177
+#6  _GLOBAL__sub_I_elf_header () at loader.cc:684
+#7  0x0000000000212ca2 in premain () at loader.cc:123
+#8  0x00000000002122c2 in start64 () at arch/x64/boot.S:104
+
+#7  std::_Hashtable<std::tuple<std::type_info const*, unsigned long>, std::tuple<std::type_info const*, unsigned long>, std::allocator<std::tuple<std::type_info const*, unsigned long> >, std::__detail::_Identity, std::equal_to<std::tuple<std::type_info const*, unsigned long> >, std::hash<std::tuple<std::type_info const*, unsigned long> >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, true, true> >::_M_insert<std::tuple<std::type_info const*, unsigned long> const&, std::__detail::_AllocNode<std::allocator<std::__detail::_Hash_node<std::tuple<std::type_info const*, unsigned long>, true> > > > (__node_gen=<synthetic pointer>..., 
+    __v=std::tuple containing = {...}, this=0xb7ee20 <tracepoint_base::known_ids()::_known_ids>)
+    at /usr/include/c++/7/bits/hashtable.h:1818
+#8  std::__detail::_Insert_base<std::tuple<std::type_info const*, unsigned long>, std::tuple<std::type_info const*, unsigned long>, std::allocator<std::tuple<std::type_info const*, unsigned long> >, std::__detail::_Identity, std::equal_to<std::tuple<std::type_info const*, unsigned long> >, std::hash<std::tuple<std::type_info const*, unsigned long> >, std::__detail::_Mod_range_hashing, std::__detail::_Default_ranged_hash, std::__detail::_Prime_rehash_policy, std::__detail::_Hashtable_traits<true, true, true> >::insert (
+    __v=std::tuple containing = {...}, this=0xb7ee20 <tracepoint_base::known_ids()::_known_ids>)
+    at /usr/include/c++/7/bits/hashtable_policy.h:843
+#9  std::unordered_set<std::tuple<std::type_info const*, unsigned long>, std::hash<std::tuple<std::type_info const*, unsigned long> >, std::equal_to<std::tuple<std::type_info const*, unsigned long> >, std::allocator<std::tuple<std::type_info const*, unsigned long> > >::insert (__x=std::tuple containing = {...}, 
+    this=0xb7ee20 <tracepoint_base::known_ids()::_known_ids>)
+---Type <return> to continue, or q <return> to quit---
+    at /usr/include/c++/7/bits/unordered_set.h:420
+#10 tracepoint_base::tracepoint_base (this=0xb2b940 <_ZN3mmuL15trace_clear_pteE>, _id=<optimized out>, 
+    tp_type=..., _name=<optimized out>, _format=<optimized out>) at core/trace.cc:210
+#11 0x000000000020329d in (anonymous namespace)::tracepointv<0, std::tuple<void*, bool, long unsigned int>(void*, bool, long unsigned int), identity_assign<void*, bool, long unsigned int> >::tracepointv (
+    format=0x6b786f "ptep=%p, cow=%d, pte=%x", name=<optimized out>, 
+    this=0xb2b940 <_ZN3mmuL15trace_clear_pteE>) at include/osv/trace.hh:341
+#12 __static_initialization_and_destruction_0 (__initialize_p=1, __priority=65535)
+    at include/osv/mmu.hh:177
+#13 _GLOBAL__sub_I_taskqueue_thread () at bsd/init.cc:57
+#14 0x0000000000212ca2 in premain () at loader.cc:123
+#15 0x00000000002122c2 in start64 () at arch/x64/boot.S:104

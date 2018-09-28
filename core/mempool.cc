@@ -441,6 +441,8 @@ std::atomic<size_t> malloc_large_bytes_requested(0);
 std::atomic<size_t> malloc_large_called(0);
 std::atomic<size_t> l2_refill_pages_allocated(0);
 
+std::atomic<size_t> tracepoints_instantiated(0);
+
 std::atomic<size_t> bitmap_allocator_allocate_count(0);
 
 long free_memory_after_memory_setup = 0;
@@ -1394,6 +1396,10 @@ void l2::fill_thread()
         debugf("*** l2::fill_thread: free memory is %ld in pages and %ld in bytes, used %ld KB since end of premain\n",
                stats::free() / page_size, stats::free(),
                (free_memory_after_at_the_end_of_premain - stats::free()) / 1024);
+        debugf("*** l2::fill_thread: created %ld tracepoints and allocated %ld pages - 2 pages for each (???)\n",
+               memory::tracepoints_instantiated.load(),
+               memory::tracepoints_instantiated.load()
+        );
     }
 
     sched::thread::wait_until([] {return smp_allocator;});
