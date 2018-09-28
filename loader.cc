@@ -130,9 +130,12 @@ void premain()
            memory::stats::free() / memory::page_size,
            (memory::free_memory_after_memory_setup - memory::stats::free()) / 1024);
 
-    debugf("-> premain end: non-SMP allocations and deallocations so far: (%ld,%ld)\n",
+    debugf("-> premain end: non-SMP allocations and deallocations so far: (%ld,%ld) - (%ld,%ld)KB\n",
            memory::malloc_non_smp_full_pages_allocated.load(),
-           memory::malloc_non_smp_full_pages_deallocated.load());
+           memory::malloc_non_smp_full_pages_deallocated.load(),
+           memory::malloc_non_smp_full_pages_allocated.load() * 4,
+           memory::malloc_non_smp_full_pages_deallocated.load() * 4
+    );
 }
 
 int main(int loader_argc, char **loader_argv)

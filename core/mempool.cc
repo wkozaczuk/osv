@@ -1396,10 +1396,10 @@ void l2::fill_thread()
         debugf("*** l2::fill_thread: free memory is %ld in pages and %ld in bytes, used %ld KB since end of premain\n",
                stats::free() / page_size, stats::free(),
                (free_memory_after_at_the_end_of_premain - stats::free()) / 1024);
-        debugf("*** l2::fill_thread: created %ld tracepoints and allocated %ld pages - 2 pages for each (???)\n",
-               memory::tracepoints_instantiated.load(),
-               memory::tracepoints_instantiated.load()
-        );
+        auto tracepoints = memory::tracepoints_instantiated.load();
+        debugf("*** l2::fill_thread: created %ld tracepoints and allocated %ld pages - 2 pages for each (sure?)\n",
+               tracepoints,
+               tracepoints * 2);
     }
 
     sched::thread::wait_until([] {return smp_allocator;});
