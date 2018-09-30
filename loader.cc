@@ -556,9 +556,17 @@ namespace memory {
 
     extern std::atomic<size_t> malloc_large_bytes_requested;
     extern std::atomic<size_t> free_large_bytes_released;
+
+    extern std::atomic<size_t> l1_unfill_pages_released;
+    extern std::atomic<size_t> l1_refill_pages_allocated;
+    extern std::atomic<size_t> l1_pages_allocated;
+    extern std::atomic<size_t> l1_pages_released;
+    extern std::atomic<size_t> l2_unfill_pages_released;
     extern std::atomic<size_t> l2_refill_pages_allocated;
 
     extern std::atomic<size_t> bitmap_allocator_allocate_count;
+
+    extern size_t l1_size_in_pages;
 }
 
 void main_cont(int loader_argc, char** loader_argv)
@@ -646,28 +654,50 @@ void main_cont(int loader_argc, char** loader_argv)
            memory::malloc_non_smp_full_pages_bytes_requested.load(),
            memory::malloc_non_smp_full_pages_deallocated.load());
 
-    debugf("----> Since setup in SMP mode allocated %ld pages in order to allocate %ld bytes\n",
+    debug("--------------------\n");
+
+    debugf("----> Since setup in SMP mode ( 1024 < x <= 4K) allocated %ld pages in order to allocate %ld bytes\n",
            memory::malloc_smp_full_pages_allocated.load(),
            memory::malloc_smp_full_pages_bytes_requested.load());
 
-    debugf("----> Since setup in memory pool mode allocated %ld bytes for requested %ld bytes\n",
+    debugf("----> Since setup in memory pool mode (<= 1024) allocated %ld bytes for requested %ld bytes\n",
            memory::malloc_memory_pool_bytes_allocated.load(),
            memory::malloc_memory_pool_bytes_requested.load());
 
-    debugf("----> Since setup malloc_large requested %ld pages and %ld bytes (%ld KB)\n",
+    debug("--------------------\n");
+
+    debugf("----> Since setup malloc_large (direct, non-L1) requested %ld pages and %ld bytes (%ld KB)\n",
            memory::malloc_large_bytes_requested.load() / memory::page_size,
            memory::malloc_large_bytes_requested.load(),
            memory::malloc_large_bytes_requested.load() /1024);
 
-    debugf("----> Since setup free_large released %ld pages and %ld bytes (%ld KB)\n",
+    debugf("----> Since setup free_large (direct, non-L1) released %ld pages and %ld bytes (%ld KB)\n",
            memory::free_large_bytes_released.load() / memory::page_size,
            memory::free_large_bytes_released.load(),
            memory::free_large_bytes_released.load() /1024);
 
-    debugf("----> Since setup L2 pool allocated %ld pages and %ld bytes (%ld KB)\n",
+    debug("--------------------\n");
+
+    debugf("----> Since setup global L2 pool filled %ld pages (%ld KB) and unfilled %ld pages (%ld KB)\n",
            memory::l2_refill_pages_allocated.load(),
-           memory::l2_refill_pages_allocated.load() * memory::page_size,
-           memory::l2_refill_pages_allocated.load() * 4);
+           memory::l2_refill_pages_allocated.load() * 4,
+           memory::l2_unfill_pages_released.load(),
+           memory::l2_unfill_pages_released.load() * 4);
+
+    debugf("----> Since setup per-cpu L1 pool (last size: %d) filled %ld pages (%ld KB) and unfilled %ld pages (%ld KB)\n",
+           memory::l1_size_in_pages,
+           memory::l1_refill_pages_allocated.load(),
+           memory::l1_refill_pages_allocated.load() * 4,
+           memory::l1_unfill_pages_released.load(),
+           memory::l1_unfill_pages_released.load() * 4);
+
+    debugf("----> Memory users (allocation <= 4K): Grabbed %ld pages (%ld KB) from L1 and returned %ld pages (%ld KB) to L1\n",
+           memory::l1_pages_allocated.load(),
+           memory::l1_pages_allocated.load() * 4,
+           memory::l1_pages_released.load(),
+           memory::l1_pages_released.load() * 4);
+
+    debug("--------------------\n");
 
     debugf("-> Free memory is %ld in pages and %ld in bytes, used %ld KB since end of premain\n",
            memory::stats::free() / memory::page_size, memory::stats::free(),

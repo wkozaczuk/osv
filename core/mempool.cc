@@ -441,7 +441,14 @@ std::atomic<size_t> malloc_large_bytes_requested(0);
 std::atomic<size_t> malloc_large_called(0);
 std::atomic<size_t> free_large_bytes_released(0);
 std::atomic<size_t> free_large_called(0);
+
+size_t l1_size_in_pages = 0;
+std::atomic<size_t> l1_refill_pages_allocated(0);
+std::atomic<size_t> l1_unfill_pages_released(0);
+std::atomic<size_t> l1_pages_allocated(0);
+std::atomic<size_t> l1_pages_released(0);
 std::atomic<size_t> l2_refill_pages_allocated(0);
+std::atomic<size_t> l2_unfill_pages_released(0);
 
 std::atomic<size_t> tracepoints_instantiated(0);
 
@@ -1211,7 +1218,8 @@ public:
         , _stack(_max)
         , _fill_thread(sched::thread::make([=] { fill_thread(); }, sched::thread::attr().name("page_pool_l2")))
     {
-       _fill_thread->start();
+        debug("l2: Created with _max: %d\n", _max);
+        _fill_thread->start();
     }
 
     page_batch* alloc_page_batch()
@@ -1331,6 +1339,7 @@ void l1::refill()
     if (pbuf.nr + page_batch::nr_pages < pbuf.max / 2) {
         auto* pb = global_l2.alloc_page_batch();
         if (pb) {
+            l1_refill_pages_allocated.fetch_add(page_batch::nr_pages);
             // Other threads might have filled the array while we waited for
             // the page batch.  Make sure there is enough room to add the pages
             // we just acquired, otherwise return them.
@@ -1341,6 +1350,7 @@ void l1::refill()
             } else {
                 global_l2.free_page_batch(pb);
             }
+            l1_size_in_pages = pbuf.nr;
         }
     }
 }
@@ -1355,6 +1365,8 @@ void l1::unfill()
             pb->pages[i] = pbuf.pop();
         }
         global_l2.free_page_batch(pb);
+        l1_unfill_pages_released.fetch_add(page_batch::nr_pages);
+        l1_size_in_pages = pbuf.nr;
     }
 }
 
@@ -1368,6 +1380,7 @@ void* l1::alloc_page_local()
     if (pbuf.nr == 0) {
         return nullptr;
     }
+    l1_pages_allocated.fetch_add(1);
     return pbuf.pop();
 }
 
@@ -1382,6 +1395,7 @@ bool l1::free_page_local(void* v)
         return false;
     }
     pbuf.push(v);
+    l1_pages_released.fetch_add(1);
     return true;
 }
 
@@ -1453,6 +1467,7 @@ void l2::refill()
                 total_size += page_size;
             }
             l2_refill_pages_allocated.fetch_add(page_batch::nr_pages);
+            //debug("l2: Filled another batch: %d, _nr: %d\n", page_batch::nr_pages, _nr.load());
             on_alloc(total_size);
         }
         // Use the last page to store other page address
@@ -1491,6 +1506,7 @@ void l2::free_batch(page_batch& batch)
             auto pr = new (v) page_range(page_size);
             free_page_range_locked(pr);
         }
+        l2_unfill_pages_released.fetch_add(page_batch::nr_pages);
     }
 }
 
