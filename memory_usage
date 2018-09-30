@@ -1,0 +1,26 @@
+Per non-smp large and page allocations - allocated and retained total of 7616 KB 
+ - regular allocated and retained 1582 pages (6328 KB) to allocate 120116 bytes (120 KB)
+ - large allocated and retained 1288 KB
+Per free stats allocated physical memory - 7620 KB
+-------------------------- almost the same
+--- It would be great to save 6MB of memory !!!
+---------------------------------------------------
+ Out of L1 (L2) -> Since setup of SMP allocator allocated 176 pages (704K) in order to allocate 330543 bytes (allocations 1K < x < 4K)
+  - 40 full allocations of those above where for < 16 bytes each -> possible saving 160K!!!
+ Out of L1 (L2) -> Since SMP emabled in memory pool mode allocated 345888 (~340K) bytes for requested 309953 bytes
+Since SMP enabled L2 pool allocated 1248 pages and 5111808 bytes (4992 KB) = ~5MB
+---
+*** L1/L2 observation -> L2 pulles almost 5M of physical memory to satisfy allocation of ~1MB of virtual memory
+***** -> 4MB is sitting doing nothing, waiting to be used but never used
+-----
+Directly from free page ranges:
+  Since SMP enabled malloc_large requested 3981312 bytes (3888 KB) - 1288 KB = 2600K
+  Since SMP enabled free_large released 107 pages and 438272 bytes (428 KB)
+  --
+  The net total is ~2.4MB
+------------------------------------
+Per free stats free physical memory is 6312 in pages and 25853952 in bytes, used 7028 KB since end of premain
+
+OBSERVATION: malloc_large/free_parge:
+a) always (both SMP and non-SMP) allocates memory from free pages ranges
+b) skips L1/L2 in SMP mode
