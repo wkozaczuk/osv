@@ -1390,13 +1390,23 @@ void l2::fill_thread()
 {
     if (smp_allocator_cnt++ == sched::cpus.size()) {
         smp_allocator = true;
-        debugf("*** l2::fill_thread: SMP allocator initialized - allocations so far: %ld, tracker called: (%ld,%ld)!!!\n",
-              malloc_non_smp_full_pages_allocated.load(),
-               tracker_remember_called.load(),
-               tracker_forget_called.load());
-        debugf("*** l2::fill_thread: malloc_large called total %ld times, total: %ld\n",
+        //debugf("*** l2::fill_thread: SMP allocator initialized - allocations so far: %ld, tracker called: (%ld,%ld)!!!\n",
+        //      malloc_non_smp_full_pages_allocated.load(),
+        //       tracker_remember_called.load(),
+        //       tracker_forget_called.load());
+        debugf("*** l2::fill_thread: in non-SMP mode has allocated %ld pages (%ld KB) and deallocated %ld pages (%ld KB)\n",
+               malloc_non_smp_full_pages_allocated.load(),
+               malloc_non_smp_full_pages_allocated.load() * 4,
+               malloc_non_smp_full_pages_deallocated.load(),
+               malloc_non_smp_full_pages_deallocated.load() * 4);
+        debugf("*** l2::fill_thread: malloc_large called total %ld times, and requested total of: %ld bytes (%ld KB)\n",
                malloc_large_called.load(),
-               malloc_large_bytes_requested.load());
+               malloc_large_bytes_requested.load(),
+               malloc_large_bytes_requested.load() / 1024);
+        debugf("*** l2::fill_thread: since setup free_large released %ld pages and %ld bytes (%ld KB)\n",
+               free_large_bytes_released.load() / memory::page_size,
+               free_large_bytes_released.load(),
+               free_large_bytes_released.load() /1024);
         debugf("*** l2::fill_thread: free memory is %ld in pages and %ld in bytes, used %ld KB since end of premain\n",
                stats::free() / page_size, stats::free(),
                (free_memory_after_at_the_end_of_premain - stats::free()) / 1024);
