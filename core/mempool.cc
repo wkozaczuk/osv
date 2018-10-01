@@ -1549,7 +1549,7 @@ static void* untracked_alloc_page()
 void* alloc_page()
 {
     void *p = untracked_alloc_page();
-    //tracker_remember(p, page_size);
+    tracker_remember(p, page_size);
     return p;
 }
 
