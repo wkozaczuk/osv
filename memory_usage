@@ -8,10 +8,11 @@ Per free stats allocated physical memory - 7620 KB
  Out of L1 (L2) -> Since setup of SMP allocator allocated 176 pages (704K) in order to allocate 330543 bytes (allocations 1K < x < 4K)
   - 40 full allocations of those above where for < 16 bytes each -> possible saving 160K!!!
  Out of L1 (L2) -> Since SMP emabled in memory pool mode allocated 345888 (~340K) bytes for requested 309953 bytes
+--
+TOTAL: 704K + 340K ~ 1MB
 Since SMP enabled L2 pool allocated 1248 pages and 5111808 bytes (4992 KB) = ~5MB
 ---
-*** L1/L2 observation -> L2 pulles almost 5M of physical memory to satisfy allocation of ~1MB of virtual memory
-***** -> 4MB is sitting doing nothing, waiting to be used but never used
+*** L1/L2 observation -> L1 needs to stay above low water-mark (128 pages = 512K) so that much is potentially over-allocated
 -----
 Directly from free page ranges:
   Since SMP enabled malloc_large requested 3981312 bytes (3888 KB) - 1288 KB = 2600K
@@ -24,3 +25,20 @@ Per free stats free physical memory is 6312 in pages and 25853952 in bytes, used
 OBSERVATION: malloc_large/free_parge:
 a) always (both SMP and non-SMP) allocates memory from free pages ranges
 b) skips L1/L2 in SMP mode
+
+----
+NEW:
+In SMP mode besides std_malloc()-using family of calls, some code also uses memory::alloc_page() that draws memory from L1/L2 pools:
+- Found 2097152 bytes in 512 allocations [size 4096] for mmu::map_anon() with mmap_prepopulate for thread stack traces (per leak)
+- Found 1040384 bytes in 254 allocations [size 4096] for virtio::net::fill_rx_ring() (drivers/virtio-net.cc:568) (per leak)
+---
+TOTAL: 2MB + 1MB = 3MB
+
+--- AFTER SMP enabled
+1MB (memory pool (< 1024) + (<4K)) + 2.4 MB (malloc_large) + 3MB (alloc_page)
+
+**** through std_mallloc - tsm_screen_resize (drivers/libtsm/tsm_screen.cc:635)
+- Found 98304 bytes in 24 allocations [size 4096, birth 2102/2171.0/2240] 
+- Found 98304 bytes in 24 allocations [size 4096, birth 2102/2171.0/2240]
+
+
