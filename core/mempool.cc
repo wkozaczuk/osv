@@ -259,6 +259,9 @@ unsigned pool::get_size()
 static inline void* untracked_alloc_page();
 static inline void untracked_free_page(void *v);
 
+std::atomic<size_t> malloc_memory_pool_pages_added(0);
+std::atomic<size_t> malloc_memory_pool_pages_released(0);
+
 void pool::add_page()
 {
     // FIXME: this function allocated a page and set it up but on rare cases
@@ -277,6 +280,7 @@ void pool::add_page()
             header->local_free = obj;
         }
         _free->push_back(*header);
+        malloc_memory_pool_pages_added.fetch_add(1);
         if (_free->empty()) {
             /* encountered when starting to enable TLS for AArch64 in mixed
                LE / IE tls models */

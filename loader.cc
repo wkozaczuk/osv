@@ -553,6 +553,7 @@ namespace memory {
 
     extern std::atomic<size_t> malloc_memory_pool_bytes_allocated;
     extern std::atomic<size_t> malloc_memory_pool_bytes_requested;
+    extern std::atomic<size_t> malloc_memory_pool_pages_added;
 
     extern std::atomic<size_t> malloc_large_bytes_requested;
     extern std::atomic<size_t> free_large_bytes_released;
@@ -660,9 +661,10 @@ void main_cont(int loader_argc, char** loader_argv)
            memory::malloc_smp_full_pages_allocated.load(),
            memory::malloc_smp_full_pages_bytes_requested.load());
 
-    debugf("----> Since setup in memory pool mode (<= 1024) allocated %ld bytes for requested %ld bytes\n",
+    debugf("----> Since setup in memory pool mode (<= 1024) allocated %ld bytes for requested %ld bytes; added %ld pages to all memory pools\n",
            memory::malloc_memory_pool_bytes_allocated.load(),
-           memory::malloc_memory_pool_bytes_requested.load());
+           memory::malloc_memory_pool_bytes_requested.load(),
+           memory::malloc_memory_pool_pages_added.load());
 
     debug("--------------------\n");
 
