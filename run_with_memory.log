@@ -1,0 +1,62 @@
+OSv v0.51.0-60-g1f114f92
+-> arch_setup_free_memory: free memory is (9751 pages, 39004 KB) and starts at 0x0000000000bb9d34 (12007 KB)
+-> arch_setup_free_memory: non-SMP allocations so far: 3
+---acpi::early_init---> In non-SMP mode allocated 606 pages (delta 600) in order to allocate 36450 bytes AND deallocated 3 pages
+1 CPUs detected
+l2: Created with _max: 16
+-> premain number of init functions called 276
+-> premain end: free memory is 8068 in pages, used 6732 KB since arch_setup_free_memory
+-> premain end: In non-SMP mode has allocated 1554 pages (6216 KB) and deallocated 40 pages (160 KB) since arch_setup_free_memory
+Firmware vendor: SeaBIOS
+*** l2::fill_thread: in non-SMP mode has allocated 1818 pages (7272 KB) and deallocated 236 pages (944 KB)
+*** l2::fill_thread: malloc_large called total 27 times, and requested total of: 1318912 bytes (1288 KB)
+*** l2::fill_thread: since setup free_large released 0 pages and 0 bytes (0 KB)
+*** l2::fill_thread: free memory is 7846 in pages and 32137216 in bytes, used 888 KB since end of premain
+*** l2::fill_thread: created 391 tracepoints and allocated 782 pages - 2 pages for each (sure?)
+bsd: initializing - done
+VFS: mounting ramfs at /
+VFS: mounting devfs at /dev
+net: initializing - done
+vga: Add VGA device instance
+eth0: ethernet address: 52:54:00:12:34:56
+virtio-blk: Add blk device instances 0 as vblk0, devsize=8521728
+random: virtio-rng registered as a source.
+random: intel drng, rdrand registered as a source.
+random: <Software, Yarrow> initialized
+VFS: unmounting /dev
+VFS: mounting rofs at /rofs
+VFS: mounting devfs at /dev
+VFS: mounting procfs at /proc
+VFS: mounting ramfs at /tmp
+[I/25 dhcp]: Broadcasting DHCPDISCOVER message with xid: [86170492]
+[I/25 dhcp]: Waiting for IP...
+[I/33 dhcp]: Received DHCPOFFER message from DHCP server: 192.168.122.1 regarding offerred IP address: 192.168.122.15
+[I/33 dhcp]: Broadcasting DHCPREQUEST message with xid: [86170492] to SELECT offered IP: 192.168.122.15
+[I/33 dhcp]: Received DHCPACK message from DHCP server: 192.168.122.1 regarding offerred IP address: 192.168.122.15
+[I/33 dhcp]: Server acknowledged IP 192.168.122.15 for interface eth0 with time to lease in seconds: 86400
+eth0: 192.168.122.15
+[I/33 dhcp]: Configuring eth0: ip 192.168.122.15 subnet mask 255.255.255.0 gateway 192.168.122.1 MTU 1500
+Hello from C code
+----> Called free_page_ranges allocator 1 times
+----> Since setup in non-SMP mode allocated 1818 pages in order to allocate 121138 bytes AND deallocated 236 pages
+--------------------
+----> Since setup in SMP mode ( 1024 < x <= 4K) allocated 177 pages in order to allocate 331823 bytes
+----> Since setup in memory pool mode (<= 1024) allocated 345952 bytes for requested 310001 bytes; added 138 pages to all memory pools
+--------------------
+----> Since setup malloc_large (direct, non-L1) requested 972 pages and 3981312 bytes (3888 KB)
+----> Since setup free_large (direct, non-L1) released 107 pages and 438272 bytes (428 KB)
+--------------------
+----> Since setup global L2 pool filled 1248 pages (4992 KB) and unfilled 256 pages (1024 KB)
+----> Since setup per-cpu L1 pool (last size: 260) filled 1152 pages (4608 KB) and unfilled 480 pages (1920 KB)
+----> Memory users (allocation <= 4K): Grabbed 1113 pages (4452 KB) from L1 and returned 686 pages (2744 KB) to L1
+--------------------
+-> Free memory is 6311 in pages and 25849856 in bytes, used 7028 KB since end of premain
+[I/0 dhcp]: Unicasting DHCPRELEASE message with xid: [661754858] from client: 192.168.122.15 to server: 192.168.122.1
+VFS: unmounting /dev
+VFS: unmounting /proc
+VFS: unmounting /
+ROFS: spent 1.34 ms reading from disk
+ROFS: read 32 512-byte blocks from disk
+ROFS: allocated 29 512-byte blocks of cache memory
+ROFS: hit ratio is 90.91%
+Powering off.
