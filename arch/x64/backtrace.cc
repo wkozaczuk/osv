@@ -21,7 +21,7 @@ int backtrace_safe(void** pc, int nr)
 
     asm("mov %%rbp, %0" : "=rm"(rbp));
     int i = 0;
-    while (i < nr
+    while (i < 5 // 5 seems to be work but 10 does not -> it is not clear if we are simply filtering our certain problematic frames, maybe referring to next addresses that are invalid???
             && safe_load(&rbp->next, next)
             && safe_load(&rbp->pc, pc[i])
             && pc[i]) {
