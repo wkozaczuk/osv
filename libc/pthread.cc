@@ -923,28 +923,33 @@ void pthread_exit(void *retval)
 
 int sched_get_priority_max(int policy)
 {
-    WARN_STUBBED();
-    return EINVAL;
+    //WARN_STUBBED();
+    //return EINVAL;
+    return 100;
 }
 
 int sched_get_priority_min(int policy)
 {
-    WARN_STUBBED();
-    return EINVAL;
+    //WARN_STUBBED();
+    //return EINVAL;
+    return 0;
 }
 
 int pthread_setschedparam(pthread_t thread, int policy,
         const struct sched_param *param)
 {
-    WARN_STUBBED();
-    return EINVAL;
+    //WARN_STUBBED();
+    //return EINVAL;
+    return 0;
 }
 
 int pthread_getschedparam(pthread_t thread, int *policy,
         struct sched_param *param)
 {
-    WARN_STUBBED();
-    return EINVAL;
+    //WARN_STUBBED();
+    //return EINVAL;
+    *policy = SCHED_OTHER;
+    return 0;
 }
 
 int pthread_kill(pthread_t thread, int sig)
