@@ -4,7 +4,7 @@ module-dir = $(src)/modules/libsmb2
 all: module
 module: libsmb2
 
-libsmb2: upstream/libsmb2/.git upstream/libsmb2/lib/libsmb2.so.2.0.0
+libsmb2: upstream/libsmb2/lib/libsmb2.so.2.0.0
 
 .PHONY: libsmb2
 
@@ -12,7 +12,7 @@ upstream/libsmb2/.git:
 	mkdir -p $(module-dir)/upstream && cd $(module-dir)/upstream && \
 	git clone --depth 1 https://github.com/sahlberg/libsmb2.git
 
-upstream/libsmb2/lib/libsmb2.so.2.0.0:
+upstream/libsmb2/lib/libsmb2.so.2.0.0: upstream/libsmb2/.git
 	cd $(module-dir)/upstream/libsmb2 && cmake . && make
 
 clean:
