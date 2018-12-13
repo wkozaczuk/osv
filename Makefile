@@ -396,7 +396,7 @@ tools += tools/uush/uush.so
 tools += tools/uush/ls.so
 tools += tools/uush/mkdir.so
 
-tools += tools/mount/mount-nfs.so
+tools += tools/mount/mount-fs.so
 tools += tools/mount/umount.so
 
 ifeq ($(arch),aarch64)
@@ -1853,6 +1853,7 @@ else
 endif
 
 objects += $(addprefix fs/nfs/, $(nfs_o))
+objects += fs/smbfs/smbfs_null_vfsops.o
 
 # ld has a known bug (https://sourceware.org/bugzilla/show_bug.cgi?id=6468)
 # where if the executable doesn't use shared libraries, its .dynamic section
