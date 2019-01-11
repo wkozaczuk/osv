@@ -6,6 +6,7 @@
  */
 
 #include "isa-serial.hh"
+#include <osv/sched.hh>
 
 namespace console {
 
@@ -75,8 +76,17 @@ void isa_serial_console::early_init()
 
 void isa_serial_console::write(const char *str, size_t len)
 {
-    while (len-- > 0)
-        putchar(*str++);
+    if (!_started) {
+        while (len-- > 0)
+            putchar(*str++);
+    }
+    else {
+        WITH_LOCK(_write_mutex) {
+            while (len-- > 0)
+                _writer_buffer->push(*str++);
+        }
+        _writer_thread->wake();
+    }
 }
 
 bool isa_serial_console::input_ready()
@@ -85,6 +95,12 @@ bool isa_serial_console::input_ready()
     // On VMWare hosts without a serial port, this register always
     // returns 0xff.  Just ignore it instead of spinning incessantly.
     return (val != 0xff && (val & lsr::RECEIVE_DATA_READY));
+}
+
+bool isa_serial_console::output_ready()
+{
+    u8 val = pci::inb(ioport + regs::LSR);
+    return (val & lsr::TRANSMIT_HOLD_EMPTY);
 }
 
 char isa_serial_console::readch()
@@ -112,14 +128,56 @@ void isa_serial_console::putchar(const char ch)
     pci::outb(ch, ioport);
 }
 
+void isa_serial_console::write()
+{
+    while (true) {
+        std::lock_guard<mutex> lock(_write_mutex);
+        sched::thread::wait_until(_write_mutex, [&] { return !_writer_buffer->empty() && this->output_ready(); });
+
+        //if (!_writer_buffer || _writer_buffer->empty()) {
+        //    continue;
+        //}
+        /*
+        do {
+            char ch = _writer_buffer->front();
+            _writer_buffer->pop();
+            pci::outb(ch, ioport);
+
+            if (_writer_buffer->empty()) {
+                break;
+            }
+
+            u8 val = pci::inb(ioport + regs::LSR);
+            if (!(val & lsr::TRANSMIT_HOLD_EMPTY)) {
+                break;
+            }
+        } while(!_writer_buffer->empty()); */
+        char ch = _writer_buffer->front();
+        _writer_buffer->pop();
+        //putchar(ch);
+        pci::outb(ch, ioport);
+    }
+}
+
 void isa_serial_console::enable_interrupt()
 {
     // enable interrupts
-    pci::outb(1, ioport + regs::IER);
+    pci::outb(1 + 2, ioport + regs::IER);
 }
 
 void isa_serial_console::dev_start() {
-    _irq.reset(new gsi_edge_interrupt(4, [&] { _thread->wake(); }));
+    _irq.reset(new gsi_edge_interrupt(4, [&] {
+        u8 val = pci::inb(ioport + regs::FCR); // Really IIR - Interrupt Identification Register
+        if (val & 0x2) //THR empty and ready to write
+            ;//_writer_thread->wake();
+        else
+            _thread->wake();
+    }));
+    _writer_buffer = new std::queue<char>();
+    _writer_thread = sched::thread::make([=] { this->write(); },
+                                         sched::thread::attr().name("isa-serial-output"));
+    _writer_thread->start();
+    _started = true;
     enable_interrupt();
 }
 
