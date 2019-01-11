@@ -26,7 +26,8 @@ public:
     }
     static void early_init();
     virtual void write(const char *str, size_t len);
-    virtual void flush() {}
+    //virtual void flush() {}
+    virtual void flush() override;
     virtual bool input_ready() override;
     virtual char readch();
     bool output_ready();

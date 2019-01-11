@@ -85,7 +85,16 @@ void isa_serial_console::write(const char *str, size_t len)
             while (len-- > 0)
                 _writer_buffer->push(*str++);
         }
+        //_writer_thread->wake();
+    }
+}
+
+void isa_serial_console::flush()
+{
+    if (_started) {
         _writer_thread->wake();
+        //std::lock_guard<mutex> lock(_write_mutex);
+        //sched::thread::wait_until(_write_mutex, [&] { return _writer_buffer->empty(); });
     }
 }
 
@@ -167,11 +176,12 @@ void isa_serial_console::enable_interrupt()
 
 void isa_serial_console::dev_start() {
     _irq.reset(new gsi_edge_interrupt(4, [&] {
-        u8 val = pci::inb(ioport + regs::FCR); // Really IIR - Interrupt Identification Register
-        if (val & 0x2) //THR empty and ready to write
-            ;//_writer_thread->wake();
-        else
-            _thread->wake();
+        //u8 val = pci::inb(ioport + regs::FCR); // Really IIR - Interrupt Identification Register
+        //if (val & 0x2) //THR empty and ready to write
+        //    ;//_writer_thread->wake();
+        //else
+        //    _thread->wake();
+        _writer_thread->wake();
     }));
     _writer_buffer = new std::queue<char>();
     _writer_thread = sched::thread::make([=] { this->write(); },
