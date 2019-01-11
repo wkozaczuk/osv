@@ -15,6 +15,10 @@
 #include <osv/interrupt.hh>
 #include <osv/mutex.h>
 
+// These articles are good to explain UART
+// - https://www.tldp.org/HOWTO/Serial-HOWTO-18.html
+// - https://en.wikibooks.org/wiki/Serial_Programming/8250_UART_Programming 
+
 namespace console {
 
 class isa_serial_console : public console_driver {
