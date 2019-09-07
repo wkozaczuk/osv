@@ -37,7 +37,7 @@ static __thread int v6 __attribute__ ((tls_model ("initial-exec"))) = 678;
 
 extern __thread int ex3 __attribute__ ((tls_model ("initial-exec")));
 
-#ifndef __OSV__
+#ifndef __SHARED_OBJECT__
 // We can also try to force the "Local Exec" TLS model, but OSv's makefile
 // builds all tests as shared objects (.so), and the linker will report an
 // error, because local-exec is not allowed in shared libraries, just in
@@ -65,7 +65,7 @@ int main(int argc, char** argv)
     report(v5 == 567, "v5");
     report(v6 == 678, "v6");
     report(ex3 == 765, "ex3");
-#ifndef __OSV__
+#ifndef __SHARED_OBJECT__
     report(v7 == 789, "v7");
 #endif
 
@@ -73,6 +73,8 @@ int main(int argc, char** argv)
     report(ex1 == 322, "ex1 modified");
     report(ex2 == 433, "ex2 modified");
     report(ex3 == 766, "ex3 modified");
+    report(v1 == 124, "v1 modified");
+    report(v5 == 568, "v5 modified");
 
     // Write on this thread's variables, and see a new thread gets
     // the original default values
@@ -82,7 +84,7 @@ int main(int argc, char** argv)
     v4 = 0;
     v5 = 0;
     v6 = 0;
-#ifndef __OSV__
+#ifndef __SHARED_OBJECT__
     v7 = 0;
 #endif
 
@@ -97,7 +99,7 @@ int main(int argc, char** argv)
             report(v5 == 567, "v5 in new thread");
             report(v6 == 678, "v6 in new thread");
             report(ex3 == 765, "ex3 in new thread");
-#ifndef __OSV__
+#ifndef __SHARED_OBJECT__
             report(v7 == 789, "v7 in new thread");
 #endif
 
@@ -105,6 +107,8 @@ int main(int argc, char** argv)
             report(ex1 == 322, "ex1 modified in new thread");
             report(ex2 == 433, "ex2 modified in new thread");
             report(ex3 == 766, "ex3 modified in new thread");
+            report(v1 == 124, "v1 modified in new thread");
+            report(v5 == 568, "v5 modified");
     });
     t1.join();
 

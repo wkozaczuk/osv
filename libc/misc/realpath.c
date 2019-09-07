@@ -39,6 +39,7 @@ static char sccsid[] = "@(#)realpath.c	8.1 (Berkeley) 2/16/94";
 #include <string.h>
 #include <unistd.h>
 #include <limits.h>
+#include <stdio.h>
 
 #include <osv/prex.h> /* for strlcpy / strlcat */
 
@@ -50,12 +51,20 @@ static char sccsid[] = "@(#)realpath.c	8.1 (Berkeley) 2/16/94";
 char *
 realpath(const char * __restrict path, char * __restrict resolved)
 {
+	printf("#realpath: %s\n", path);
 	struct stat sb;
 	char *p, *q, *s;
 	size_t left_len, resolved_len;
 	unsigned symlinks;
 	int m, slen;
 	char left[PATH_MAX], next_token[PATH_MAX], symlink[PATH_MAX];
+
+        if (strcmp("/proc/self/exe", path) == 0) {
+		if (resolved == NULL)
+			resolved = malloc(PATH_MAX);
+                strcpy(resolved, "/HelloApp/dotnet-sdk-2.2");
+		return resolved;
+        }
 
 	if (path == NULL) {
 		errno = EINVAL;
