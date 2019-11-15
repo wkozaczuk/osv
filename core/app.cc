@@ -316,6 +316,8 @@ void application::main()
     elf::get_program()->init_library(_args.size(), _argv.get());
     sched::thread::current()->set_name(_command);
 
+    printf("APP [%s, tid:%d]: executing main\n", _command.c_str(), sched::thread::current()->id());
+
     if (_main) {
         run_main();
     } else {
