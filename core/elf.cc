@@ -30,6 +30,14 @@
 
 #include "arch.hh"
 
+#define ELF_DEBUG_ENABLED 1
+
+#if defined(ELF_DEBUG_ENABLED)
+#define elf_debug(format,...) kprintf("ELF [%s, tid:%d]: " format, _pathname.c_str(), sched::thread::current()->id() __VA_OPT__(,) __VA_ARGS__)
+#else
+#define elf_debug(...)
+#endif
+
 TRACEPOINT(trace_elf_load, "%s", const char *);
 TRACEPOINT(trace_elf_unload, "%s", const char *);
 TRACEPOINT(trace_elf_lookup, "%s", const char *);
@@ -116,6 +124,7 @@ object::object(program& prog, std::string pathname)
     , _is_executable(false)
     , _visibility(nullptr)
 {
+    elf_debug("Instantiated\n");
 }
 
 object::~object()
@@ -327,6 +336,7 @@ void object::set_base(void* base)
     }
 
     _end = _base + q->p_vaddr + q->p_memsz;
+    elf_debug("The base set to: 0x%016x and end: 0x%016x\n", _base, _end);
 }
 
 void* object::base() const
@@ -367,6 +377,7 @@ void file::load_segment(const Elf64_Phdr& phdr)
             mmu::map_anon(_base + vstart + filesz, memsz - filesz, flag, perm);
         }
     }
+    elf_debug("Loaded and mapped PT_LOAD segment at: 0x%016x of size: 0x%x\n", _base + vstart, filesz); //TODO: Add memory?
 }
 
 bool object::mlocked()
@@ -407,6 +418,7 @@ Elf64_Note::Elf64_Note(void *_base, char *str)
 extern "C" char _pie_static_tls_start, _pie_static_tls_end;
 void object::load_segments()
 {
+    elf_debug("Loading segments\n");
     for (unsigned i = 0; i < _ehdr.e_phnum; ++i) {
         auto &phdr = _phdrs[i];
         switch (phdr.p_type) {
@@ -462,6 +474,7 @@ void object::load_segments()
             _tls_init_size = phdr.p_filesz;
             _tls_uninit_size = phdr.p_memsz - phdr.p_filesz;
             _tls_alignment = phdr.p_align;
+            elf_debug("Found TLS segment at 0x%016x of aligned size: %x\n", _tls_segment, get_aligned_tls_size());
             break;
         default:
             abort("Unknown p_type in executable %s: %d\n", pathname(), phdr.p_type);
@@ -693,6 +706,7 @@ void object::relocate_rela()
             abort();
         }
     }
+    elf_debug("Relocated %d symbols in DT_RELA\n", nb);
 }
 
 extern "C" { void __elf_resolve_pltgot(void); }
@@ -741,6 +755,7 @@ void object::relocate_pltgot()
             *static_cast<u64*>(addr) += reinterpret_cast<u64>(_base);
         }
     }
+    elf_debug("Relocated %d PLT symbols in DT_JMPREL\n", nrel);
 
     // PLTGOT resolution has a special calling convention,
     // for x64 the symbol index and some word is pushed on the stack,
@@ -987,6 +1002,7 @@ void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
     }
     auto needed = dynamic_str_array(DT_NEEDED);
     for (auto lib : needed) {
+        elf_debug("Loading needed %s\n", lib);
         auto obj = _prog.load_object(lib, rpath, loaded_objects);
         if (obj) {
             // Keep a reference to the needed object, so it won't be
@@ -1047,12 +1063,14 @@ void object::run_init_funcs(int argc, char** argv)
     if (dynamic_exists(DT_INIT)) {
         auto func = dynamic_ptr<void>(DT_INIT);
         if (func) {
+            elf_debug("Executing DT_INIT function\n");
             reinterpret_cast<void(*)(int, char**)>(func)(argc, argv);
         }
     }
     if (dynamic_exists(DT_INIT_ARRAY)) {
         auto funcs = dynamic_ptr<void(*)(int, char**)>(DT_INIT_ARRAY);
         auto nr = dynamic_val(DT_INIT_ARRAYSZ) / sizeof(*funcs);
+        elf_debug("Executing %d DT_INIT_ARRAYSZ functions\n", nr);
         for (auto i = 0u; i < nr; ++i) {
             funcs[i](argc, argv);
         }
@@ -1094,6 +1112,7 @@ void object::alloc_static_tls()
     if (!_static_tls && tls_size) {
         _static_tls = true;
         _static_tls_offset = _static_tls_alloc.fetch_add(tls_size, std::memory_order_relaxed);
+        elf_debug("Allocated static TLS at 0x%016x of size: 0x%x\n", _static_tls_offset, tls_size);
     }
 }
 
@@ -1129,10 +1148,12 @@ void object::init_static_tls()
         }
         if (obj->is_executable()) {
             obj->prepare_local_tls(_initial_tls_offsets);
+            elf_debug("Initialized local-exec static TLS for %s\n", obj->pathname().c_str());
         }
         else {
             obj->prepare_initial_tls(_initial_tls.get(), _initial_tls_size,
                                      _initial_tls_offsets);
+            elf_debug("Initialized initial-exec static TLS for %s of size: 0x%x\n", obj->pathname().c_str(), _initial_tls_size);
         }
     }
 }
@@ -1710,6 +1731,7 @@ struct module_and_offset {
 
 char *object::setup_tls()
 {
+    elf_debug("Setting up dynamic TLS of %d bytes\n", _tls_init_size + _tls_uninit_size);
     return (char *) sched::thread::current()->setup_tls(
             _module_index, _tls_segment, _tls_init_size, _tls_uninit_size);
 }
