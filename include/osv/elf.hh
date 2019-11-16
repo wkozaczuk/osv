@@ -373,6 +373,7 @@ public:
     ulong get_tls_size();
     ulong get_aligned_tls_size();
     void copy_local_tls(void* to_addr);
+    void print_all_symbols();
 protected:
     virtual void load_segment(const Elf64_Phdr& segment) = 0;
     virtual void unload_segment(const Elf64_Phdr& segment) = 0;

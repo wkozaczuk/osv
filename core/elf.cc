@@ -211,6 +211,14 @@ const char * object::symbol_name(const Elf64_Sym * sym) {
     return strtab + sym->st_name;
 }
 
+void object::print_all_symbols() {
+    auto symtab = dynamic_ptr<Elf64_Sym>(DT_SYMTAB);
+    auto strtab = dynamic_ptr<char>(DT_STRTAB);
+    auto len = symtab_len();
+    for (auto sym = symtab; sym < symtab + len; sym++)
+        elf_debug("-> %d nth symbol: %s\n", sym - symtab, strtab + sym->st_name);
+}
+
 void* object::entry_point() const {
     if (!_is_executable) {
         return nullptr;
@@ -1324,6 +1332,8 @@ program::load_object(std::string name, std::vector<std::string> extra_path,
         ef->fix_permissions();
         _files[name] = ef;
         _files[ef->soname()] = ef;
+        if (name == "/hello")
+            ef->print_all_symbols();
         return ef;
     } else {
         return std::shared_ptr<object>();
