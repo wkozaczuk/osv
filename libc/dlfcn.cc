@@ -65,6 +65,9 @@ int dlclose(void* handle)
 
 void* dlsym(void* handle, const char* name)
 {
+    if (strcmp("CoreDllMain",name) == 0) {
+        printf("Looked up CoreDllMain\n");
+    }
     elf::symbol_module sym;
     auto program = elf::get_program();
     if ((program == handle) || (handle == RTLD_DEFAULT)) {

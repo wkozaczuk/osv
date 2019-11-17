@@ -216,7 +216,8 @@ void object::print_all_symbols() {
     auto strtab = dynamic_ptr<char>(DT_STRTAB);
     auto len = symtab_len();
     for (auto sym = symtab; sym < symtab + len; sym++)
-        elf_debug("-> %d nth symbol: %s\n", sym - symtab, strtab + sym->st_name);
+        elf_debug("-> %d nth symbol: %s, value: %d\n",
+                sym - symtab, strtab + sym->st_name, sym->st_value);
 }
 
 void* object::entry_point() const {
@@ -880,6 +881,9 @@ Elf64_Sym* object::lookup_symbol_gnu(const char* name)
     if (idx == 0) {
         return nullptr;
     }
+    if (_pathname == "/libcoreclr.so" && strcmp(name,"gCurrentThreadInfo") == 0 ) {
+        return &symtab[32];
+    }
     auto version_symtab = dynamic_exists(DT_VERSYM) ? dynamic_ptr<Elf64_Versym>(DT_VERSYM) : nullptr;
     do {
         if ((chains[idx] & ~1) != (hashval & ~1)) {
@@ -1222,7 +1226,7 @@ program::program(void* addr)
           "libpthread.so.0",
           "libdl.so.2",
           "librt.so.1",
-          "libstdc++.so.6",
+          //"libstdc++.so.6",
           "libaio.so.1",
           "libxenstore.so.3.0",
           "libcrypt.so.1",
@@ -1328,12 +1332,12 @@ program::load_object(std::string name, std::vector<std::string> extra_path,
         add_debugger_obj(ef.get());
         loaded_objects.push_back(ef);
         ef->load_needed(loaded_objects);
+        if (name == "/libcoreclr.so")
+            ef->print_all_symbols();
         ef->relocate();
         ef->fix_permissions();
         _files[name] = ef;
         _files[ef->soname()] = ef;
-        if (name == "/hello")
-            ef->print_all_symbols();
         return ef;
     } else {
         return std::shared_ptr<object>();

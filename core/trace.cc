@@ -186,6 +186,13 @@ void enable_backtraces(bool backtrace) {
     }
 }
 
+void list_tracepoints()
+{
+    for (auto & tp : tracepoint_base::tp_list) {
+        printf("%s: %s\n", tp.name, tp.format);
+    }
+}
+
 namespace std {
 
 template<>
