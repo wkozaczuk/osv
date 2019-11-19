@@ -218,6 +218,11 @@ void object::print_all_symbols() {
     for (auto sym = symtab; sym < symtab + len; sym++)
         elf_debug("-> %d nth symbol: %s, value: %d\n",
                 sym - symtab, strtab + sym->st_name, sym->st_value);
+    if (_pathname == "/libcoreclr.so") {
+        auto sym = &symtab[31]; //32 for 2, 31 for 3
+        elf_debug("-> 31st symbol: %s, value: %d\n",
+             strtab + sym->st_name, sym->st_value);
+    }
 }
 
 void* object::entry_point() const {
@@ -810,6 +815,10 @@ void object::relocate()
     if (dynamic_exists(DT_JMPREL)) {
         relocate_pltgot();
     }
+    auto version_symtab = dynamic_exists(DT_VERSYM) ? dynamic_ptr<Elf64_Versym>(DT_VERSYM) : nullptr;
+    if (version_symtab) {
+        elf_debug("versioned symbol table\n");
+    }
 }
 
 unsigned long
@@ -852,7 +861,7 @@ dl_new_hash(const char *s)
 {
     uint_fast32_t h = 5381;
     for (unsigned char c = *s; c != '\0'; c = *++s) {
-        h = h * 33 + c;
+        h = (h << 5) + h + c;
     }
     return h & 0xffffffff;
 }
@@ -882,7 +891,8 @@ Elf64_Sym* object::lookup_symbol_gnu(const char* name)
         return nullptr;
     }
     if (_pathname == "/libcoreclr.so" && strcmp(name,"gCurrentThreadInfo") == 0 ) {
-        return &symtab[32];
+        printf("--------------> idx: %d\n", idx);
+        return &symtab[31]; //32 for 2, 31 for 3
     }
     auto version_symtab = dynamic_exists(DT_VERSYM) ? dynamic_ptr<Elf64_Versym>(DT_VERSYM) : nullptr;
     do {

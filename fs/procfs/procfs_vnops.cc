@@ -34,7 +34,7 @@ static uint64_t inode_count = 1; /* inode 0 is reserved to root */
 
 static std::string procfs_stats()
 {
-    int pid = 0, ppid = 0, pgrp = 0, session = 0, tty = 0, tpgid = -1,
+    int pid = 1, ppid = 0, pgrp = 0, session = 0, tty = 0, tpgid = -1,
         flags = 0;
     // Postpone this one. We need to hook into ZFS statistics to properly figure
     // out which faults are maj, which are min.
@@ -177,7 +177,7 @@ procfs_mount(mount* mp, const char *dev, int flags, const void* data)
 
     auto* root = new pseudo_dir_node(vp->v_ino);
     root->add("self", self);
-    root->add("0", self); // our standard pid
+    root->add("1", self); // our standard pid
     root->add("mounts", inode_count++, procfs_mounts);
     root->add("sys", sys);
 
