@@ -44,6 +44,8 @@ void* dlopen(const char* filename, int flags)
         return elf::get_program();
     }
 
+    printf("dlopen: trying to open: %s\n", filename);
+
     std::shared_ptr<elf::object> obj =
             elf::get_program()->get_library(filename);
     // FIXME: handle flags etc.
@@ -68,6 +70,9 @@ void* dlsym(void* handle, const char* name)
     if (strcmp("CoreDllMain",name) == 0) {
         printf("Looked up CoreDllMain\n");
     }
+    if (strcmp("ASN1_BIT_STRING_free",name) == 0) {
+        printf("Looked up ASN1_BIT_STRING_free\n");
+    }
     elf::symbol_module sym;
     auto program = elf::get_program();
     if ((program == handle) || (handle == RTLD_DEFAULT)) {
@@ -77,7 +82,7 @@ void* dlsym(void* handle, const char* name)
         abort();
     } else {
         auto obj = *reinterpret_cast<std::shared_ptr<elf::object>*>(handle);
-        sym = { obj->lookup_symbol(name), obj.get() };
+        sym = obj->lookup_symbol_with_dependencies(name);
     }
     if (!sym.obj || !sym.symbol) {
         dlerror_fmt("dlsym: symbol %s not found", name);

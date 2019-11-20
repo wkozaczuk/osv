@@ -341,6 +341,7 @@ public:
     void* base() const;
     void* end() const;
     Elf64_Sym* lookup_symbol(const char* name);
+    symbol_module lookup_symbol_with_dependencies(const char* name);
     void load_segments();
     void unload_segments();
     void fix_permissions();

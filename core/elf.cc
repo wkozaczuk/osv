@@ -926,6 +926,21 @@ Elf64_Sym* object::lookup_symbol(const char* name)
     return sym;
 }
 
+symbol_module object::lookup_symbol_with_dependencies(const char* name) {
+    auto sym = lookup_symbol(name);
+    if (!sym) {
+        for (auto dep: _needed) {
+            sym = dep->lookup_symbol(name);
+            if (sym) {
+                return {sym, dep.get()};
+            }
+        }
+    } else {
+        return { sym, this};
+    }
+    return {nullptr, nullptr};
+}
+
 unsigned object::symtab_len()
 {
     if (dynamic_exists(DT_HASH)) {
@@ -1087,6 +1102,7 @@ void object::run_init_funcs(int argc, char** argv)
         if (func) {
             elf_debug("Executing DT_INIT function\n");
             reinterpret_cast<void(*)(int, char**)>(func)(argc, argv);
+            elf_debug("Finished executing DT_INIT function\n");
         }
     }
     if (dynamic_exists(DT_INIT_ARRAY)) {
@@ -1096,6 +1112,7 @@ void object::run_init_funcs(int argc, char** argv)
         for (auto i = 0u; i < nr; ++i) {
             funcs[i](argc, argv);
         }
+        elf_debug("Finished executing %d DT_INIT_ARRAYSZ functions\n", nr);
     }
 }
 
