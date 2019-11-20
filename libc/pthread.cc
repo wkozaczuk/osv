@@ -971,6 +971,7 @@ int pthread_getschedparam(pthread_t thread, int *policy,
 
 int pthread_kill(pthread_t thread, int sig)
 {
+    printf("Thread %d sending signal: %d to thread %d\n", sched::thread::current()->id(), sig, pthread::from_libc(thread)->_thread->id());
     WARN_STUBBED();
 
     return EINVAL;
