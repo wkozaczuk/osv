@@ -140,10 +140,13 @@ namespace pthread_private {
             return {attr.stack_begin, attr.stack_size};
         }
         size_t size = attr.stack_size;
-        void *addr = mmu::map_anon(nullptr, size, mmu::mmap_populate, mmu::perm_rw);
+        void *addr = mmu::map_anon(nullptr, size, mmu::mmap_stack, mmu::perm_rw);
         mmu::mprotect(addr, attr.guard_size, 0);
         sched::thread::stack_info si{addr, size};
         si.deleter = free_stack;
+        si.lazy = true;
+        //printf("--> Created LAZY app stack of size: %ld for thread: %s\n", size, attr._name);
+        printf("--> Created LAZY app stack of size: %ld\n", size);
         return si;
     }
 

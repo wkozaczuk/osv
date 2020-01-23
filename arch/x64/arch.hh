@@ -11,14 +11,31 @@
 #include "processor.hh"
 #include "msr.hh"
 
+#include <osv/barrier.hh>
+
 // namespace arch - architecture independent interface for architecture
 //                  dependent operations (e.g. irq_disable vs. cli)
+
+namespace mmu {
+extern unsigned __thread read_stack_page_ahead_counter;
+}
 
 namespace arch {
 
 #define CACHELINE_ALIGNED __attribute__((aligned(64)))
 #define INSTR_SIZE_MIN 1
 #define ELF_IMAGE_START OSV_KERNEL_BASE
+
+inline void read_next_stack_page() {
+    barrier();
+    ++mmu::read_stack_page_ahead_counter;
+    if (mmu::read_stack_page_ahead_counter != 1) {
+        return;
+    }
+
+    char i;
+    asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
+}
 
 inline void irq_disable()
 {
@@ -41,6 +58,8 @@ inline void irq_enable()
 inline void wait_for_interrupt()
 {
     processor::sti_hlt();
+    barrier();
+    --mmu::read_stack_page_ahead_counter;
 }
 
 inline void halt_no_interrupts()
