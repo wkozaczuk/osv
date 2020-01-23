@@ -141,11 +141,16 @@ namespace pthread_private {
         }
         size_t size = attr.stack_size;
         void *addr = mmu::map_anon(nullptr, size, mmu::mmap_stack, mmu::perm_rw);
+        // Replacing the above line with the one below should pre-populate entire stack
+        // regardless if lazy is true or not -> should use more memory
+        //void *addr = mmu::map_anon(nullptr, size, mmu::mmap_populate, mmu::perm_rw);
         mmu::mprotect(addr, attr.guard_size, 0);
         sched::thread::stack_info si{addr, size};
         si.deleter = free_stack;
-        si.lazy = true;
-        //printf("--> Created LAZY app stack of size: %ld for thread: %s\n", size, attr._name);
+        // Setting lazy to false disables read-stack-page-ahead behavior for this thread
+        // and may lead to crashes/hangs where the active part of the stack is not allocated
+        // page fault cannot not be handled (assert would fail)
+        si.lazy = true; //Setting this to false disables read-stack-page-ahead behavior
         printf("--> Created LAZY app stack of size: %ld\n", size);
         return si;
     }
