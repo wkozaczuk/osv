@@ -31,10 +31,26 @@ namespace arch {
 #define ELF_IMAGE_START OSV_KERNEL_BASE
 
 inline void ensure_next_stack_page() {
+    //long offset = - ((unsigned)(!sched::preempt_counter && !mmu::irq_counter) << 12);
+    //long stack_pointer;
+    //asm volatile("movq %%rsp, %0\n" : "=r"(stack_pointer));
+    //stack_pointer -= offset;
+    //char i;
+    //asm volatile("movb 0(%1), %0\n" : "=r"(i) : "m"(stack_pointer));
+    //asm volatile("movb %1(%%rsp), %0" : "=r"(i) : "m"(offset));
+
+    /*
     if (!sched::preempt_counter && !mmu::irq_counter) {
         char i;
         asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
+    }*/
+
+    if (sched::preempt_counter || mmu::irq_counter) {
+        return;
     }
+
+    char i;
+    asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
 }
 
 inline void irq_disable()
