@@ -97,12 +97,14 @@ private:
 
 inline void irq_flag_notrace::save()
 {
+    read_next_stack_page();
     asm volatile("sub $128, %%rsp; pushfq; popq %0; add $128, %%rsp" : "=r"(_rflags));
 }
 
 inline void irq_flag_notrace::restore()
 {
     asm volatile("sub $128, %%rsp; pushq %0; popfq; add $128, %%rsp" : : "r"(_rflags));
+    --mmu::read_stack_page_ahead_counter;
 }
 
 inline bool irq_flag_notrace::enabled() const

@@ -302,6 +302,7 @@ extern "C" void simd_exception(exception_frame *ef)
 
 extern "C" void nmi(exception_frame* ef)
 {
+    //TODO: Possibly needs to be handled
     while (true) {
         processor::cli_hlt();
     }

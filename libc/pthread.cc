@@ -150,7 +150,7 @@ namespace pthread_private {
         // Setting lazy to false disables read-stack-page-ahead behavior for this thread
         // and may lead to crashes/hangs where the active part of the stack is not allocated
         // page fault cannot not be handled (assert would fail)
-        si.lazy = true; //Setting this to false disables read-stack-page-ahead behavior
+        si.lazy = true;
         printf("--> Created LAZY app stack of size: %ld\n", size);
         return si;
     }
