@@ -1,0 +1,32 @@
+--- 
+a) for non-lazy stack (kernel threads) we start with 11
+b) for lazy stack we start with 1 -> gets set in thread_main_c (look at arch/x64/arch-switch.hh)
+---
+--- places where mmu::read_stack_page_ahead_counter is incremented/decremented
+---
+arch/x64/arch.hh:
+arch::read_next_stack_page() increments the counter AND ONLY if equals 1 it attempts
+                             to read single page 1 page ahead on the stack (1 page deeper)
+arch::wait_for_interrupt() decrements the counter after processor::sti_hlt()
+                           !!! ??? This seems to be assymetrical - why ?
+                           processor::sti_hlt() is effectively STI; HLT; - 1st enables interrupts and halts cpu waiting for interrupts to happen and get handled
+
+   --> wait_for_interrupts() is used in cpu::do_idle() where relevant unique_lock is disassociated from 
+       the irq_lock_type instance by calling release() and then the interrupts must be enabled manually by calling
+       wait_for_interrupts which does STI; HLT;
+
+---
+include/osv/irqlock.hh
+- irq_lock_type::lock() IMPLICITLY increments the counter by calling arch::read_next_stack_page()
+                        BEFORE disabling interrupts (arch::irq_disable() ?)
+- irq_lock_type::unlock() decrements the counter AFTER enabling interrupts (arch::irq_enable())
+
+- irq_save_lock_type::lock() IMPLICITLY increments the counter by calling arch::read_next_stack_page()
+                             BEFORE disabling interrupts (arch::irq_disable() ?)
+- irq_save_lock_type::unlock() decrements the counter AFTER retoring flags 
+                             !!! ??? Why does this not enable enabling interrupts (arch::irq_enable()) ?
+
+---
+include/osv/sched.hh
+- sched::preempt_disable() IMPLICITLY increments the counter by calling arch::read_next_stack_page()
+- sched::preempt_enable() decrements the counter

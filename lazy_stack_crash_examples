@@ -1,0 +1,76 @@
+if lazy set to false
+----
+  TEST tst-pipe.so                        OSv v0.54.0-97-g6626580e
+--> Created LAZY app stack of size: 1048576
+eth0: 192.168.122.15
+Booted up in 161.42 ms
+Cmdline: /tests/tst-pipe.so
+--> Created LAZY app stack of size: 1048576
+PASS: pipe call
+PASS: write to empty socket
+PASS: read after write
+PASS: write to read end should fail
+PASS: read to write end should fail
+--> Created LAZY app stack of size: 1048576
+PASS: read before write
+PASS: poll() (immediate, no events)
+PASS: poll() (timeout, no events)
+PASS: poll() (immediate, has event)
+PASS: read after poll
+--> Created LAZY app stack of size: 1048576
+PASS: waiting poll
+PASS: read after waiting poll
+PASS: write to polling socket
+PASS: poll() (no output on read end)
+PASS: poll() (no input on write end)
+--> Created LAZY app stack of size: 1048576
+PASS: write size-100 bytes to empty pipe
+PASS: read size-100 bytes from pipe
+PASS: write 400 bytes is atomic
+PASS: read 400 bytes written atomicly
+PASS: partial read of the 20000 bytes
+(read 8192)
+PASS: partial read of the 20000 bytes
+(read 8192)
+PASS: write 20000 bytes until complete
+PASS: partial read of the 20000 bytes
+(read 3616)
+PASS: writev
+PASS: read after writev
+PASS: write for readv
+PASS: readv
+--> Created LAZY app stack of size: 1048576
+Assertion failed: sched::preemptable() (arch/x64/mmu.cc: page_fault: 37)
+
+[backtrace]
+0x000000004023b14e <__assert_fail+30>
+0x00000000403a9ed2 <page_fault+354>
+0x00000000403a8c56 <???+1077578838>
+0x00000000403f624e <???+1077895758>
+0x00000000403f66ba <malloc+74>
+0x000000004036f12b <???+1077342507>
+0x000000004036f2ce <???+1077342926>
+0x000000004036fbc2 <???+1077345218>
+0x0000000040371208 <tsm_screen_newline+56>
+0x0000000040373adb <???+1077361371>
+0x0000000040359a1f <???+1077254687>
+0x000000004035a574 <console::LineDiscipline::write(char const*, unsigned long, std::function<void (char const*, unsigned long)>&)+84>
+0x0000000040359dc8 <console::console_multiplexer::write_ll(char const*, unsigned long)+168>
+0x0000000040359e69 <console::console_multiplexer::write(char const*, unsigned long)+105>
+0x0000000040359efc <console::console_multiplexer::write(uio*, int)+92>
+0x0000000040359623 <console::console_file::write(uio*, int)+19>
+0x0000000040451872 <sys_write+226>
+0x00000000404475e0 <pwritev+80>
+0x0000000040469d1b <__stdio_write+123>
+0x000000004049d75c <__fwritex+172>
+0x000000004046cc13 <???+1078381587>
+0x000000004046dad2 <vfprintf+178>
+0x000000004049decb <printf+155>
+0x0000000040474463 <pthread_private::pthread::allocate_stack(pthread_private::thread_attr)+147>
+0x00000000404744e6 <pthread_private::pthread::attributes(pthread_private::thread_attr)+86>
+0x00000000404745ad <pthread_private::pthread::pthread(void* (*)(void*), void*, sigset_t, pthread_private::thread_attr const*)+125>
+0x0000000040476154 <pthread_create+404>
+0x00000000405656d8 <std::thread::_M_start_thread(std::unique_ptr<std::thread::_State, std::default_delete<std::thread::_State> >, void (*)())+24>
+0x0f0e0d0c0b0a0907 <???+185207047>
+Test tst-pipe.so FAILED
+
