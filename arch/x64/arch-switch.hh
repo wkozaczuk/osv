@@ -317,7 +317,7 @@ void thread::free_tcb()
 void thread_main_c(thread* t)
 {
     if (t->get_stack_info().lazy) {
-        mmu::read_stack_page_ahead_counter = 1;
+        mmu::irq_counter = 1;
         //printf("Initialized lazy stack for thread: %s\n", t->name().c_str());
     }
     arch::irq_enable();

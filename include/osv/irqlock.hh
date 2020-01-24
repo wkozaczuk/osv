@@ -11,23 +11,16 @@
 #include "arch.hh"
 
 namespace mmu {
-extern unsigned __thread read_stack_page_ahead_counter;
-}
-
-namespace arch {
-inline void read_next_stack_page();
+extern unsigned __thread irq_counter;
 }
 
 class irq_lock_type {
 public:
     static void lock() {
-       arch::read_next_stack_page();
        arch::irq_disable();
     }
     static void unlock() {
        arch::irq_enable();
-       barrier();
-       --mmu::read_stack_page_ahead_counter;
     }
 };
 
@@ -43,7 +36,6 @@ private:
 inline void irq_save_lock_type::lock()
 {
     _flags.save();
-    arch::read_next_stack_page();
     arch::irq_disable();
 }
 
@@ -51,7 +43,7 @@ inline void irq_save_lock_type::unlock()
 {
     _flags.restore();
     barrier();
-    --mmu::read_stack_page_ahead_counter;
+    --mmu::irq_counter;
 }
 
 extern irq_lock_type irq_lock;

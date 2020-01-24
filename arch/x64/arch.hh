@@ -17,7 +17,11 @@
 //                  dependent operations (e.g. irq_disable vs. cli)
 
 namespace mmu {
-extern unsigned __thread read_stack_page_ahead_counter;
+extern unsigned __thread irq_counter;
+}
+
+namespace sched {
+extern unsigned __thread preempt_counter;
 }
 
 namespace arch {
@@ -26,19 +30,17 @@ namespace arch {
 #define INSTR_SIZE_MIN 1
 #define ELF_IMAGE_START OSV_KERNEL_BASE
 
-inline void read_next_stack_page() {
-    barrier();
-    ++mmu::read_stack_page_ahead_counter;
-    if (mmu::read_stack_page_ahead_counter != 1) {
-        return;
+inline void ensure_next_stack_page() {
+    if (!sched::preempt_counter && !mmu::irq_counter) {
+        char i;
+        asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
     }
-
-    char i;
-    asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
 }
 
 inline void irq_disable()
 {
+    ensure_next_stack_page();
+    ++mmu::irq_counter;
     processor::cli();
 }
 
@@ -53,13 +55,15 @@ inline void irq_disable_notrace()
 inline void irq_enable()
 {
     processor::sti();
+    barrier();
+    --mmu::irq_counter;
 }
 
 inline void wait_for_interrupt()
 {
     processor::sti_hlt();
     barrier();
-    --mmu::read_stack_page_ahead_counter;
+    --mmu::irq_counter;
 }
 
 inline void halt_no_interrupts()
@@ -97,14 +101,15 @@ private:
 
 inline void irq_flag_notrace::save()
 {
-    read_next_stack_page();
+    ensure_next_stack_page();
+    ++mmu::irq_counter;
     asm volatile("sub $128, %%rsp; pushfq; popq %0; add $128, %%rsp" : "=r"(_rflags));
 }
 
 inline void irq_flag_notrace::restore()
 {
     asm volatile("sub $128, %%rsp; pushq %0; popfq; add $128, %%rsp" : : "r"(_rflags));
-    --mmu::read_stack_page_ahead_counter;
+    --mmu::irq_counter;
 }
 
 inline bool irq_flag_notrace::enabled() const

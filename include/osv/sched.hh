@@ -42,7 +42,7 @@ namespace elf {
     struct tls_data;
 }
 namespace mmu {
-extern unsigned __thread read_stack_page_ahead_counter;
+extern unsigned __thread irq_counter;
 }
 
 namespace osv {
@@ -1009,7 +1009,7 @@ inline void preempt()
 
 inline void preempt_disable()
 {
-    arch::read_next_stack_page();
+    arch::ensure_next_stack_page();
     ++preempt_counter;
     barrier();
 }
@@ -1018,7 +1018,6 @@ inline void preempt_enable()
 {
     barrier();
     --preempt_counter;
-    --mmu::read_stack_page_ahead_counter;
     if (preemptable() && need_reschedule && arch::irq_enabled()) {
         cpu::schedule();
     }

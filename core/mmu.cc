@@ -42,7 +42,7 @@ extern const char text_start[], text_end[];
 
 namespace mmu {
 
-unsigned __thread read_stack_page_ahead_counter = 11;
+unsigned __thread irq_counter = 11;
 
 namespace bi = boost::intrusive;
 
