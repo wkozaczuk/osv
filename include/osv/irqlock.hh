@@ -16,12 +16,8 @@ extern unsigned __thread irq_counter;
 
 class irq_lock_type {
 public:
-    static void lock() {
-       arch::irq_disable();
-    }
-    static void unlock() {
-       arch::irq_enable();
-    }
+    static void lock() { arch::irq_disable(); }
+    static void unlock() { arch::irq_enable(); }
 };
 
 class irq_save_lock_type {

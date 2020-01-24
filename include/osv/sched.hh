@@ -41,9 +41,6 @@ void cancel_this_thread_alarm();
 namespace elf {
     struct tls_data;
 }
-namespace mmu {
-extern unsigned __thread irq_counter;
-}
 
 namespace osv {
 
