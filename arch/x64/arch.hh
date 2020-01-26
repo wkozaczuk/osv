@@ -45,22 +45,23 @@ inline void ensure_next_stack_page() {
         asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
     }*/
 
-    /* BEST so FAR
+    /* BEST so FAR */
     if (sched::preempt_counter || mmu::irq_counter) {
         return;
     }
 
     char i;
     asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
-    */
-    auto p = sched::preempt_counter;
+    
+    /* Better native code -> but breaks */
+    /*auto p = sched::preempt_counter;
     auto i = mmu::irq_counter;
     unsigned sum = 0;
     asm volatile("mov %1, %0\n"
                  "add %2, %0\n"
                  "cmovz -4096(%%rsp), %0\n"
                 : "=r"(sum)
-                : "r"(p), "r"(i));
+                : "r"(p), "r"(i));*/
 }
 
 inline void irq_disable()

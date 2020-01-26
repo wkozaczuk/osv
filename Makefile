@@ -853,6 +853,8 @@ drivers += drivers/virtio-blk.o
 drivers += drivers/virtio-net.o
 endif # aarch64
 
+$(drivers:%=$(out)/%): CXXFLAGS += -ftls-model=local-exec
+
 objects += arch/$(arch)/arch-trace.o
 objects += arch/$(arch)/arch-setup.o
 objects += arch/$(arch)/signal.o
@@ -1863,6 +1865,7 @@ else
 endif
 
 objects += $(addprefix fs/nfs/, $(nfs_o))
+$(objects:%=$(out)/%): CXXFLAGS += -ftls-model=local-exec
 
 # ld has a known bug (https://sourceware.org/bugzilla/show_bug.cgi?id=6468)
 # where if the executable doesn't use shared libraries, its .dynamic section
