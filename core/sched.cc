@@ -69,7 +69,8 @@ std::vector<cpu*> cpus __attribute__((init_priority((int)init_prio::cpus)));
 thread __thread * s_current;
 cpu __thread * current_cpu;
 
-unsigned __thread preempt_counter = 1;
+//unsigned __thread preempt_counter = 1;
+counters_union __thread counters = {{1, 11}};
 bool __thread need_reschedule = false;
 
 elf::tls_data tls;

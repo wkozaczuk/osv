@@ -42,6 +42,8 @@ extern const char text_start[], text_end[];
 
 namespace mmu {
 
+//unsigned __thread irq_counter = irq_counter_default_init_value;
+
 namespace bi = boost::intrusive;
 
 class vma_compare {
