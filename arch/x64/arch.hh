@@ -47,6 +47,13 @@ inline void ensure_next_stack_page() {
 
     char i;
     asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
+    /* tst-vfs.so fails 
+    u16 i;
+    asm volatile("cmpq $0, %1\n"
+                 "cmovz -4096(%%rsp), %0\n" 
+        : "=r"(i)
+        : "r"(sched::counters.preempt_or_irq_on));
+    */
 }
 
 inline void irq_disable()
