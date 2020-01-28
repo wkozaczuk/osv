@@ -11,6 +11,8 @@
 #define ARCH_HH_
 
 #include "processor.hh"
+#include <osv/barrier.hh>
+#include <osv/counters.hh>
 
 // architecture independent interface for architecture dependent operations
 
@@ -20,8 +22,20 @@ namespace arch {
 #define INSTR_SIZE_MIN 4
 #define ELF_IMAGE_START (OSV_KERNEL_BASE + 0x10000)
 
+inline void ensure_next_stack_page() {
+    if (irq_preempt_counters.any_is_on) {
+        return;
+    }
+
+    char i;
+    u64 offset = -4096;
+    asm volatile("ldr %0, [sp, %1]" : "=r"(i) : "r"(offset));
+}
+
 inline void irq_disable()
 {
+    ensure_next_stack_page();
+    ++irq_preempt_counters.irq;
     processor::irq_disable();
 }
 
@@ -36,11 +50,15 @@ inline void irq_disable_notrace()
 inline void irq_enable()
 {
     processor::irq_enable();
+    --irq_preempt_counters.irq;
+    barrier();
 }
 
 inline void wait_for_interrupt()
 {
     processor::wait_for_interrupt();
+    --irq_preempt_counters.irq;
+    barrier();
 }
 
 inline void halt_no_interrupts()
@@ -75,11 +93,14 @@ private:
 };
 
 inline void irq_flag_notrace::save() {
+    ensure_next_stack_page();
+    ++irq_preempt_counters.irq;
     asm volatile("mrs %0, daif;" : "=r"(daif) :: "memory");
 }
 
 inline void irq_flag_notrace::restore() {
     asm volatile("msr daif, x0" :: "r"(daif) : "memory");
+    --irq_preempt_counters.irq;
 }
 
 inline bool irq_flag_notrace::enabled() const {
