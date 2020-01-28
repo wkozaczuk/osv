@@ -10,13 +10,6 @@
 
 #include "arch.hh"
 
-//namespace mmu {
-//extern unsigned __thread irq_counter;
-//}
-namespace sched {
-extern counters_union __thread counters;
-}
-
 class irq_lock_type {
 public:
     static void lock() { arch::irq_disable(); }
@@ -41,8 +34,8 @@ inline void irq_save_lock_type::lock()
 inline void irq_save_lock_type::unlock()
 {
     _flags.restore();
+    --arch::irq_preempt_counters.irq;
     barrier();
-    --sched::counters._counters.irq;
 }
 
 extern irq_lock_type irq_lock;

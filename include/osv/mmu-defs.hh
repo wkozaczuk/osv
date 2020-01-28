@@ -15,8 +15,6 @@
 
 struct exception_frame;
 
-struct exception_frame;
-
 namespace mmu {
 
 constexpr uintptr_t page_size = 4096;

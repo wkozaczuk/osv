@@ -979,24 +979,13 @@ inline void release(mutex_t* mtx)
     }
 }
 
-/*
-union counters_union {
-    struct counters {
-       unsigned preempt;
-       unsigned irq;
-    } _counters;
-    u64 preempt_or_irq_on;
-};
-
-extern counters_union __thread counters;*/
-//extern unsigned __thread preempt_counter;
 extern bool __thread need_reschedule;
 
 #ifdef __OSV_CORE__
 inline unsigned int get_preempt_counter()
 {
     barrier();
-    return counters._counters.preempt;
+    return arch::irq_preempt_counters.preempt;
 }
 
 inline bool preemptable()
@@ -1017,14 +1006,14 @@ inline void preempt()
 inline void preempt_disable()
 {
     arch::ensure_next_stack_page();
-    ++counters._counters.preempt;
+    ++arch::irq_preempt_counters.preempt;
     barrier();
 }
 
 inline void preempt_enable()
 {
     barrier();
-    --counters._counters.preempt;
+    --arch::irq_preempt_counters.preempt;
     if (preemptable() && need_reschedule && arch::irq_enabled()) {
         cpu::schedule();
     }

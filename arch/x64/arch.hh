@@ -11,28 +11,10 @@
 #include "processor.hh"
 #include "msr.hh"
 #include <osv/barrier.hh>
+#include <osv/counters.hh>
 
 // namespace arch - architecture independent interface for architecture
 //                  dependent operations (e.g. irq_disable vs. cli)
-
-namespace mmu {
-constexpr unsigned irq_counter_default_init_value = 11;
-constexpr unsigned irq_counter_lazy_stack_init_value = 1;
-//extern unsigned __thread irq_counter;
-}
-
-namespace sched {
-//extern unsigned __thread preempt_counter;
-union counters_union {
-    struct counters {
-       unsigned preempt;
-       unsigned irq;
-    } _counters;
-    u64 preempt_or_irq_on;
-};
-
-extern counters_union __thread counters;
-}
 
 namespace arch {
 
@@ -41,25 +23,18 @@ namespace arch {
 #define ELF_IMAGE_START OSV_KERNEL_BASE
 
 inline void ensure_next_stack_page() {
-    if (sched::counters.preempt_or_irq_on) {
+    if (irq_preempt_counters.any_is_on) {
         return;
     }
 
     char i;
     asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
-    /* tst-vfs.so fails 
-    u16 i;
-    asm volatile("cmpq $0, %1\n"
-                 "cmovz -4096(%%rsp), %0\n" 
-        : "=r"(i)
-        : "r"(sched::counters.preempt_or_irq_on));
-    */
 }
 
 inline void irq_disable()
 {
     ensure_next_stack_page();
-    ++sched::counters._counters.irq;
+    ++irq_preempt_counters.irq;
     processor::cli();
 }
 
@@ -74,15 +49,15 @@ inline void irq_disable_notrace()
 inline void irq_enable()
 {
     processor::sti();
+    --irq_preempt_counters.irq;
     barrier();
-    --sched::counters._counters.irq;
 }
 
 inline void wait_for_interrupt()
 {
     processor::sti_hlt();
+    --irq_preempt_counters.irq;
     barrier();
-    --sched::counters._counters.irq;
 }
 
 inline void halt_no_interrupts()
@@ -121,14 +96,14 @@ private:
 inline void irq_flag_notrace::save()
 {
     ensure_next_stack_page();
-    ++sched::counters._counters.irq;
+    ++irq_preempt_counters.irq;
     asm volatile("sub $128, %%rsp; pushfq; popq %0; add $128, %%rsp" : "=r"(_rflags));
 }
 
 inline void irq_flag_notrace::restore()
 {
     asm volatile("sub $128, %%rsp; pushq %0; popfq; add $128, %%rsp" : : "r"(_rflags));
-    --sched::counters._counters.irq;
+    --irq_preempt_counters.irq;
 }
 
 inline bool irq_flag_notrace::enabled() const
