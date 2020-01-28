@@ -10,6 +10,9 @@
 
 namespace arch {
 
+// Both preempt and irq counters are colocated next to each other in this
+// union by design to let compiler optimize ensure_next_stack_page() so
+// that it can check if any counter is non-zero by checking single 64-bit any_is_on field
 union counters {
     struct {
         unsigned preempt;
@@ -19,6 +22,7 @@ union counters {
 };
 
 extern counters __thread irq_preempt_counters;
+
 constexpr unsigned irq_counter_default_init_value = 11;
 constexpr unsigned irq_counter_lazy_stack_init_value = 1;
 
