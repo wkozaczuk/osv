@@ -34,6 +34,8 @@ inline void irq_save_lock_type::lock()
 inline void irq_save_lock_type::unlock()
 {
     _flags.restore();
+    --arch::irq_preempt_counters.irq;
+    barrier();
 }
 
 extern irq_lock_type irq_lock;

@@ -15,8 +15,6 @@
 
 struct exception_frame;
 
-struct exception_frame;
-
 namespace mmu {
 
 constexpr uintptr_t page_size = 4096;
@@ -84,6 +82,7 @@ enum {
     mmap_small       = 1ul << 5,
     mmap_jvm_balloon = 1ul << 6,
     mmap_file        = 1ul << 7,
+    mmap_stack       = 1ul << 8,
 };
 
 enum {
