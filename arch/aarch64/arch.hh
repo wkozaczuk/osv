@@ -11,6 +11,8 @@
 #define ARCH_HH_
 
 #include "processor.hh"
+#include <osv/barrier.hh>
+#include <osv/counters.hh>
 
 // architecture independent interface for architecture dependent operations
 
@@ -19,6 +21,10 @@ namespace arch {
 #define CACHELINE_ALIGNED __attribute__((aligned(64)))
 #define INSTR_SIZE_MIN 4
 #define ELF_IMAGE_START (OSV_KERNEL_BASE + 0x10000)
+
+inline void ensure_next_stack_page() {
+    //TODO: Implement lazy stack check for AARCH64
+}
 
 inline void irq_disable()
 {

@@ -10,6 +10,8 @@
 
 #include "processor.hh"
 #include "msr.hh"
+#include <osv/barrier.hh>
+#include <osv/counters.hh>
 
 // namespace arch - architecture independent interface for architecture
 //                  dependent operations (e.g. irq_disable vs. cli)
@@ -20,8 +22,29 @@ namespace arch {
 #define INSTR_SIZE_MIN 1
 #define ELF_IMAGE_START OSV_KERNEL_BASE
 
+inline void ensure_next_stack_page() {
+    if (irq_preempt_counters.any_is_on) {
+        return;
+    }
+
+    char i;
+    asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
+}
+
+inline void ensure_next_two_stack_pages() {
+    if (irq_preempt_counters.any_is_on) {
+        return;
+    }
+
+    char i;
+    asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
+    asm volatile("movb -8192(%%rsp), %0" : "=r"(i));
+}
+
 inline void irq_disable()
 {
+    ensure_next_stack_page();
+    ++irq_preempt_counters.irq;
     processor::cli();
 }
 
@@ -36,11 +59,15 @@ inline void irq_disable_notrace()
 inline void irq_enable()
 {
     processor::sti();
+    --irq_preempt_counters.irq;
+    barrier();
 }
 
 inline void wait_for_interrupt()
 {
     processor::sti_hlt();
+    --irq_preempt_counters.irq;
+    barrier();
 }
 
 inline void halt_no_interrupts()
@@ -78,12 +105,15 @@ private:
 
 inline void irq_flag_notrace::save()
 {
+    ensure_next_stack_page();
+    ++irq_preempt_counters.irq;
     asm volatile("sub $128, %%rsp; pushfq; popq %0; add $128, %%rsp" : "=r"(_rflags));
 }
 
 inline void irq_flag_notrace::restore()
 {
     asm volatile("sub $128, %%rsp; pushq %0; popfq; add $128, %%rsp" : : "r"(_rflags));
+    --irq_preempt_counters.irq;
 }
 
 inline bool irq_flag_notrace::enabled() const

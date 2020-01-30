@@ -335,6 +335,7 @@ public:
         void* begin;
         size_t size;
         void (*deleter)(stack_info si);  // null: don't delete
+        bool lazy = false;
         static void default_deleter(stack_info si);
     };
     struct attr {
@@ -978,14 +979,13 @@ inline void release(mutex_t* mtx)
     }
 }
 
-extern unsigned __thread preempt_counter;
 extern bool __thread need_reschedule;
 
 #ifdef __OSV_CORE__
 inline unsigned int get_preempt_counter()
 {
     barrier();
-    return preempt_counter;
+    return arch::irq_preempt_counters.preempt;
 }
 
 inline bool preemptable()
@@ -1005,14 +1005,15 @@ inline void preempt()
 
 inline void preempt_disable()
 {
-    ++preempt_counter;
+    arch::ensure_next_stack_page();
+    ++arch::irq_preempt_counters.preempt;
     barrier();
 }
 
 inline void preempt_enable()
 {
     barrier();
-    --preempt_counter;
+    --arch::irq_preempt_counters.preempt;
     if (preemptable() && need_reschedule && arch::irq_enabled()) {
         cpu::schedule();
     }

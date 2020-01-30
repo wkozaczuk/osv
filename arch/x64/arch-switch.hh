@@ -148,6 +148,13 @@ void thread::init_stack()
     _state.rip = reinterpret_cast<void*>(thread_main);
     _state.rsp = stacktop;
     _state.exception_stack = _arch.exception_stack + sizeof(_arch.exception_stack);
+
+    if (stack.lazy) {
+        // If the thread stack is setup to get lazily allocated and given the thread initially starts
+        // running with preemption disabled, we need to pre-fault the first stack page.
+        volatile char r = *((char *) (stacktop - 1));
+        (void) r; // trick the compiler into thinking that r is used
+    }
 }
 
 void thread::setup_tcb()
@@ -311,6 +318,9 @@ void thread::free_tcb()
 
 void thread_main_c(thread* t)
 {
+    if (t->get_stack_info().lazy) {
+        arch::irq_preempt_counters.irq = arch::irq_counter_lazy_stack_init_value;
+    }
     arch::irq_enable();
 #ifdef CONF_preempt
     preempt_enable();

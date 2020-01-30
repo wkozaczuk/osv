@@ -42,6 +42,10 @@ extern char _percpu_start[], _percpu_end[];
 using namespace osv;
 using namespace osv::clock::literals;
 
+namespace arch {
+counters __thread irq_preempt_counters = {{1, irq_counter_default_init_value}};
+}
+
 namespace sched {
 
 TRACEPOINT(trace_sched_idle, "");
@@ -69,7 +73,6 @@ std::vector<cpu*> cpus __attribute__((init_priority((int)init_prio::cpus)));
 thread __thread * s_current;
 cpu __thread * current_cpu;
 
-unsigned __thread preempt_counter = 1;
 bool __thread need_reschedule = false;
 
 elf::tls_data tls;
