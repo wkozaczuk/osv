@@ -141,14 +141,17 @@ namespace pthread_private {
         }
         size_t size = attr.stack_size;
 #ifdef AARCH64_PORT_STUB
-        void *addr = mmu::map_anon(nullptr, size, mmu::mmap_populate, mmu::perm_rw);
+        unsigned stack_flags = mmu::mmap_populate;
 #else
-        void *addr = mmu::map_anon(nullptr, size, mmu::mmap_stack, mmu::perm_rw);
+        unsigned stack_flags = mmu::mmap_stack;
 #endif
+        void *addr = mmu::map_anon(nullptr, size, stack_flags, mmu::perm_rw);
         mmu::mprotect(addr, attr.guard_size, 0);
         sched::thread::stack_info si{addr, size};
         si.deleter = free_stack;
+#ifndef AARCH64_PORT_STUB
         si.lazy = true;
+#endif
         return si;
     }
 

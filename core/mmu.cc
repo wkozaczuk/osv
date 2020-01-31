@@ -43,7 +43,9 @@ extern const char text_start[], text_end[];
 namespace mmu {
 
 static void prevent_stack_page_fault() {
+#ifndef AARCH64_PORT_STUB
     arch::ensure_next_two_stack_pages();
+#endif
 }
 
 namespace bi = boost::intrusive;
