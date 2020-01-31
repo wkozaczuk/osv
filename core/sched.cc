@@ -43,7 +43,7 @@ using namespace osv;
 using namespace osv::clock::literals;
 
 namespace arch {
-counters __thread irq_preempt_counters = {{1, irq_counter_default_init_value}};
+counters __thread irq_preempt_counters = {{1, 1, 1}};
 }
 
 namespace sched {

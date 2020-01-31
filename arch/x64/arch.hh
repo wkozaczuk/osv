@@ -23,7 +23,7 @@ namespace arch {
 #define ELF_IMAGE_START OSV_KERNEL_BASE
 
 inline void ensure_next_stack_page() {
-    if (irq_preempt_counters.any_is_on) {
+    if (irq_preempt_counters.lazy_stack_no_pre_fault) {
         return;
     }
 
@@ -32,7 +32,7 @@ inline void ensure_next_stack_page() {
 }
 
 inline void ensure_next_two_stack_pages() {
-    if (irq_preempt_counters.any_is_on) {
+    if (irq_preempt_counters.lazy_stack_no_pre_fault) {
         return;
     }
 
@@ -44,7 +44,7 @@ inline void ensure_next_two_stack_pages() {
 inline void irq_disable()
 {
     ensure_next_stack_page();
-    ++irq_preempt_counters.irq;
+    ++irq_preempt_counters._data.irq;
     processor::cli();
 }
 
@@ -59,14 +59,14 @@ inline void irq_disable_notrace()
 inline void irq_enable()
 {
     processor::sti();
-    --irq_preempt_counters.irq;
+    --irq_preempt_counters._data.irq;
     barrier();
 }
 
 inline void wait_for_interrupt()
 {
     processor::sti_hlt();
-    --irq_preempt_counters.irq;
+    --irq_preempt_counters._data.irq;
     barrier();
 }
 
@@ -106,14 +106,14 @@ private:
 inline void irq_flag_notrace::save()
 {
     ensure_next_stack_page();
-    ++irq_preempt_counters.irq;
+    ++irq_preempt_counters._data.irq;
     asm volatile("sub $128, %%rsp; pushfq; popq %0; add $128, %%rsp" : "=r"(_rflags));
 }
 
 inline void irq_flag_notrace::restore()
 {
     asm volatile("sub $128, %%rsp; pushq %0; popfq; add $128, %%rsp" : : "r"(_rflags));
-    --irq_preempt_counters.irq;
+    --irq_preempt_counters._data.irq;
 }
 
 inline bool irq_flag_notrace::enabled() const

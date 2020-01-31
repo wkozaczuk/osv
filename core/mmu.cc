@@ -43,9 +43,6 @@ extern const char text_start[], text_end[];
 namespace mmu {
 
 static void prevent_stack_page_fault() {
-    if (!sched::thread::current()->is_app()) {
-        return;
-    }
     arch::ensure_next_two_stack_pages();
 }
 
@@ -1191,6 +1188,7 @@ static void nohugepage(void* addr, size_t length)
 error advise(void* addr, size_t size, int advice)
 {
     prevent_stack_page_fault();
+    arch::lazy_stack_flags_guard lazy_stack_guard(arch::lazy_stack_mmu_disable);
     WITH_LOCK(vma_list_mutex.for_write()) {
         if (!ismapped(addr, size)) {
             return make_error(ENOMEM);
@@ -1219,14 +1217,12 @@ ulong populate_vma(vma *vma, void *v, size_t size, bool write = false)
 
 void* map_anon(const void* addr, size_t size, unsigned flags, unsigned perm)
 {
-    prevent_stack_page_fault();
-    char i;
-    asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
-    asm volatile("movb -8192(%%rsp), %0" : "=r"(i));
     bool search = !(flags & mmap_fixed);
     size = align_up(size, mmu::page_size);
     auto start = reinterpret_cast<uintptr_t>(addr);
     auto* vma = new mmu::anon_vma(addr_range(start, start + size), perm, flags);
+    prevent_stack_page_fault();
+    arch::lazy_stack_flags_guard lazy_stack_guard(arch::lazy_stack_mmu_disable);
     SCOPE_LOCK(vma_list_mutex.for_write());
     auto v = (void*) allocate(vma, start, size, search);
     if (flags & mmap_populate) {
@@ -1254,6 +1250,7 @@ void* map_file(const void* addr, size_t size, unsigned flags, unsigned perm,
     auto *vma = f->mmap(addr_range(start, start + size), flags | mmap_file, perm, offset).release();
     void *v;
     prevent_stack_page_fault();
+    arch::lazy_stack_flags_guard lazy_stack_guard(arch::lazy_stack_mmu_disable);
     WITH_LOCK(vma_list_mutex.for_write()) {
         v = (void*) allocate(vma, start, size, search);
         if (flags & mmap_populate) {
@@ -1621,6 +1618,7 @@ ulong map_jvm(unsigned char* jvm_addr, size_t size, size_t align, balloon_ptr b)
     auto* vma = new mmu::jvm_balloon_vma(jvm_addr, start, start + size, b, v->perm(), v->flags());
 
     prevent_stack_page_fault();
+    arch::lazy_stack_flags_guard lazy_stack_guard(arch::lazy_stack_mmu_disable);
     WITH_LOCK(vma_list_mutex.for_write()) {
         // This means that the mapping that we had before was a balloon mapping
         // that was laying around and wasn't updated to an anon mapping. If we
@@ -1883,6 +1881,7 @@ void free_initial_memory_range(uintptr_t addr, size_t size)
 error mprotect(const void *addr, size_t len, unsigned perm)
 {
     prevent_stack_page_fault();
+    arch::lazy_stack_flags_guard lazy_stack_guard(arch::lazy_stack_mmu_disable);
     SCOPE_LOCK(vma_list_mutex.for_write());
 
     if (!ismapped(addr, len)) {
@@ -1895,6 +1894,7 @@ error mprotect(const void *addr, size_t len, unsigned perm)
 error munmap(const void *addr, size_t length)
 {
     prevent_stack_page_fault();
+    arch::lazy_stack_flags_guard lazy_stack_guard(arch::lazy_stack_mmu_disable);
     SCOPE_LOCK(vma_list_mutex.for_write());
 
     length = align_up(length, mmu::page_size);

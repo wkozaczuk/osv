@@ -37,6 +37,8 @@ void page_fault(exception_frame *ef)
     assert(sched::preemptable());
     assert(ef->rflags & processor::rflags_if);
 
+    arch::lazy_stack_flags_guard lazy_stack_guard(arch::lazy_stack_fault_disable);
+
     // And since we may sleep, make sure interrupts are enabled.
     DROP_LOCK(irq_lock) { // irq_lock is acquired by HW
         mmu::vm_fault(addr, ef);

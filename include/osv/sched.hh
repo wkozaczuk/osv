@@ -985,7 +985,7 @@ extern bool __thread need_reschedule;
 inline unsigned int get_preempt_counter()
 {
     barrier();
-    return arch::irq_preempt_counters.preempt;
+    return arch::irq_preempt_counters._data.preempt;
 }
 
 inline bool preemptable()
@@ -1006,14 +1006,14 @@ inline void preempt()
 inline void preempt_disable()
 {
     arch::ensure_next_stack_page();
-    ++arch::irq_preempt_counters.preempt;
+    ++arch::irq_preempt_counters._data.preempt;
     barrier();
 }
 
 inline void preempt_enable()
 {
     barrier();
-    --arch::irq_preempt_counters.preempt;
+    --arch::irq_preempt_counters._data.preempt;
     if (preemptable() && need_reschedule && arch::irq_enabled()) {
         cpu::schedule();
     }

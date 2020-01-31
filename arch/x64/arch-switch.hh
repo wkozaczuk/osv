@@ -319,7 +319,7 @@ void thread::free_tcb()
 void thread_main_c(thread* t)
 {
     if (t->get_stack_info().lazy) {
-        arch::irq_preempt_counters.irq = arch::irq_counter_lazy_stack_init_value;
+        arch::irq_preempt_counters._data.set_lazy_flags_bit(arch::lazy_stack_disable, false);
     }
     arch::irq_enable();
 #ifdef CONF_preempt
