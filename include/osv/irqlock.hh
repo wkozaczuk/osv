@@ -34,8 +34,10 @@ inline void irq_save_lock_type::lock()
 inline void irq_save_lock_type::unlock()
 {
     _flags.restore();
+#ifndef AARCH64_PORT_STUB
     --arch::irq_preempt_counters._data.irq;
     barrier();
+#endif
 }
 
 extern irq_lock_type irq_lock;
