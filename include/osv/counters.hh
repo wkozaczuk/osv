@@ -10,9 +10,10 @@
 
 namespace arch {
 
-// Both preempt and irq counters are co-located next to each other in this
-// union by design to let compiler optimize ensure_next_stack_page() so
-// that it can check if any counter is non-zero by checking single 64-bit any_is_on field
+// Both preempt and irq counters are co-located next to each other
+// along with the the flags that drive lazy stack related logic
+// union by design. It is so that compiler can optimize ensure_next_stack_page()
+// to test against single 64-bit lazy_stack_no_pre_fault field
 union counters {
     struct data {
         unsigned preempt;

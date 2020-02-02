@@ -318,6 +318,8 @@ void thread::free_tcb()
 
 void thread_main_c(thread* t)
 {
+    // Disable lazy stack pre-fault logic for this thread
+    // if stack is not lazy (most likely kernel thread)
     if (t->get_stack_info().lazy) {
         arch::irq_preempt_counters._data.set_lazy_flags_bit(arch::lazy_stack_disable, false);
     }

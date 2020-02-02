@@ -43,6 +43,7 @@ using namespace osv;
 using namespace osv::clock::literals;
 
 namespace arch {
+// By default disable lazy stack pre-fault logic
 counters __thread irq_preempt_counters = {{1, 1, 1}};
 }
 

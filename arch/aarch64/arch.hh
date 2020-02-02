@@ -11,8 +11,6 @@
 #define ARCH_HH_
 
 #include "processor.hh"
-#include <osv/barrier.hh>
-#include <osv/counters.hh>
 
 // architecture independent interface for architecture dependent operations
 
@@ -22,7 +20,8 @@ namespace arch {
 #define INSTR_SIZE_MIN 4
 #define ELF_IMAGE_START (OSV_KERNEL_BASE + 0x10000)
 
-inline void ensure_next_stack_page() {
+inline void ensure_next_stack_page()
+{
     //TODO: Implement lazy stack check for AARCH64
 }
 

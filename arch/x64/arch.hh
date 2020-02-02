@@ -23,6 +23,10 @@ namespace arch {
 #define ELF_IMAGE_START OSV_KERNEL_BASE
 
 inline void ensure_next_stack_page() {
+    // Because both irq and preempt counters and lazy stack
+    // flags are co-located within same 8-bytes long union
+    // we can check single field for non-zero value to determine
+    // if we should trigger pre-fault on lazy stack
     if (irq_preempt_counters.lazy_stack_no_pre_fault) {
         return;
     }

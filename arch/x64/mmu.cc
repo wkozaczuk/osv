@@ -37,6 +37,9 @@ void page_fault(exception_frame *ef)
     assert(sched::preemptable());
     assert(ef->rflags & processor::rflags_if);
 
+    // Even though we are on exception stack that is not lazy
+    // for pre-caution we are disabling the pre-fault logic
+    // for the time the fault is being handled
     arch::lazy_stack_flags_guard lazy_stack_guard(arch::lazy_stack_fault_disable);
 
     // And since we may sleep, make sure interrupts are enabled.

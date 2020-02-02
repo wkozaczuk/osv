@@ -43,6 +43,12 @@ extern const char text_start[], text_end[];
 namespace mmu {
 
 static void prevent_stack_page_fault() {
+    // We need to ensure that lazy stack is populated
+    // deeply enough (2 pages) for all cases where
+    // the vma_list_mutex is taken for write so that we can disable
+    // the pre-fault check (arch::ensure_next_stack_page) which,
+    // if page fault triggered, would make page-fault handling logic
+    // attempt to take same vma_list_mutex fo read and end up with deadlock
 #ifndef AARCH64_PORT_STUB
     arch::ensure_next_two_stack_pages();
 #endif
