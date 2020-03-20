@@ -1,0 +1,4 @@
+obj
+ntlm_user_file
+*.so
+usr.manifest
