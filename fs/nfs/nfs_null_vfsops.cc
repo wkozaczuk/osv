@@ -23,7 +23,7 @@
  */
 struct vfsops nfs_vfsops = {
     nfs_mount,      /* mount */
-    nfs_umount,    /* umount */
+    nfs_umount,     /* umount */
     nfs_sync,       /* sync */
     nfs_vget,       /* vget */
     nfs_statfs,     /* statfs */
