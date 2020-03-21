@@ -16,17 +16,24 @@ def make_export_and_conf():
     return (conf_path, export_dir)
 
 proc = None
+conf_path = None
+export_dir = None
 
 def kill_unfsd():
-    global proc
+    global proc, conf_path, export_dir
     proc.kill()
     proc.wait()
+    if conf_path and os.path.exists(conf_path):
+        os.unlink(conf_path)
+    if export_dir and os.path.exists(export_dir):
+        import shutil
+        shutil.rmtree(export_dir, ignore_errors=True)
 
 dirname = os.path.dirname(os.path.abspath(__file__))
 UNFSD = dirname + "/unfsd.bin"
 
 def run_test():
-    global proc
+    global proc, conf_path, export_dir
     start = time.time()
 
     if not os.path.exists(UNFSD):
@@ -34,6 +41,8 @@ def run_test():
         sys.exit(1)
 
     (conf_path, export_dir) = make_export_and_conf()
+    #TODO: Automatically check if 'rpcbind' is installed and running
+    #Try to run 'rpcinfo'
     proc = subprocess.Popen([os.path.join(os.getcwd(), UNFSD),
                              "-t",
                              "-d",
