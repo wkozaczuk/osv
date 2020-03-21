@@ -115,13 +115,14 @@ def make_export_and_conf():
     conf.write("%s 127.0.0.1(insecure,rw)\n" % export_dir)
     conf.flush()
     conf.close()
+    print("Conf path: [%s], export dir: [%s]" % (conf_path, export_dir))
     return (conf_path, export_dir)
 
 proc = None
 
 def kill_unfsd():
     global proc
-    subprocess.call(["sudo", "kill", str(proc.pid + 1)])
+    subprocess.call(["kill", str(proc.pid)])
     proc.wait()
 
 UNFSD = "./modules/nfs-tests/unfsd.bin"
@@ -145,8 +146,7 @@ def run_tests():
             print("Please do:\n\tmake nfs-server")
             sys.exit(1)
         (conf_path, export_dir) = make_export_and_conf()
-        proc = subprocess.Popen([ "sudo",
-                                 os.path.join(os.getcwd(), UNFSD),
+        proc = subprocess.Popen([os.path.join(os.getcwd(), UNFSD),
                                  "-t",
                                  "-d",
                                  "-s",
