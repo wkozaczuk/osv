@@ -4,8 +4,7 @@ UNFS_URL="https://github.com/unfs3/unfs3.git"
 
 autodepend = -MD -MT $@ -MP
 
-src := $(OSV_BASE)
-out := $(OSV_BUILD_PATH)
+src = $(shell readlink -f ../..)
 arch := $(ARCH)
 
 INCLUDES = -I../../include
@@ -39,6 +38,11 @@ tst-nfs:
 
 fsx-linux:
 	$(call quiet, $(CC)  $(CORE) -shared -o fsx-linux.so fsx-linux.c, LINK $@)
+
+check:
+	cd $(src) && \
+	make image=nfs,nfs-tests && \
+	PYTHONPATH=$(src)/scripts modules/nfs-tests/test.py
 
 clean:
 	$(call quiet, rm -rf upstream, RM upstream)
