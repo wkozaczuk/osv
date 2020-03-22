@@ -2307,12 +2307,10 @@ void pivot_rootfs(const char* path)
         kprintf("failed to pivot root, error = %s\n", strerror(ret));
 
     // Initialize other filesystem libraries if present
-    //TODO: Is this the best place on a filesystem to look for these libraries
     auto fs_lib_dir = opendir("/usr/lib/fs");
     if (fs_lib_dir) {
         while (auto dirent = readdir(fs_lib_dir)) {
             auto len = strlen(dirent->d_name);
-            //TODO: It would be nice to have ends_with() in std::string ;-)
             if (len >= 3 && strcmp(dirent->d_name + (len - 3), ".so") == 0) {
                 auto lib_path = std::string("/usr/lib/fs/") + dirent->d_name;
                 auto module = dlopen(lib_path.c_str(), RTLD_LAZY);

@@ -41,8 +41,12 @@ def run_test():
         sys.exit(1)
 
     (conf_path, export_dir) = make_export_and_conf()
-    #TODO: Automatically check if 'rpcbind' is installed and running
-    #Try to run 'rpcinfo'
+
+    ret = subprocess.call(['rpcinfo'])
+    if ret != 0:
+        print('Please install rpcbind!')
+        exit(-1)
+
     proc = subprocess.Popen([os.path.join(os.getcwd(), UNFSD),
                              "-t",
                              "-d",

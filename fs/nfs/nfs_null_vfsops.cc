@@ -15,10 +15,10 @@
 #define nfs_vget    ((vfsop_vget_t)vfs_nullop)
 #define nfs_statfs  ((vfsop_statfs_t)vfs_nullop)
 
-static int nfs_op_noop_mount(struct mount *mp, const char *dev, int flags,
-                             const void *data)
+static int nfs_noop_mount(struct mount *mp, const char *dev, int flags,
+                          const void *data)
 {
-    printf("The nfs module in-active!. Please add nfs module to the image.\n");
+    printf("The nfs module is in-active!. Please add nfs module to the image.\n");
     return -1;
 }
 
@@ -29,7 +29,7 @@ static int nfs_op_noop_mount(struct mount *mp, const char *dev, int flags,
  *
  */
 struct vfsops nfs_vfsops = {
-    nfs_op_noop_mount,      /* mount */
+    nfs_noop_mount,      /* mount */
     nfs_umount,     /* umount */
     nfs_sync,       /* sync */
     nfs_vget,       /* vget */
