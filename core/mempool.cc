@@ -541,7 +541,7 @@ void reclaimer::wait_for_memory(size_t mem)
 
 class page_range_allocator {
 public:
-    static constexpr unsigned max_order = 16;
+    static constexpr unsigned max_order = page_ranges_max_order;
 
     page_range_allocator() : _deferred_free(nullptr) { }
 
@@ -569,6 +569,22 @@ public:
             size += list.size();
         }
         return size;
+    }
+
+    void stats(stats::page_ranges_stats& stats) const {
+        stats.order[max_order].ranges_num = _free_huge.size();
+        stats.order[max_order].bytes = 0;
+        for (auto& pr : _free_huge) {
+            stats.order[max_order].bytes += pr.size;
+        }
+
+        for (auto order = max_order; order--;) {
+            stats.order[order].ranges_num = _free[order].size();
+            stats.order[order].bytes = 0;
+            for (auto& pr : _free[order]) {
+                stats.order[order].bytes += pr.size;
+            }
+        }
     }
 
 private:
@@ -816,6 +832,15 @@ void page_range_allocator::for_each(unsigned min_order, Func f)
             if (!f(pr)) {
                 return;
             }
+        }
+    }
+}
+
+namespace stats {
+    void page_ranges(page_ranges_stats &stats)
+    {
+        WITH_LOCK(free_page_ranges_lock) {
+            free_page_ranges.stats(stats);
         }
     }
 }
