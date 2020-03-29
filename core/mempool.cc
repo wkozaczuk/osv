@@ -837,7 +837,7 @@ void page_range_allocator::for_each(unsigned min_order, Func f)
 }
 
 namespace stats {
-    void page_ranges(page_ranges_stats &stats)
+    void get_page_ranges_stats(page_ranges_stats &stats)
     {
         WITH_LOCK(free_page_ranges_lock) {
             free_page_ranges.stats(stats);
@@ -1101,6 +1101,8 @@ static unsigned large_object_size(void *obj)
 
 namespace page_pool {
 
+static std::vector<stats::pool_stats> l1_pool_stats;
+
 // L1-pool (Percpu page buffer pool)
 //
 // if nr < max * 1 / 4
@@ -1115,6 +1117,7 @@ struct l1 {
         : _fill_thread(sched::thread::make([] { fill_thread(); },
             sched::thread::attr().pin(cpu).name(osv::sprintf("page_pool_l1_%d", cpu->id))))
     {
+        cpu_id = cpu->id;
         _fill_thread->start();
     }
 
@@ -1138,12 +1141,15 @@ struct l1 {
     void* pop()
     {
         assert(nr);
+        l1_pool_stats[cpu_id]._nr = nr - 1;
         return _pages[--nr];
     }
     void push(void* page)
     {
         assert(nr < 512);
         _pages[nr++] = page;
+        l1_pool_stats[cpu_id]._nr = nr;
+
     }
     void* top() { return _pages[nr - 1]; }
     void wake_thread() { _fill_thread->wake(); }
@@ -1155,6 +1161,7 @@ struct l1 {
     static constexpr size_t watermark_lo = max * 1 / 4;
     static constexpr size_t watermark_hi = max * 3 / 4;
     size_t nr = 0;
+    unsigned int cpu_id;
 
 private:
     std::unique_ptr<sched::thread> _fill_thread;
@@ -1244,6 +1251,14 @@ public:
         return true;
     }
 
+    void stats(stats::pool_stats &stats)
+    {
+        stats._nr = get_nr();
+        stats._max = _max;
+        stats._watermark_lo = _watermark_lo;
+        stats._watermark_hi = _watermark_hi;
+    }
+
     void fill_thread();
     void refill();
     void unfill();
@@ -1269,6 +1284,7 @@ static sched::cpu::notifier _notifier([] () {
     if (smp_allocator_cnt++ == sched::cpus.size()) {
         smp_allocator = true;
     }
+    l1_pool_stats.resize(sched::cpus.size());
 });
 static inline l1& get_l1()
 {
@@ -1445,6 +1461,21 @@ void l2::free_batch(page_batch& batch)
     }
 }
 
+}
+
+namespace stats {
+    void get_global_l2_stats(pool_stats &stats)
+    {
+        page_pool::global_l2.stats(stats);
+    }
+
+    void get_l1_stats(unsigned int cpu_id, pool_stats &stats)
+    {
+        stats._nr = page_pool::l1_pool_stats[cpu_id]._nr;
+        stats._max = page_pool::l1::max;
+        stats._watermark_lo = page_pool::l1::watermark_lo;
+        stats._watermark_hi = page_pool::l1::watermark_hi;
+    }
 }
 
 static void* early_alloc_page()

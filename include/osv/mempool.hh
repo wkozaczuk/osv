@@ -205,7 +205,17 @@ namespace stats {
         } order[page_ranges_max_order + 1];
     };
 
-    void page_ranges(page_ranges_stats &stats);
+    void get_page_ranges_stats(page_ranges_stats &stats);
+
+    struct pool_stats {
+        size_t _max;
+        size_t _nr;
+        size_t _watermark_lo;
+        size_t _watermark_hi;
+    };
+
+    void get_global_l2_stats(pool_stats &stats);
+    void get_l1_stats(unsigned int cpu_id, stats::pool_stats &stats);
 }
 
 class phys_contiguous_memory final {
