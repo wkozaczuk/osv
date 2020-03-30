@@ -850,7 +850,7 @@ namespace stats {
 static void* mapped_malloc_large(size_t size, size_t offset)
 {
     //TODO: For now pre-populate the memory, in future consider doing lazy population
-    void* obj = mmu::map_anon(nullptr, size, mmu::mmap_populate, mmu::perm_read | mmu::perm_write);
+    void* obj = mmu::map_anon(nullptr, size, mmu::mmap_uninitialized, mmu::perm_read | mmu::perm_write);
     size_t* ret_header = static_cast<size_t*>(obj);
     *ret_header = size;
     return obj + offset;
