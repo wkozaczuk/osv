@@ -217,8 +217,6 @@ def disk_path(qcow_disk_path):
         if ret != 0:
             print('Failed to convert %s to a raw format %s!' % (qcow_disk_path, raw_disk_path))
             exit(-1)
-    else:
-        print('--> Disk path: %s' % raw_disk_path)
     return raw_disk_path
 
 
@@ -272,7 +270,7 @@ def main(options):
 
     qemu_disk_path = options.image
     if not qemu_disk_path:
-        qemu_disk_path = os.path.join(dirname, '../build/release/disk.img')
+        qemu_disk_path = os.path.join(dirname, '../build/release/usr.img')
     raw_disk_path = disk_path(qemu_disk_path)
 
     cmdline = options.execute
@@ -366,7 +364,7 @@ if __name__ == "__main__":
     parser.add_argument("-i", "--image", action="store", default=None, metavar="CMD",
                         help="path to disk image file. defaults to ../build/release/usr.img")
     parser.add_argument("-k", "--kernel", action="store", default=None, metavar="CMD",
-                        help="path to kernel loader file. defaults to ../build/release/loader-stripped.elf")
+                        help="path to kernel loader file. defaults to ../build/release/kernel.elf")
     parser.add_argument("-n", "--networking", action="store_true",
                         help="needs root to setup tap networking first time")
     parser.add_argument("-b", "--bridge", action="store", default=None,
