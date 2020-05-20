@@ -54,7 +54,7 @@ mmioaddr_t mmio_isa_serial_console::_addr_mmio;
 
 void mmio_isa_serial_console::early_init()
 {
-    u64 address = 0x40001000; //TODO: Should parse from early console boot command line
+    u64 address = 0x40001000; //TODO: Should parse from boot command line ('earlycon=uart,mmio,0x40001000')
     u64 size = 4096;
 
     _addr_mmio = mmio_map(address, size);
@@ -126,6 +126,7 @@ void mmio_isa_serial_console::enable_interrupt()
 }
 
 void mmio_isa_serial_console::dev_start() {
+    //TODO: Figure out which interrupt and what kind to use
     //_irq.reset(new sgi_edge_interrupt(4, [&] { _thread->wake(); }));
     enable_interrupt();
 }

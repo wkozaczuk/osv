@@ -118,9 +118,6 @@ void premain()
     }
     debug_early("Premain complete!\n");
     boot_time.event(".init functions");
-
-    //arch_init_early_console();
-    //debug_early("OSv " OSV_VERSION "\n");
 }
 
 int main(int loader_argc, char **loader_argv)

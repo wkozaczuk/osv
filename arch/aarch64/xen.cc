@@ -84,12 +84,9 @@ extern "C" {
 
 void init_xen()
 {
-    //TODO: Check if works
-    /*
     HYPERVISOR_shared_info = nullptr;
     if (dtb_get_vmm_is_xen())
         xen::setup();
-    */
 }
 
 }
