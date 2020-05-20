@@ -18,11 +18,11 @@ void page_fault(exception_frame *ef)
 {
     sched::fpu_lock fpu;
     SCOPE_LOCK(fpu);
-    debug_early_entry("page_fault");
+    //debug_early_entry("page_fault");
     u64 addr;
     asm volatile ("mrs %0, far_el1" : "=r"(addr));
     debug_early_u64("faulting address ", (u64)addr);
-    debug_early_u64("elr exception ra ", (u64)ef->elr);
+    //debug_early_u64("elr exception ra ", (u64)ef->elr);
 
     if (fixup_fault(ef)) {
         debug_early("fixed up with fixup_fault\n");
@@ -45,7 +45,7 @@ void page_fault(exception_frame *ef)
         mmu::vm_fault(addr, ef);
     }
 
-    debug_early("leaving page_fault()\n");
+    //debug_early("leaving page_fault()\n");
 }
 
 namespace mmu {

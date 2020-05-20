@@ -17,6 +17,7 @@
 #include <osv/debug.hh>
 #include <osv/commands.hh>
 #include <osv/xen.hh>
+#include <osv/version.h>
 
 #include "arch-mmu.hh"
 #include "arch-dtb.hh"
@@ -122,7 +123,7 @@ void arch_setup_free_memory()
     mmu::switch_to_runtime_page_tables();
 
     arch_init_early_console();
-    debug_early("OSv (OLO) -> from arch_setup_free_memory\n");
+    debug_early("OSv " OSV_VERSION "\n");
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)
