@@ -14,6 +14,10 @@
 #include "psci.hh"
 #include <string.h>
 
+extern "C" void poweroff() {
+    osv::poweroff();
+}
+
 namespace osv {
 
 void halt(void)
@@ -27,10 +31,11 @@ void halt(void)
 
 void poweroff(void)
 {
-    int ret = psci::_psci.system_off();
-    debug_early("power: poweroff failed: ");
-    debug_early(strerror(ret));
-    debug_early("\n");
+    psci::_psci.system_off();
+    //int ret = psci::_psci.system_off();
+    //debug_early("power: poweroff failed: ");
+    //debug_early(strerror(ret));
+    //debug_early("\n");
     halt();
 }
 

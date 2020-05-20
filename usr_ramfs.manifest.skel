@@ -3,6 +3,8 @@
 /libvdso.so: libvdso.so
 /tools/mount-fs.so: tools/mount/mount-fs.so
 /tools/umount.so: tools/mount/umount.so
+/tools/uush.so: tools/uush/uush.so
+/tools/hello.so: tools/uush/hello.so
 /usr/lib/libgcc_s.so.1: %(libgcc_s_dir)s/libgcc_s.so.1
 /&/etc/hosts: ../../static/&
 

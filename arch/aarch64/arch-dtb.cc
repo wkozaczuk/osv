@@ -225,7 +225,8 @@ bool dtb_get_gic_v2(u64 *dist, size_t *dist_len, u64 *cpu, size_t *cpu_len)
     if (!dtb)
         return false;
 
-    node = fdt_node_offset_by_compatible(dtb, -1, "arm,cortex-a15-gic");
+    //node = fdt_node_offset_by_compatible(dtb, -1, "arm,cortex-a15-gic");
+    node = fdt_node_offset_by_compatible(dtb, -1, "arm,gic-400");
     if (node < 0)
         return false;
 
@@ -613,11 +614,13 @@ void  __attribute__((constructor(init_prio::dtb))) dtb_setup()
         abort("dtb_setup: failed to parse cpu mpid.\n");
     }
 
+    //TODO: Parse PCI only if required and
+    // abort if missing only if required
     dtb_timer_irq = dtb_parse_timer_irq();
     dtb_pci_irqmask = dtb_parse_pci_irqmask();
     dtb_pci_irqmap_count = dtb_parse_pci_irqmap_count();
     if (!dtb_parse_pci_irqmap(dtb_pci_bdfs, dtb_pci_irq_ids, dtb_pci_irqmap_count)) {
-        abort("dtb_setup: failed to parse pci_irq_map.\n");
+        //abort("dtb_setup: failed to parse pci_irq_map.\n");
     }
 
     register u64 edata;

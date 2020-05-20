@@ -354,6 +354,7 @@ tools := tools/mkfs/mkfs.so tools/cpiod/cpiod.so
 $(out)/tools/%.o: COMMON += -fPIC
 
 tools += tools/uush/uush.so
+tools += tools/uush/hello.so
 tools += tools/uush/ls.so
 tools += tools/uush/mkdir.so
 
@@ -451,8 +452,8 @@ endif # x64
 
 ifeq ($(arch),aarch64)
 
-kernel_base := 0x40080000
-kernel_vm_base := 0x40080000
+kernel_base := 0x80080000
+kernel_vm_base := 0x80080000
 app_local_exec_tls_size := 0x0
 
 include $(libfdt_base)/Makefile.libfdt
@@ -816,6 +817,7 @@ drivers += drivers/xenplatform-pci.o
 endif # x64
 
 ifeq ($(arch),aarch64)
+drivers += drivers/mmio-isa-serial.o
 drivers += drivers/pl011.o
 drivers += drivers/xenconsole.o
 drivers += drivers/virtio.o

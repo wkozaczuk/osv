@@ -25,6 +25,7 @@
 #include "drivers/pl011.hh"
 #include "early-console.hh"
 #include <osv/pci.hh>
+#include "drivers/mmio-isa-serial.hh"
 
 #include <alloca.h>
 
@@ -91,12 +92,14 @@ void arch_setup_free_memory()
     mmu::linear_map((void *)mmu::mem_addr, (mmu::phys)mmu::mem_addr,
                     addr - mmu::mem_addr);
 
-    if (!is_xen()) {
+    //TODO: Check if is_xen is working
+    // also somehow conditionally enable uart/pl011 if present
+    //if (!is_xen()) {
         /* linear_map [TTBR0 - UART] */
-        addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
-        mmu::linear_map((void *)addr, addr, 0x1000, mmu::page_size,
-                        mmu::mattr::dev);
-    }
+    //    addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
+    //    mmu::linear_map((void *)addr, addr, 0x1000, mmu::page_size,
+    //                    mmu::mattr::dev);
+    //}
 
     /* linear_map [TTBR0 - GIC DIST and GIC CPU] */
     u64 dist, cpu;
@@ -110,12 +113,16 @@ void arch_setup_free_memory()
     mmu::linear_map((void *)cpu, (mmu::phys)cpu, cpu_len, mmu::page_size,
                     mmu::mattr::dev);
 
-    arch_setup_pci();
+    //TODO: Call it only if PCI available
+    //arch_setup_pci();
 
     // get rid of the command line, before memory is unmapped
     osv::parse_cmdline(cmdline);
 
     mmu::switch_to_runtime_page_tables();
+
+    arch_init_early_console();
+    debug_early("OSv (OLO) -> from arch_setup_free_memory\n");
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)
@@ -179,33 +186,43 @@ void arch_init_drivers()
 
 void arch_init_early_console()
 {
+    //TODO: Check if is_xen() works and enable again
+    /*
     if (is_xen()) {
         new (&console::aarch64_console.xen) console::XEN_Console();
         console::arch_early_console = console::aarch64_console.xen;
         return;
-    }
+    }*/
 
+    /* Comment out for now
     new (&console::aarch64_console.pl011) console::PL011_Console();
     console::arch_early_console = console::aarch64_console.pl011;
     int irqid;
-    u64 addr = dtb_get_uart(&irqid);
-    if (!addr) {
+    u64 addr = dtb_get_uart(&irqid);*/
+    //if (!addr) {
         /* keep using default addresses */
-        return;
-    }
+    //    return;
+    //}
 
-    console::aarch64_console.pl011.set_base_addr(addr);
-    console::aarch64_console.pl011.set_irqid(irqid);
+    //console::aarch64_console.pl011.set_base_addr(addr);
+    //console::aarch64_console.pl011.set_irqid(irqid);
+
+    new (&console::aarch64_console.mmio_isa_serial) console::mmio_isa_serial_console();
+    console::arch_early_console = console::aarch64_console.mmio_isa_serial;
+
+    console::mmio_isa_serial_console::early_init();
 }
 
 bool arch_setup_console(std::string opt_console)
 {
+    /*
     if (opt_console.compare("pl011") == 0) {
         console::console_driver_add(&console::arch_early_console);
     } else if (opt_console.compare("all") == 0) {
         console::console_driver_add(&console::arch_early_console);
     } else {
         return false;
-    }
+    }*/
+    console::console_driver_add(&console::arch_early_console);
     return true;
 }

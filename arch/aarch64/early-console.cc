@@ -13,6 +13,7 @@
 namespace console {
 
 union AARCH64_Console aarch64_console;
-console_driver & arch_early_console = aarch64_console.pl011;
+//console_driver & arch_early_console = aarch64_console.pl011;
+console_driver & arch_early_console = aarch64_console.mmio_isa_serial;
 
 }
