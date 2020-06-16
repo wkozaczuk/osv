@@ -212,14 +212,12 @@ void arch_init_early_console()
 
 bool arch_setup_console(std::string opt_console)
 {
-    /*
     if (opt_console.compare("pl011") == 0) {
         console::console_driver_add(&console::arch_early_console);
     } else if (opt_console.compare("all") == 0) {
         console::console_driver_add(&console::arch_early_console);
     } else {
         return false;
-    }*/
-    console::console_driver_add(&console::arch_early_console);
+    }
     return true;
 }
