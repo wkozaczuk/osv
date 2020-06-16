@@ -225,10 +225,12 @@ bool dtb_get_gic_v2(u64 *dist, size_t *dist_len, u64 *cpu, size_t *cpu_len)
     if (!dtb)
         return false;
 
-    //node = fdt_node_offset_by_compatible(dtb, -1, "arm,cortex-a15-gic");
     node = fdt_node_offset_by_compatible(dtb, -1, "arm,gic-400");
-    if (node < 0)
-        return false;
+    if (node < 0) {
+        node = fdt_node_offset_by_compatible(dtb, -1, "arm,cortex-a15-gic");
+        if (node < 0)
+            return false;
+    }
 
     if (!dtb_get_reg_n(node, addr, len, 2))
         return false;

@@ -49,8 +49,9 @@ void arch_setup_pci()
     /* linear_map [TTBR0 - PCI config space] */
     u64 pci_cfg;
     size_t pci_cfg_len;
-    if (!dtb_get_pci_cfg(&pci_cfg, &pci_cfg_len))
-	return;
+    if (!dtb_get_pci_cfg(&pci_cfg, &pci_cfg_len)) {
+        return;
+    }
 
     pci::set_pci_cfg(pci_cfg, pci_cfg_len);
     pci_cfg = pci::get_pci_cfg(&pci_cfg_len);
@@ -113,18 +114,13 @@ void arch_setup_free_memory()
     mmu::linear_map((void *)cpu, (mmu::phys)cpu, cpu_len, mmu::page_size,
                     mmu::mattr::dev);
 
-    //TODO: Call it only if PCI available
-    //arch_setup_pci();
+    arch_setup_pci();
 
     // get rid of the command line, before memory is unmapped
     osv::parse_cmdline(cmdline);
 
     mmu::switch_to_runtime_page_tables();
     console::mmio_isa_serial_console::map(0x40001000);
-
-    //TODO: This is probably wrong place to init the console
-    //arch_init_early_console();
-    //debug_early("OSv " OSV_VERSION "\n");
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)
