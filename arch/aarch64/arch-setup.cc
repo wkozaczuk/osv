@@ -120,10 +120,11 @@ void arch_setup_free_memory()
     osv::parse_cmdline(cmdline);
 
     mmu::switch_to_runtime_page_tables();
+    console::mmio_isa_serial_console::map(0x40001000);
 
     //TODO: This is probably wrong place to init the console
-    arch_init_early_console();
-    debug_early("OSv " OSV_VERSION "\n");
+    //arch_init_early_console();
+    //debug_early("OSv " OSV_VERSION "\n");
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)
@@ -209,7 +210,8 @@ void arch_init_early_console()
     new (&console::aarch64_console.mmio_isa_serial) console::mmio_isa_serial_console();
     console::arch_early_console = console::aarch64_console.mmio_isa_serial;
 
-    console::mmio_isa_serial_console::early_init();
+    u64 address = 0x40001000; //TODO: Should parse from boot command line ('earlycon=uart,mmio,0x40001000')
+    console::mmio_isa_serial_console::early_init(address);
 }
 
 bool arch_setup_console(std::string opt_console)
