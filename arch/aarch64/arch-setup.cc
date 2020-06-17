@@ -120,7 +120,8 @@ void arch_setup_free_memory()
     osv::parse_cmdline(cmdline);
 
     mmu::switch_to_runtime_page_tables();
-    console::mmio_isa_serial_console::map(0x40001000);
+
+    console::mmio_isa_serial_console::memory_map();
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)
@@ -184,30 +185,35 @@ void arch_init_drivers()
 
 void arch_init_early_console()
 {
+    console::mmio_isa_serial_console::_phys_mmio_address = 0;
+
     if (is_xen()) {
         new (&console::aarch64_console.xen) console::XEN_Console();
         console::arch_early_console = console::aarch64_console.xen;
         return;
     }
 
-    /* Comment out for now
+    //u64 uart_mmio_address = 0x40001000;
+    u64 uart_mmio_address = dtb_get_uart_mmio_address();
+    if (uart_mmio_address) {
+        console::mmio_isa_serial_console::early_init(uart_mmio_address);
+
+        new (&console::aarch64_console.isa_serial) console::mmio_isa_serial_console();
+        console::arch_early_console = console::aarch64_console.isa_serial;
+        return;
+    }
+
     new (&console::aarch64_console.pl011) console::PL011_Console();
     console::arch_early_console = console::aarch64_console.pl011;
     int irqid;
-    u64 addr = dtb_get_uart(&irqid);*/
-    //if (!addr) {
+    u64 addr = dtb_get_uart(&irqid);
+    if (!addr) {
         /* keep using default addresses */
-    //    return;
-    //}
+        return;
+    }
 
-    //console::aarch64_console.pl011.set_base_addr(addr);
-    //console::aarch64_console.pl011.set_irqid(irqid);
-
-    new (&console::aarch64_console.mmio_isa_serial) console::mmio_isa_serial_console();
-    console::arch_early_console = console::aarch64_console.mmio_isa_serial;
-
-    u64 address = 0x40001000; //TODO: Should parse from boot command line ('earlycon=uart,mmio,0x40001000')
-    console::mmio_isa_serial_console::early_init(address);
+    console::aarch64_console.pl011.set_base_addr(addr);
+    console::aarch64_console.pl011.set_irqid(irqid);
 }
 
 bool arch_setup_console(std::string opt_console)

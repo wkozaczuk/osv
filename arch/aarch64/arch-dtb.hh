@@ -49,6 +49,8 @@ size_t dtb_get_phys_memory(u64 *addr);
  */
 u64 dtb_get_uart(int *irqid);
 
+u64 dtb_get_uart_mmio_address();
+
 /* int gdb_get_timer_irq()
  *
  * returns the irqid of the virtual timer from the dtb,

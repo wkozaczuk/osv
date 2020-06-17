@@ -19,7 +19,7 @@ namespace console {
 union AARCH64_Console {
     PL011_Console pl011;
     XEN_Console xen;
-    mmio_isa_serial_console mmio_isa_serial;
+    mmio_isa_serial_console isa_serial;
 
     AARCH64_Console() {};  /* placement new is used to initialize object */
     ~AARCH64_Console() {}; /* won't ever be called */

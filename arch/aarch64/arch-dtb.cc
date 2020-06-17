@@ -189,6 +189,40 @@ u64 dtb_get_uart(int *irqid)
     return retval;
 }
 
+#define BOOT_ARGS_UART_PREFIX "earlycon=uart,mmio,"
+u64 dtb_get_uart_mmio_address()
+{
+    int node;
+
+    if (!dtb)
+        return 0;
+
+    if (fdt_check_header(dtb) != 0)
+        return 0;
+
+    node = fdt_path_offset(dtb, "/chosen");
+    if (node < 0)
+        return 0;
+
+    auto boot_args = (char *) fdt_getprop(dtb, node, "bootargs", NULL);
+    if (!boot_args) {
+        return 0;
+    }
+
+    // earlycon=uart,mmio,<baseaddr>
+    auto prefix_pos = strstr(boot_args,BOOT_ARGS_UART_PREFIX);
+    if (!prefix_pos) {
+        return 0;
+    }
+
+    u64 address = 0;
+    char *address_pos = prefix_pos + strlen(BOOT_ARGS_UART_PREFIX);
+    if (sscanf(address_pos,"%x", &address) == 1)
+        return address;
+    else
+        return 0;
+}
+
 /* this gets the virtual timer irq, we are not interested
  * about the other timers.
  */

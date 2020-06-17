@@ -15,8 +15,9 @@ namespace console {
 class mmio_isa_serial_console : public isa_serial_console_base {
 public:
     static void early_init(u64 mmio_phys_address);
-    static void map(u64 mmio_phys_address);
+    static void memory_map();
     static mmioaddr_t _addr_mmio;
+    static u64 _phys_mmio_address;
 private:
     //std::unique_ptr<sgi_edge_interrupt> _irq;
     virtual void dev_start();
