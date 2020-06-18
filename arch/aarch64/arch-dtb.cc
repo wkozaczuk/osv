@@ -189,38 +189,34 @@ u64 dtb_get_uart(int *irqid)
     return retval;
 }
 
-#define BOOT_ARGS_UART_PREFIX "earlycon=uart,mmio,"
-u64 dtb_get_uart_mmio_address()
+u64 dtb_get_mmio_serial_console(int *irqid)
 {
     int node;
+    struct dtb_int_spec int_spec[1];
+    u64 address;
 
     if (!dtb)
         return 0;
 
-    if (fdt_check_header(dtb) != 0)
-        return 0;
-
-    node = fdt_path_offset(dtb, "/chosen");
+    node = fdt_node_offset_by_compatible(dtb, -1, "ns16550a");
     if (node < 0)
         return 0;
 
-    auto boot_args = (char *) fdt_getprop(dtb, node, "bootargs", NULL);
-    if (!boot_args) {
+    const char *node_name = fdt_get_name(dtb, node, NULL);
+    if (!node_name) {
         return 0;
     }
 
-    // earlycon=uart,mmio,<baseaddr>
-    auto prefix_pos = strstr(boot_args,BOOT_ARGS_UART_PREFIX);
-    if (!prefix_pos) {
+    if (sscanf(node_name,"uart@%x", &address) != 1) {
         return 0;
     }
 
-    u64 address = 0;
-    char *address_pos = prefix_pos + strlen(BOOT_ARGS_UART_PREFIX);
-    if (sscanf(address_pos,"%x", &address) == 1)
-        return address;
-    else
+    if( !dtb_get_int_spec(node, int_spec, 1)) {
         return 0;
+    };
+
+    *irqid = int_spec[0].irq_id;
+    return address;
 }
 
 /* this gets the virtual timer irq, we are not interested
@@ -656,6 +652,7 @@ void  __attribute__((constructor(init_prio::dtb))) dtb_setup()
     dtb_pci_irqmask = dtb_parse_pci_irqmask();
     dtb_pci_irqmap_count = dtb_parse_pci_irqmap_count();
     if (!dtb_parse_pci_irqmap(dtb_pci_bdfs, dtb_pci_irq_ids, dtb_pci_irqmap_count)) {
+        //TODO: If expects PCI
         //abort("dtb_setup: failed to parse pci_irq_map.\n");
     }
 

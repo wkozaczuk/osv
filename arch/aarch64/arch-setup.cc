@@ -192,11 +192,13 @@ void arch_init_early_console()
         return;
     }
 
-    u64 uart_mmio_address = dtb_get_uart_mmio_address();
-    if (uart_mmio_address) {
-        console::mmio_isa_serial_console::early_init(uart_mmio_address);
+    int irqid;
+    u64 mmio_serial_address = dtb_get_mmio_serial_console(&irqid);
+    if (mmio_serial_address) {
+        console::mmio_isa_serial_console::early_init(mmio_serial_address);
 
         new (&console::aarch64_console.isa_serial) console::mmio_isa_serial_console();
+        console::aarch64_console.isa_serial.set_irqid(irqid);
         console::arch_early_console = console::aarch64_console.isa_serial;
         return;
     }
@@ -204,7 +206,6 @@ void arch_init_early_console()
     new (&console::aarch64_console.pl011) console::PL011_Console();
     console::arch_early_console = console::aarch64_console.pl011;
     console::PL011_Console::active = true;
-    int irqid;
     u64 addr = dtb_get_uart(&irqid);
     if (!addr) {
         /* keep using default addresses */

@@ -14,12 +14,14 @@ namespace console {
 
 class mmio_isa_serial_console : public isa_serial_console_base {
 public:
+    void set_irqid(int irqid) { this->irqid = irqid; }
     static void early_init(u64 mmio_phys_address);
     static void memory_map();
     static mmioaddr_t _addr_mmio;
     static u64 _phys_mmio_address;
 private:
-    //std::unique_ptr<sgi_edge_interrupt> _irq;
+    unsigned int irqid;
+    std::unique_ptr<spi_interrupt> _irq;
     virtual void dev_start();
     virtual const char *thread_name() { return "mmio-isa-serial-input"; }
 };

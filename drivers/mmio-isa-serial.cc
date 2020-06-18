@@ -40,8 +40,9 @@ void mmio_isa_serial_console::memory_map()
 }
 
 void mmio_isa_serial_console::dev_start() {
-    //TODO: Figure out which interrupt and what kind to use
-    //_irq.reset(new sgi_edge_interrupt(4, [&] { _thread->wake(); }));
+    _irq.reset(new spi_interrupt(gic::irq_type::IRQ_TYPE_EDGE, 64,
+                                 [&] { return true; },
+                                 [&] { _thread->wake(); }));
     enable_interrupt();
 }
 
