@@ -94,12 +94,11 @@ void arch_setup_free_memory()
     mmu::linear_map((void *)mmu::mem_addr, (mmu::phys)mmu::mem_addr,
                     addr - mmu::mem_addr);
 
-    if (!is_xen()) {
+    if (console::PL011_Console::active) {
         /* linear_map [TTBR0 - UART] */
-        //TODO: Only run it if pl011 is detected
-        //addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
-        //mmu::linear_map((void *)addr, addr, 0x1000, mmu::page_size,
-        //                mmu::mattr::dev);
+        addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
+        mmu::linear_map((void *)addr, addr, 0x1000, mmu::page_size,
+                        mmu::mattr::dev);
     }
 
     /* linear_map [TTBR0 - GIC DIST and GIC CPU] */
@@ -193,7 +192,6 @@ void arch_init_early_console()
         return;
     }
 
-    //u64 uart_mmio_address = 0x40001000;
     u64 uart_mmio_address = dtb_get_uart_mmio_address();
     if (uart_mmio_address) {
         console::mmio_isa_serial_console::early_init(uart_mmio_address);
@@ -205,6 +203,7 @@ void arch_init_early_console()
 
     new (&console::aarch64_console.pl011) console::PL011_Console();
     console::arch_early_console = console::aarch64_console.pl011;
+    console::PL011_Console::active = true;
     int irqid;
     u64 addr = dtb_get_uart(&irqid);
     if (!addr) {
