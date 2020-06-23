@@ -9,21 +9,17 @@
 
 namespace console {
 
-std::function<u8 (const int&)> isa_serial_console_base::read_byte = [](const int& reg) {
+u8 isa_serial_console_base::read_byte(int reg) {
     return pci::inb(isa_serial_console::ioport + reg);
 };
 
-std::function<void (const u8&, const int&)> isa_serial_console_base::write_byte = [](const u8& val, const int& reg) {
+void isa_serial_console_base::write_byte(u8 val, int reg) {
     pci::outb(val, isa_serial_console::ioport + reg);
 };
 
 void isa_serial_console::early_init()
 {
-    common_early_init( [](const int& reg) {
-        return pci::inb(ioport + reg);
-    }, [](const u8& val, const int& reg) {
-        pci::outb(val, ioport + reg);
-    });
+    common_early_init();
 }
 
 void isa_serial_console::dev_start() {
