@@ -121,12 +121,6 @@ void arch_setup_free_memory()
     // get rid of the command line, before memory is unmapped
     console::mmio_isa_serial_console::clean_cmdline(cmdline);
     osv::parse_cmdline(cmdline);
-    //osv::parse_cmdline("--nomount --maxnic=0 /tools/hello.so");
-    //osv::parse_cmdline(" --nomount --maxnic=0 /tools/hello.so ");
-
-    debug_early("-->[");
-    debug_early(osv::osv_cmdline);
-    debug_early("]\n");
 
     mmu::switch_to_runtime_page_tables();
 
