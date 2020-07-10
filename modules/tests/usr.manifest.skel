@@ -1,1 +1,7 @@
 /testrunner.so: ./tests/testrunner.so
+/usr/lib/libboost_unit_test_framework.so.1.69.0: /home/wkozaczuk/projects/osv/build/downloaded_packages/aarch64/boost/install/usr/lib64/libboost_unit_test_framework.so.1.69.0
+/usr/lib/libboost_filesystem.so.1.69.0: /home/wkozaczuk/projects/osv/build/downloaded_packages/aarch64/boost/install/usr/lib64/libboost_filesystem.so.1.69.0
+/usr/lib/libboost_chrono.so.1.69.0: /home/wkozaczuk/projects/osv/build/downloaded_packages/aarch64/boost/install/usr/lib64/libboost_chrono.so.1.69.0
+/usr/lib/libboost_system.so.1.69.0: /home/wkozaczuk/projects/osv/build/downloaded_packages/aarch64/boost/install/usr/lib64/libboost_system.so.1.69.0
+/usr/lib/libboost_timer.so.1.69.0: /home/wkozaczuk/projects/osv/build/downloaded_packages/aarch64/boost/install/usr/lib64/libboost_timer.so.1.69.0
+/usr/lib/libgcc_s.so.1: /home/wkozaczuk/projects/osv/build/downloaded_packages/aarch64/gcc/install/lib64/libgcc_s-10-20200328.so.1
