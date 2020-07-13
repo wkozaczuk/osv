@@ -451,8 +451,8 @@ endif # x64
 
 ifeq ($(arch),aarch64)
 
-kernel_base := 0x40080000
-kernel_vm_base := 0x40080000
+kernel_base := 0x80080000
+kernel_vm_base := 0x80080000
 app_local_exec_tls_size := 0x0
 
 include $(libfdt_base)/Makefile.libfdt
@@ -822,6 +822,7 @@ drivers += drivers/pl011.o
 drivers += drivers/xenconsole.o
 drivers += drivers/virtio.o
 drivers += drivers/virtio-pci-device.o
+drivers += drivers/virtio-mmio.o
 drivers += drivers/virtio-vring.o
 drivers += drivers/virtio-rng.o
 drivers += drivers/virtio-blk.o

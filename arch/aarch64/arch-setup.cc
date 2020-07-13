@@ -115,8 +115,12 @@ void arch_setup_free_memory()
     arch_setup_pci();
 
     // get rid of the command line, before memory is unmapped
+    debug_early(cmdline);
+    debug_early("\n____\n");
     console::mmio_isa_serial_console::clean_cmdline(cmdline);
     osv::parse_cmdline(cmdline);
+
+    dtb_collect_parsed_mmio_virtio_devices();
 
     mmu::switch_to_runtime_page_tables();
 
@@ -147,6 +151,7 @@ void arch_init_premain()
 #include "drivers/virtio-rng.hh"
 #include "drivers/virtio-blk.hh"
 #include "drivers/virtio-net.hh"
+#include "drivers/virtio-mmio.hh"
 
 void arch_init_drivers()
 {
@@ -171,6 +176,9 @@ void arch_init_drivers()
 	    pci::pci_device_enumeration();
 	    boot_time.event("pci enumerated");
     }
+
+    // Register any parsed virtio-mmio devices
+    virtio::register_mmio_devices(device_manager::instance());
 
     // Initialize all drivers
     hw::driver_manager* drvman = hw::driver_manager::instance();
