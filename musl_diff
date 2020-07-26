@@ -1,0 +1,318 @@
+diff --git a/include/crypt.h b/include/crypt.h
+index 07de2169..d5573541 100644
+--- a/include/crypt.h
++++ b/include/crypt.h
+@@ -13,6 +13,16 @@ struct crypt_data {
+ char *crypt(const char *, const char *);
+ char *crypt_r(const char *, const char *, struct crypt_data *);
+ 
++#define hidden __attribute__((__visibility__("hidden")))
++hidden char *__crypt_r(const char *, const char *, struct crypt_data *);
++hidden char *__crypt_des(const char *, const char *, char *);
++hidden char *__crypt_md5(const char *, const char *, char *);
++hidden char *__crypt_blowfish(const char *, const char *, char *);
++hidden char *__crypt_sha256(const char *, const char *, char *);
++hidden char *__crypt_sha512(const char *, const char *, char *);
++#define weak_alias(old, new) \
++       extern __typeof(old) new __attribute__((__weak__, __alias__(#old)))
++
+ #ifdef __cplusplus
+ }
+ #endif
+diff --git a/include/poll.h b/include/poll.h
+index daccc760..e59db48b 100644
+--- a/include/poll.h
++++ b/include/poll.h
+@@ -7,7 +7,8 @@ extern "C" {
+ 
+ #include <features.h>
+ 
+-#include <bits/poll.h>
++//#include <bits/poll.h>
++#include <sys/poll.h>
+ 
+ #define POLLIN     0x001
+ #define POLLPRI    0x002
+diff --git a/src/env/clearenv.c b/src/env/clearenv.c
+index db8e8e94..f732b5f3 100644
+--- a/src/env/clearenv.c
++++ b/src/env/clearenv.c
+@@ -1,3 +1,4 @@
++#undef _GNU_SOURCE
+ #define _GNU_SOURCE
+ #include <stdlib.h>
+ #include <unistd.h>
+diff --git a/src/locale/catopen.c b/src/locale/catopen.c
+index 97f2446d..4423c4d9 100644
+--- a/src/locale/catopen.c
++++ b/src/locale/catopen.c
+@@ -1,79 +1,6 @@
+-#define _BSD_SOURCE
+ #include <nl_types.h>
+-#include <string.h>
+-#include <stdint.h>
+-#include <endian.h>
+-#include <errno.h>
+-#include <langinfo.h>
+-#include <locale.h>
+-#include <sys/mman.h>
+-#include "libc.h"
+ 
+-#define V(p) be32toh(*(uint32_t *)(p))
+-
+-static nl_catd do_catopen(const char *name)
+-{
+-	size_t size;
+-	const unsigned char *map = __map_file(name, &size);
+-	/* Size recorded in the file must match file size; otherwise
+-	 * the information needed to unmap the file will be lost. */
+-	if (!map || V(map) != 0xff88ff89 || 20+V(map+8) != size) {
+-		if(map) munmap((void *)map, size);
+-		errno = ENOENT;
+-		return (nl_catd)-1;
+-	}
+-	return (nl_catd)map;
+-}
+-
+-nl_catd catopen(const char *name, int oflag)
++nl_catd catopen (const char *name, int oflag)
+ {
+-	nl_catd catd;
+-
+-	if (strchr(name, '/')) return do_catopen(name);
+-
+-	char buf[PATH_MAX];
+-	size_t i;
+-	const char *path, *lang, *p, *z;
+-	if (libc.secure || !(path = getenv("NLSPATH"))) {
+-		errno = ENOENT;
+-		return (nl_catd)-1;
+-	}
+-	lang = oflag ? nl_langinfo(_NL_LOCALE_NAME(LC_MESSAGES)) : getenv("LANG");
+-	if (!lang) lang = "";
+-	for (p=path; *p; p=z) {
+-		i = 0;
+-		z = __strchrnul(p, ':');
+-		for (; p<z; p++) {
+-			const char *v;
+-			size_t l;
+-			if (*p!='%') v=p, l=1;
+-			else switch (*++p) {
+-			case 'N': v=name; l=strlen(v); break;
+-			case 'L': v=lang; l=strlen(v); break;
+-			case 'l': v=lang; l=strcspn(v,"_.@"); break;
+-			case 't':
+-				v=__strchrnul(lang,'_');
+-				if (*v) v++;
+-				l=strcspn(v,".@");
+-				break;
+-			case 'c': v="UTF-8"; l=5; break;
+-			case '%': v="%"; l=1; break;
+-			default: v=0;
+-			}
+-			if (!v || l >= sizeof buf - i) {
+-				break;
+-			}
+-			memcpy(buf+i, v, l);
+-			i += l;
+-		}
+-		if (!*z && (p<z || !i)) break;
+-		if (p<z) continue;
+-		if (*z) z++;
+-		buf[i] = 0;
+-		/* Leading : or :: in NLSPATH is same as %N */
+-		catd = do_catopen(i ? buf : name);
+-		if (catd != (nl_catd)-1) return catd;
+-	}
+-	errno = ENOENT;
+ 	return (nl_catd)-1;
+ }
+diff --git a/src/network/freeaddrinfo.c b/src/network/freeaddrinfo.c
+index 62241c23..687d5f3a 100644
+--- a/src/network/freeaddrinfo.c
++++ b/src/network/freeaddrinfo.c
+@@ -6,6 +6,8 @@
+ 
+ void freeaddrinfo(struct addrinfo *p)
+ {
++        free(p);
++/*
+ 	size_t cnt;
+ 	for (cnt=1; p->ai_next; cnt++, p=p->ai_next);
+ 	struct aibuf *b = (void *)((char *)p - offsetof(struct aibuf, ai));
+@@ -13,4 +15,5 @@ void freeaddrinfo(struct addrinfo *p)
+ 	LOCK(b->lock);
+ 	if (!(b->ref -= cnt)) free(b);
+ 	else UNLOCK(b->lock);
++*/
+ }
+diff --git a/src/network/lookup_ipliteral.c b/src/network/lookup_ipliteral.c
+index 2fddab73..e37d34bd 100644
+--- a/src/network/lookup_ipliteral.c
++++ b/src/network/lookup_ipliteral.c
+@@ -9,6 +9,7 @@
+ #include <ctype.h>
+ #include "lookup.h"
+ 
++int __inet_aton(const char *s0, struct in_addr *dest);
+ int __lookup_ipliteral(struct address buf[static 1], const char *name, int family)
+ {
+ 	struct in_addr a4;
+diff --git a/src/network/lookup_name.c b/src/network/lookup_name.c
+index c93263a9..5e2abca8 100644
+--- a/src/network/lookup_name.c
++++ b/src/network/lookup_name.c
+@@ -15,6 +15,11 @@
+ #include "stdio_impl.h"
+ #include "syscall.h"
+ 
++int __dn_expand(const unsigned char *base, const unsigned char *end, const unsigned char *src, char *dest, int space);
++int __res_mkquery(int op, const char *dname, int class, int type,
++	const unsigned char *data, int datalen,
++	const unsigned char *newrr, unsigned char *buf, int buflen);
++
+ static int is_valid_hostname(const char *host)
+ {
+ 	const unsigned char *s;
+diff --git a/src/network/res_msend.c b/src/network/res_msend.c
+index 3e018009..bbc00ff0 100644
+--- a/src/network/res_msend.c
++++ b/src/network/res_msend.c
+@@ -14,10 +14,11 @@
+ #include "syscall.h"
+ #include "lookup.h"
+ 
++/*
+ static void cleanup(void *p)
+ {
+ 	__syscall(SYS_close, (intptr_t)p);
+-}
++}*/
+ 
+ static unsigned long mtime()
+ {
+@@ -32,7 +33,7 @@ int __res_msend_rc(int nqueries, const unsigned char *const *queries,
+ 	const struct resolvconf *conf)
+ {
+ 	int fd;
+-	int timeout, attempts, retry_interval, servfail_retry;
++	int timeout, attempts, retry_interval, servfail_retry = 0;
+ 	union {
+ 		struct sockaddr_in sin;
+ 		struct sockaddr_in6 sin6;
+@@ -86,7 +87,7 @@ int __res_msend_rc(int nqueries, const unsigned char *const *queries,
+ 	 * yield either no reply (indicated by zero length) or an answer
+ 	 * packet which is up to the caller to interpret. */
+ 
+-	pthread_cleanup_push(cleanup, (void *)(intptr_t)fd);
++	//pthread_cleanup_push(cleanup, (void *)(intptr_t)fd);
+ 	pthread_setcancelstate(cs, 0);
+ 
+ 	/* Convert any IPv4 addresses in a mixed environment to v4-mapped */
+@@ -174,7 +175,7 @@ int __res_msend_rc(int nqueries, const unsigned char *const *queries,
+ 		}
+ 	}
+ out:
+-	pthread_cleanup_pop(1);
++	//pthread_cleanup_pop(1);
+ 
+ 	return 0;
+ }
+diff --git a/src/network/resolvconf.c b/src/network/resolvconf.c
+index ceabf080..686d547d 100644
+--- a/src/network/resolvconf.c
++++ b/src/network/resolvconf.c
+@@ -6,6 +6,7 @@
+ #include <stdlib.h>
+ #include <netinet/in.h>
+ 
++#define	AF_UNSPEC	0
+ int __get_resolv_conf(struct resolvconf *conf, char *search, size_t search_sz)
+ {
+ 	char line[256];
+diff --git a/src/regex/fnmatch.c b/src/regex/fnmatch.c
+index 978fff88..5502f063 100644
+--- a/src/regex/fnmatch.c
++++ b/src/regex/fnmatch.c
+@@ -25,6 +25,7 @@
+ #define BRACKET -3
+ #define QUESTION -4
+ #define STAR -5
++#define	FNM_CASEFOLD	0x10
+ 
+ static int str_next(const char *str, size_t n, size_t *step)
+ {
+diff --git a/src/stdio/getchar.c b/src/stdio/getchar.c
+index df395ca9..c1012658 100644
+--- a/src/stdio/getchar.c
++++ b/src/stdio/getchar.c
+@@ -1,7 +1,6 @@
+ #include <stdio.h>
+-#include "getc.h"
+ 
+ int getchar(void)
+ {
+-	return do_getc(stdin);
++	return fgetc(stdin);
+ }
+diff --git a/src/stdio/putchar.c b/src/stdio/putchar.c
+index f044f169..945636d5 100644
+--- a/src/stdio/putchar.c
++++ b/src/stdio/putchar.c
+@@ -1,7 +1,6 @@
+ #include <stdio.h>
+-#include "putc.h"
+ 
+ int putchar(int c)
+ {
+-	return do_putc(c, stdout);
++	return fputc(c, stdout);
+ }
+diff --git a/src/stdio/tempnam.c b/src/stdio/tempnam.c
+index 84f91978..6ffe1427 100644
+--- a/src/stdio/tempnam.c
++++ b/src/stdio/tempnam.c
+@@ -14,7 +14,6 @@ char *tempnam(const char *dir, const char *pfx)
+ 	char s[PATH_MAX];
+ 	size_t l, dl, pl;
+ 	int try;
+-	int r;
+ 
+ 	if (!dir) dir = P_tmpdir;
+ 	if (!pfx) pfx = "temp";
+@@ -36,13 +35,9 @@ char *tempnam(const char *dir, const char *pfx)
+ 
+ 	for (try=0; try<MAXTRIES; try++) {
+ 		__randname(s+l-6);
+-#ifdef SYS_lstat
+-		r = __syscall(SYS_lstat, s, &(struct stat){0});
+-#else
+-		r = __syscall(SYS_fstatat, AT_FDCWD, s,
+-			&(struct stat){0}, AT_SYMLINK_NOFOLLOW);
+-#endif
+-		if (r == -ENOENT) return strdup(s);
++		if(fstatat( AT_FDCWD, s,
++			&(struct stat){0}, AT_SYMLINK_NOFOLLOW) == -1 && errno == ENOENT)
++		    return strdup(s);
+ 	}
+ 	return 0;
+ }
+diff --git a/src/time/__map_file.c b/src/time/__map_file.c
+index 9d376222..2b179e52 100644
+--- a/src/time/__map_file.c
++++ b/src/time/__map_file.c
+@@ -5,6 +5,7 @@
+ 
+ const char unsigned *__map_file(const char *pathname, size_t *size)
+ {
++/*
+ 	struct stat st;
+ 	const unsigned char *map = MAP_FAILED;
+ 	int fd = sys_open(pathname, O_RDONLY|O_CLOEXEC|O_NONBLOCK);
+@@ -15,4 +16,6 @@ const char unsigned *__map_file(const char *pathname, size_t *size)
+ 	}
+ 	__syscall(SYS_close, fd);
+ 	return map == MAP_FAILED ? 0 : map;
++*/
++        return 0;
+ }

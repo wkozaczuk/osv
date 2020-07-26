@@ -18,6 +18,11 @@ extern "C" {
 
 #include <bits/alltypes.h>
 
+hidden void *__memrchr(const void *, int, size_t);
+hidden char *__stpcpy(char *, const char *);
+hidden char *__stpncpy(char *, const char *, size_t);
+char *__strchrnul(const char *, int);
+
 void *memcpy (void *__restrict, const void *__restrict, size_t);
 void *memmove (void *, const void *, size_t);
 void *memset (void *, int, size_t);

@@ -278,9 +278,15 @@ static struct __locale_struct c_locale = {
     c_tolower_array + 128, // __ctype_tolower
     c_toupper_array + 128, // __ctype_toupper
     { }, // __names
+    { }, // cat
 };
 
 locale_t __c_locale_ptr = &c_locale;
+locale_t the_locale = &c_locale;
+#define hidden __attribute__((__visibility__("hidden")))
+//const struct __locale_struct __c_locale = { 0 };
+//const locale_t __c_locale = &c_locale;
+//locale_t __c_dot_utf8_locale = &c_locale;
 
 void* __stack_chk_guard = reinterpret_cast<void*>(0x12345678abcdefull);
 extern "C" void __stack_chk_fail(void) {

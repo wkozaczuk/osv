@@ -174,6 +174,9 @@ int asprintf(char **, const char *, ...);
 int vasprintf(char **, const char *, va_list);
 #endif
 
+hidden FILE **__ofl_lock(void);
+hidden void __ofl_unlock(void);
+
 #ifdef _GNU_SOURCE
 char *fgets_unlocked(char *, int, FILE *);
 int fputs_unlocked(const char *, FILE *);

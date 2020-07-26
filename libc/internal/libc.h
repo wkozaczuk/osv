@@ -5,6 +5,9 @@
 #include <osv/mutex.h>
 #include "stdio.h"
 
+char *__strchrnul(const char *, int);
+hidden void __stdio_exit_needed(void);
+
 __BEGIN_DECLS
 
 /* as long as we use the glibc header we'll need this hack */

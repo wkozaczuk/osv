@@ -7,6 +7,25 @@
 #if LDBL_MANT_DIG == 53 && LDBL_MAX_EXP == 1024
 #elif LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384
 union ldshape {
+	long double f;
+	struct {
+		uint64_t m;
+		uint16_t se;
+	} i;
+};
+#elif LDBL_MANT_DIG == 113 && LDBL_MAX_EXP == 16384
+union ldshape {
+	long double f;
+	struct {
+#else
+#error Unsupported long double representation
+#endif
+
+
+/*
+#if LDBL_MANT_DIG == 53 && LDBL_MAX_EXP == 1024
+#elif LDBL_MANT_DIG == 64 && LDBL_MAX_EXP == 16384
+union ldshape {
 	long double value;
 	struct {
 		uint64_t m;
@@ -28,7 +47,7 @@ union ldshape {
 #else
 #error Unsupported long double representation
 #endif
-
+*/
 
 // FIXME: hacks to make freebsd+openbsd long double code happy
 

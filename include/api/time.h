@@ -125,6 +125,9 @@ extern int getdate_err;
 struct tm *getdate (const char *);
 #endif
 
+#define hidden __attribute__((__visibility__("hidden")))
+hidden int __clock_gettime(clockid_t, struct timespec *);
+hidden char *__asctime_r(const struct tm *, char *);
 
 #if defined(_GNU_SOURCE) || defined(_BSD_SOURCE)
 int stime(const time_t *);

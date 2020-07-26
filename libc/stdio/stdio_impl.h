@@ -21,6 +21,7 @@ __BEGIN_DECLS
 #define F_EOF 16
 #define F_ERR 32
 #define F_SVB 64
+#define F_APP 128
 
 /*
  * Note: this structure is layed out so that the fields which are accessed
@@ -61,6 +62,7 @@ struct __FILE_s {
 
 	bool no_locking;
 	mutex_t mutex;
+        void *locale;
 };
 
 size_t __stdio_read(FILE *, unsigned char *, size_t);

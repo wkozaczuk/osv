@@ -14,6 +14,11 @@ extern "C" {
 
 #include <bits/alltypes.h>
 
+extern char **__environ;
+hidden int __putenv(char *, size_t, char *);
+hidden char *__randname(char *);
+hidden int __mkostemps(char *, int, int);
+
 int atoi (const char *);
 long atol (const char *);
 long long atoll (const char *);

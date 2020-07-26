@@ -44,6 +44,9 @@ int mincore (void *, size_t, unsigned char *);
 int shm_open (const char *, int, mode_t);
 int shm_unlink (const char *);
 
+#define hidden __attribute__((__visibility__("hidden")))
+hidden const unsigned char *__map_file(const char *, size_t *);
+
 #if defined(_LARGEFILE64_SOURCE) || defined(_GNU_SOURCE)
 //#define mmap64 mmap
 #define off64_t off_t
