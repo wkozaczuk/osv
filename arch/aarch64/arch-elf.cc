@@ -14,6 +14,7 @@
 #define elf_debug(...)
 #endif
 
+extern "C" int flush_icache_range(u64 start, u64 end);
 extern "C" size_t __tlsdesc_static(size_t *);
 namespace elf {
 
@@ -40,6 +41,8 @@ bool arch_init_reloc_dyn(struct init_table *t, u32 type, u32 sym,
 bool object::arch_relocate_rela(u32 type, u32 sym, void *addr,
                                 Elf64_Sxword addend)
 {
+    //flush_icache_range((u64)addr, (u64)addr);
+    elf_debug("arch_relocate_rela for sym:%d\n", sym);
     switch (type) {
     case R_AARCH64_NONE:
     case R_AARCH64_NONE2:
@@ -90,12 +93,15 @@ bool object::arch_relocate_rela(u32 type, u32 sym, void *addr,
         return false;
     }
 
+
     return true;
 }
 
 bool object::arch_relocate_jump_slot(symbol_module& sym, void *addr, Elf64_Sxword addend)
 {
+    elf_debug("arch_relocate_rela for sym:%d at addr:%p\n", sym, addr);
     if (sym.symbol) {
+        //flush_icache_range((u64)addr, (u64)addr);
         *static_cast<void**>(addr) = sym.relocated_addr() + addend;
         return true;
     } else {
@@ -105,6 +111,7 @@ bool object::arch_relocate_jump_slot(symbol_module& sym, void *addr, Elf64_Sxwor
 
 void object::arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend)
 {
+    //flush_icache_range((u64)addr, (u64)addr);
     //TODO: Differentiate between DL_NEEDED (static TLS, initial-exec) and dynamic TLS (dlopen)
     //For now assume it is always static TLS case
     //

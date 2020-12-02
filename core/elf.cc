@@ -407,15 +407,19 @@ void file::load_segment(const Elf64_Phdr& phdr)
     unsigned perm = get_segment_mmap_permissions(phdr);
 
     auto flag = mmu::mmap_fixed | (mlocked() ? mmu::mmap_populate : 0);
+    //auto flag = mmu::mmap_fixed | mmu::mmap_populate;
     mmu::map_file(_base + vstart, filesz, flag, perm, _f, align_down(phdr.p_offset, mmu::page_size));
     if (phdr.p_filesz != phdr.p_memsz) {
         assert(perm & mmu::perm_write);
+        elf_debug("Zeroing PT_LOAD segment at: %018p of size: 0x%x\n", _base + vstart + filesz_unaligned, filesz - filesz_unaligned);
         memset(_base + vstart + filesz_unaligned, 0, filesz - filesz_unaligned);
         if (memsz != filesz) {
+            elf_debug("Extra chunk of %ld\n", memsz - filesz);
             mmu::map_anon(_base + vstart + filesz, memsz - filesz, flag, perm);
         }
     }
-    elf_debug("Loaded and mapped PT_LOAD segment at: %018p of size: 0x%x\n", _base + vstart, filesz);
+    elf_debug("Loaded and mapped PT_LOAD segment at: %018p of size: 0x%x, origin file_size: 0x%x, origin mem_size: 0x%x, mlocked():%d\n", 
+		    _base + vstart, filesz, phdr.p_filesz, phdr.p_memsz, mlocked());
 }
 
 bool object::mlocked()
@@ -547,6 +551,7 @@ void object::process_headers()
                   << "' to ./scripts/build or re-link the app with '-shared' instead of '-pie'.\n";
         }
     }
+    elf_debug("Processed headers\n");
 }
 
 void file::unload_segment(const Elf64_Phdr& phdr)
@@ -599,6 +604,7 @@ void object::fix_permissions()
         ulong memsz = align_up(phdr.p_vaddr + phdr.p_memsz, mmu::page_size) - vstart;
 
         mmu::mprotect(_base + vstart, memsz, mmu::perm_read);
+        debug_early("fix_permissions\n");
     }
 }
 
@@ -613,6 +619,7 @@ void object::make_text_writable(bool flag)
 
         unsigned perm = get_segment_mmap_permissions(phdr);
         mmu::mprotect(_base + vstart, memsz, flag ? perm | mmu::perm_write : perm);
+        elf_debug("make_text_writable: %d\n", flag);
     }
 }
 
@@ -737,7 +744,9 @@ symbol_module object::symbol_other(unsigned idx)
 
 void object::relocate_rela()
 {
+    elf_debug("relocate_rela ...\n");
     if(has_non_writable_text_relocations()) {
+        elf_debug("relocate_rela -> making text writable...\n");
         make_text_writable(true);
     }
 
@@ -763,6 +772,7 @@ extern "C" { void __elf_resolve_pltgot(void); }
 
 void object::relocate_pltgot()
 {
+    elf_debug("relocate_pltgot\n");
     auto pltgot = dynamic_ptr<void*>(DT_PLTGOT);
     void *original_plt = nullptr;
     if (pltgot[1]) {
@@ -781,10 +791,15 @@ void object::relocate_pltgot()
 
     auto rel = dynamic_ptr<Elf64_Rela>(DT_JMPREL);
     auto nrel = dynamic_val(DT_PLTRELSZ) / sizeof(*rel);
+    elf_debug("relocate_pltgot (2)\n");
     for (auto p = rel; p < rel + nrel; ++p) {
+        elf_debug("relocate_pltgot (3.00)\n");
         auto info = p->r_info;
+        elf_debug("relocate_pltgot (3.01)\n");
         u32 type = info & 0xffffffff;
+        elf_debug("relocate_pltgot (3.02)\n");
         void *addr = _base + p->r_offset;
+        debug_early_u64("relocate_pltgot (3) at ", (u64)addr);
         assert(type == ARCH_JUMP_SLOT || type == ARCH_TLSDESC);
         if (type == ARCH_JUMP_SLOT) {
             if (bind_now) {
@@ -800,11 +815,15 @@ void object::relocate_pltgot()
                 // Restore the link to the original plt.
                 // We know the JUMP_SLOT entries are in plt order, and that
                 // each plt entry is 16 bytes.
+                elf_debug("relocate_pltgot, original (4) at %p\n", addr);
                 *static_cast<void**>(addr) = original_plt + (p-rel)*16;
             } else {
                 // The JUMP_SLOT entry already points back to the PLT, just
                 // make sure it is relocated relative to the object base.
+                elf_debug("relocate_pltgot, non-original (4) at %p with _base:%p\n", addr, _base);
                 *static_cast<u64*>(addr) += reinterpret_cast<u64>(_base);
+                elf_debug("relocate_pltgot, non-original (4), AFTER at %p changed to :%p\n", addr, *static_cast<u64*>(addr));
+                debug_early_u64("relocate_pltgot, non-original (4), AFTER changed to ", *static_cast<u64*>(addr));
             }
         } else {
             u32 sym = info >> 32;
@@ -850,6 +869,7 @@ void* object::resolve_pltgot(unsigned index)
 
 void object::relocate()
 {
+    elf_debug("Relocating object\n");
     assert(!dynamic_exists(DT_REL));
     if (dynamic_exists(DT_RELA)) {
         relocate_rela();
@@ -1057,6 +1077,7 @@ static std::string dirname(std::string path)
 
 void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
 {
+    elf_debug("Loading DT_NEEDED objects ... \n");
     std::vector<std::string> rpath;
 
     std::string rpath_str;
@@ -1068,11 +1089,14 @@ void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
         rpath_str = dynamic_str(DT_RPATH);
     }
 
+    elf_debug("Loading DT_NEEDED objects (2)... \n");
     if (!rpath_str.empty()) {
         boost::replace_all(rpath_str, "$ORIGIN", dirname(_pathname));
         boost::split(rpath, rpath_str, boost::is_any_of(":"));
     }
+    elf_debug("Loading DT_NEEDED objects (3)... \n");
     auto needed = dynamic_str_array(DT_NEEDED);
+    elf_debug("Loading DT_NEEDED objects (4)... \n");
     for (auto lib : needed) {
         elf_debug("Loading DT_NEEDED object: %s \n", lib);
         auto obj = _prog.load_object(lib, rpath, loaded_objects);

@@ -10,19 +10,47 @@
 #include <osv/sched.hh>
 #include <osv/debug.h>
 #include <osv/irqlock.hh>
+#include <osv/align.hh>
 
 #include "arch-cpu.hh"
 #include "exceptions.hh"
+
+extern "C" int flush_icache_range(u64 start, u64 end);
+extern "C" void flush_cache_line(exception_frame *ef);
+
+void flush_cache_line(exception_frame *ef)
+{
+    sched::fpu_lock fpu;
+    SCOPE_LOCK(fpu);
+    
+    u64 addr = (u64)ef->elr;
+    debug_early_u64("flush_cache_line ", addr);
+    //
+    auto start = align_down(addr, mmu::page_size);
+    auto end = align_up(start + 1, mmu::page_size);
+
+    //u64 cache_line_addr = align_down(addr, (u64)64);
+    //debug_early_u64("flush_cache_line addr ", cache_line_addr);
+
+    //assert(sched::preemptable());
+    //assert(!(ef->spsr & processor::daif_i));
+
+    //DROP_LOCK(irq_lock) {
+        flush_icache_range(start, end);
+    //  asm volatile ("dc civac, %0; dsb ish;" :: "r"(cache_line_addr) : "memory");
+    //  asm volatile ("ic ivau, %0; dsb ish; isb;" :: "r"(cache_line_addr) : "memory");
+    //}
+}
 
 void page_fault(exception_frame *ef)
 {
     sched::fpu_lock fpu;
     SCOPE_LOCK(fpu);
-    debug_early_entry("page_fault");
+    //debug_early_entry("page_fault");
     u64 addr;
     asm volatile ("mrs %0, far_el1" : "=r"(addr));
     debug_early_u64("faulting address ", (u64)addr);
-    debug_early_u64("elr exception ra ", (u64)ef->elr);
+    //debug_early_u64("elr exception ra ", (u64)ef->elr);
 
     if (fixup_fault(ef)) {
         debug_early("fixed up with fixup_fault\n");
@@ -41,8 +69,15 @@ void page_fault(exception_frame *ef)
     assert(sched::preemptable());
     assert(!(ef->spsr & processor::daif_i));
 
+    auto start = align_down(addr, mmu::page_size);
+    auto end = align_up(start + 1, mmu::page_size);
+
     DROP_LOCK(irq_lock) {
         mmu::vm_fault(addr, ef);
+        debug_early_u64("trying to flush down ", (u64)start); //uintptr_t
+        debug_early_u64("trying to flush up   ", (u64)end);
+        //flush_icache_range(start, end);
+	__builtin___clear_cache((char*)start, (char*)end);
     }
 
     debug_early("leaving page_fault()\n");

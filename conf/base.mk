@@ -10,4 +10,4 @@ conf-logger_debug=0
 # build variant in the code.
 conf-DEBUG_BUILD=0
 
-conf-debug_elf=0
+conf-debug_elf=1

@@ -1,10 +1,10 @@
 include common.gmk
 
-ifeq ($(arch),aarch64)
-java-targets :=
-else
+#ifeq ($(arch),aarch64)
+#java-targets :=
+#else
 java-targets := obj/jni/monitor.so obj/jvm/jni_helpers.o obj/jvm/java_api.o obj/balloon/jvm_balloon.o
-endif
+#endif
 
 module: all
 

@@ -262,11 +262,11 @@ kernel_end=$(($loader_size+2097151 & ~2097151))
 # the case in our old build.mk).
 cd $OUT
 
-if [[ "$arch" == 'aarch64' ]]; then
-	libgcc_s_dir=$(readlink -f ../downloaded_packages/aarch64/gcc/install/lib64)
-else
+#if [[ "$arch" == 'aarch64' ]]; then
+#	libgcc_s_dir=$(readlink -f ../downloaded_packages/aarch64/gcc/install/lib64)
+#else
 	libgcc_s_dir=$(dirname $(readlink -f $(gcc -print-file-name=libgcc_s.so.1)))
-fi
+#fi
 
 if [ "$export" != "none" ]; then
 	export_dir=${vars[export_dir]-$SRC/build/export}
@@ -278,7 +278,7 @@ if [[ ${vars[create_disk]} == "true" ]]; then
 	bare="$SRC"/scripts/disk.bin
 	raw_disk=disk
 	qcow2_disk=disk
-	upload_kernel_mode="-k"
+#	upload_kernel_mode="-k"
 else
 	partition_offset=$kernel_end
 	bare=loader.img

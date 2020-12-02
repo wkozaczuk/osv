@@ -2,11 +2,11 @@ SRC = $(shell readlink -f ../..)
 
 include $(SRC)/modules/java-base/common.gmk
 
-ifeq ($(arch),aarch64)
-java-targets :=
-else
+#ifeq ($(arch),aarch64)
+#java-targets :=
+#else
 java-targets := obj/java_non_isolated.so
-endif
+#endif
 
 jar-targets := $(java-base-path)/runjava-non-isolated/target/runjava-non-isolated.jar
 

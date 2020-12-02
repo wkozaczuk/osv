@@ -9,9 +9,6 @@ fs_type := $(fs_type)
 # TODO: need to set up CXX, etc., for cross compilation, as in the main
 # Makefile...
 
-aarch64_gccbase = $(src)/build/downloaded_packages/aarch64/gcc/install
-aarch64_boostbase = $(src)/build/downloaded_packages/aarch64/boost/install
-
 # Ask make to not delete "intermediate" results, such as the .o in the chain
 # .cc -> .o -> .so. Otherwise, during the first build, make considers the .o
 # to be intermediate, and deletes it, but the newly-created ".d" files lists
@@ -25,68 +22,30 @@ makedir = $(call very-quiet, mkdir -p $(dir $@))
 
 autodepend = -MD -MT $@ -MP
 
+#include $(src)/conf/$(arch).mk
 INCLUDES = -I$(src)/arch/$(ARCH) -I$(src) -I$(src)/include \
 	-I$(src)/arch/common -isystem $(src)/include/glibc-compat
 
-ifeq ($(arch),aarch64)
-  CROSS_PREFIX = aarch64-linux-gnu-
-  CXX=$(CROSS_PREFIX)g++
-  CC=$(CROSS_PREFIX)gcc
-  LD=$(CROSS_PREFIX)ld
-  OBJCOPY=$(CROSS_PREFIX)objcopy
-  export STRIP=$(CROSS_PREFIX)strip
-
-  aarch64_libdir := $(dir $(shell find $(aarch64_gccbase)/ -name libstdc++.so))
-  aarch64_libdir2 := $(dir $(shell find $(aarch64_gccbase)/ -name libgcc_s.so.1))
-  LDFLAGS = -L$(aarch64_libdir)
-
-  aarch64-gcc-inc-base := $(dir $(shell find $(aarch64_gccbase)/ -name vector | grep -v -e debug/vector$$ -e profile/vector$$ -e experimental/vector$$))
-  aarch64-gcc-inc-base3 := $(dir $(shell dirname `find $(aarch64_gccbase)/ -name c++config.h | grep -v /32/`))
-  INCLUDES += -isystem $(aarch64-gcc-inc-base)
-  INCLUDES += -isystem $(aarch64-gcc-inc-base3)
-  INCLUDES += -isystem $(aarch64_boostbase)/usr/include
-else
-  INCLUDES += $(shell $(CXX) -E -xc++ - -v </dev/null 2>&1 | awk '/^End/ {exit} /^ .*c\+\+/ {print "-isystem" $$0}')
-endif
-
+INCLUDES += $(shell $(CXX) -E -xc++ - -v </dev/null 2>&1 | awk '/^End/ {exit} /^ .*c\+\+/ {print "-isystem" $$0}')
 INCLUDES += -isystem $(src)/include/api -isystem $(src)/include/api/$(ARCH)
-
-ifeq ($(arch),aarch64)
-  aarch64-gcc-inc-base2 := $(dir $(shell find $(aarch64_gccbase)/ -name unwind.h))
-  # must be after include/api, since it includes some libc-style headers:
-  INCLUDES += -isystem $(aarch64-gcc-inc-base2)
-endif
-
+INCLUDES += -isystem /usr/include
 INCLUDES += -isystem $(out)/gen/include
 
-ifeq ($(arch),aarch64)
-  post-includes-bsd = -isystem $(src)/bsd/sys
-  # For acessing machine/ in cpp xen drivers
-  post-includes-bsd += -isystem $(src)/bsd/
-  post-includes-bsd += -isystem $(src)/bsd/$(arch)
-  INCLUDES += $(post-includes-bsd)
-endif
+# ifeq ($(arch),aarch64)
+#   post-includes-bsd = -isystem $(src)/bsd/sys
+#   # For acessing machine/ in cpp xen drivers
+#   post-includes-bsd += -isystem $(src)/bsd/
+#   post-includes-bsd += -isystem $(src)/bsd/$(arch)
+#   INCLUDES += $(post-includes-bsd)
+# endif
 
 COMMON = $(autodepend) $(INCLUDES)
 
-ifeq ($(arch),aarch64)
-  COMMON += --sysroot $(aarch64_gccbase) -DAARCH64_PORT_STUB
-endif
-
 COMMON += -g -O2 -fPIC -DBOOST_TEST_DYN_LINK \
 	-U _FORTIFY_SOURCE -D_KERNEL -D__OSV__ -DCONF_debug_memory=0 \
-	-Wall -Wno-pointer-arith -Wformat=0 -Wno-format-security
+	-Wall -Wno-pointer-arith -Wformat=0 -Wno-format-security $(arch-cflags)
 
-ifeq ($(arch),aarch64)
-  COMMON += -nostdinc
-endif
-
-ifeq ($(arch),aarch64)
-LIBS = $(aarch64_libdir2)/libgcc_s.so.1
-else
 LIBS =
-endif
-
 CXXFLAGS = -std=gnu++11 $(COMMON)
 CFLAGS = -std=gnu99 $(COMMON)
 
@@ -180,7 +139,7 @@ tests := tst-pthread.so misc-ramdisk.so tst-vblk.so tst-bsd-evh.so \
 	tst-pthread-affinity-inherit.so tst-sem-timed-wait.so \
 	tst-ttyname.so tst-pthread-barrier.so tst-feexcept.so tst-math.so \
 	tst-sigaltstack.so tst-fread.so tst-tcp-cork.so tst-tcp-v6.so \
-	tst-calloc.so tst-crypt.so tst-non-fpic.so tst-small-malloc.so \
+	tst-calloc.so tst-crypt.so tst-small-malloc.so \
 	tst-getopt.so tst-getopt-pie.so tst-non-pie.so tst-semaphore.so \
 	tst-elf-init.so tst-realloc.so tst-setjmp.so \
 	libtls.so libtls_gold.so tst-tls.so tst-tls-gold.so tst-tls-pie.so
@@ -191,7 +150,7 @@ tests := tst-pthread.so misc-ramdisk.so tst-vblk.so tst-bsd-evh.so \
 # The tst-ifaddrs.so is an exception and it does not compile due to some
 # missing headers
 ifeq ($(arch),x64)
-tests += tst-syscall.so tst-ifaddrs.so tst-mmx-fpu.so
+tests += tst-syscall.so tst-ifaddrs.so tst-mmx-fpu.so tst-non-fpic.so
 endif
 
 tests += testrunner.so
@@ -239,11 +198,6 @@ $(out)/tests/tst-tls-gold.so: \
 		$(out)/tests/libtls_gold.so
 	$(makedir)
 	$(call quiet, cd $(out); $(CXX) $(CXXFLAGS) $(LDFLAGS) -D__SHARED_OBJECT__=1 -shared -o $@ $< tests/libtls_gold.so, CXX tests/tst-tls.cc)
-
-ifeq ($(arch),aarch64)
-  aarch64_boost_libdir := $(dir $(shell find $(aarch64_boostbase)/ -name libboost_system.so))
-  LDFLAGS += -L$(aarch64_boost_libdir)
-endif
 
 common-boost-tests := tst-vfs.so tst-libc-locking.so misc-fs-stress.so \
 	misc-bdev-write.so misc-bdev-wlatency.so misc-bdev-rw.so \
@@ -306,32 +260,24 @@ build_all_tests: $(all_tests:%=$(out)/%)
 usr.manifest: build_all_tests $(lastword $(MAKEFILE_LIST)) usr.manifest.skel FORCE
 	@echo "  generating modules/tests/usr.manifest"
 	@cat $@.skel > $@
-	@if [ "$(arch)" = "x64" ]; then \
-		ldd $(addprefix $(out)/tests/,$(boost-tests)) | grep libboost | sed 's/ *[^ ] *\(.*\) => \(.*\) .*/\/usr\/lib\/\1: \2/' | sort | uniq >> $@; \
-	else \
-		./add_aarch64_boost_libraries.sh $(OSV_BASE) >> $@; \
-	fi
+	ldd $(addprefix $(out)/tests/,$(boost-tests)) | grep libboost | sed 's/ *[^ ] *\(.*\) => \(.*\) .*/\/usr\/lib\/\1: \2/' | sort | uniq >> $@
 	@echo $(all_tests) | tr ' ' '\n' | grep -v "tests/rofs/tst-.*.so" | awk '{print "/" $$0 ": ./" $$0}' >> $@
 	@echo $(all_tests) | tr ' ' '\n' | grep "tests/rofs/tst-.*.so" | sed 's/\.so//' | awk 'BEGIN { FS = "/" } ; { print "/tests/" $$3 "-rofs.so: ./tests/" $$2 "/" $$3 ".so"}' >> $@
-	$(call very-quiet, ./create_static.sh $(out) usr.manifest $(fs_type))
+	./create_static.sh $(out) usr.manifest $(fs_type)
 .PHONY: FORCE
 FORCE:
 
 common.manifest: build_all_tests $(lastword $(MAKEFILE_LIST)) usr.manifest.skel FORCE
 	@echo "  generating modules/tests/common.manifest"
 	@cat usr.manifest.skel > $@
-	@if [ "$(arch)" = "x64" ]; then \
-		ldd $(addprefix $(out)/tests/,$(boost-tests)) | grep libboost | sed 's/ *[^ ] *\(.*\) => \(.*\) .*/\/usr\/lib\/\1: \2/' | sort | uniq >> $@; \
-	else \
-		./add_aarch64_boost_libraries.sh $(OSV_BASE) >> $@; \
-	fi
+	ldd $(addprefix $(out)/tests/,$(boost-tests)) | grep libboost | sed 's/ *[^ ] *\(.*\) => \(.*\) .*/\/usr\/lib\/\1: \2/' | sort | uniq >> $@ 
 	@echo $(common-tests) $(solaris-tests) | tr ' ' '\n' | awk '{print "/tests/" $$0 ": ./tests/" $$0}' >> $@
 
 fs.manifest: build_all_tests $(lastword $(MAKEFILE_LIST)) FORCE
 	@echo "  generating modules/tests/fs.manifest"
 	@echo $(specific-fs-tests) $($(fs_type)-only-boost-tests) | tr ' ' '\n' | grep -v "rofs/tst-.*.so" | awk '{print "/tests/" $$0 ": ./tests/" $$0}' > $@
 	@echo $(specific-fs-tests) $($(fs_type)-only-boost-tests) | tr ' ' '\n' | grep "rofs/tst-.*.so" | sed 's/\.so//' | awk 'BEGIN { FS = "/" } ; { print "/tests/" $$2 "-rofs.so: ./tests/" $$1 "/" $$2 ".so"}' >> $@
-	$(call very-quiet, ./create_static.sh $(out) fs.manifest $(fs_type))
+	./create_static.sh $(out) fs.manifest $(fs_type)
 
 clean:
 	-rm -f usr.manifest common.manifest fs.manifest

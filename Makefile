@@ -192,25 +192,6 @@ local-includes =
 INCLUDES = $(local-includes) -Iarch/$(arch) -I. -Iinclude  -Iarch/common
 INCLUDES += -isystem include/glibc-compat
 
-aarch64_gccbase = build/downloaded_packages/aarch64/gcc/install
-aarch64_boostbase = build/downloaded_packages/aarch64/boost/install
-
-ifeq ($(arch),aarch64)
-ifeq (,$(wildcard $(aarch64_gccbase)))
-    $(error Missing $(aarch64_gccbase) directory. Please run "./scripts/download_fedora_aarch64_packages.py")
-endif
-ifeq (,$(wildcard $(aarch64_boostbase)))
-    $(error Missing $(aarch64_boostbase) directory. Please run "./scripts/download_fedora_aarch64_packages.py")
-endif
-endif
-
-ifeq ($(arch),aarch64)
-  gcc-inc-base := $(dir $(shell find $(aarch64_gccbase)/ -name vector | grep -v -e debug/vector$$ -e profile/vector$$ -e experimental/vector$$))
-  gcc-inc-base3 := $(dir $(shell dirname `find $(aarch64_gccbase)/ -name c++config.h | grep -v /32/`))
-  INCLUDES += -isystem $(gcc-inc-base)
-  INCLUDES += -isystem $(gcc-inc-base3)
-endif
-
 ifeq ($(arch),x64)
 INCLUDES += -isystem external/$(arch)/acpica/source/include
 endif
@@ -221,24 +202,23 @@ INCLUDES += -isystem $(libfdt_base)
 endif
 
 INCLUDES += $(boost-includes)
-ifeq ($(arch),x64)
 # Starting in Gcc 6, the standard C++ header files (which we do not change)
 # must precede in the include path the C header files (which we replace).
 # This is explained in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=70722.
 # So we are forced to list here (before include/api) the system's default
 # C++ include directories, though they are already in the default search path.
 INCLUDES += $(shell $(CXX) -E -xc++ - -v </dev/null 2>&1 | awk '/^End/ {exit} /^ .*c\+\+/ {print "-isystem" $$0}')
-endif
 INCLUDES += $(pre-include-api)
 INCLUDES += -isystem include/api
 INCLUDES += -isystem include/api/$(arch)
-ifeq ($(arch),aarch64)
-  gcc-inc-base2 := $(dir $(shell find $(aarch64_gccbase)/ -name unwind.h))
-  # must be after include/api, since it includes some libc-style headers:
-  INCLUDES += -isystem $(gcc-inc-base2)
-endif
 INCLUDES += -isystem $(out)/gen/include
 INCLUDES += $(post-includes-bsd)
+# must be after include/api, since it includes some libc-style headers:
+#INCLUDES += -isystem /usr/include -isystem /usr/include/$(arch)-linux-gnu -isystem /usr/lib/gcc/aarch64-linux-gnu/9/include
+INCLUDES += -isystem /usr/lib/gcc/aarch64-linux-gnu/9/include \
+-isystem /usr/local/include \
+-isystem /usr/include/aarch64-linux-gnu \
+-isystem /usr/include
 
 post-includes-bsd += -isystem bsd/sys
 # For acessing machine/ in cpp xen drivers
@@ -266,8 +246,6 @@ $(out)/musl/%.o: source-dialects =
 
 kernel-defines = -D_KERNEL $(source-dialects)
 
-gcc-sysroot = $(if $(CROSS_PREFIX), --sysroot $(aarch64_gccbase)) \
-
 # This play the same role as "_KERNEL", but _KERNEL unfortunately is too
 # overloaded. A lot of files will expect it to be set no matter what, specially
 # in headers. "userspace" inclusion of such headers is valid, and lacking
@@ -289,11 +267,13 @@ COMMON = $(autodepend) -g -Wall -Wno-pointer-arith $(CFLAGS_WERROR) -Wformat=0 -
 	$(kernel-defines) \
 	-fno-omit-frame-pointer $(compiler-specific) \
 	-include compiler/include/intrinsics.hh \
-	$(arch-cflags) $(conf-opt) $(acpi-defines) $(tracing-flags) $(gcc-sysroot) \
+	$(arch-cflags) $(conf-opt) $(acpi-defines) $(tracing-flags) \
 	$(configuration) -D__OSV__ -D__XEN_INTERFACE_VERSION__="0x00030207" -DARCH_STRING=$(ARCH_STR) $(EXTRA_FLAGS)
 ifeq ($(arch),aarch64)
   COMMON += -nostdinc
 endif
+
+hide-symbols-flags = -fvisibility=hidden -fvisibility-inlines-hidden
 
 tracing-flags-0 =
 tracing-flags-1 = -finstrument-functions -finstrument-functions-exclude-file-list=c++,trace.cc,trace.hh,align.hh,mmintrin.h
@@ -772,14 +752,20 @@ libtsm += drivers/libtsm/tsm_vte_charsets.o
 drivers := $(bsd) $(solaris)
 drivers += core/mmu.o
 drivers += arch/$(arch)/early-console.o
+$(out)/arch/$(arch)/early-console.o: CXXFLAGS += $(hide-symbols-flags)
 drivers += drivers/console.o
+$(out)/drivers/console.o: CXXFLAGS += $(hide-symbols-flags)
 drivers += drivers/console-multiplexer.o
+$(out)/drivers/console-multiplexer.o: CXXFLAGS += $(hide-symbols-flags)
 drivers += drivers/console-driver.o
+$(out)/drivers/console-driver.o: CXXFLAGS += $(hide-symbols-flags)
 drivers += drivers/line-discipline.o
+$(out)/drivers/line-discipline.o: CXXFLAGS += $(hide-symbols-flags)
 drivers += drivers/clock.o
 drivers += drivers/clock-common.o
 drivers += drivers/clockevent.o
 drivers += drivers/isa-serial-base.o
+$(out)/drivers/isa-serial-base.o: CXXFLAGS += $(hide-symbols-flags)
 drivers += core/elf.o
 drivers += drivers/random.o
 drivers += drivers/zfs.o
@@ -821,8 +807,11 @@ endif # x64
 
 ifeq ($(arch),aarch64)
 drivers += drivers/mmio-isa-serial.o
+$(out)/drivers/mmio-isa-serial.o: CXXFLAGS += $(hide-symbols-flags)
 drivers += drivers/pl011.o
+$(out)/drivers/pl011.o: CXXFLAGS += $(hide-symbols-flags)
 drivers += drivers/xenconsole.o
+$(out)/drivers/xenconsole.o: CXXFLAGS += $(hide-symbols-flags)
 drivers += drivers/virtio.o
 drivers += drivers/virtio-pci-device.o
 drivers += drivers/virtio-mmio.o
@@ -867,6 +856,8 @@ objects += arch/$(arch)/memset.o
 objects += arch/$(arch)/memcpy.o
 objects += arch/$(arch)/memmove.o
 objects += arch/$(arch)/tlsdesc.o
+objects += arch/$(arch)/cache.o
+$(out)/arch/$(arch)/xen.o: CXXFLAGS += $(hide-symbols-flags)
 objects += $(libfdt)
 endif
 
@@ -1798,56 +1789,41 @@ objects += $(addprefix fs/, $(fs_objs))
 objects += $(addprefix libc/, $(libc))
 objects += $(addprefix musl/src/, $(musl))
 
-ifeq ($(arch),x64)
-    libstdc++.a := $(shell $(CXX) -print-file-name=libstdc++.a)
-    ifeq ($(filter /%,$(libstdc++.a)),)
-        $(error Error: libstdc++.a needs to be installed.)
-    endif
-
-    libsupc++.a := $(shell $(CXX) -print-file-name=libsupc++.a)
-    ifeq ($(filter /%,$(libsupc++.a)),)
-        $(error Error: libsupc++.a needs to be installed.)
-    endif
-else
-    libstdc++.a := $(shell find $(aarch64_gccbase)/ -name libstdc++.a)
-    libsupc++.a := $(shell find $(aarch64_gccbase)/ -name libsupc++.a)
+libstdc++.a := $(shell $(CXX) -print-file-name=libstdc++.a)
+ifeq ($(filter /%,$(libstdc++.a)),)
+    $(error Error: libstdc++.a needs to be installed.)
 endif
 
-ifeq ($(arch),x64)
-    libgcc.a := $(shell $(CC) -print-libgcc-file-name)
-    ifeq ($(filter /%,$(libgcc.a)),)
-        $(error Error: libgcc.a needs to be installed.)
-    endif
-
-    libgcc_eh.a := $(shell $(CC) -print-file-name=libgcc_eh.a)
-    ifeq ($(filter /%,$(libgcc_eh.a)),)
-        $(error Error: libgcc_eh.a needs to be installed.)
-    endif
-else
-    libgcc.a := $(shell find $(aarch64_gccbase)/ -name libgcc.a |  grep -v /32/)
-    libgcc_eh.a := $(shell find $(aarch64_gccbase)/ -name libgcc_eh.a |  grep -v /32/)
+libsupc++.a := $(shell $(CXX) -print-file-name=libsupc++.a)
+ifeq ($(filter /%,$(libsupc++.a)),)
+    $(error Error: libsupc++.a needs to be installed.)
 endif
 
-ifeq ($(arch),x64)
-    # link with -mt if present, else the base version (and hope it is multithreaded)
-    boost-mt := -mt
+libgcc.a := $(shell $(CC) -print-libgcc-file-name)
+ifeq ($(filter /%,$(libgcc.a)),)
+    $(error Error: libgcc.a needs to be installed.)
+endif
+
+libgcc_eh.a := $(shell $(CC) -print-file-name=libgcc_eh.a)
+ifeq ($(filter /%,$(libgcc_eh.a)),)
+    $(error Error: libgcc_eh.a needs to be installed.)
+endif
+
+
+# link with -mt if present, else the base version (and hope it is multithreaded)
+boost-mt := -mt
+boost-lib-dir := $(dir $(shell $(CC) --print-file-name libboost_system$(boost-mt).a))
+ifeq ($(filter /%,$(boost-lib-dir)),)
+    boost-mt :=
     boost-lib-dir := $(dir $(shell $(CC) --print-file-name libboost_system$(boost-mt).a))
     ifeq ($(filter /%,$(boost-lib-dir)),)
-        boost-mt :=
-        boost-lib-dir := $(dir $(shell $(CC) --print-file-name libboost_system$(boost-mt).a))
-        ifeq ($(filter /%,$(boost-lib-dir)),)
-            $(error Error: libboost_system.a needs to be installed.)
-        endif
+        $(error Error: libboost_system.a needs to be installed.)
     endif
-    # When boost_env=host, we won't use "-nostdinc", so the build machine's
-    # header files will be used normally. So we don't need to add anything
-    # special for Boost.
-    boost-includes =
-else
-    boost-lib-dir := $(firstword $(dir $(shell find $(aarch64_boostbase)/ -name libboost_system*.a)))
-    boost-mt := $(if $(filter %-mt.a, $(wildcard $(boost-lib-dir)/*.a)),-mt)
-    boost-includes = -isystem $(aarch64_boostbase)/usr/include
 endif
+# When boost_env=host, we won't use "-nostdinc", so the build machine's
+# header files will be used normally. So we don't need to add anything
+# special for Boost.
+boost-includes =
 
 boost-libs := $(boost-lib-dir)/libboost_system$(boost-mt).a
 
@@ -1928,11 +1904,7 @@ $(bootfs_manifest_dep): phony
 		echo -n $(bootfs_manifest) > $(bootfs_manifest_dep) ; \
 	fi
 
-ifeq ($(arch),x64)
 libgcc_s_dir := $(dir $(shell $(CC) -print-file-name=libgcc_s.so.1))
-else
-libgcc_s_dir := ../../$(aarch64_gccbase)/lib64
-endif
 
 $(out)/bootfs.bin: scripts/mkbootfs.py $(bootfs_manifest) $(bootfs_manifest_dep) $(tools:%=$(out)/%) \
 		$(out)/zpool.so $(out)/zfs.so $(out)/libenviron.so $(out)/libvdso.so

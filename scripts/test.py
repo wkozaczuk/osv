@@ -52,6 +52,7 @@ aarch64_disabled_list= [
     "tst-eventfd.so",              # Seems to hang after 'running simple threaded test'
     "tst-except.so",               # Crashes with 'failed looking up symbol _Unwind_Resume'
     "tst-fpu.so",                  # Seems to hang, possibly floating point related
+    "tst-feexcept",                # Not yet
     "tst-hub.so",                  # Seems to hang after 'Starting stress test'
     "tst-libc-locking.so",         # Hangs
     "tst-mmap-file.so",            # Some assertions fail - 'SUMMARY: 30 tests, 4 failures'
@@ -74,6 +75,8 @@ aarch64_disabled_list= [
     #tst-tcp-nbwrite.so,           # Sometimes hangs
     #tst-concurrent-init.so,       # Sometimes hangs
     #tst-bsd-kthread.so,           # Once failed with page fault
+    "tst-rcu-hashtable.so",
+    "tst-namespace.so",
 ]
 
 add_tests([
@@ -214,7 +217,7 @@ if __name__ == "__main__":
         disabled_list.extend(qemu_disabled_list)
     if cmdargs.arch == 'aarch64':
         disabled_list.extend(aarch64_disabled_list)
-    if running_with_kvm_on(cmdargs.arch, cmdargs.hypervisor):
-        disabled_list.remove("tst-feexcept.so")
+    #if running_with_kvm_on(cmdargs.arch, cmdargs.hypervisor):
+    #    disabled_list.remove("tst-feexcept.so")
     disabled_list.extend(cmdargs.disabled_list)
     main()

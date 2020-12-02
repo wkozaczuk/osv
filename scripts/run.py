@@ -73,8 +73,8 @@ def set_imgargs(options):
     if options.hypervisor == 'qemu_microvm':
         execute = '--nopci ' + execute
 
-    if options.arch == 'aarch64':
-        execute = '--disable_rofs_cache ' + execute
+    #if options.arch == 'aarch64':
+    #    execute = '--disable_rofs_cache ' + execute
 
     options.osv_cmdline = execute
     if options.kernel or options.hypervisor == 'qemu_microvm' or options.arch == 'aarch64':
@@ -279,9 +279,15 @@ def start_osv_qemu(options):
         if options.dry_run:
             print(format_args(cmdline))
         else:
-            ret = subprocess.call(cmdline, env=qemu_env)
-            if ret != 0:
-                sys.exit("qemu failed.")
+            count = 0
+            while True:
+                print("### R U N N I N G   %d time" % count)
+                ret = subprocess.call(cmdline, env=qemu_env)
+                count = count + 1
+                if ret != 0:
+                    sys.exit("qemu failed.")
+                if not cmdargs.repeat:
+                    break
     except OSError as e:
         if e.errno == errno.ENOENT:
             print("'%s' binary not found. Please install the qemu-system-x86 package." % qemu_path)
@@ -579,6 +585,7 @@ if __name__ == "__main__":
                         help="virtio-fs device tag")
     parser.add_argument("--virtio-fs-dir", action="store",
                         help="path to the directory exposed via virtio-fs mount")
+    parser.add_argument("--repeat", action="store_true", help="repeat until test fails")
     cmdargs = parser.parse_args()
 
     cmdargs.opt_path = "debug" if cmdargs.debug else "release" if cmdargs.release else "last"

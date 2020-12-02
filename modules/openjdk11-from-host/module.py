@@ -4,7 +4,7 @@ import os, os.path
 import subprocess
 
 api.require('java-cmd')
-provides = ['java','java8']
+provides = ['java','java8','java11']
 
 #Verify that the jdk exists by trying to locate javac (java compiler)
 if subprocess.call(['which', 'javac']) != 0:
@@ -12,8 +12,8 @@ if subprocess.call(['which', 'javac']) != 0:
      os.exit(-1)
 
 java_version = subprocess.check_output(['java', '--version'], stderr=subprocess.STDOUT).decode('utf-8')
-if not 'openjdk version "1.8.0' in java_version:
-    print('Could not find openjdk version 8 on the host. Please install openjdk8!')
+if not 'openjdk 11.0' in java_version:
+    print('Could not find openjdk version 11 on the host. Please install openjdk11!')
     os.exit(-1)
 
 javac_path = subprocess.check_output(['which', 'javac']).decode('utf-8').split('\n')[0]

@@ -1333,10 +1333,16 @@ void vm_fault(uintptr_t addr, exception_frame* ef)
     WITH_LOCK(vma_list_mutex.for_read()) {
         auto vma = find_intersecting_vma(addr);
         if (vma == vma_list.end() || access_fault(*vma, ef->get_error())) {
+	    auto error = ef->get_error();
+	    printf("vm_fault: end:%d, access:%d, error:%x, perm:%x, isnt_fault:%d, write_fault: %d\n", 
+			    vma == vma_list.end(), access_fault(*vma, error), error, vma->perm(), mmu::is_page_fault_insn(error), mmu::is_page_fault_write(error));
             vm_sigsegv(addr, ef);
             trace_mmu_vm_fault_sigsegv(addr, ef->get_error(), "slow");
             return;
         }
+	auto error = ef->get_error();
+	printf("vm_fault: error:%x, perm:%x, isnt_fault:%d, write_fault: %d\n", 
+	      error, vma->perm(), mmu::is_page_fault_insn(error), mmu::is_page_fault_write(error));
         vma->fault(addr, ef);
     }
     trace_mmu_vm_fault_ret(addr, ef->get_error());
@@ -1424,6 +1430,7 @@ bool vma::map_dirty()
 
 void vma::fault(uintptr_t addr, exception_frame *ef)
 {
+    debug_early_u64("vma::fault addr: ", (u64)addr);
     auto hp_start = align_up(_range.start(), huge_page_size);
     auto hp_end = align_down(_range.end(), huge_page_size);
     size_t size;
@@ -1691,6 +1698,7 @@ file_vma::file_vma(addr_range range, unsigned perm, unsigned flags, fileref file
 
 void file_vma::fault(uintptr_t addr, exception_frame *ef)
 {
+    debug_early_u64("file_vma::fault addr: ", (u64)addr);
     auto hp_start = align_up(_range.start(), huge_page_size);
     auto hp_end = align_down(_range.end(), huge_page_size);
     auto fsize = ::size(_file);

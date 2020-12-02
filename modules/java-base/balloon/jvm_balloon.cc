@@ -5,8 +5,10 @@
 #include <osv/align.hh>
 #include <exceptions.hh>
 
+#define AARCH64_PORT_STUB 1
+
 #ifndef AARCH64_PORT_STUB
-#include <memcpy_decode.hh>
+//#include <memcpy_decode.hh>
 #endif /* !AARCH64_PORT_STUB */
 
 #include <boost/intrusive/set.hpp>
