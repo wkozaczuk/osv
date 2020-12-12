@@ -791,15 +791,15 @@ void object::relocate_pltgot()
 
     auto rel = dynamic_ptr<Elf64_Rela>(DT_JMPREL);
     auto nrel = dynamic_val(DT_PLTRELSZ) / sizeof(*rel);
-    elf_debug("relocate_pltgot (2)\n");
+    //elf_debug("relocate_pltgot (2)\n");
     for (auto p = rel; p < rel + nrel; ++p) {
-        elf_debug("relocate_pltgot (3.00)\n");
+        //elf_debug("relocate_pltgot (3.00)\n");
         auto info = p->r_info;
-        elf_debug("relocate_pltgot (3.01)\n");
+        //elf_debug("relocate_pltgot (3.01)\n");
         u32 type = info & 0xffffffff;
-        elf_debug("relocate_pltgot (3.02)\n");
+        //elf_debug("relocate_pltgot (3.02)\n");
         void *addr = _base + p->r_offset;
-        debug_early_u64("relocate_pltgot (3) at ", (u64)addr);
+        //debug_early_u64("relocate_pltgot (3) at ", (u64)addr);
         assert(type == ARCH_JUMP_SLOT || type == ARCH_TLSDESC);
         if (type == ARCH_JUMP_SLOT) {
             if (bind_now) {
@@ -815,15 +815,15 @@ void object::relocate_pltgot()
                 // Restore the link to the original plt.
                 // We know the JUMP_SLOT entries are in plt order, and that
                 // each plt entry is 16 bytes.
-                elf_debug("relocate_pltgot, original (4) at %p\n", addr);
+         //       elf_debug("relocate_pltgot, original (4) at %p\n", addr);
                 *static_cast<void**>(addr) = original_plt + (p-rel)*16;
             } else {
                 // The JUMP_SLOT entry already points back to the PLT, just
                 // make sure it is relocated relative to the object base.
-                elf_debug("relocate_pltgot, non-original (4) at %p with _base:%p\n", addr, _base);
+          //      elf_debug("relocate_pltgot, non-original (4) at %p with _base:%p\n", addr, _base);
                 *static_cast<u64*>(addr) += reinterpret_cast<u64>(_base);
-                elf_debug("relocate_pltgot, non-original (4), AFTER at %p changed to :%p\n", addr, *static_cast<u64*>(addr));
-                debug_early_u64("relocate_pltgot, non-original (4), AFTER changed to ", *static_cast<u64*>(addr));
+           //     elf_debug("relocate_pltgot, non-original (4), AFTER at %p changed to :%p\n", addr, *static_cast<u64*>(addr));
+            //    debug_early_u64("relocate_pltgot, non-original (4), AFTER changed to ", *static_cast<u64*>(addr));
             }
         } else {
             u32 sym = info >> 32;
@@ -1089,14 +1089,14 @@ void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
         rpath_str = dynamic_str(DT_RPATH);
     }
 
-    elf_debug("Loading DT_NEEDED objects (2)... \n");
+    //elf_debug("Loading DT_NEEDED objects (2)... \n");
     if (!rpath_str.empty()) {
         boost::replace_all(rpath_str, "$ORIGIN", dirname(_pathname));
         boost::split(rpath, rpath_str, boost::is_any_of(":"));
     }
-    elf_debug("Loading DT_NEEDED objects (3)... \n");
+    //elf_debug("Loading DT_NEEDED objects (3)... \n");
     auto needed = dynamic_str_array(DT_NEEDED);
-    elf_debug("Loading DT_NEEDED objects (4)... \n");
+    //elf_debug("Loading DT_NEEDED objects (4)... \n");
     for (auto lib : needed) {
         elf_debug("Loading DT_NEEDED object: %s \n", lib);
         auto obj = _prog.load_object(lib, rpath, loaded_objects);

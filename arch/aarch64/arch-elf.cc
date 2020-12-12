@@ -42,7 +42,7 @@ bool object::arch_relocate_rela(u32 type, u32 sym, void *addr,
                                 Elf64_Sxword addend)
 {
     //flush_icache_range((u64)addr, (u64)addr);
-    elf_debug("arch_relocate_rela for sym:%d\n", sym);
+    //elf_debug("arch_relocate_rela for sym:%d\n", sym);
     switch (type) {
     case R_AARCH64_NONE:
     case R_AARCH64_NONE2:
@@ -99,7 +99,7 @@ bool object::arch_relocate_rela(u32 type, u32 sym, void *addr,
 
 bool object::arch_relocate_jump_slot(symbol_module& sym, void *addr, Elf64_Sxword addend)
 {
-    elf_debug("arch_relocate_rela for sym:%d at addr:%p\n", sym, addr);
+    //elf_debug("arch_relocate_rela for sym:%d at addr:%p\n", sym, addr);
     if (sym.symbol) {
         //flush_icache_range((u64)addr, (u64)addr);
         *static_cast<void**>(addr) = sym.relocated_addr() + addend;

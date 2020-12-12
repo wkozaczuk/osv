@@ -177,12 +177,15 @@ public:
         return _page;
     }
     int flush() {
+	debug_early("------------> clear_pte\n");
         return for_each_pte([] (mmu::hw_ptep<0> pte) { mmu::clear_pte(pte); return 1;});
     }
     int clear_accessed() {
+	debug_early("------------> clear_accessed\n");
         return for_each_pte([] (mmu::hw_ptep<0> pte) -> int { return mmu::clear_accessed(pte); });
     }
     int clear_dirty() {
+	debug_early("------------> clear_dirt\n");
         return for_each_pte([] (mmu::hw_ptep<0> pte) -> int { return mmu::clear_dirty(pte); });
     }
     const hashkey& key() {
@@ -517,10 +520,12 @@ bool get(vfs_file* fp, off_t offset, mmu::hw_ptep<0> ptep, mmu::pt_element<0> pt
                 // remove mapping to read cache page if exists
                 if (IS_ZFS(st.st_dev)) {
                     remove_arc_read_mapping(key, ptep);
+		    mmu::flush_tlb_all();
                 } else {
                     // ROFS (at least for now)
                     remove_read_mapping(key, ptep);
                 }
+	        debug_early("--> pagecache: write, handling COW - removing read page\n");
                 // cow (copy-on-write) of private page from read cache
                 return mmu::write_pte(newcp->release(), ptep, pte);
             }
@@ -528,6 +533,7 @@ bool get(vfs_file* fp, off_t offset, mmu::hw_ptep<0> ptep, mmu::pt_element<0> pt
             // cow (copy-on-write) of private page from write cache
             void* page = memory::alloc_page();
             memcpy(page, wcp->addr(), mmu::page_size);
+	    debug_early_u64("--> pagecache: write, handling COW (copying) with ", (u64)page);
             return mmu::write_pte(page, ptep, pte);
         }
     } else if (!wcp) {
@@ -539,7 +545,11 @@ bool get(vfs_file* fp, off_t offset, mmu::hw_ptep<0> ptep, mmu::pt_element<0> pt
                     cached_page_arc* cp = find_in_cache(arc_read_cache, key);
                     if (cp) {
                         add_arc_read_mapping(cp, ptep);
+	                debug_early("--> pagecache: read\n");
                         return mmu::write_pte(cp->addr(), ptep, mmu::pte_mark_cow(pte, true));
+                        /*auto p = mmu::write_pte(cp->addr(), ptep, mmu::pte_mark_cow(pte, true));
+                        mmu::flush_tlb_all();
+			return p;*/
                     }
                 }
             }
@@ -549,6 +559,7 @@ bool get(vfs_file* fp, off_t offset, mmu::hw_ptep<0> ptep, mmu::pt_element<0> pt
                     cached_page* cp = find_in_cache(read_cache, key);
                     if (cp) {
                         add_read_mapping(cp, ptep);
+	                debug_early("--> pagecache: read\n");
                         return mmu::write_pte(cp->addr(), ptep, mmu::pte_mark_cow(pte, true));
                     }
                 }
@@ -576,6 +587,7 @@ bool get(vfs_file* fp, off_t offset, mmu::hw_ptep<0> ptep, mmu::pt_element<0> pt
 
     wcp->map(ptep);
 
+    debug_early("--> mmu: handling COW (4)");
     return mmu::write_pte(wcp->addr(), ptep, mmu::pte_mark_cow(pte, !shared));
 }
 
@@ -704,14 +716,14 @@ private:
                     }
                     std::for_each(cached_page_arc::arc_cache_map.begin(current_bucket), cached_page_arc::arc_cache_map.end(current_bucket),
                             [&accessed, &scanned, &cleared](cached_page_arc::arc_map::value_type& p) {
-                        auto arcbuf = p.first;
+                        /*auto arcbuf = p.first;
                         auto cp = p.second;
                         if (cp->clear_accessed()) {
                             arc_hashkey arc_hashkey;
                             arc_buf_get_hashkey(arcbuf, arc_hashkey.key);
                             accessed.emplace(arc_hashkey);
                             cleared++;
-                        }
+                        }*/
                         scanned++;
                     });
                     current_bucket++;

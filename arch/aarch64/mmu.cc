@@ -49,7 +49,7 @@ void page_fault(exception_frame *ef)
     //debug_early_entry("page_fault");
     u64 addr;
     asm volatile ("mrs %0, far_el1" : "=r"(addr));
-    debug_early_u64("faulting address ", (u64)addr);
+    debug_early_u64("page_fault ENTER ", (u64)addr);
     //debug_early_u64("elr exception ra ", (u64)ef->elr);
 
     if (fixup_fault(ef)) {
@@ -74,23 +74,30 @@ void page_fault(exception_frame *ef)
 
     DROP_LOCK(irq_lock) {
         mmu::vm_fault(addr, ef);
-        debug_early_u64("trying to flush down ", (u64)start); //uintptr_t
-        debug_early_u64("trying to flush up   ", (u64)end);
-        //flush_icache_range(start, end);
+        //debug_early_u64("trying to flush down ", (u64)start); //uintptr_t
+        //debug_early_u64("trying to flush up   ", (u64)end);
+        //flush_icache_range(start, end); //HANGS
 	__builtin___clear_cache((char*)start, (char*)end);
+        /*
+	if (mmu::is_page_fault_insn(ef->get_error())) {
+            debug_early_u64("trying to flush down ", (u64)start); //uintptr_t
+	    __builtin___clear_cache((char*)start, (char*)end);
+	}*/
     }
 
-    debug_early("leaving page_fault()\n");
+    debug_early_u64("page_fault  EXIT ", (u64)addr);
 }
 
 namespace mmu {
 
 void flush_tlb_all() {
     asm volatile("dsb sy; tlbi vmalle1is; dsb sy; isb;");
+    debug_early("##### flush_tlb_all\n");
 }
 
 void flush_tlb_local() {
     asm volatile("dsb sy; tlbi vmalle1; dsb sy; isb;");
+    debug_early("##### flush_tlb_local\n");
 }
 
 static pt_element<4> page_table_root[2] __attribute__((init_priority((int)init_prio::pt_root)));

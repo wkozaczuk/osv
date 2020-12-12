@@ -1430,7 +1430,7 @@ bool vma::map_dirty()
 
 void vma::fault(uintptr_t addr, exception_frame *ef)
 {
-    debug_early_u64("vma::fault addr: ", (u64)addr);
+    //debug_early_u64("vma::fault addr: ", (u64)addr);
     auto hp_start = align_up(_range.start(), huge_page_size);
     auto hp_end = align_down(_range.end(), huge_page_size);
     size_t size;
@@ -1698,7 +1698,7 @@ file_vma::file_vma(addr_range range, unsigned perm, unsigned flags, fileref file
 
 void file_vma::fault(uintptr_t addr, exception_frame *ef)
 {
-    debug_early_u64("file_vma::fault addr: ", (u64)addr);
+    //debug_early_u64("file_vma::fault addr: ", (u64)addr);
     auto hp_start = align_up(_range.start(), huge_page_size);
     auto hp_end = align_down(_range.end(), huge_page_size);
     auto fsize = ::size(_file);
