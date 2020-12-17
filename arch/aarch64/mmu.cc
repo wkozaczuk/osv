@@ -74,7 +74,7 @@ void page_fault(exception_frame *ef)
 
     DROP_LOCK(irq_lock) {
         mmu::vm_fault(addr, ef);
-        //debug_early_u64("trying to flush down ", (u64)start); //uintptr_t
+        debug_early_u64("trying to flush down ", (u64)start); //uintptr_t
         //debug_early_u64("trying to flush up   ", (u64)end);
         //flush_icache_range(start, end); //HANGS
 	__builtin___clear_cache((char*)start, (char*)end);

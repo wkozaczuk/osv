@@ -380,7 +380,7 @@ long syscall(long number, ...)
     switch (number) {
 #ifdef SYS_open
     SYSCALL2(open, const char *, int);
-#endif    
+#endif
     SYSCALL3(read, int, char *, size_t);
     SYSCALL1(uname, struct utsname *);
     SYSCALL3(write, int, const void *, size_t);
@@ -406,9 +406,9 @@ long syscall(long number, ...)
     SYSCALL4(rt_sigprocmask, int, sigset_t *, sigset_t *, size_t);
     SYSCALL1(sys_exit, int);
     SYSCALL2(sigaltstack, const stack_t *, stack_t *);
-#ifdef SYS_select    
+#ifdef SYS_select
     SYSCALL5(select, int, fd_set *, fd_set *, fd_set *, struct timeval *);
-#endif    
+#endif
     SYSCALL3(madvise, void *, size_t, int);
     SYSCALL0(sched_yield);
     SYSCALL3(mincore, void *, size_t, unsigned char *);
@@ -422,7 +422,7 @@ long syscall(long number, ...)
     SYSCALL3(sys_ioctl, unsigned int, unsigned int, unsigned long);
 #ifdef SYS_stat
     SYSCALL2(stat, const char *, struct stat *);
-#endif    
+#endif
     SYSCALL2(fstat, int, struct stat *);
     SYSCALL3(getsockname, int, struct sockaddr *, socklen_t *);
     SYSCALL6(sendto, int, const void *, size_t, int, const struct sockaddr *, socklen_t);
