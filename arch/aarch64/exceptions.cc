@@ -12,6 +12,7 @@
 
 #include "exceptions.hh"
 #include "fault-fixup.hh"
+#include "dump.hh"
 
 __thread exception_frame* current_interrupt_frame;
 class interrupt_table idt __attribute__((init_priority((int)init_prio::idt)));
@@ -162,6 +163,14 @@ void interrupt(exception_frame* frame)
 
     current_interrupt_frame = nullptr;
     sched::preempt();
+}
+
+extern "C" { void handle_unexpected_sync_exception(exception_frame* frame); }
+
+void handle_unexpected_sync_exception(exception_frame* frame)
+{
+    debug_ll("unexpected synchronous exception, esr: 0x%016lx\n", frame->esr);
+    dump_registers(frame);
 }
 
 bool fixup_fault(exception_frame* ef)
