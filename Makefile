@@ -192,24 +192,24 @@ local-includes =
 INCLUDES = $(local-includes) -Iarch/$(arch) -I. -Iinclude  -Iarch/common
 INCLUDES += -isystem include/glibc-compat
 
-aarch64_gccbase = build/downloaded_packages/aarch64/gcc/install
+#aarch64_gccbase = build/downloaded_packages/aarch64/gcc/install
 aarch64_boostbase = build/downloaded_packages/aarch64/boost/install
 
 ifeq ($(arch),aarch64)
-ifeq (,$(wildcard $(aarch64_gccbase)))
-    $(error Missing $(aarch64_gccbase) directory. Please run "./scripts/download_fedora_aarch64_packages.py")
-endif
+#ifeq (,$(wildcard $(aarch64_gccbase)))
+#    $(error Missing $(aarch64_gccbase) directory. Please run "./scripts/download_fedora_aarch64_packages.py")
+#endif
 ifeq (,$(wildcard $(aarch64_boostbase)))
     $(error Missing $(aarch64_boostbase) directory. Please run "./scripts/download_fedora_aarch64_packages.py")
 endif
 endif
 
-ifeq ($(arch),aarch64)
-  gcc-inc-base := $(dir $(shell find $(aarch64_gccbase)/ -name vector | grep -v -e debug/vector$$ -e profile/vector$$ -e experimental/vector$$))
-  gcc-inc-base3 := $(dir $(shell dirname `find $(aarch64_gccbase)/ -name c++config.h | grep -v /32/`))
-  INCLUDES += -isystem $(gcc-inc-base)
-  INCLUDES += -isystem $(gcc-inc-base3)
-endif
+#ifeq ($(arch),aarch64)
+#  gcc-inc-base := $(dir $(shell find $(aarch64_gccbase)/ -name vector | grep -v -e debug/vector$$ -e profile/vector$$ -e experimental/vector$$))
+#  gcc-inc-base3 := $(dir $(shell dirname `find $(aarch64_gccbase)/ -name c++config.h | grep -v /32/`))
+#  INCLUDES += -isystem $(gcc-inc-base)
+#  INCLUDES += -isystem $(gcc-inc-base3)
+#endif
 
 ifeq ($(arch),x64)
 INCLUDES += -isystem external/$(arch)/acpica/source/include
@@ -221,22 +221,22 @@ INCLUDES += -isystem $(libfdt_base)
 endif
 
 INCLUDES += $(boost-includes)
-ifeq ($(arch),x64)
+#ifeq ($(arch),x64)
 # Starting in Gcc 6, the standard C++ header files (which we do not change)
 # must precede in the include path the C header files (which we replace).
 # This is explained in https://gcc.gnu.org/bugzilla/show_bug.cgi?id=70722.
 # So we are forced to list here (before include/api) the system's default
 # C++ include directories, though they are already in the default search path.
 INCLUDES += $(shell $(CXX) -E -xc++ - -v </dev/null 2>&1 | awk '/^End/ {exit} /^ .*c\+\+/ {print "-isystem" $$0}')
-endif
+#endif
 INCLUDES += $(pre-include-api)
 INCLUDES += -isystem include/api
 INCLUDES += -isystem include/api/$(arch)
-ifeq ($(arch),aarch64)
-  gcc-inc-base2 := $(dir $(shell find $(aarch64_gccbase)/ -name unwind.h))
-  # must be after include/api, since it includes some libc-style headers:
-  INCLUDES += -isystem $(gcc-inc-base2)
-endif
+#ifeq ($(arch),aarch64)
+#  gcc-inc-base2 := $(dir $(shell find $(aarch64_gccbase)/ -name unwind.h))
+#  # must be after include/api, since it includes some libc-style headers:
+#  INCLUDES += -isystem $(gcc-inc-base2)
+#endif
 INCLUDES += -isystem $(out)/gen/include
 INCLUDES += $(post-includes-bsd)
 
@@ -266,7 +266,7 @@ $(out)/musl/%.o: source-dialects =
 
 kernel-defines = -D_KERNEL $(source-dialects)
 
-gcc-sysroot = $(if $(CROSS_PREFIX), --sysroot $(aarch64_gccbase)) \
+#gcc-sysroot = $(if $(CROSS_PREFIX), --sysroot $(aarch64_gccbase)) \
 
 # This play the same role as "_KERNEL", but _KERNEL unfortunately is too
 # overloaded. A lot of files will expect it to be set no matter what, specially
@@ -291,9 +291,9 @@ COMMON = $(autodepend) -g -Wall -Wno-pointer-arith $(CFLAGS_WERROR) -Wformat=0 -
 	-include compiler/include/intrinsics.hh \
 	$(arch-cflags) $(conf-opt) $(acpi-defines) $(tracing-flags) $(gcc-sysroot) \
 	$(configuration) -D__OSV__ -D__XEN_INTERFACE_VERSION__="0x00030207" -DARCH_STRING=$(ARCH_STR) $(EXTRA_FLAGS)
-ifeq ($(arch),aarch64)
-  COMMON += -nostdinc
-endif
+#ifeq ($(arch),aarch64)
+#  COMMON += -nostdinc
+#endif
 
 tracing-flags-0 =
 tracing-flags-1 = -finstrument-functions -finstrument-functions-exclude-file-list=c++,trace.cc,trace.hh,align.hh,mmintrin.h
@@ -1798,7 +1798,7 @@ objects += $(addprefix fs/, $(fs_objs))
 objects += $(addprefix libc/, $(libc))
 objects += $(addprefix musl/src/, $(musl))
 
-ifeq ($(arch),x64)
+#ifeq ($(arch),x64)
     libstdc++.a := $(shell $(CXX) -print-file-name=libstdc++.a)
     ifeq ($(filter /%,$(libstdc++.a)),)
         $(error Error: libstdc++.a needs to be installed.)
@@ -1808,12 +1808,12 @@ ifeq ($(arch),x64)
     ifeq ($(filter /%,$(libsupc++.a)),)
         $(error Error: libsupc++.a needs to be installed.)
     endif
-else
-    libstdc++.a := $(shell find $(aarch64_gccbase)/ -name libstdc++.a)
-    libsupc++.a := $(shell find $(aarch64_gccbase)/ -name libsupc++.a)
-endif
+#else
+#    libstdc++.a := $(shell find $(aarch64_gccbase)/ -name libstdc++.a)
+#    libsupc++.a := $(shell find $(aarch64_gccbase)/ -name libsupc++.a)
+#endif
 
-ifeq ($(arch),x64)
+#ifeq ($(arch),x64)
     libgcc.a := $(shell $(CC) -print-libgcc-file-name)
     ifeq ($(filter /%,$(libgcc.a)),)
         $(error Error: libgcc.a needs to be installed.)
@@ -1823,10 +1823,10 @@ ifeq ($(arch),x64)
     ifeq ($(filter /%,$(libgcc_eh.a)),)
         $(error Error: libgcc_eh.a needs to be installed.)
     endif
-else
-    libgcc.a := $(shell find $(aarch64_gccbase)/ -name libgcc.a |  grep -v /32/)
-    libgcc_eh.a := $(shell find $(aarch64_gccbase)/ -name libgcc_eh.a |  grep -v /32/)
-endif
+#else
+#    libgcc.a := $(shell find $(aarch64_gccbase)/ -name libgcc.a |  grep -v /32/)
+#    libgcc_eh.a := $(shell find $(aarch64_gccbase)/ -name libgcc_eh.a |  grep -v /32/)
+#endif
 
 ifeq ($(arch),x64)
     # link with -mt if present, else the base version (and hope it is multithreaded)
@@ -1934,11 +1934,11 @@ $(bootfs_manifest_dep): phony
 		echo -n $(bootfs_manifest) > $(bootfs_manifest_dep) ; \
 	fi
 
-ifeq ($(arch),x64)
+#ifeq ($(arch),x64)
 libgcc_s_dir := $(dir $(shell $(CC) -print-file-name=libgcc_s.so.1))
-else
-libgcc_s_dir := ../../$(aarch64_gccbase)/lib64
-endif
+#else
+#libgcc_s_dir := ../../$(aarch64_gccbase)/lib64
+#endif
 
 $(out)/bootfs.bin: scripts/mkbootfs.py $(bootfs_manifest) $(bootfs_manifest_dep) $(tools:%=$(out)/%) \
 		$(out)/zpool.so $(out)/zfs.so $(out)/libenviron.so $(out)/libvdso.so

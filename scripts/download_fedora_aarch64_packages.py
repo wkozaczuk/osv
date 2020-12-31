@@ -19,7 +19,7 @@ def aarch64_download(version):
                       'boost-chrono',
                       'boost-timer']
     osv_root = os.path.join(os.path.dirname(os.path.abspath(__file__)), '..')
-    script_path = '%s/scripts/download_rpm_package.sh' % osv_root
+    script_path = '%s/scripts/download_fedora_aarch64_rpm_package.sh' % osv_root
     destination = '%s/build/downloaded_packages/aarch64' % osv_root
 
     install_commands = ['%s %s %s %s/gcc' % (script_path, package, version, destination) for package in gcc_packages]

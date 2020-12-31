@@ -73,8 +73,8 @@ def set_imgargs(options):
     if options.hypervisor == 'qemu_microvm':
         execute = '--nopci ' + execute
 
-    if options.arch == 'aarch64':
-        execute = '--disable_rofs_cache ' + execute
+    #if options.arch == 'aarch64':
+    #    execute = '--disable_rofs_cache ' + execute
 
     options.osv_cmdline = execute
     if options.kernel or options.hypervisor == 'qemu_microvm' or options.arch == 'aarch64':
