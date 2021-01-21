@@ -11,13 +11,13 @@ module: $(module_out)/libtools.so $(module_out)/lsroute.so $(module_out)/ifconfi
 	@echo "/usr/lib/libtools.so: $(module_out)/libtools.so" > usr.manifest;
 
 $(module_out)/libtools.so: $(module_out)/route_info.o $(module_out)/network_interface.o
-	$(call quiet, $(CXX) $(CXXFLAGS) -shared -o $@ $^, LINK libtools.so)
+	$(call quiet, $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $^, LINK libtools.so)
 
 $(module_out)/lsroute.so: $(module_out)/lsroute.o $(module_out)/libtools.so
-	$(call quiet, $(CXX) $(CXXFLAGS) -shared -o $@ $^, LINK lsroute.so)
+	$(call quiet, $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $^, LINK lsroute.so)
 
 $(module_out)/ifconfig.so: $(module_out)/ifconfig.o $(module_out)/libtools.so
-	$(call quiet, $(CXX) $(CXXFLAGS) -shared -o $@ $^, LINK ifconfig.so)
+	$(call quiet, $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $^, LINK ifconfig.so)
 
 $(module_out)/%.o: %.cc
 	$(call very-quiet, mkdir -p $(module_out))
