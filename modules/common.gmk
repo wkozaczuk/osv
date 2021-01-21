@@ -1,4 +1,12 @@
 # Paths set by scripts/build
+ifndef OSV_BASE
+    OSV_BASE := $(shell readlink -f ../..)
+endif
+
+ifndef OSV_BUILD_PATH
+    OSV_BUILD_PATH := $(shell readlink -f ../../build/release.$(arch))
+endif
+
 src := $(OSV_BASE)
 out := $(OSV_BUILD_PATH)
 arch := $(ARCH)
