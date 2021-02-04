@@ -80,10 +80,15 @@ do
 	image=*|modules=*|fs=*|usrskel=*|check|--append-manifest|--create-disk) ;;
 	clean)
 		stage1_args=clean ;;
-	*)	# yuck... Is there a prettier way to append to array?
-		args[${#args[@]}]="$i" ;;
+	arch=*)
+		eval ${i}
+		args+=("$i") ;;
+	*)
+		args+=("$i") ;;
 	esac
 done
+
+arch=${arch:-x64}
 
 make "${args[@]}" ${stage1_args} | tee build.out
 # check exit status of make
@@ -162,7 +167,6 @@ fs_size=${vars[fs_size]-$(($fs_size_mb*1024*1024))}
 fs_size=$((fs_size - (fs_size & 511)))
 
 SRC=`pwd`
-arch=`expr $OUT : '.*\.\(.*\)'`
 mode=`expr $OUT : '.*/\(.*\)\..*'`
 
 # Set "modules" according to the image= or modules= paramters, or some
