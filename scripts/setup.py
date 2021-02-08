@@ -354,7 +354,6 @@ class CentOS(object):
                 'openssl-devel',
                 'p11-kit',
                 'patch',
-                'python36-dpkt',
                 'python3-requests',
                 'qemu-img',
                 'tcpdump',
@@ -369,7 +368,7 @@ class CentOS(object):
     test_packages = ['openssl-devel']
 
     class CentOS_7(object):
-        pre_install = 'yum -y install epel-release centos-release-scl centos-release-scl-rh https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm https://forensics.cert.org/cert-forensics-tools-release-el7.rpm'
+        pre_install = 'yum -y install epel-release centos-release-scl centos-release-scl-rh https://packages.endpoint.com/rhel/7/os/x86_64/endpoint-repo-1.7-1.x86_64.rpm'
         packages = []
         ec2_packages = []
         test_packages = []
