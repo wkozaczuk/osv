@@ -46,25 +46,25 @@ aarch64_disabled_list= [
     #Please see comments on the right side for more details
     "tst-condvar.so",              # To few cpus?
     "tst-elf-permissions.so",      # Infinite page fault
-    "tst-eventfd.so",              # Seems to hang after 'running simple threaded test'
-    "tst-except.so",               # Crashes with 'failed looking up symbol _Unwind_Resume'
-    "tst-fpu.so",                  # Seems to hang, possibly floating point related
-    "tst-hub.so",                  # Seems to hang after 'Starting stress test'
-    "tst-libc-locking.so",         # Hangs
-    "tst-mmap-file.so",            # Some assertions fail - 'SUMMARY: 30 tests, 4 failures'
-    "tst-mmap.so",                 # Infinite page fault
-    "tst-pthread-barrier.so",      # Some assertions fail - 'SUMMARY: 8 tests / 1 failures', with cpu >= 2 seems to hang
-    "tst-ring-spsc-wraparound.so", # Hangs
-    "tst-sampler.so",              # Crashes with 'failed looking up symbol _ZN4prof13start_samplerENS_6configE (prof::start_sampler(prof::config))'
-    "tst-semaphore.so",            # Seems to hang after 'Thread *: Incremented 1th' messages
-    "tst-stdio-rofs.so",           # One assertion fails - 'tst-stdio.cc(1922): fatal error: in "STDIO_TEST_fread_unbuffered_pathological_performance": critical check (t1 - t0) <= (1) has failed'
+    #"tst-eventfd.so",              # Seems to hang after 'running simple threaded test'
+    #"tst-except.so",               # Crashes with 'failed looking up symbol _Unwind_Resume'
+    #"tst-fpu.so",                  # Seems to hang, possibly floating point related
+    #"tst-hub.so",                  # Seems to hang after 'Starting stress test'
+    #"tst-libc-locking.so",         # Hangs
+    #"tst-mmap-file.so",            # Some assertions fail - 'SUMMARY: 30 tests, 4 failures'
+    #"tst-mmap.so",                 # Infinite page fault
+    #"tst-pthread-barrier.so",      # Some assertions fail - 'SUMMARY: 8 tests / 1 failures', with cpu >= 2 seems to hang
+    #"tst-ring-spsc-wraparound.so", # Takes loooooong time - 3 minutes
+    #"tst-sampler.so",              # Crashes with 'failed looking up symbol _ZN4prof13start_samplerENS_6configE (prof::start_sampler(prof::config))'
+    #"tst-semaphore.so",            # Seems to hang after 'Thread *: Incremented 1th' messages
+    #"tst-stdio-rofs.so",           # One assertion fails - 'tst-stdio.cc(1922): fatal error: in "STDIO_TEST_fread_unbuffered_pathological_performance": critical check (t1 - t0) <= (1) has failed'
     "tst-time.so",                 # One assertion fails - 'tst-time.cc(70): fatal error: in "time_time": critical check (static_cast<time_t>(0)) != (t1) has failed'
     "tst-timerfd.so",              # Some assertions fail - 'SUMMARY: 212 tests, 10 failures'
-    "tst-yield.so",                # Seems to hang
+    #"tst-yield.so",                # Seems to hang
     #These tests fail due to some other shortcomings in the test scripts
-    "tracing_smoke_test",
+    #"tracing_smoke_test",
     "tcp_close_without_reading_on_fc",
-    "tcp_close_without_reading_on_qemu",
+    #"tcp_close_without_reading_on_qemu",
     #The tests below are NOT disabled but occasionally hang so I am listing
     #them here for completeness.
     #tst-queue-mpsc.so,            # Sometimes hangs

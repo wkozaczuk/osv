@@ -1347,6 +1347,9 @@ void vm_fault(uintptr_t addr, exception_frame* ef)
     WITH_LOCK(vma_list_mutex.for_read()) {
         auto vma = find_intersecting_vma(addr);
         if (vma == vma_list.end() || access_fault(*vma, ef->get_error())) {
+	    //debug_early_u64("--> vm_fault: before vm_sigsegv, vma == vma_list.end(): ", vma == vma_list.end());
+	    //debug_early_u64("--> vm_fault: before vm_sigsegv, addr: ", addr);
+	    //debug_early_u64("--> vm_fault: before vm_sigsegv, access_fault: ", access_fault(*vma, ef->get_error()));
             vm_sigsegv(addr, ef);
             trace_mmu_vm_fault_sigsegv(addr, ef->get_error(), "slow");
             return;

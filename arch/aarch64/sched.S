@@ -4,8 +4,8 @@
 .type reschedule_from_interrupt, @function
 reschedule_from_interrupt:
         #.cfi_startproc
-        stp     x29, x30, [sp, #-176]!
-        #.cfi_adjust_cfa_offset 176
+        stp     x29, x30, [sp, #-192]!
+        #.cfi_adjust_cfa_offset 192
         mov	x29, sp
         #.cfi_def_cfa_register x29
 
@@ -29,6 +29,8 @@ reschedule_from_interrupt:
         stp	d10, d11, [sp, #112]
         stp	d12, d13, [sp, #128]
         stp	d14, d15, [sp, #144]
+        mrs     x2, fpcr
+        str     x2, [sp, #160]
 
         #Switch to new thread
         ldr	x2, [x1, #32]     //Fetch _tcb of the new thread
@@ -59,12 +61,14 @@ reschedule_from_interrupt:
         ldp	d10, d11, [sp, #112]
         ldp	d12, d13, [sp, #128]
         ldp	d14, d15, [sp, #144]
+        ldr     x2, [sp, #160]
+        msr     fpcr, x2
 
         #Call destroy_current_cpu_terminating_thread()
         bl destroy_current_cpu_terminating_thread
 
 2:
-        ldp     x29, x30, [sp], #176
+        ldp     x29, x30, [sp], #192
         #.cfi_def_cfa sp, 0
         ret
         #.cfi_endproc

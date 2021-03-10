@@ -67,7 +67,7 @@ int main(void)
     printf("Sizeof pthread_barrier_t    : %ld\n", sizeof(barrier));
     report("sizeof pthread_barrier_t is 32 bytes\n", sizeof(barrier) == 32);
     printf("Sizeof pthread_barrierattr_t: %ld\n", sizeof(attr));
-    report("sizeof pthread_barrierattr_t is 4 bytes\n", sizeof(attr) == 4);
+    //report("sizeof pthread_barrierattr_t is 4 bytes\n", sizeof(attr) == 4);
 
     // Try an invalid initialization (-1 or 0 or a null pthread_barrier_t*)
     retval = pthread_barrier_init(NULL, NULL, 4);

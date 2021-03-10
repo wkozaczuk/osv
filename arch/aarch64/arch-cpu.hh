@@ -35,10 +35,15 @@ struct arch_cpu {
 struct arch_thread {
 };
 
+extern "C" {
+void _fpu_state_save(processor::fpu_state *s);
+void _fpu_state_load(processor::fpu_state *s);
+};
+
 struct arch_fpu {
     struct processor::fpu_state s;
-    void save() { processor::fpu_state_save(&s); }
-    void restore() { processor::fpu_state_load(&s); }
+    void save() { _fpu_state_save(&s); }
+    void restore() { _fpu_state_load(&s); }
 };
 
 // lock adapter for arch_fpu

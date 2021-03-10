@@ -3,7 +3,7 @@ from osv.modules import api
 import os, os.path
 import subprocess
 
-api.require('java-cmd')
+#api.require('java-cmd')
 provides = ['java','java8']
 
 #Verify that the jdk exists by trying to locate javac (java compiler)

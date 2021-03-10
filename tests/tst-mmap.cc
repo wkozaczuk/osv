@@ -115,7 +115,8 @@ int main(int argc, char **argv)
     // tries to write again (and should fail). For this test to succeed, we
     // must correctly flush the TLB of all processors, not just the one
     // running mprotect.
-    assert(sched::cpus.size() >= 2); // this test can't work without 2 cpus...
+    //assert(sched::cpus.size() >= 2); // this test can't work without 2 cpus...
+    if (sched::cpus.size() >= 2) { // this test can't work without 2 cpus...
     std::atomic_int state(0);
     buf = mmap(NULL, 4096, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
     assert(buf != MAP_FAILED);
@@ -145,6 +146,7 @@ int main(int argc, char **argv)
     delete t1; // also join()s the thread
     delete t2;
     munmap(buf, 4096);
+    }
 #endif
 
     // Test that mprotect() only hides memory, doesn't free it

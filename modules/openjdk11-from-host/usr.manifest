@@ -1,0 +1,6 @@
+# Shared Library
+/usr/lib/libsunec.so: /usr/lib/jvm/java-11-openjdk-arm64/lib/libsunec.so
+# --------------------
+# Dependencies
+# --------------------
+# --------------------
