@@ -32,14 +32,15 @@ void thread::switch_to_first()
     remote_thread_local_var(percpu_base) = _detached_state->_cpu->percpu_base;
 
     asm volatile("\n"
-                 "ldp x29, x0, %0  \n"
-                 "ldp x22, x21, %1 \n"
+                 "ldp x29, x0, %2  \n"
+                 "ldp x22, x21, %3 \n"
                  "mov sp, x22      \n"
                  "blr x21          \n"
-                 :
+                 : // No output operands - this is to designate the input operands as earlyclobbers
+                   "=&Ump"(this->_state.fp), "=&Ump"(this->_state.sp)
                  : "Ump"(this->_state.fp), "Ump"(this->_state.sp)
                  : "x0", "x19", "x20", "x21", "x22", "x23", "x24",
-		   "x25", "x26", "x27", "x28", "x29", "x30", "memory");
+                   "x25", "x26", "x27", "x28", "x30", "memory");
 }
 
 void thread::init_stack()

@@ -175,7 +175,7 @@ common-boost-tests := tst-vfs.so tst-libc-locking.so misc-fs-stress.so \
 	tst-bsd-tcp1-zsndrcv.so tst-async.so tst-rcu-list.so tst-tcp-listen.so \
 	tst-poll.so tst-bitset-iter.so tst-timer-set.so tst-clock.so \
 	tst-rcu-hashtable.so tst-unordered-ring-mpsc.so \
-	tst-seek.so tst-ctype.so tst-wctype.so tst-string.so tst-time.so
+	tst-seek.so tst-ctype.so tst-wctype.so tst-string.so tst-time.so tst-dax.so
 
 boost-tests := $(common-boost-tests)
 
@@ -197,7 +197,7 @@ solaris-tests := tst-solaris-taskq.so
 # FIXME: two of the test below can't compile now because of include path
 # (BSD and OSv header files get mixed up, etc.).
 #zfs-tests := misc-zfs-disk.so misc-zfs-io.so misc-zfs-arc.so
-zfs-tests := misc-zfs-io.so 
+zfs-tests := misc-zfs-io.so
 solaris-tests += $(zfs-tests)
 
 tests += $(solaris-tests)
@@ -205,7 +205,7 @@ tests += $(solaris-tests)
 $(zfs-tests:%=$(out)/tests/%): COMMON+= \
         -DBUILDING_ZFS \
         -I$(src)/bsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs \
-        -I$(src)/bsd/sys/cddl/contrib/opensolaris/common/zfs 
+        -I$(src)/bsd/sys/cddl/contrib/opensolaris/common/zfs
 
 $(solaris-tests:%=$(out)/tests/%): COMMON+= \
         -Wno-strict-aliasing \
@@ -229,11 +229,10 @@ build_all_tests: $(all_tests:%=$(out)/%)
 usr.manifest: build_all_tests $(lastword $(MAKEFILE_LIST)) usr.manifest.skel FORCE
 	@echo "  generating modules/tests/usr.manifest"
 	@cat $@.skel > $@
-	@if [[ "$(CROSS_PREFIX)" == aarch64* ]]; then \
-		./add_aarch64_boost_libraries.sh $(OSV_BASE) >> $@; \
-	else \
-		LD_LIBRARY_PATH=$(boost-lib-dir) ldd $(addprefix $(out)/tests/,$(boost-tests)) | grep libboost | sed 's/ *[^ ] *\(.*\) => \(.*\) .*/\/usr\/lib\/\1: \2/' | sort | uniq >> $@; \
-	fi
+	@case "$(CROSS_PREFIX)" in \
+		"aarch64"*) ./add_aarch64_boost_libraries.sh $(OSV_BASE) >> $@ ;; \
+		*) LD_LIBRARY_PATH=$(boost-lib-dir) ldd $(addprefix $(out)/tests/,$(boost-tests)) | grep libboost | sed 's/ *[^ ] *\(.*\) => \(.*\) .*/\/usr\/lib\/\1: \2/' | sort | uniq >> $@ ;; \
+	esac
 	@echo $(all_tests) | tr ' ' '\n' | grep -v "tests/rofs/tst-.*.so" | awk '{print "/" $$0 ": ./" $$0}' >> $@
 	@echo $(all_tests) | tr ' ' '\n' | grep "tests/rofs/tst-.*.so" | sed 's/\.so//' | awk 'BEGIN { FS = "/" } ; { print "/tests/" $$3 "-rofs.so: ./tests/" $$2 "/" $$3 ".so"}' >> $@
 	$(call very-quiet, ./create_static.sh $(out) usr.manifest $(fs_type))
@@ -243,11 +242,10 @@ FORCE:
 common.manifest: build_all_tests $(lastword $(MAKEFILE_LIST)) usr.manifest.skel FORCE
 	@echo "  generating modules/tests/common.manifest"
 	@cat usr.manifest.skel > $@
-	@if [[ "$(CROSS_PREFIX)" == aarch64* ]]; then \
-		./add_aarch64_boost_libraries.sh $(OSV_BASE) >> $@; \
-	else \
-		LD_LIBRARY_PATH=$(boost-lib-dir) ldd $(addprefix $(out)/tests/,$(boost-tests)) | grep libboost | sed 's/ *[^ ] *\(.*\) => \(.*\) .*/\/usr\/lib\/\1: \2/' | sort | uniq >> $@; \
-	fi
+	@case "$(CROSS_PREFIX)" in \
+		"aarch64"*) ./add_aarch64_boost_libraries.sh $(OSV_BASE) >> $@ ;; \
+		*) LD_LIBRARY_PATH=$(boost-lib-dir) ldd $(addprefix $(out)/tests/,$(boost-tests)) | grep libboost | sed 's/ *[^ ] *\(.*\) => \(.*\) .*/\/usr\/lib\/\1: \2/' | sort | uniq >> $@ ;; \
+	esac
 	@echo $(common-tests) $(solaris-tests) | tr ' ' '\n' | awk '{print "/tests/" $$0 ": ./tests/" $$0}' >> $@
 
 fs.manifest: build_all_tests $(lastword $(MAKEFILE_LIST)) FORCE

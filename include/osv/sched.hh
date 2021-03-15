@@ -712,7 +712,7 @@ private:
     std::vector<char*> _tls;
     bool _app;
     std::shared_ptr<osv::application_runtime> _app_runtime;
-public: //TODO: For whatever reason we need to make this public even though destroy_current_cpu_terminating_thread is defined as friend below, so compiler still complains.
+public:
     void destroy();
 private:
 #ifdef AARCH64_PORT_STUB
