@@ -42,8 +42,8 @@ void _fpu_state_load(processor::fpu_state *s);
 
 struct arch_fpu {
     struct processor::fpu_state s;
-    void save() { _fpu_state_save(&s); }
-    void restore() { _fpu_state_load(&s); }
+    void save() { fpu_state_save(&s); }
+    void restore() { fpu_state_load(&s); }
 };
 
 // lock adapter for arch_fpu
