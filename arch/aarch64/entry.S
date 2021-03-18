@@ -173,16 +173,7 @@ entry_fiq:
 .global entry_serror
 .type entry_serror, @function
 entry_serror:
-        #b       entry_invalid
-        mrs     x20, elr_el1       // Exception Link Register -> X20
-        mrs     x21, spsr_el1      // Saved PSTATE -> X21
-        mrs     x22, esr_el1       // Exception Syndrome Register -> X22
-
-        ubfm    x23, x22, #ESR_EC_BEG, #ESR_EC_END   // Exception Class -> X23
-        ubfm    x24, x22, #ESR_ISS_BEG, #ESR_ISS_END // Instruction-Specific Syndrome -> X24
-
-1:      wfi
-        b       1b
+        b       entry_invalid
 
 .global call_signal_handler_thunk
 call_signal_handler_thunk:
@@ -224,56 +215,6 @@ call_signal_handler_thunk:
         mov     sp, x30
         ldr     x30, [x30, #-48] //restore x30
         eret
-
-.global _fpu_state_save
-.type _fpu_state_save, @function
-_fpu_state_save:
-        stp	q0, q1, [x0, #0]
-        stp	q2, q3, [x0, #32]
-        stp	q4, q5, [x0, #64]
-        stp	q6, q7, [x0, #96]
-        stp	q8, q9, [x0, #128]
-        stp	q10, q11, [x0, #160]
-        stp	q12, q13, [x0, #192]
-        stp	q14, q15, [x0, #224]
-        stp	q16, q17, [x0, #256]
-        stp	q18, q19, [x0, #288]
-        stp	q20, q21, [x0, #320]
-        stp	q22, q23, [x0, #352]
-        stp	q24, q25, [x0, #384]
-        stp	q26, q27, [x0, #416]
-        stp	q28, q29, [x0, #448]
-        stp	q30, q31, [x0, #480]
-        mrs	x1, fpsr
-        str	w1, [x0, #512]
-        mrs	x1, fpcr
-        str	w1, [x0, #516]
-        ret
-
-.global _fpu_state_load
-.type _fpu_state_load, @function
-_fpu_state_load:
-        ldp	q0, q1, [x0, #0]
-        ldp	q2, q3, [x0, #32]
-        ldp	q4, q5, [x0, #64]
-        ldp	q6, q7, [x0, #96]
-        ldp	q8, q9, [x0, #128]
-        ldp	q10, q11, [x0, #160]
-        ldp	q12, q13, [x0, #192]
-        ldp	q14, q15, [x0, #224]
-        ldp	q16, q17, [x0, #256]
-        ldp	q18, q19, [x0, #288]
-        ldp	q20, q21, [x0, #320]
-        ldp	q22, q23, [x0, #352]
-        ldp	q24, q25, [x0, #384]
-        ldp	q26, q27, [x0, #416]
-        ldp	q28, q29, [x0, #448]
-        ldp	q30, q31, [x0, #480]
-        ldr	w1, [x0, #512]
-        msr	fpsr, x1
-        ldr	w1, [x0, #516]
-        msr	fpcr, x1
-        ret
 
 // Keep fpu_state_save/load in sync with struct fpu_state in arch/aarch64/processor.hh
 // void fpu_state_save(fpu_state *s);
