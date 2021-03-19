@@ -7,6 +7,7 @@
 
 #include "drivers/clockevent.hh"
 #include "drivers/clock.hh"
+#include "drivers/pl031.hh"
 #include "arm-clock.hh"
 #include <osv/interrupt.hh>
 #include "exceptions.hh"
@@ -36,6 +37,8 @@ protected:
     u32 freq_hz;  /* frequency in Hz (updates per second) */
 
     friend class arm_clock_events;
+private:
+    u64 _boot_time;
 };
 
 arm_clock::arm_clock() {
@@ -49,6 +52,13 @@ arm_clock::arm_clock() {
 #if CONF_logger_debug
     debug_early_u64("arm_clock(): frequency read as ", freq_hz);
 #endif
+    u64 rtc_address = dtb_get_rtc();
+    if (rtc_address) {
+        pl031 rtc(rtc_address);
+	_boot_time = rtc.wallclock_ns();
+    } else {
+	_boot_time = 0;
+    }
 }
 
 static __attribute__((constructor(init_prio::clock))) void setup_arm_clock()
@@ -70,12 +80,16 @@ s64 arm_clock::uptime()
 
 s64 arm_clock::time()
 {
-    return uptime();
+    //Given that _boot_time came from RTC which gives only 1 second
+    //precision the result time() is only accurate up to a second
+    //On top of this, this implementation does not account for any host
+    //clock drifts
+    return _boot_time + uptime();
 }
 
 s64 arm_clock::boot_time()
 {
-    return uptime();
+    return _boot_time;
 }
 
 u64 arm_clock::processor_to_nano(u64 ticks)
