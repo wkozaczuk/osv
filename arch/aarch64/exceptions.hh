@@ -52,9 +52,10 @@ public:
 
     /* invoke_interrupt returns false if unhandled */
     bool invoke_interrupt(unsigned int id);
+    void enable_irq(int id);
 
 protected:
-    void enable_irq(int id);
+    //void enable_irq(int id);
     void disable_irq(int id);
 
     unsigned int nr_irqs; /* number of supported InterruptIDs, read from gic */

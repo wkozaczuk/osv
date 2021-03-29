@@ -179,6 +179,7 @@ public:
         bool _timers_need_reload = false;
         client_list_t _active_timers;
         friend class timer_base;
+	friend class cpu;
     };
 public:
     explicit timer_base(client& t);
@@ -214,7 +215,7 @@ protected:
     enum class state {
         free, armed, expired
     };
-    state _state = state::free;
+    std::atomic<state> _state {state::free};
     osv::clock::uptime::time_point _time;
     friend class timer_list;
 };
@@ -695,7 +696,9 @@ private:
         bool lock_sent = false;   // send_lock() was called for us
         std::atomic<status> st = { status::unstarted };
     };
+public:
     std::unique_ptr<detached_state> _detached_state;
+private:
     attr _attr;
     int _migration_lock_counter;
     // _migration_lock_counter being set may be temporary, but if _pinned
@@ -722,6 +725,7 @@ private:
     friend void thread_main_c(thread* t);
     friend class wait_guard;
     friend struct cpu;
+    friend class waiter;
     friend class timer;
     friend class thread_runtime_compare;
     friend struct arch_cpu;
@@ -966,12 +970,12 @@ public:
     wait_guard(thread* t) : _t(t) { t->prepare_wait(); }
     ~wait_guard() { stop(); }
     void stop() {
-        if (_t) {
-            _t->stop_wait(); _t = nullptr;
+        if (_t.load()) {
+            _t.load()->stop_wait(); _t.store(nullptr);
         }
     }
 private:
-    thread* _t;
+    std::atomic<thread*> _t;
 };
 
 // does not return - continues to @cont instead
@@ -1085,12 +1089,14 @@ void thread::do_wait_until(Mutex& mtx, Pred pred)
     assert(preemptable());
 
     thread* me = current();
+    assert(me);
 
     IntrStrategy::prepare(me);
 
     while (true) {
         {
             wait_guard waiter(me);
+            assert(me);
             if (pred()) {
                 return;
             }
@@ -1098,6 +1104,7 @@ void thread::do_wait_until(Mutex& mtx, Pred pred)
             IntrStrategy::check(me, waiter);
 
             release(mtx);
+            assert(me);
             me->wait();
         }
         acquire(mtx);

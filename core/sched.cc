@@ -63,6 +63,7 @@ TRACEPOINT(trace_timer_reset, "timer=%p time=%d", timer_base*, s64);
 TRACEPOINT(trace_timer_cancel, "timer=%p", timer_base*);
 TRACEPOINT(trace_timer_fired, "timer=%p", timer_base*);
 TRACEPOINT(trace_thread_create, "thread=%p", thread*);
+TRACEPOINT(trace_timer_list_fired, "");
 
 std::vector<cpu*> cpus __attribute__((init_priority((int)init_prio::cpus)));
 
@@ -74,7 +75,12 @@ bool __thread need_reschedule = false;
 
 elf::tls_data tls;
 
-inter_processor_interrupt wakeup_ipi{IPI_WAKEUP, [] {}};
+std::atomic<u64> woken {0};
+std::atomic<u64> send_wake {0};
+inter_processor_interrupt wakeup_ipi{IPI_WAKEUP, [] {
+    woken++;
+    asm volatile ("dsb ish");
+}};
 
 constexpr float cmax = 0x1P63;
 constexpr float cinitial = 0x1P-63;
@@ -427,6 +433,7 @@ void cpu::send_wakeup_ipi()
     if (!idle_poll.load(std::memory_order_relaxed) && runqueue.size() <= 1) {
         trace_sched_ipi(id);
         wakeup_ipi.send(this);
+	send_wake++;
     }
 }
 
@@ -743,7 +750,7 @@ void cpu::load_balance()
         }
         WITH_LOCK(irq_lock) {
             auto i = std::find_if(runqueue.rbegin(), runqueue.rend(),
-                    [](thread& t) { return t._migration_lock_counter == 0; });
+                    [](thread& t) { return t._migration_lock_counter == 0 && t._active_timers.empty(); });
             if (i == runqueue.rend()) {
                 continue;
             }
@@ -763,6 +770,7 @@ void cpu::load_balance()
             mig.stat_migrations.incr();
             min->incoming_wakeups[id].push_back(mig);
             min->incoming_wakeups_mask.set(id);
+	    asm volatile ("dsb ish");
             // FIXME: avoid if the cpu is alive and if the priority does not
             // FIXME: warrant an interruption
             min->send_wakeup_ipi();
@@ -1186,12 +1194,24 @@ void thread::destroy()
 // *may* contain status::sending_lock (for waitqueue wait morphing).
 // it will transition from one of the allowed initial states to the
 // waking state.
+std::atomic<u64> wake_impl_returned {0};
+std::atomic<u64> wake_impl_ipi {0};
+std::atomic<u64> wake_impl_same_cpu {0};
 void thread::wake_impl(detached_state* st, unsigned allowed_initial_states_mask)
 {
     status old_status = status::waiting;
     trace_sched_wake(st->t);
+    /*status old_status = st->st.load();
+    if (!((1 << unsigned(old_status)) & (allowed_initial_states_mask ))) {
+	return;
+    }*/    
     while (!st->st.compare_exchange_weak(old_status, status::waking)) {
-        if (!((1 << unsigned(old_status)) & allowed_initial_states_mask)) {
+        if (!((1 << unsigned(old_status)) & (allowed_initial_states_mask ))) {
+	    //if (allowed_initial_states_mask == ((1 << unsigned(status::waiting)) | (1 << unsigned(status::sending_lock)))) {
+		    //assert(0);
+            //		    continue;
+	                //}
+	    wake_impl_returned++;
             return;
         }
     }
@@ -1203,13 +1223,16 @@ void thread::wake_impl(detached_state* st, unsigned allowed_initial_states_mask)
         irq_save_lock_type irq_lock;
         WITH_LOCK(irq_lock) {
             tcpu->incoming_wakeups[c].push_back(*st->t);
+	    asm volatile ("dsb ish");
         }
         if (!tcpu->incoming_wakeups_mask.test_all_and_set(c)) {
             // FIXME: avoid if the cpu is alive and if the priority does not
             // FIXME: warrant an interruption
             if (tcpu != current()->tcpu()) {
                 tcpu->send_wakeup_ipi();
+		wake_impl_ipi++;
             } else {
+		wake_impl_same_cpu++;
                 need_reschedule = true;
             }
         }
@@ -1444,17 +1467,26 @@ timer_list::callback_dispatch::callback_dispatch()
     clock_event->set_callback(this);
 }
 
+std::atomic<u64> cpu_0_fired{0};
+std::atomic<u64> cpu_0_expired{0};
+std::atomic<u64> cpu_1_fired{0};
+std::atomic<u64> cpu_1_expired{0};
+
 void timer_list::fired()
 {
+    u64 c = 0;
     auto now = osv::clock::uptime::now();
+    trace_timer_list_fired();
  again:
     _last = osv::clock::uptime::time_point::max();
     _list.expire(now);
     timer_base* timer;
     while ((timer = _list.pop_expired())) {
-        assert(timer->_state == timer_base::state::armed);
+        assert(timer->_state.load() == timer_base::state::armed);
         timer->expire();
+	c++;
     }
+ //   assert(c);
     if (!_list.empty()) {
         // We could have simply called rearm() here, but this would lead to
         // recursion if the next timer has already expired in the time that
@@ -1467,6 +1499,15 @@ void timer_list::fired()
             _last = t;
             clock_event->set(t - now);
         }
+    }
+    if (cpu::current()->id == 0) {
+	    cpu_0_fired++;
+            if (c)
+	         cpu_0_expired++;
+    } else {
+	    cpu_1_fired++;
+            if (c)
+	         cpu_1_expired++;
     }
 }
 
@@ -1483,7 +1524,7 @@ void timer_list::rearm()
 void timer_list::suspend(timer_base::client_list_t& timers)
 {
     for (auto& t : timers) {
-        assert(t._state == timer::state::armed);
+        assert(t._state.load() == timer::state::armed);
         _list.remove(t);
     }
 }
@@ -1493,7 +1534,7 @@ void timer_list::resume(timer_base::client_list_t& timers)
 {
     bool do_rearm = false;
     for (auto& t : timers) {
-        assert(t._state == timer::state::armed);
+        assert(t._state.load() == timer::state::armed);
         do_rearm |= _list.insert(t);
     }
     if (do_rearm) {
@@ -1521,7 +1562,7 @@ timer_base::~timer_base()
 void timer_base::expire()
 {
     trace_timer_fired(this);
-    _state = state::expired;
+    _state.store(state::expired);
     _t._active_timers.erase(_t._active_timers.iterator_to(*this));
     _t.timer_fired();
 }
@@ -1531,7 +1572,7 @@ void timer_base::set(osv::clock::uptime::time_point time)
     trace_timer_set(this, time.time_since_epoch().count());
     irq_save_lock_type irq_lock;
     WITH_LOCK(irq_lock) {
-        _state = state::armed;
+        _state.store(state::armed);
         _time = time;
 
         auto& timers = cpu::current()->timers;
@@ -1544,17 +1585,17 @@ void timer_base::set(osv::clock::uptime::time_point time)
 
 void timer_base::cancel()
 {
-    if (_state == state::free) {
+    if (_state.load() == state::free) {
         return;
     }
     trace_timer_cancel(this);
     irq_save_lock_type irq_lock;
     WITH_LOCK(irq_lock) {
-        if (_state == state::armed) {
+        if (_state.load() == state::armed) {
             _t._active_timers.erase(_t._active_timers.iterator_to(*this));
             cpu::current()->timers._list.remove(*this);
         }
-        _state = state::free;
+        _state.store(state::free);
     }
     // even if we remove the first timer, allow it to expire rather than
     // reprogramming the timer
@@ -1568,11 +1609,11 @@ void timer_base::reset(osv::clock::uptime::time_point time)
 
     irq_save_lock_type irq_lock;
     WITH_LOCK(irq_lock) {
-        if (_state == state::armed) {
+        if (_state.load() == state::armed) {
             timers._list.remove(*this);
         } else {
             _t._active_timers.push_back(*this);
-            _state = state::armed;
+            _state.store(state::armed);
         }
 
         _time = time;
@@ -1585,7 +1626,7 @@ void timer_base::reset(osv::clock::uptime::time_point time)
 
 bool timer_base::expired() const
 {
-    return _state == state::expired;
+    return _state.load() == state::expired;
 }
 
 bool operator<(const timer_base& t1, const timer_base& t2)
@@ -1664,6 +1705,7 @@ void init(std::function<void ()> cont)
     attr.stack(4096*10).pin(smp_initial_find_current_cpu());
     attr.name("init");
     thread t{cont, attr, true};
+    sched::cpus[0]->bringup_thread = &t;
     t.switch_to_first();
 }
 

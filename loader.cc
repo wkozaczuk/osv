@@ -638,6 +638,15 @@ void* do_main_thread(void *_main_args)
     return nullptr;
 }
 
+namespace sched {
+extern std::atomic<u64> cpu_0_fired;
+extern std::atomic<u64> cpu_0_expired;
+extern std::atomic<u64> cpu_1_fired;
+extern std::atomic<u64> cpu_1_expired;
+}
+extern std::atomic<u64> cpu_0_clock_set;
+extern std::atomic<u64> cpu_1_clock_set;
+
 void main_cont(int loader_argc, char** loader_argv)
 {
     osv::firmware_probe();
@@ -724,6 +733,9 @@ void main_cont(int loader_argc, char** loader_argv)
         sched::thread::wait_until([] { return false; });
     }
 
+    printf("--> cpu0: clock_set:%ld, fired:%ld, expired:%ld\n", cpu_0_clock_set.load(), sched::cpu_0_fired.load(), sched::cpu_0_expired.load());
+    printf("--> cpu1: clock_set:%ld, fired:%ld, expired:%ld\n", cpu_1_clock_set.load(), sched::cpu_1_fired.load(), sched::cpu_1_expired.load());
+
     if (memory::tracker_enabled) {
         debug("Leak testing done. Please use 'osv leak show' in gdb to analyze results.\n");
         osv::halt();
@@ -735,3 +747,13 @@ void main_cont(int loader_argc, char** loader_argv)
 int __loader_argc = 0;
 char** __loader_argv = nullptr;
 char* __app_cmdline = nullptr;
+
+std::atomic<sched::thread*> _olo {nullptr};
+
+void set(sched::thread* t) {
+   _olo = t;
+}
+
+sched::thread* get() {
+   return _olo;
+}

@@ -3,7 +3,12 @@
 .global reschedule_from_interrupt
 .type reschedule_from_interrupt, @function
 reschedule_from_interrupt:
+        #.cfi_startproc simple
+        #.cfi_def_cfa sp, 0
         stp     x29, x30, [sp, #-192]!
+        #.cfi_def_cfa x29, -192
+        #.cfi_def_cfa x30, -188
+        #.cfi_adjust_cfa_offset 192
         mov	x29, sp
 
         #Call cpu_schedule_next_thread() to determine next thread to switch to if any
@@ -17,10 +22,20 @@ reschedule_from_interrupt:
 
         #Store all regular callee-save registers on the old thread stack
         stp	x19, x20, [sp, #16]
+       //.cfi_def_cfa x19, 0
+       //.cfi_def_cfa x20, 8
         stp	x21, x22, [sp, #32]
+       //.cfi_def_cfa x19, 16
+       //.cfi_def_cfa x20, 24
         stp	x23, x24, [sp, #48]
+       //.cfi_def_cfa x19, 32
+       //.cfi_def_cfa x20, 40
         stp	x25, x26, [sp, #64]
+       //.cfi_def_cfa x19, 48
+       //.cfi_def_cfa x20, 56
         stp	x27, x28, [sp, #80]
+       //.cfi_def_cfa x19, 64
+       //.cfi_def_cfa x20, 72
 
         #Store all SIMD/FP callee-save registers on the old thread stack
         stp	d8, d9, [sp, #96]
@@ -36,6 +51,7 @@ reschedule_from_interrupt:
         ldr	x2, [x1, #32]     //Fetch _tcb of the new thread
         msr	tpidr_el0, x2     //Set thread pointer
         isb
+        dsb ish
 
         str     x29, [x0, #0]     //Save frame pointer of the old thread
         mov     x3, sp            //Fetch old thread stack pointer
@@ -52,10 +68,20 @@ reschedule_from_interrupt:
 1:
         #Restore all regular callee-save registers from the new thread stack
         ldp     x19, x20, [sp, #16]
+        //.cfi_restore x20
+        //.cfi_restore x19
         ldp     x21, x22, [sp, #32]
+        //.cfi_restore x22
+        //.cfi_restore x21
         ldp     x23, x24, [sp, #48]
+        //.cfi_restore x24
+        //.cfi_restore x23
         ldp     x25, x26, [sp, #64]
+        //.cfi_restore x26
+        //.cfi_restore x25
         ldp     x27, x28, [sp, #80]
+        //.cfi_restore x28
+        //.cfi_restore x27
 
         #Restore all SIMD/FP callee-save registers from the new thread stack
         ldp	d8, d9, [sp, #96]
@@ -72,4 +98,6 @@ reschedule_from_interrupt:
 
 2:
         ldp     x29, x30, [sp], #192
+        #.cfi_adjust_cfa_offset -192
         ret
+        #.cfi_endproc

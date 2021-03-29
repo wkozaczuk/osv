@@ -30,21 +30,21 @@ namespace lockfree { struct mutex; }
 
 class waiter {
 protected:
-    sched::thread *t;
+    std::atomic<sched::thread*> t;
 public:
-    explicit waiter(sched::thread *t) : t(t) { };
+    explicit waiter(sched::thread *_t) : t(_t) { };
 
     inline void wake() {
-        t->wake_with_from_mutex([&] { t = nullptr; });
+        t.load()->wake_with_from_mutex([&] { t.store(nullptr); });
     }
 
     inline void wait() const {
-        sched::thread::wait_until([&] { return !t; });
+        sched::thread::wait_until([&] { return !t.load(); });
     }
 
     inline void wait(sched::timer* tmr) const {
         sched::thread::wait_until([&] {
-            return (tmr && tmr->expired()) || !t; });
+            return (tmr && tmr->expired()) || !t.load(); });
     }
 
     // The thread() method returns the thread waiting on this waiter, or 0 if
@@ -52,19 +52,19 @@ public:
     // sanity assert()s. To help enforce this intended use case, we return a
     // const sched::thread.
     inline const sched::thread *thread(void) const {
-        return t;
+        return t.load();
     }
 
     // woken() returns true if the wait_record was already woken by a wake()
     // (a timeout doesn't set the wait_record to woken()).
     inline bool woken() const {
-        return !t;
+        return !t.load();
     }
 
     // Signal the wait record as woken without actually waking it up.  Use
     // only with external synchronization.
     void clear() noexcept {
-        t = nullptr;
+        t.store(nullptr);
     }
 
     // A waiter object cannot be copied or moved, as wake() on the copy will
@@ -89,7 +89,7 @@ struct wait_record : public waiter {
     struct wait_record *next;
     explicit wait_record(sched::thread *t) : waiter(t), next(nullptr) { };
     using mutex = lockfree::mutex;
-    void wake_lock(mutex* mtx) { t->wake_lock(mtx, this); }
+    void wake_lock(mutex* mtx) { t.load()->wake_lock(mtx, this); }
 };
 
 #endif /* INCLUDED_OSV_WAIT_RECORD */

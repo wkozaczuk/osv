@@ -40,7 +40,10 @@ int condvar::wait(mutex* user_mutex, sched::timer* tmr)
     sched::preempt_enable();
 
     // Wait until either the timer expires or condition variable signaled
-    wr.wait(tmr);
+    if (tmr)
+       wr.wait(tmr);
+    else
+       wr.wait();
     if (!wr.woken()) {
         ret = ETIMEDOUT;
         // wr is still in the linked list (because of a timeout) so remove it:

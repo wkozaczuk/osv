@@ -195,7 +195,7 @@ if __name__ == "__main__":
     if cmdargs.arch == 'aarch64':
         disabled_list.extend(aarch64_disabled_list)
         #The SMP (#vCPUs >= 2) support on AArch64 is still pretty flaky (see issue #1123), so let us force to single cpu_list)
-        run_py_args = run_py_args + ['-c', '1']
+        run_py_args = run_py_args + ['-c', '2']
 
     if running_with_kvm_on(cmdargs.arch, cmdargs.hypervisor) and cmdargs.arch != 'aarch64':
         disabled_list.remove("tst-feexcept.so")

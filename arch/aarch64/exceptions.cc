@@ -120,8 +120,16 @@ void interrupt_table::unregister_interrupt(interrupt *interrupt)
     }
 }
 
+std::atomic<u64> cpu_0_invoke_interrupt{0};
+std::atomic<u64> cpu_1_invoke_interrupt{0};
+
 bool interrupt_table::invoke_interrupt(unsigned int id)
 {
+    if (sched::cpu::current()->id == 0)
+        cpu_0_invoke_interrupt++;
+    else
+        cpu_1_invoke_interrupt++;
+
     WITH_LOCK(osv::rcu_read_lock) {
         assert(id < this->nr_irqs);
         interrupt_desc *desc = this->irq_desc[id].read();
