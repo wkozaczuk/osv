@@ -1664,6 +1664,9 @@ void init(std::function<void ()> cont)
     attr.stack(4096*10).pin(smp_initial_find_current_cpu());
     attr.name("init");
     thread t{cont, attr, true};
+    if (cpu::current()->id == 0) {
+       cpus[0]->bringup_thread = &t;
+    }
     t.switch_to_first();
 }
 
