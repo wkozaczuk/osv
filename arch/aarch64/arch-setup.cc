@@ -88,6 +88,8 @@ void arch_setup_free_memory()
         auto base = reinterpret_cast<void*>(get_mem_area_base(area));
         mmu::linear_map(base + addr, addr, memory::phys_mem_size);
     }
+    debug_early_u64("-> arch_setup_free_memory:          addr=", addr);
+    debug_early_u64("-> arch_setup_free_memory: phys_mem_size=", memory::phys_mem_size);
 
     /* linear_map [TTBR0 - boot, DTB and ELF] */
     mmu::linear_map((void *)mmu::mem_addr, (mmu::phys)mmu::mem_addr,

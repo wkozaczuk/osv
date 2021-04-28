@@ -741,3 +741,21 @@ void main_cont(int loader_argc, char** loader_argv)
 int __loader_argc = 0;
 char** __loader_argv = nullptr;
 char* __app_cmdline = nullptr;
+
+std::atomic<sched::thread*> _thread_pointer;
+
+sched::thread* load_full() {
+   return _thread_pointer.load();
+}
+
+void store_full(sched::thread* t) {
+   _thread_pointer.store(t);
+}
+
+sched::thread* load_acquire() {
+   return _thread_pointer.load(std::memory_order_acquire);
+}
+
+void store_release(sched::thread* t) {
+   _thread_pointer.store(t, std::memory_order_release);
+}

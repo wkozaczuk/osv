@@ -99,8 +99,16 @@ void abort()
     abort("Aborted\n");
 }
 
+#include <iostream>
+#include <fstream>
 void abort(const char *fmt, ...)
 {
+    ///tmp/hs_err_pid2.log
+    std::ifstream f("/tmp/hs_err_pid2.log");
+
+    if (f.is_open())
+        std::cout << f.rdbuf();
+
     bool expected = false;
     if (!aborting.compare_exchange_strong(expected, true)) {
         do {} while (true);

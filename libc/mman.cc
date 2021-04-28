@@ -144,6 +144,9 @@ void *mmap(void *addr, size_t length, int prot, int flags,
     }
 #endif
     if (flags & MAP_ANONYMOUS) {
+        if (addr && addr < (void*)0x0000100000000000) {
+           addr = addr + (u64)0x0000300000000000;
+        }
         // We have already determined (see below) the region where the heap must be located. Now the JVM will request
         // fixed mappings inside that region
         if (jvm_heap_size && (addr >= jvm_heap_region) && (addr + length <= jvm_heap_region_end) && (mmap_flags & mmu::mmap_fixed)) {

@@ -206,18 +206,22 @@ entry_serror:
 call_signal_handler_thunk:
         .type call_signal_handler_thunk, @function
         .cfi_startproc simple
-        # stack contains a signal_frame
-        /*
-        .cfi_offset reg, offset
-        ...
-        mov x0, sp
-        call call_signal_handler
-        # FIXME: fpu
-
-        pop_pair...
-        add sp, sp, 16 # error_code
-        */
-        ret
+         # stack contains a signal_frame
+         /*
+         .cfi_offset reg, offset
+@@ -189,32 +217,8 @@ call_signal_handler_thunk:
+         pop_pair...
+         add sp, sp, 16 # error_code
+         */
+         msr    SPsel, #1
+         ldr     x0, [sp, #-40] //new sp modified in the original exception frame
+         mov     sp, x0
+         bl      call_signal_handler
+         pop_state_from_exception_frame
+         ldr     x30, [sp, #-40] //old sp saved in the copy of original exception frame in signal frame
+         mov     sp, x30
+         ldr     x30, [x30, #-48] //restore x30
+         eret
         .cfi_endproc
 
 // Keep fpu_state_save/load in sync with struct fpu_state in arch/aarch64/processor.hh
