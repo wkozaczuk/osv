@@ -81,12 +81,12 @@ void cpu_quiescent_state_thread::request(uint64_t generation)
 
 bool cpu_quiescent_state_thread::check(uint64_t generation)
 {
-    return _generation.load(std::memory_order_relaxed) >= generation;
+    return _generation.load(std::memory_order_acquire) >= generation;
 }
 
 void cpu_quiescent_state_thread::set_generation(uint64_t generation)
 {
-    _generation.store(generation, std::memory_order_relaxed);
+    _generation.store(generation, std::memory_order_release);
     // Wake the quiescent threads who might be interested in my _generation.
     for (auto cqst : cpu_quiescent_state_threads) {
         if (cqst != this &&
