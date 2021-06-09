@@ -54,9 +54,35 @@ $(tests-jar-target): $(isolated-jar-target) $(tests-isolates-target) $(tests-jre
 	$(call quiet, cd $(src)/modules/java-tests && \
 	JAVA_HOME=$(java_jdk_path) mvn -q --projects :runjava-common$(comma):runjava-non-isolated$(comma):runjava-isolated$(comma):tests-isolates$(comma):runjava-tests$(comma):tests-jre-extension package -DskipTests=true, MVN $@)
 
-module: $(java-targets) $(tests-jar-target)
+module: $(java-targets) $(tests-jar-target) test_commands
+
+ifeq ($(arch),aarch64)
+java_arch_options := -Xint
+endif
+
+java_isolated_cmd := 'java_isolated: /java_isolated.so $(java_arch_options) -cp /tests/java/tests.jar:/tests/java/isolates.jar \
+        -Disolates.jar=/tests/java/isolates.jar org.junit.runner.JUnitCore io.osv.AllTestsThatTestIsolatedApp'
+java_non_isolated_cmd := 'java_non_isolated: /java.so $(java_arch_options) -cp /tests/java/tests.jar:/tests/java/isolates.jar \
+        -Disolates.jar=/tests/java/isolates.jar org.junit.runner.JUnitCore io.osv.AllTestsThatTestNonIsolatedApp'
+java_no_wrapper_cmd := 'java_no_wrapper: /usr/bin/java $(java_arch_options) -cp /tests/java/tests.jar org.junit.runner.JUnitCore io.osv.BasicTests !'
+java_perms_cmd := 'java-perms: /usr/bin/java $(java_arch_options) -cp /tests/java/tests.jar io.osv.TestDomainPermissions !'
+
+.PHONY: test_commands
+
+ifeq ($(arch),$(host_arch))
+test_commands:
+	$(call very-quiet, rm -f test_commands)
+	$(call very-quiet, if [ "$(javac_version)" = "javac 1.8" ]; then \
+		echo $(java_isolated_cmd) >> test_commands && \
+		echo $(java_non_isolated_cmd) >> test_commands; fi )
+	$(call very-quiet, echo $(java_no_wrapper_cmd) >> test_commands)
+	$(call very-quiet, echo $(java_perms_cmd) >> test_commands)
+else
+test_commands:
+	$(call very-quiet, rm -f test_commands)
+endif
 
 clean:
 	cd $(src)/modules/java-tests && mvn -q clean
-	-rm -f dependency-reduced-pom.xml
+	-rm -f dependency-reduced-pom.xml test_commands
 	$(call very-quiet, $(RM) -rf $(module_out))
