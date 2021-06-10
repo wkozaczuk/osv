@@ -16,7 +16,8 @@ jdk_path = os.path.dirname(os.path.dirname(javac_real_path))
 javac_with_version = subprocess.check_output(['javac', '-version'], stderr=subprocess.STDOUT).decode('utf-8')
 java_version = javac_with_version.split()[1].split('.')[0]
 
-api.require('java-cmd')
+api.require('ca-certificates')
+api.require('libz')
 provides = ['java','java%s' % java_version]
 
 usr_files = FileMap()

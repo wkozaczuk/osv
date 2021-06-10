@@ -7,11 +7,12 @@ include ../java-base/common.gmk
 
 javac_version := $(shell javac -version 2>&1 | grep -oP "javac \d+\.\d+")
 
+ifeq ($(javac_version),javac 1.8)
+tests-jar-target := tests/target/runjava-tests.jar
+
 java-targets := $(module_out)/java_isolated.so
 
 isolated-jar-target := $(java-base-path)/runjava-isolated/target/runjava-isolated.jar
-
-tests-jar-target := tests/target/runjava-tests.jar
 
 tests-isolates-target := tests-isolates/target/tests-isolates-jar-with-dependencies.jar
 
@@ -22,10 +23,6 @@ $(module_out)/java_isolated.o: $(src)/modules/java-base/java.cc | init
 
 $(module_out)/java_isolated.so: $(module_out)/java_isolated.o $(out)/modules/java-base/jvm/java_api.o $(out)/modules/java-base/jvm/jni_helpers.o $(out)/modules/java-base/balloon/jvm_balloon.o
 	$(call quiet, $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $^, LINK $@)
-
-init:
-	@echo "  MKDIRS"
-	$(call very-quiet, mkdir -p $(module_out))
 
 comma := ,
 
@@ -54,7 +51,20 @@ $(tests-jar-target): $(isolated-jar-target) $(tests-isolates-target) $(tests-jre
 	$(call quiet, cd $(src)/modules/java-tests && \
 	JAVA_HOME=$(java_jdk_path) mvn -q --projects :runjava-common$(comma):runjava-non-isolated$(comma):runjava-isolated$(comma):tests-isolates$(comma):runjava-tests$(comma):tests-jre-extension package -DskipTests=true, MVN $@)
 
+init:
+	@echo "  MKDIRS"
+	$(call very-quiet, mkdir -p $(module_out))
+
 module: $(java-targets) $(tests-jar-target) test_commands
+else
+tests-jar-target := tests-for-java9_1x/target/runjava-9-1x-tests.jar
+
+$(tests-jar-target): $(wildcard $(java-base-path)/tests-for-java9_1x/src/main/java/io/osv//*.java)
+	$(call quiet, cd $(src)/modules/java-tests/tests-for-java9_1x && \
+	JAVA_HOME=$(java_jdk_path) mvn -q package -DskipTests=true, MVN $@)
+
+module: $(tests-jar-target) test_commands
+endif
 
 ifeq ($(arch),aarch64)
 java_arch_options := -Xint
@@ -84,5 +94,6 @@ endif
 
 clean:
 	cd $(src)/modules/java-tests && mvn -q clean
+	cd $(src)/modules/java-tests/tests-for-java9_1x && mvn -q clean
 	-rm -f dependency-reduced-pom.xml test_commands
 	$(call very-quiet, $(RM) -rf $(module_out))
