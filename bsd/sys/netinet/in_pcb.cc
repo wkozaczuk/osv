@@ -646,21 +646,6 @@ in_pcb_lport(struct inpcb *inp, struct in_addr *laddrp, u_short *lportp,
 
 	return (0);
 }
-
-/*
- * Return cached socket options.
- */
-int
-inp_so_options(const struct inpcb *inp)
-{
-	int so_options;
-
-	so_options = 0;
-
-	if ((inp->inp_flags2 & INP_REUSEPORT) != 0)
-		so_options |= SO_REUSEPORT;
-	return (so_options);
-}
 #endif /* INET || INET6 */
 
 #ifdef INET
@@ -1832,7 +1817,6 @@ in_pcbinshash_internal(struct inpcb *inp)
 	struct inpcbinfo *pcbinfo = inp->inp_pcbinfo;
 	struct inpcbport *phd;
 	u_int32_t hashkey_faddr;
-	int so_options;
 
 	INP_LOCK_ASSERT(inp);
 	INP_HASH_LOCK_ASSERT(pcbinfo);
@@ -1855,10 +1839,9 @@ in_pcbinshash_internal(struct inpcb *inp)
 
 	/*
 	 * Add entry to load balance group.
-	 * Only do this if SO_REUSEPORT is set.
+	 * Only do this if INP_REUSEPORT is set.
 	 */
-	so_options = inp_so_options(inp);
-	if (so_options & SO_REUSEPORT) {
+	if (inp->inp_flags2 & INP_REUSEPORT) {
 		int ret = in_pcbinslbgrouphash(inp);
 		if (ret) {
 			/* pcb lb group malloc fail (ret=ENOBUFS). */
