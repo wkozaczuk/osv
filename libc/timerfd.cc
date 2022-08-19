@@ -116,6 +116,7 @@ void timerfd::wakeup_thread_func()
                     _blocked_reader.wake_one();
                     poll_wake(this, POLLIN);
                 } else {
+                    assert(!sched::thread::current()->is_app());
                     tmr.cancel();
                 }
             } else {

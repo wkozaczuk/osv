@@ -1,0 +1,139 @@
+================================
+= no need to do anything
+================================
+-- handling page fault and on exception stack
+./arch/aarch64/mmu.cc:106:    DROP_LOCK(irq_lock) {
+./arch/x64/mmu.cc:41:    DROP_LOCK(irq_lock) { // irq_lock is acquired by HW
+
+-- early boot in premain on kernel stack
+./drivers/hypervclock.cc:41:    irq_save_lock_type irq_lock;
+./drivers/hypervclock.cc:42:    WITH_LOCK(irq_lock) {
+./drivers/hpet.cc:130:    irq_save_lock_type irq_lock;
+./drivers/hpet.cc:131:    WITH_LOCK(irq_lock) {
+
+-- on the kernel idle threads
+./core/sched.cc:447:        std::unique_lock<irq_lock_type> guard(irq_lock);
+./core/sched.cc:453:        arch::wait_for_interrupt(); // this unlocks irq_lock
+
+-- called on kernel helper thread spawned as part of thread::pin(thread *t, cpu *target_cpu)
+./core/sched.cc:594:        WITH_LOCK(irq_lock) {
+./core/sched.cc:598:                DROP_LOCK(irq_lock) {
+./core/sched.cc:621:                DROP_LOCK(irq_lock) {
+
+-- called by cpu::load_balance() as part of kernel threads
+./core/sched.cc:744:        WITH_LOCK(irq_lock) {
+
+-- only used by bsd/sys/dev/random/random_harvestq.cc which is always
+   called by an interrupt handler on populated INTERRUPT stack
+   (the random_harvestq_internal() calls ring->emplace() which is what uses irq_lock
+#0  random_harvestq_internal (somecounter=37507369233, entropy=0xffff8000011ddcf0, count=16, bits=1, origin=RANDOM_INTERRUPT)
+    at bsd/sys/dev/random/random_harvestq.cc:164
+#1  0x00000000402fc8b3 in harvest_interrupt_randomness (frame=0xffff8000011de068, frame=0xffff8000011de068, irq=41) at include/osv/intr_random.hh:22
+#2  interrupt (frame=0xffff8000011de068) at arch/x64/exceptions.cc:259
+./include/lockfree/unordered_ring_mpsc.hh:108:        irq_save_lock_type irq_lock;
+./include/lockfree/unordered_ring_mpsc.hh:109:        WITH_LOCK(irq_lock) {
+
+-- cpu::handle_incoming_wakeups() - IRQ is always disabled by this point because it called by:
+    - "idle" kernel thread 
+    - thread::yield() BEFORE disables IRQ with a guard(irq_lock)
+    - cpu::reschedule_from_interrupt() is always called with IRQ disabled by:
+      - cpu::schedule() - WITH_LOCK(irq)
+      - thread::pin() - WITH_LOCK(irq)
+      - thread::yield() - disables interrupts before see above
+      - sched::preemt() - which is called by interrupt() routine which is called on interrupt/exception stack and IRQ disabled I think
+./core/sched.cc:485:        irq_save_lock_type irq_lock;
+./core/sched.cc:486:        WITH_LOCK(irq_lock) {
+
+=====================================================
+== IRQ may be enabled but preemption for sure IS disabled so cannot pre-fault => do nothing
+=====================================================
+-- part of thread::wake_impl(detached_state* st ...)
+   wake_impl() is called by sched::thread::do_wake_with(), thread_handle::wake() and thread::wake() where each of
+   the 3 takes WITH_LOCK(rcu_read_lock) => this implies we CANNOT pre-fault the stack
+./core/sched.cc:1203:        irq_save_lock_type irq_lock;
+./core/sched.cc:1204:        WITH_LOCK(irq_lock) {
+=======================================================
+
+
+******************************************************
+* Possibly we can prove that once/if IRQ is disabled we
+  do not disable preemption any deeper (the vice-versa is
+  different). If that is true, we can imply that everytime
+  preemption is being disabled (preempt_disable() is called)
+  the IRQ is still enabled. That would allow us to to simplify
+  the conditional stack pre-fault logic before calling
+  preempt_disable() and only check if preemption is still enabled (scheed::preemptable()). 
+  The same (check only if preemption enabled) could apply to non-"save"
+  version of irq_lock as well.
+
+  The exceptions:
+    - thread::pin() wakeme->wake_with()
+    - thread::destroy() joiner->wake_with([&] { ds->st.store(status::terminated); }); => called by reschedule_from_in..
+
+  The only exception might be the the gic.cc where send_sgi()
+  uses spinlock when irq disabled and sprinlock uses preemption.
+
+  The "save" version of IRQ lock is DIFFERENT story.
+******************************************************
+
+
+===============================
+= IRQ enabled but preemption not necessarily
+  because it uses global irq_lock which means once out of scope of guard
+  or WITH_LOCK the IRQ would be enabled again
+
+  Observation: anything calling any of these 3 means that IRQ are enabled so if preemption
+  is enabled as well we can pre-fault the stack
+===============================
+-- cpu::schedule()
+./core/sched.cc:227:    WITH_LOCK(irq_lock) {
+
+-- thread::pin(cpu *target_cpu)
+./core/sched.cc:560:    WITH_LOCK(irq_lock) {
+
+-- thread::yield() - uses lock_guard with GLOBAL irq_lock so it for has IRQ enabled
+   because IRQ will be enabled once the guard goes out of scope = end of yield()
+./core/sched.cc:801:    std::lock_guard<irq_lock_type> guard(irq_lock);
+
+===============================
+== These use the "save" version of IRQ lock so we do NOT know if IRQ is disabled already ...
+   BUT most of the places these get called are either on kernel threads or have preemption disabled
+   so we either end up qualifying these as "do nothing" or "just check preemption"
+===============================
+-- void timer_base::cancel()
+   called by:
+    * core/sched.cc
+       - cpu::reschedule_from_interrupt() on preempt_timer - no need to do anything cause the resch... is called under IRQ
+       - timer_base::~timer_base() - ??? - not sure if in all places IRQ is enabled
+    * core/async.cc - async_worker::run() executed on kernel thread "async_worker%d" - no need
+    * libc/signal.cc - itimer::work() executed by kernel threads "itimer-real" and "itimer-virt" => no need
+    * libc/timerfd.cc - wakeup_thread_func called by kernel thread "timerfd" => populated stack => no need
+    * core/newpoll.cc - poller_expired() probably both IRQ and preemption enabled - can pre-fault or check only if preempt enabled -> NOT used
+    * core/sampler.cc - sampler::stop() is EITHER called by interrupt handler by means of stop_on_current()
+                        which would be on interrupt stack => do nothing OR by stop_sampler()
+./core/sched.cc:1551:    irq_save_lock_type irq_lock;
+./core/sched.cc:1552:    WITH_LOCK(irq_lock) {
+
+-- void timer_base::reset(osv::clock::uptime::time_point time)
+   called by:
+    * core/newpoll.cc - poller::set_timer() - probably both IRQ and preemption enabled - (NOT used, unfinished code)
+        can pre-fault or check only if preempt enabled
+    * core/async.cc - async_worker::rearm() called by:
+       - async_worker::run() executed on kernel thread "async_worker%d" - no need
+       - async_worker::insert() calls rearm() within WITH_LOCK(preempt_lock) so no need
+./core/sched.cc:1569:    irq_save_lock_type irq_lock;
+./core/sched.cc:1570:    WITH_LOCK(irq_lock) {
+
+===============================
+== These all use the "save" version of IRQ lock so we do NOT know if IRQ is disabled already
+===============================
+-- timer_base::set(osv::clock::uptime::time_point time) - called by:
+   - bsd/porting/callout.cc by _callout_thread() on the "callout" kernel thread => do NOTHING
+   - bsd/.../uipc_sockbuf.cc by sbwait_tmo() - most likely both IRQ and preemption are enabled
+
+./core/sched.cc:1532:    irq_save_lock_type irq_lock;
+./core/sched.cc:1533:    WITH_LOCK(irq_lock) {
+
+-- NOT scheduler ones
+./arch/aarch64/gic.cc:166:    irq_save_lock_type irq_lock;
+./arch/aarch64/gic.cc:168:    WITH_LOCK(irq_lock) {

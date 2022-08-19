@@ -1,0 +1,35 @@
+(gdb) bt
+#0  abort (fmt=fmt@entry=0x405ad2d0 "Assertion failed: %s (%s: %s: %d)\n") at runtime.cc:113
+#1  0x0000000040238919 in __assert_fail (expr=<optimized out>, file=<optimized out>, line=<optimized out>, func=<optimized out>) at runtime.cc:150
+#2  0x00000000402bb1cd in sched::preempt_disable () at include/osv/sched.hh:1054
+#3  0x00000000402bdf1f in sched::preempt_disable () at include/osv/sched.hh:1054
+#4  osv::rcu_lock_type::lock () at include/osv/rcu.hh:169
+#5  std::lock_guard<osv::rcu_lock_type>::lock_guard (__m=..., this=<synthetic pointer>) at /usr/include/c++/11/bits/std_mutex.h:229
+#6  lock_guard_for_with_lock<osv::rcu_lock_type>::lock_guard_for_with_lock (lock=..., this=<synthetic pointer>) at include/osv/mutex.h:89
+#7  elf::program::modules_get (this=<optimized out>) at core/elf.cc:1822
+#8  0x00000000402be5d0 in elf::program::with_modules<elf::program::lookup_addr(void const*)::<lambda(const elf::program::modules_list&)> > (f=..., 
+    this=0xffffa00000099d30) at include/osv/elf.hh:705
+#9  elf::program::lookup_addr (this=0xffffa00000099d30, 
+    addr=addr@entry=0x40238918 <__assert_fail(char const*, char const*, unsigned int, char const*)+24>) at core/elf.cc:1640
+#10 0x000000004039228c in osv::lookup_name_demangled (addr=0x40238918 <__assert_fail(char const*, char const*, unsigned int, char const*)+24>, 
+    buf=0xffff8000001d3a70 "\377\003;\004H\213\025\267\060<\035", len=1024) at core/demangle.cc:47
+#11 0x000000004023841a in print_backtrace () at runtime.cc:93
+#12 0x00000000402388cc in abort (fmt=fmt@entry=0x405ad2d0 "Assertion failed: %s (%s: %s: %d)\n") at runtime.cc:129
+#13 0x0000000040238919 in __assert_fail (expr=<optimized out>, file=<optimized out>, line=<optimized out>, func=<optimized out>) at runtime.cc:150
+#14 0x00000000403635dd in sched::preempt_disable () at include/osv/sched.hh:1054
+#15 0x0000000040367937 in sched::preempt_disable () at core/sched.cc:1127
+#16 osv::rcu_lock_type::lock () at include/osv/rcu.hh:169
+#17 std::lock_guard<osv::rcu_lock_type>::lock_guard (__m=..., this=<synthetic pointer>) at /usr/include/c++/11/bits/std_mutex.h:229
+#18 lock_guard_for_with_lock<osv::rcu_lock_type>::lock_guard_for_with_lock (lock=..., this=<synthetic pointer>) at include/osv/mutex.h:89
+#19 sched::thread::wake (this=<optimized out>) at core/sched.cc:1223
+#20 sched::thread::start (this=<optimized out>) at core/sched.cc:1138
+#21 0x00000000403679e8 in sched::start_early_threads () at core/sched.cc:1658
+#22 0x0000000040367a54 in sched::cpu::idle (this=0xffff800000020040) at core/sched.cc:470
+#23 0x0000000040367a6c in operator() (__closure=<optimized out>, __closure=<optimized out>) at core/sched.cc:167
+#24 std::__invoke_impl<void, sched::cpu::init_idle_thread()::<lambda()>&> (__f=...) at /usr/include/c++/11/bits/invoke.h:61
+#25 std::__invoke_r<void, sched::cpu::init_idle_thread()::<lambda()>&> (__fn=...) at /usr/include/c++/11/bits/invoke.h:154
+#26 std::_Function_handler<void(), sched::cpu::init_idle_thread()::<lambda()> >::_M_invoke(const std::_Any_data &) (__functor=...)
+    at /usr/include/c++/11/bits/std_function.h:290
+#27 0x000000004036777a in sched::thread::main (this=0xffff8000001bd040) at core/sched.cc:1269
+#28 sched::thread_main_c (t=0xffff8000001bd040) at arch/x64/arch-switch.hh:325
+#29 0x00000000402faf83 in thread_main () at arch/x64/entry.S:116

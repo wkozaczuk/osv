@@ -170,6 +170,8 @@ void stop_sampler() throw()
 
     WITH_LOCK(migration_lock) {
         stop_sampler_ipi.send_allbutself();
+        assert(arch::irq_enabled());
+        sched::ensure_next_stack_page_if_preemptable();
         stop_on_current();
     }
 

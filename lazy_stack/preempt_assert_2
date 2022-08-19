@@ -1,0 +1,41 @@
+#0  abort (fmt=fmt@entry=0x405ad850 "Assertion failed: %s (%s: %s: %d)\n") at runtime.cc:113
+#1  0x0000000040238909 in __assert_fail (expr=<optimized out>, file=<optimized out>, line=<optimized out>, func=<optimized out>) at runtime.cc:150
+#2  0x00000000402bb66d in sched::preempt_disable () at include/osv/sched.hh:1054
+#3  0x00000000402be3ff in sched::preempt_disable () at include/osv/sched.hh:1054
+#4  osv::rcu_lock_type::lock () at include/osv/rcu.hh:169
+#5  std::lock_guard<osv::rcu_lock_type>::lock_guard (__m=..., this=<synthetic pointer>) at /usr/include/c++/11/bits/std_mutex.h:229
+#6  lock_guard_for_with_lock<osv::rcu_lock_type>::lock_guard_for_with_lock (lock=..., this=<synthetic pointer>) at include/osv/mutex.h:89
+#7  elf::program::modules_get (this=<optimized out>) at core/elf.cc:1822
+#8  0x00000000402beab0 in elf::program::with_modules<elf::program::lookup_addr(void const*)::<lambda(const elf::program::modules_list&)> > (f=..., 
+    this=0xffffa00000099d30) at include/osv/elf.hh:705
+#9  elf::program::lookup_addr (this=0xffffa00000099d30, 
+    addr=addr@entry=0x40238908 <__assert_fail(char const*, char const*, unsigned int, char const*)+24>) at core/elf.cc:1640
+#10 0x000000004039263c in osv::lookup_name_demangled (addr=0x40238908 <__assert_fail(char const*, char const*, unsigned int, char const*)+24>, 
+    buf=0xffff800000143760 "\220\027+@", len=1024) at core/demangle.cc:47
+#11 0x000000004023840a in print_backtrace () at runtime.cc:93
+#12 0x00000000402388bc in abort (fmt=fmt@entry=0x405ad850 "Assertion failed: %s (%s: %s: %d)\n") at runtime.cc:129
+#13 0x0000000040238909 in __assert_fail (expr=<optimized out>, file=<optimized out>, line=<optimized out>, func=<optimized out>) at runtime.cc:150
+#14 0x000000004036393d in sched::preempt_disable () at include/osv/sched.hh:1054
+#15 0x00000000403675c0 in sched::preempt_disable () at core/sched.cc:236
+#16 osv::rcu_lock_type::lock () at include/osv/rcu.hh:169
+#17 std::lock_guard<osv::rcu_lock_type>::lock_guard (__m=..., this=<synthetic pointer>) at /usr/include/c++/11/bits/std_mutex.h:229
+#18 lock_guard_for_with_lock<osv::rcu_lock_type>::lock_guard_for_with_lock (lock=..., this=<synthetic pointer>) at include/osv/mutex.h:89
+#19 sched::thread::wake (this=<optimized out>) at core/sched.cc:1223
+#20 0x00000000403518b2 in memory::page_pool::l1::wake_thread (this=0xffff800000174040) at /usr/include/c++/11/bits/unique_ptr.h:173
+#21 memory::page_pool::l1::alloc_page_local () at core/mempool.cc:1413
+#22 0x0000000040354462 in memory::page_pool::l1::alloc_page () at core/mempool.cc:1178
+#23 memory::untracked_alloc_page () at core/mempool.cc:1678
+#24 memory::pool::add_page (this=0x408439a0 <memory::malloc_pools+96>) at core/mempool.cc:257
+#25 0x00000000403545c0 in memory::pool::alloc (this=0x408439a0 <memory::malloc_pools+96>) at core/mempool.cc:224
+#26 0x000000004035477b in std_malloc (size=11, alignment=16) at core/mempool.cc:1789
+#27 0x0000000040354c37 in malloc (size=size@entry=11) at core/mempool.cc:2008
+#28 0x00000000403d9905 in setenv (var=0x405aada9 "OSV_CPUS", value=0xffff800000143f50 "1", overwrite=<optimized out>) at musl/src/env/setenv.c:36
+#29 0x000000004022b4d1 in main_cont (loader_argc=<optimized out>, loader_argv=<optimized out>) at /usr/include/c++/11/bits/basic_string.h:194
+#30 0x000000004022b9cf in operator() (__closure=<optimized out>, __closure=<optimized out>) at loader.cc:144
+#31 std::__invoke_impl<void, main(int, char**)::<lambda()>&> (__f=...) at /usr/include/c++/11/bits/invoke.h:61
+#32 std::__invoke_r<void, main(int, char**)::<lambda()>&> (__fn=...) at /usr/include/c++/11/bits/invoke.h:154
+#33 std::_Function_handler<void(), main(int, char**)::<lambda()> >::_M_invoke(const std::_Any_data &) (__functor=...)
+    at /usr/include/c++/11/bits/std_function.h:290
+#34 0x0000000040367b3a in sched::thread::main (this=0x40801df0) at core/sched.cc:1269
+#35 sched::thread_main_c (t=0x40801df0) at arch/x64/arch-switch.hh:325
+#36 0x00000000402fb5b3 in thread_main () at arch/x64/entry.S:116

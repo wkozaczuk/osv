@@ -1,0 +1,75 @@
+================================
+= no need to do anything
+================================
+-- invoke_interrupt() called by interrupt() which is always executed on interrupt/exception stack
+./arch/aarch64/exceptions.cc:125:    WITH_LOCK(osv::rcu_read_lock) {
+./arch/x64/exceptions.cc:223:    WITH_LOCK(osv::rcu_read_lock) {
+
+-- classifier::post_packet() - is ALWAYS called by kernel threads like "virtio-net-rx" so stack is populated
+./core/net_channel.cc:131:    WITH_LOCK(osv::rcu_read_lock) {
+-- void net_channel::wake_pollers() - called by net_channel::wake() called by classifier::post_packet()
+./core/net_channel.cc:43:    WITH_LOCK(osv::rcu_read_lock) {
+
+-- void virt_visit_pte_rcu() - called by x64 mmu::fast_sigsegv_check() which is called by mmu::vm_fault() called by page_fault
+   which is executed on exception stack
+./core/mmu.cc:904:    WITH_LOCK(osv::rcu_read_lock) {
+
+================================
+= Preemption MUST be enabled - Pre-fault stack if IRQ is enabled as well (can we assume it?)
+================================
+-- program::tls_object() called by __tls_get_addr() which is libc API so preemtion must be enabled
+./include/osv/elf.hh:721:    SCOPE_LOCK(osv::rcu_read_lock);
+
+-- program::modules_list program::modules_get() in elf.cc - we imply preemption must be enabled because of nested DROP_LOCK
+./core/elf.cc:1822:    WITH_LOCK(osv::rcu_read_lock) {
+./core/elf.cc:1828:            DROP_LOCK(osv::rcu_read_lock) {
+
+==================================================
+= We do not know for sure if preemption is enabled here
+==================================================
+-- thread::do_wake_with() which calls thread::wake_impl() which disables interrupts with WITH_LOCK(irq_lock)
+./include/osv/sched.hh:1307:    WITH_LOCK(osv::rcu_read_lock) {
+
+-- Maybe there is some common truth about all wakes
+-- void thread::wake()
+./core/sched.cc:1223:    WITH_LOCK(rcu_read_lock) {
+
+-- thread::wake_lock(mutex* mtx, wait_record* wr)
+./core/sched.cc:1231:    WITH_LOCK(rcu_read_lock) {
+
+-- void thread_handle::wake()
+./core/sched.cc:1436:    WITH_LOCK(rcu_read_lock) {
+
+==================================================
+= Most likely this is called with preemption and IRQ enabled => can safely prefault stack
+==================================================
+-- thread::unsafe_stop() - called by application::unsafe_stop_and_abandon_other_threads()
+   and osv::shutdown() => both IRQ and preemption should be enabled 
+./core/sched.cc:1257:    WITH_LOCK(rcu_read_lock) {
+
+-- routcache::lookup()
+./bsd/sys/net/routecache.hh:165:        WITH_LOCK(osv::rcu_read_lock) {
+
+-- arp_cache::lookup()
+./bsd/sys/netinet/arpcache.hh:101:        WITH_LOCK(osv::rcu_read_lock) {
+
+-- VFS fget() used mostly in fs/vfs/main.cc
+./fs/vfs/kern_descrip.cc:148:    WITH_LOCK(rcu_read_lock) {
+
+-- program::object_containing_addr(const void *addr) called by libc API _dl_find_object() and __cxa_thread_atexit_impl() (by linked_destructor)
+   which seems to imply preemption must be enabled
+./core/elf.cc:1657:    WITH_LOCK(osv::rcu_read_lock) {
+
+-------------
+
+
+./core/trace.cc:250:        WITH_LOCK(osv::rcu_read_lock) {
+./core/trace.cc:286:    WITH_LOCK(osv::rcu_read_lock) {
+
+===================================
+./tests/tst-rcu-list.cc:44:        WITH_LOCK(osv::rcu_read_lock) {
+./tests/tst-rcu-hashtable.cc:56:        WITH_LOCK(osv::rcu_read_lock) {
+./tests/tst-rcu-hashtable.cc:96:    WITH_LOCK(osv::rcu_read_lock) {
+./tests/tst-rcu-hashtable.cc:126:        WITH_LOCK(osv::rcu_read_lock) {
+./tests/tst-rcu-hashtable.cc:135:                    DROP_LOCK(osv::rcu_read_lock) {
+./tests/tst-rcu-hashtable.cc:144:                    DROP_LOCK(osv::rcu_read_lock) {

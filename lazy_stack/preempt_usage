@@ -1,0 +1,28 @@
+tst-hello.so
+----
+p preempted
+$1 = {<std::__atomic_base<unsigned long>> = {static _S_alignment = 8, _M_i = 9031}, <No data fields>}
+(gdb) p irq_disabled
+$2 = {<std::__atomic_base<unsigned long>> = {static _S_alignment = 8, _M_i = 2177}, <No data fields>}
+
+misc-free-perf.so
+----
+Freed 46989334 in 7.00 s = 6711656.50 per second
+(gdb)  p preempted
+$2 = {<std::__atomic_base<unsigned long>> = {static _S_alignment = 8, _M_i = 127860208}, <No data fields>}
+(gdb)  p irq_disabled
+$3 = {<std::__atomic_base<unsigned long>> = {static _S_alignment = 8, _M_i = 1088650}, <No data fields>}
+
+ZFS image building
+----
+(gdb) p preempted
+$1 = {<std::__atomic_base<unsigned long>> = {static _S_alignment = 8, _M_i = 5289908}, <No data fields>}
+(gdb) p irq_disabled
+$2 = {<std::__atomic_base<unsigned long>> = {static _S_alignment = 8, _M_i = 365185}, <No data fields>}
+
+golang pie httpserver (after ab runnning with 200K requests)
+----
+(gdb) p preempted
+$1 = {<std::__atomic_base<unsigned long>> = {static _S_alignment = 8, _M_i = 9650790}, <No data fields>}
+(gdb) p irq_disabled
+$2 = {<std::__atomic_base<unsigned long>> = {static _S_alignment = 8, _M_i = 3071152}, <No data fields>}

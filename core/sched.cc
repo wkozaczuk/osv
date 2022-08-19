@@ -224,6 +224,7 @@ void thread::cputime_estimator_get(
 // scheduler on a different CPU would be disastrous.
 void cpu::schedule()
 {
+    sched::ensure_next_stack_page_if_preemptable();
     WITH_LOCK(irq_lock) {
 #ifdef __aarch64__
         reschedule_from_interrupt(sched::cpu::current(), false, thyst);
@@ -444,6 +445,7 @@ void cpu::do_idle()
                 }
             }
         }
+        assert(!thread::current()->is_app());
         std::unique_lock<irq_lock_type> guard(irq_lock);
         handle_incoming_wakeups();
         if (!runqueue.empty()) {
@@ -477,6 +479,7 @@ void cpu::idle()
 
 void cpu::handle_incoming_wakeups()
 {
+    assert(!arch::irq_enabled() || !thread::current()->is_app());
     cpu_set queues_with_wakes{incoming_wakeups_mask.fetch_clear()};
     if (!queues_with_wakes) {
         return;
@@ -557,6 +560,7 @@ void thread::pin(cpu *target_cpu)
         t.wake();
     }, sched::thread::attr().pin(source_cpu)));
     wakeme->start();
+    sched::ensure_next_stack_page_if_preemptable();
     WITH_LOCK(irq_lock) {
         trace_sched_migrate(&t, target_cpu->id);
         t.stat_migrations.incr();
@@ -591,6 +595,7 @@ void thread::pin(thread *t, cpu *target_cpu)
     // helper thread to follow the target thread's CPU. We could have also
     // re-used an existing thread (e.g., the load balancer thread).
     thread_unique_ptr helper(thread::make_unique([&] {
+        assert(!thread::current()->is_app());
         WITH_LOCK(irq_lock) {
             // This thread started on the same CPU as t, but by now t might
             // have moved. If that happened, we need to move too.
@@ -741,6 +746,7 @@ void cpu::load_balance()
         if (min->load() >= (load() - 1)) {
             continue;
         }
+        assert(!thread::current()->is_app());
         WITH_LOCK(irq_lock) {
             auto i = std::find_if(runqueue.rbegin(), runqueue.rend(),
                     [](thread& t) { return t._migration_lock_counter == 0; });
@@ -798,6 +804,7 @@ void thread::yield(thread_runtime::duration preempt_after)
 {
     trace_sched_yield();
     auto t = current();
+    sched::ensure_next_stack_page_if_preemptable();
     std::lock_guard<irq_lock_type> guard(irq_lock);
     // FIXME: drive by IPI
     cpu::current()->handle_incoming_wakeups();
@@ -1200,6 +1207,7 @@ void thread::wake_impl(detached_state* st, unsigned allowed_initial_states_mask)
         unsigned c = cpu::current()->id;
         // we can now use st->t here, since the thread cannot terminate while
         // it's waking, but not afterwards, when it may be running
+        assert(!sched::preemptable());
         irq_save_lock_type irq_lock;
         WITH_LOCK(irq_lock) {
             tcpu->incoming_wakeups[c].push_back(*st->t);
@@ -1515,6 +1523,8 @@ timer_base::timer_base(timer_base::client& t)
 
 timer_base::~timer_base()
 {
+    assert(arch::irq_enabled()); //TODO: We might resort to heavier "if preemptable() and irq_enabled()" ensure
+    sched::ensure_next_stack_page_if_preemptable();
     cancel();
 }
 
@@ -1526,9 +1536,11 @@ void timer_base::expire()
     _t.timer_fired();
 }
 
+std::atomic<u64> timer_set(0);
 void timer_base::set(osv::clock::uptime::time_point time)
 {
     trace_timer_set(this, time.time_since_epoch().count());
+    timer_set++;
     irq_save_lock_type irq_lock;
     WITH_LOCK(irq_lock) {
         _state = state::armed;
@@ -1566,6 +1578,7 @@ void timer_base::reset(osv::clock::uptime::time_point time)
 
     auto& timers = cpu::current()->timers;
 
+    assert(!thread::current()->is_app() || !sched::preemptable());
     irq_save_lock_type irq_lock;
     WITH_LOCK(irq_lock) {
         if (_state == state::armed) {

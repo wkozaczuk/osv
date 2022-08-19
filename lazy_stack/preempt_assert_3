@@ -1,0 +1,43 @@
+#0  abort (fmt=fmt@entry=0x405ac1d0 "Assertion failed: %s (%s: %s: %d)\n") at runtime.cc:113
+#1  0x0000000040238989 in __assert_fail (expr=<optimized out>, file=<optimized out>, line=<optimized out>, func=<optimized out>) at runtime.cc:150
+#2  0x00000000403533d3 in memory::pool::alloc (this=<optimized out>) at core/mempool.cc:216
+#3  0x000000004035347b in std_malloc (size=8, alignment=8) at core/mempool.cc:1789
+#4  0x0000000040353937 in malloc (size=8) at core/mempool.cc:2008
+#5  0x000000004041c59c in operator new(unsigned long) ()
+#6  0x00000000402bdca0 in __gnu_cxx::new_allocator<elf::object*>::allocate (this=0xffff80000018b5e0, __n=1)
+    at /usr/include/c++/11/ext/new_allocator.h:103
+#7  std::allocator_traits<std::allocator<elf::object*> >::allocate (__n=1, __a=...) at /usr/include/c++/11/bits/alloc_traits.h:464
+#8  std::_Vector_base<elf::object*, std::allocator<elf::object*> >::_M_allocate (__n=1, this=0xffff80000018b5e0)
+    at /usr/include/c++/11/bits/stl_vector.h:346
+#9  std::vector<elf::object*, std::allocator<elf::object*> >::reserve (__n=1, this=0xffff80000018b5e0) at /usr/include/c++/11/bits/vector.tcc:78
+#10 elf::program::modules_get (this=0xffffa00000099d30) at core/elf.cc:1829
+#11 0x00000000402be560 in elf::program::with_modules<elf::program::lookup_addr(void const*)::<lambda(const elf::program::modules_list&)> > (f=..., 
+    this=0xffffa00000099d30) at include/osv/elf.hh:705
+#12 elf::program::lookup_addr (this=0xffffa00000099d30, 
+    addr=addr@entry=0x40238988 <__assert_fail(char const*, char const*, unsigned int, char const*)+24>) at core/elf.cc:1640
+#13 0x000000004039113c in osv::lookup_name_demangled (addr=0x40238988 <__assert_fail(char const*, char const*, unsigned int, char const*)+24>, 
+    buf=0xffff80000018baa0 "\206\001\216\237 fB\214\060.[@", len=1024) at core/demangle.cc:47
+#14 0x000000004023848a in print_backtrace () at runtime.cc:93
+#15 0x000000004023893c in abort (fmt=fmt@entry=0x405ac1d0 "Assertion failed: %s (%s: %s: %d)\n") at runtime.cc:129
+#16 0x0000000040238989 in __assert_fail (expr=<optimized out>, file=<optimized out>, line=<optimized out>, func=<optimized out>) at runtime.cc:150
+#17 0x0000000040352d41 in preempt_lock_t::lock (this=<optimized out>) at include/osv/preempt-lock.hh:15
+#18 preempt_lock_t::lock (this=<optimized out>) at include/osv/preempt-lock.hh:15
+#19 std::lock_guard<preempt_lock_t>::lock_guard (__m=..., this=<synthetic pointer>) at /usr/include/c++/11/bits/std_mutex.h:229
+#20 lock_guard_for_with_lock<preempt_lock_t>::lock_guard_for_with_lock (lock=..., this=<synthetic pointer>) at include/osv/mutex.h:89
+#21 operator() (__closure=<synthetic pointer>) at core/mempool.cc:1357
+
+---- FAILS because do_wait_until uses wait_guard that calls prepare_wait() which calls preempt_disable()
+
+#22 sched::thread::do_wait_until<sched::noninterruptible, sched::thread::dummy_lock, memory::page_pool::l1::fill_thread()::<lambda()> > (
+    mtx=<synthetic pointer>..., pred=...) at include/osv/sched.hh:1112
+#23 sched::thread::wait_until<memory::page_pool::l1::fill_thread()::<lambda()> > (pred=...) at include/osv/sched.hh:1130
+#24 memory::page_pool::l1::fill_thread () at core/mempool.cc:1356
+#25 0x0000000040355c29 in memory::page_pool::l1::l1(sched::cpu*)::{lambda()#1}::operator()() const (__closure=<optimized out>) at core/mempool.cc:1168
+#26 std::__invoke_impl<void, memory::page_pool::l1::l1(sched::cpu*)::{lambda()#1}&>(std::__invoke_other, memory::page_pool::l1::l1(sched::cpu*)::{lambda()#1}&) (__f=...) at /usr/include/c++/11/bits/invoke.h:61
+#27 std::__invoke_r<void, memory::page_pool::l1::l1(sched::cpu*)::{lambda()#1}&>(memory::page_pool::l1::l1(sched::cpu*)::{lambda()#1}&) (__fn=...)
+    at /usr/include/c++/11/bits/invoke.h:154
+#28 std::_Function_handler<void (), memory::page_pool::l1::l1(sched::cpu*)::{lambda()#1}>::_M_invoke(std::_Any_data const&) (__functor=...)
+    at /usr/include/c++/11/bits/std_function.h:290
+#29 0x00000000403666fa in sched::thread::main (this=0xffff800000176040) at core/sched.cc:1269
+#30 sched::thread_main_c (t=0xffff800000176040) at arch/x64/arch-switch.hh:325
+#31 0x00000000402fae83 in thread_main () at arch/x64/entry.S:116

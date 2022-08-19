@@ -1,0 +1,54 @@
+===
+RCU the rcu_lock_type is equivalent to preempt_lock OF type preempt_lock_t
+    it calls preempt_disable() on lock
+    IDENTIFY all places where rcu_read_lock is used
+
+    Please note that:
+     - rcu_read_lock_in_preempt_disabled OF type rcu_lock_in_preempt_type
+     - preempt_lock_in_rcu               OF type preempt_lock_in_rcu_type
+    do ABSOLUTELY nothing
+===
+./include/osv/rcu.hh:113:extern rcu_lock_in_preempt_type rcu_read_lock_in_preempt_disabled;
+./include/osv/rcu.hh:169:    sched::preempt_disable();
+./core/rcu.cc:24:rcu_lock_in_preempt_type rcu_read_lock_in_preempt_disabled;
+
+===
+preempt_lock - used all over the place
+./include/osv/preempt-lock.hh:18:       sched::preempt_disable();
+===
+
+================================
+= no need to do anything
+================================
+-- part of the kernel "idle" thread
+./core/sched.cc:467:    preempt_disable();
+./core/sched.cc:1168:    WITH_LOCK(rcu_read_lock_in_preempt_disabled) {
+
+-- this is used by trace only and it the code between preempt_disable() and preempt_enable()
+   does NOT seem to be using the stack so may not need to do anything here (VERIFY where exacly the tracepoint is stored)
+./core/per-cpu-counter.cc:14:    sched::preempt_disable();
+
+
+-- thread::prepare_wait() is only used by wait_guard which also calls thread::stop_wait() that calls preempt_enable
+   It might be that in all cases this is called the preemption is ENABLED (see thread::do_wait_until())
+./core/sched.cc:1145:    preempt_disable();
+
+
+-- thread::complete() - this is so rare that might simply do a conditional on both preemption and IRQ
+./core/sched.cc:1312:    preempt_disable();
+
+
+-- spinlock seems to be used in the early stage of the console-multiplexer
+   which would run on kernel thread so we do not need to do anything I think
+   for aarch64 used in gic.cc and except for send_sgi() is is used early on kernel thread
+   BUT send_sgi() is not clear
+./core/spinlock.cc:13:    sched::preempt_disable();
+./core/spinlock.cc:23:    sched::preempt_disable();
+
+-- may be called from networking code also on app threads BUT maybe
+   preemption is always enabled in all those cases
+./include/osv/percpu_xmit.hh:473:        sched::preempt_disable();
+./include/osv/percpu_xmit.hh:512:            sched::preempt_disable();
+
+./core/condvar.cc:36:    // This preempt_disable() is just an optimization, to avoid context
+./core/condvar.cc:38:    sched::preempt_disable();

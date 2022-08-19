@@ -502,6 +502,7 @@ void itimer::work()
                         _owner_thread->interrupted(true);
                     }
                 } else {
+                    assert(!sched::thread::current()->is_app());
                     tmr.cancel();
                 }
             } else {

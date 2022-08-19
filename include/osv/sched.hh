@@ -1034,6 +1034,13 @@ inline bool preemptable()
     return !get_preempt_counter();
 }
 
+inline void ensure_next_stack_page_if_preemptable() {
+    if (!preemptable()) {
+        return;
+    }
+    arch::ensure_next_stack_page();
+}
+
 inline void preempt()
 {
     if (preemptable()) {

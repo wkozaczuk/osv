@@ -1,0 +1,79 @@
+================================
+= no need to do anything
+================================
+-- in temp kernel thread spawned by thread::unpin() so must be running on populated stack
+./core/sched.cc:707:        WITH_LOCK(preempt_lock) {
+./core/sched.cc:711:                DROP_LOCK(preempt_lock) {
+
+--------------------------------
+-- garbage_collector_fn which is executed by "percpu%d" kernel threads
+./core/mempool.cc:157:    WITH_LOCK(preempt_lock) {
+
+-- l1::fill_thread() executed on kernel threads "page_pool_l1_%d"
+./core/mempool.cc:1357:                WITH_LOCK(preempt_lock) {
+
+-- cpu_quiescent_state_thread::do_work() is executed by "rcu%n" kernel threads
+./core/rcu.cc:121:        WITH_LOCK(preempt_lock) {
+
+-- both async_worker::run() and async_worker::fire() executed by kernel thread "async_worker_%d"
+./core/async.cc:163:            WITH_LOCK(preempt_lock) {
+./core/async.cc:186:                    DROP_LOCK(preempt_lock) {
+./core/async.cc:227:        DROP_LOCK(preempt_lock) {
+
+================================
+= Preemption MUST be enabled - Pre-fault stack if IRQ is enabled as well (can we assume it?)
+================================
+-- pool::alloc() - the presence of DROP_LOCK implies preemption must be always enabled
+./core/mempool.cc:217:    WITH_LOCK(preempt_lock) {
+./core/mempool.cc:223:            DROP_LOCK(preempt_lock) {
+
+-- pool::add_page() - called by pool::alloc() whit DROP_LOCK 
+./core/mempool.cc:258:    WITH_LOCK(preempt_lock) {
+
+-- pool::free_same_cpu() and pool::free() - same reasoning as above
+./core/mempool.cc:293:        DROP_LOCK(preempt_lock) {
+./core/mempool.cc:323:    WITH_LOCK(preempt_lock) {
+
+-- l2 is global, l1 is local per-cpu
+-- l2:alloc_page_batch() must be called with preemption disabled
+./core/mempool.cc:1261:                DROP_LOCK(preempt_lock) {
+-- l2:free_page_batch() must be called with preemption disabled
+./core/mempool.cc:1273:                DROP_LOCK(preempt_lock) {
+
+-- l1::refill() uses SCOPE_LOCK and calls l2::alloc_page_batch() that uses DROP_LOCK
+./core/mempool.cc:1376:    SCOPE_LOCK(preempt_lock);
+
+-- l1::unfill() uses SCOPE_LOCK and calls l2::free_page_batch() that uses DROP_LOCK
+./core/mempool.cc:1397:    SCOPE_LOCK(preempt_lock);
+
+-- l1::alloc_page_local() called by l1::alloc_page() that also calls l1::refill() where we implied preemption was enabled
+./core/mempool.cc:1410:    SCOPE_LOCK(preempt_lock);
+-- l1::free_page_local() - similar to l1::alloc_page_local()
+./core/mempool.cc:1423:    SCOPE_LOCK(preempt_lock);
+
+--
+-- Use by BSD networking stack code and ZFS but possibly same rule applies as with pool::alloc() and pool::free()
+-- uma_zalloc_arg() calls malloc() and memory::alloc_page() where we imply preemption enabled so ...
+./bsd/porting/uma_stub.cc:37:    WITH_LOCK(preempt_lock) {
+-- uma_zfree_arg() - similar as above
+./bsd/porting/uma_stub.cc:104:    WITH_LOCK(preempt_lock) {
+
+-- Part of rcu_defer() - it has a DROP_LOCK on preempt_lock which would only work if preemption was enabled in first place
+./core/rcu.cc:196:    WITH_LOCK(preempt_lock) {
+./core/rcu.cc:207:                DROP_LOCK(preempt_lock) {
+
+==================================================
+We do no know if preemption is enabled here
+==================================================
+-- thread::unpin() - called by pthred API function in libc/pthread.cc - most likely preemption would be enabled
+./core/sched.cc:697:        WITH_LOCK(preempt_lock) {
+-- thread_runtime::duration thread::thread_clock() - possibly does not use stack - if not does not seem to be used in many places
+./core/sched.cc:869:        WITH_LOCK (preempt_lock) {
+
+-- first 2 called by methods which are called by timer_task::reschedule()
+-- I think it is used a lot in TCP networking stack: bsd/sys/netinet/tcp_timer.cc and bsd/sys/netinet/tcp_syncache.cc
+./core/async.cc:107:        WITH_LOCK(preempt_lock) {
+./core/async.cc:128:        WITH_LOCK(preempt_lock) {
+
+-- caled by async::run_later()
+./core/async.cc:145:        WITH_LOCK(preempt_lock) {

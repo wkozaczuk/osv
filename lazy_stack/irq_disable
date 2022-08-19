@@ -1,0 +1,11 @@
+./include/osv/irqlock.hh:    static void lock() { arch::irq_disable(); }
+./include/osv/irqlock.hh:    arch::irq_disable();
+
+irq_lock_type - lock() simply calls arch::irq_disable()
+irq_save_lock_type - lock() saves the flags and calls arch::irq_disable()
+
+./runtime.cc:    arch::irq_disable();
+
+arch::irq_disable()
+arch::irq_disable_notrace() - same above for both x64 and aarch64
+ - used in core/trace.cc
