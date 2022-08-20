@@ -145,6 +145,8 @@ int fget(int fd, struct file **out_fp)
     if (fd < 0 || fd >= FDMAX)
         return EBADF;
 
+    assert(sched::preemptable() && arch::irq_enabled());
+    arch::ensure_next_stack_page();
     WITH_LOCK(rcu_read_lock) {
         fp = gfdt[fd].read();
         if (fp == nullptr) {

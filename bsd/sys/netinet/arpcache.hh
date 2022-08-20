@@ -16,6 +16,7 @@
 #include <osv/rcu.hh>
 #include <osv/types.h>
 #include <osv/mutex.h>
+#include <osv/sched.hh>
 
 #include <boost/optional.hpp>
 #include <functional>
@@ -98,6 +99,8 @@ struct arp_cache {
 
     boost::optional<entry> lookup(const in_addr ip)
     {
+        assert(sched::preemptable() && arch::irq_enabled());
+        arch::ensure_next_stack_page();
         WITH_LOCK(osv::rcu_read_lock) {
             auto i = _entries.reader_find(ip, std::hash<in_addr>(), entry_compare());
             return boost::optional<entry>(!!i, *i);

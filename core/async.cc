@@ -160,6 +160,7 @@ public:
                 return _timer.expired() || !_queue.empty();
             });
 
+            assert(!sched::thread::current()->is_app());
             WITH_LOCK(preempt_lock) {
                 _timer.cancel();
 
@@ -224,6 +225,7 @@ private:
         }
 
         auto& master = *task.master;
+        assert(!sched::thread::current()->is_app());
         DROP_LOCK(preempt_lock) {
             master.fire(task);
         }

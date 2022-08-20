@@ -162,6 +162,8 @@ public:
         // route.cc).
         assert(fibnum == 0);
 
+        assert(sched::preemptable() && arch::irq_enabled());
+        arch::ensure_next_stack_page();
         WITH_LOCK(osv::rcu_read_lock) {
             auto *c = cache.read();
             auto entry = c->search(dst->sin_addr.s_addr);

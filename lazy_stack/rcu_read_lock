@@ -17,7 +17,7 @@
 ================================
 = Preemption MUST be enabled - Pre-fault stack if IRQ is enabled as well (can we assume it?)
 ================================
--- program::tls_object() called by __tls_get_addr() which is libc API so preemtion must be enabled
+-- program::tls_object() called by __tls_get_addr() which is libc API so preemption must be enabled
 ./include/osv/elf.hh:721:    SCOPE_LOCK(osv::rcu_read_lock);
 
 -- program::modules_list program::modules_get() in elf.cc - we imply preemption must be enabled because of nested DROP_LOCK

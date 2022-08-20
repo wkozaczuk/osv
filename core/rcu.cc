@@ -118,6 +118,7 @@ void cpu_quiescent_state_thread::do_work()
 {
     while (true) {
         bool toclean = false;
+        assert(!sched::thread::current()->is_app());
         WITH_LOCK(preempt_lock) {
             auto p = &*percpu_callbacks;
             if (p->ncallbacks[p->buf]) {
@@ -193,6 +194,8 @@ using namespace rcu;
 
 void rcu_defer(std::function<void ()>&& func)
 {
+    assert(sched::preemptable() && arch::irq_enabled());
+    arch::ensure_next_stack_page();
     WITH_LOCK(preempt_lock) {
         auto p = &*percpu_callbacks;
         while (p->ncallbacks[p->buf] == p->callbacks[p->buf].size()) {

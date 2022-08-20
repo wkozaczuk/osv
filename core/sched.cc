@@ -707,6 +707,7 @@ void thread::unpin()
         return;
     }
     thread_unique_ptr helper(thread::make_unique([this] {
+        assert(!thread::current()->is_app());
         WITH_LOCK(preempt_lock) {
             // helper thread started on the same CPU as "this", but by now
             // "this" might migrated. If that happened helper need to migrate.
@@ -1260,6 +1261,8 @@ void thread::wake_lock(mutex* mtx, wait_record* wr)
 
 bool thread::unsafe_stop()
 {
+    assert(sched::preemptable() && arch::irq_enabled());
+    arch::ensure_next_stack_page();
     WITH_LOCK(rcu_read_lock) {
         auto st = _detached_state.get();
         auto expected = status::waiting;

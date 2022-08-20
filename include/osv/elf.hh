@@ -16,6 +16,7 @@
 #include <unordered_set>
 #include <unordered_map>
 #include <osv/types.h>
+#include <osv/sched.hh>
 #include <atomic>
 
 #include "arch-elf.hh"
@@ -718,6 +719,8 @@ object::lookup(const char* symbol)
 
 object *program::tls_object(ulong module)
 {
+    assert(sched::preemptable() && arch::irq_enabled());
+    arch::ensure_next_stack_page();
     SCOPE_LOCK(osv::rcu_read_lock);
     return (*(get_program()->_module_index_list_rcu.read()))[module];
 }
