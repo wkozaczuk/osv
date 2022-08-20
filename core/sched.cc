@@ -1243,6 +1243,8 @@ void thread::wake()
 void thread::wake_lock(mutex* mtx, wait_record* wr)
 {
     // must be called with mtx held
+    assert(sched::preemptable() && arch::irq_enabled());
+    arch::ensure_next_stack_page();
     WITH_LOCK(rcu_read_lock) {
         auto st = _detached_state.get();
         // We want to send_lock() to this thread, but we want to be sure we're the only

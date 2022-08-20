@@ -27,7 +27,9 @@
 ==================================================
 = We do not know for sure if preemption is enabled here
 ==================================================
--- thread::do_wake_with() which calls thread::wake_impl() which disables interrupts with WITH_LOCK(irq_lock)
+-- thread::do_wake_with() which calls thread::wake_impl() which disables interrupts with WITH_LOCK(irq_lock); 2 versions:
+   - thread::wake_with(Action action)
+   - thread::wake_with_from_mutex(Action action) - IRQ is always enabled but preemption not always
 ./include/osv/sched.hh:1307:    WITH_LOCK(osv::rcu_read_lock) {
 
 -- Maybe there is some common truth about all wakes

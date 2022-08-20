@@ -1334,6 +1334,10 @@ template <class Action>
 inline
 void thread::wake_with_from_mutex(Action action)
 {
+    assert(arch::irq_enabled());
+    if (preemptable()) {
+        arch::ensure_next_stack_page();
+    }
     return do_wake_with(action, (1 << unsigned(status::waiting))
                               | (1 << unsigned(status::sending_lock)));
 }
