@@ -6,7 +6,6 @@ arch/aarch64/gic.cc - same as above
 
 DIRECT calls to preempt_disable()
 ./core/per-cpu-counter.cc:14
-./core/sched.cc:1312 - thread::complete()
 ./core/spinlock.cc
 ./include/osv/percpu_xmit.hh
 
@@ -14,11 +13,6 @@ rcu_read_lock
 ==================================================
 = We do not know for sure if IRQ or preemption is enabled here
 ==================================================
- -- thread::wake_with(Action action) which calls thread::do_wake_with() which calls
-      thread::wake_impl() which disables interrupts with WITH_LOCK(irq_lock)
-./include/osv/sched.hh:1328:    WITH_LOCK(osv::rcu_read_lock) {
-
--- Maybe there is some common truth about all wakes
 -- void thread::wake()
 ./core/sched.cc:1223:    WITH_LOCK(rcu_read_lock) {
 

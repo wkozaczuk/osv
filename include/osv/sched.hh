@@ -481,6 +481,8 @@ public:
     bool interrupted();
     void interrupted(bool f);
     template <class Action>
+    inline void wake_with_irq_or_preemption_disabled(Action action);
+    template <class Action>
     inline void wake_with(Action action);
     // for mutex internal use
     template <class Action>
@@ -1325,8 +1327,18 @@ void thread::sleep(std::chrono::duration<Rep, Period> duration)
 
 template <class Action>
 inline
+void thread::wake_with_irq_or_preemption_disabled(Action action)
+{
+    return do_wake_with(action, (1 << unsigned(status::waiting)));
+}
+
+template <class Action>
+inline
 void thread::wake_with(Action action)
 {
+    assert(arch::irq_enabled());
+    assert(preemptable());
+    arch::ensure_next_stack_page();
     return do_wake_with(action, (1 << unsigned(status::waiting)));
 }
 

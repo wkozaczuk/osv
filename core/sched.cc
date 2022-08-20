@@ -574,7 +574,7 @@ void thread::pin(cpu *target_cpu)
         t._detached_state->st.store(thread::status::waiting);
         // Note that wakeme is on the same CPU, and irq is disabled,
         // so it will not actually run until we stop running.
-        wakeme->wake_with([&] { do_wakeme = true; });
+        wakeme->wake_with_irq_or_preemption_disabled([&] { do_wakeme = true; });
 #ifdef __aarch64__
         reschedule_from_interrupt(source_cpu, false, thyst);
 #else
@@ -1191,7 +1191,7 @@ void thread::destroy()
             ds->st.store(status::terminated);
         } else {
             // The joiner won the race, and will wait. We need to wake it.
-            joiner->wake_with([&] { ds->st.store(status::terminated); });
+            joiner->wake_with_irq_or_preemption_disabled([&] { ds->st.store(status::terminated); });
         }
     }
 }
@@ -1328,6 +1328,9 @@ void thread::complete()
     }
     // If this thread gets preempted after changing status it will never be
     // scheduled again to set terminating_thread. So must disable preemption.
+    assert(arch::irq_enabled());
+    assert(preemptable());
+    arch::ensure_next_stack_page();
     preempt_disable();
     _detached_state->st.store(status::terminating);
     // We want to run destroy() here, but can't because it cause the stack we're
