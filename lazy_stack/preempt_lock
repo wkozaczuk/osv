@@ -64,7 +64,7 @@
 
 
 
-
+ADDRESSED:
 ==================================================
 We do no know if preemption is enabled here
 ==================================================
@@ -78,5 +78,5 @@ We do no know if preemption is enabled here
 ./core/async.cc:107:        WITH_LOCK(preempt_lock) {
 ./core/async.cc:128:        WITH_LOCK(preempt_lock) {
 
--- caled by async::run_later()
+-- called by async::run_later()
 ./core/async.cc:145:        WITH_LOCK(preempt_lock) {

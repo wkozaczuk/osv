@@ -104,6 +104,8 @@ public:
 
     void insert(percpu_timer_task& task)
     {
+        assert(arch::irq_enabled() && sched::preemptable());
+        arch::ensure_next_stack_page();
         WITH_LOCK(preempt_lock) {
             trace_async_timer_task_insert(this, &task);
 
@@ -125,6 +127,8 @@ public:
 
     percpu_timer_task& borrow_task()
     {
+        assert(arch::irq_enabled() && sched::preemptable());
+        arch::ensure_next_stack_page();
         WITH_LOCK(preempt_lock) {
             auto task = released_timer_tasks.pop();
             if (task) {
@@ -142,6 +146,8 @@ public:
     {
         auto task = new one_shot_task(std::move(callback));
 
+        assert(arch::irq_enabled() && sched::preemptable());
+        arch::ensure_next_stack_page();
         WITH_LOCK(preempt_lock) {
             if (_queue.empty()) {
                 _thread->wake();

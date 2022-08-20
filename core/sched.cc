@@ -464,6 +464,7 @@ void cpu::idle()
     // The idle thread must not sleep, because the whole point is that the
     // scheduler can always find at least one runnable thread.
     // We set preempt_disable just to help us verify this.
+    assert(!thread::current()->is_app());
     preempt_disable();
 
     if (id == 0) {
@@ -697,6 +698,8 @@ void thread::unpin()
     // to pin, unpin, or migrate the same thread, we need to run the actual
     // unpinning code on the same CPU as the target thread.
     if (this == current()) {
+        assert(arch::irq_enabled() && sched::preemptable());
+        arch::ensure_next_stack_page();
         WITH_LOCK(preempt_lock) {
             if (_pinned) {
                 _pinned = false;
@@ -872,6 +875,8 @@ static thread_runtime::duration total_app_time_exited(0);
 
 thread_runtime::duration thread::thread_clock() {
     if (this == current()) {
+        assert(arch::irq_enabled() && sched::preemptable());
+        arch::ensure_next_stack_page();
         WITH_LOCK (preempt_lock) {
             // Inside preempt_lock, we are running and the scheduler can't
             // intervene and change _total_cpu_time or _running_since
@@ -1148,6 +1153,9 @@ void thread::prepare_wait()
 {
     // After setting the thread's status to "waiting", we must not preempt it,
     // as it is no longer in "running" state and therefore will not return.
+    assert(arch::irq_enabled());
+    assert(sched::preemptable());
+    arch::ensure_next_stack_page();
     preempt_disable();
     assert(_detached_state->st.load() == status::running);
     _detached_state->st.store(status::waiting);

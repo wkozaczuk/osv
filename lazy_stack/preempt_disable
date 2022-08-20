@@ -25,7 +25,7 @@ preempt_lock - used all over the place
 ./core/sched.cc:1168:    WITH_LOCK(rcu_read_lock_in_preempt_disabled) {
 
 -- this is used by trace only and it the code between preempt_disable() and preempt_enable()
-   does NOT seem to be using the stack so may not need to do anything here (VERIFY where exacly the tracepoint is stored)
+   does NOT seem to be using the stack so may not need to do anything here (VERIFY where exactly the tracepoint is stored)
 ./core/per-cpu-counter.cc:14:    sched::preempt_disable();
 
 
