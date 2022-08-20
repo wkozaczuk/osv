@@ -470,6 +470,9 @@ lock:
     void push_cpu(void* cooky) {
         bool success = false;
 
+        assert(arch::irq_enabled());
+        assert(sched::preemptable());
+        arch::ensure_next_stack_page();
         sched::preempt_disable();
 
         cpu_queue_type* local_cpuq = _cpuq->get();
@@ -509,6 +512,8 @@ lock:
                 return;
             }
 
+            assert(arch::irq_enabled());
+            arch::ensure_next_stack_page();
             sched::preempt_disable();
 
             // Refresh: we could have been moved to a different CPU

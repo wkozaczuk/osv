@@ -7,7 +7,6 @@ arch/aarch64/gic.cc - same as above
 DIRECT calls to preempt_disable()
 ./core/per-cpu-counter.cc:14
 ./core/spinlock.cc
-./include/osv/percpu_xmit.hh
 
 rcu_read_lock
 ==================================================
