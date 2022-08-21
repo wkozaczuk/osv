@@ -473,6 +473,7 @@ public:
     static void wait_for(mutex& mtx, waitable&&... waitables);
 
     void wake();
+    void wake_with_irq_disabled();
     cpu* get_cpu() const {
         return _detached_state.get()->_cpu;
     }

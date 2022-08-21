@@ -664,7 +664,7 @@ void thread::pin(thread *t, cpu *target_cpu)
                 // comment above).
                 if (t->_detached_state->st.load(std::memory_order_relaxed) == status::waking) {
                     t->_detached_state->st.store(status::waiting);
-                    t->wake();
+                    t->wake_with_irq_disabled();
                 }
                 break;
             case status::queued:
@@ -678,7 +678,7 @@ void thread::pin(thread *t, cpu *target_cpu)
                 t->remote_thread_local_var(current_cpu) = target_cpu;
                 // pretend the thread was waiting, so we can wake it
                 t->_detached_state->st.store(status::waiting);
-                t->wake();
+                t->wake_with_irq_disabled();
                 break;
             default:
                 // Thread is in an unexpected state (for example, already
@@ -1235,6 +1235,16 @@ void thread::wake_impl(detached_state* st, unsigned allowed_initial_states_mask)
 
 void thread::wake()
 {
+    assert(arch::irq_enabled());
+    sched::ensure_next_stack_page_if_preemptable();
+    WITH_LOCK(rcu_read_lock) {
+        wake_impl(_detached_state.get());
+    }
+}
+
+void thread::wake_with_irq_disabled()
+{
+    assert(!arch::irq_enabled());
     WITH_LOCK(rcu_read_lock) {
         wake_impl(_detached_state.get());
     }
@@ -1419,7 +1429,7 @@ void thread::set_cleanup(std::function<void ()> cleanup)
 
 void thread::timer_fired()
 {
-    wake();
+    wake_with_irq_disabled();
 }
 
 unsigned int thread::id() const

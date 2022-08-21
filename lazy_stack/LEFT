@@ -8,13 +8,12 @@ DIRECT calls to preempt_disable()
                                using any stack
 ./core/spinlock.cc
 
+REVISIT core/sampler.cc and usage of arch::irq_enabled() when calling arm() or rearm()
+
 rcu_read_lock
 ==================================================
 = We do not know for sure if IRQ or preemption is enabled here
 ==================================================
--- void thread::wake()
-./core/sched.cc:1223:    WITH_LOCK(rcu_read_lock) {
-
 -- void thread_handle::wake()
 ./core/sched.cc:1436:    WITH_LOCK(rcu_read_lock) {
 

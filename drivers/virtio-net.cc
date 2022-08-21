@@ -316,7 +316,7 @@ net::net(virtio_device& dev)
         return new pci_interrupt(
             pci_dev,
             [=] { return this->ack_irq(); },
-            [=] { poll_task->wake(); });
+            [=] { poll_task->wake_with_irq_disabled(); });
     };
 #endif
 
@@ -333,7 +333,7 @@ net::net(virtio_device& dev)
     int_factory.create_gsi_edge_interrupt = [this,poll_task]() {
         return new gsi_edge_interrupt(
             _dev.get_irq(),
-            [=] { if (this->ack_irq()) poll_task->wake(); });
+            [=] { if (this->ack_irq()) poll_task->wake_with_irq_disabled(); });
     };
 #endif
 #endif
