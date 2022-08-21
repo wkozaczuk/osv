@@ -1,11 +1,11 @@
 core/trace.cc - arch::irq_disable_notrace()
 =================
-core/sched.cc - void timer_base::set() uses the "save" version of irq_lock and we do not know if irq enabled
 arch/aarch64/gic.cc - same as above
 =================
 
 DIRECT calls to preempt_disable()
-./core/per-cpu-counter.cc:14
+./core/per-cpu-counter.cc:14 - MAYBE this one is "do nothing" as the code between preempt_disable() and preempt_disable() does not seem to
+                               using any stack
 ./core/spinlock.cc
 
 rcu_read_lock

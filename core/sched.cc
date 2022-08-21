@@ -292,7 +292,7 @@ void cpu::reschedule_from_interrupt(bool called_from_yield,
                 preemption_timer.cancel();
                 auto delta = p->_runtime.time_until(t._runtime.get_local());
                 if (delta > 0) {
-                    preemption_timer.set(now + delta);
+                    preemption_timer.set_with_irq_disabled(now + delta);
                 }
 #ifdef __aarch64__
                 return switch_data;
@@ -353,11 +353,11 @@ void cpu::reschedule_from_interrupt(bool called_from_yield,
             auto& t = *runqueue.begin();
             auto delta = n->_runtime.time_until(t._runtime.get_local());
             if (delta > 0) {
-                preemption_timer.set(now + delta);
+                preemption_timer.set_with_irq_disabled(now + delta);
             }
         }
     } else {
-        preemption_timer.set(now + preempt_after);
+        preemption_timer.set_with_irq_disabled(now + preempt_after);
     }
 
     if (app_thread.load(std::memory_order_relaxed) != n->_app) { // don't write into a cache line if it can be avoided
@@ -1552,11 +1552,28 @@ void timer_base::expire()
     _t.timer_fired();
 }
 
+void timer_base::set_with_irq_disabled(osv::clock::uptime::time_point time)
+{
+    assert(!arch::irq_enabled());
+    trace_timer_set(this, time.time_since_epoch().count());
+    _state = state::armed;
+    _time = time;
+
+    auto& timers = cpu::current()->timers;
+    _t._active_timers.push_back(*this);
+    if (timers._list.insert(*this)) {
+        timers.rearm();
+    }
+};
+
 std::atomic<u64> timer_set(0);
 void timer_base::set(osv::clock::uptime::time_point time)
 {
     trace_timer_set(this, time.time_since_epoch().count());
     timer_set++;
+    assert(arch::irq_enabled());
+    assert(sched::preemptable());
+    arch::ensure_next_stack_page();
     irq_save_lock_type irq_lock;
     WITH_LOCK(irq_lock) {
         _state = state::armed;

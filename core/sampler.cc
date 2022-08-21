@@ -32,9 +32,14 @@ private:
     sched::timer_base _timer;
     bool _active;
 
-    void rearm()
+    void arm()
     {
         _timer.set(_config.period);
+    }
+
+    void rearm()
+    {
+        _timer.set_with_irq_disabled(_config.period);
     }
 
 public:
@@ -54,7 +59,11 @@ public:
     {
         assert(!_active);
         _active = true;
-        rearm();
+        if (arch::irq_enabled()) {
+            arm();
+        } else {
+            rearm();
+        }
     }
 
     void stop()

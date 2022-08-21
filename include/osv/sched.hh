@@ -186,6 +186,7 @@ public:
     explicit timer_base(client& t);
     ~timer_base();
     void set(osv::clock::uptime::time_point time);
+    void set_with_irq_disabled(osv::clock::uptime::time_point time);
     void reset(osv::clock::uptime::time_point time);
     // Set a timer using absolute wall-clock time.
     // CAVEAT EMPTOR: Internally timers are kept using the monotonic (uptime)
@@ -202,6 +203,10 @@ public:
     template <class Rep, class Period>
     void set(std::chrono::duration<Rep, Period> duration) {
         set(osv::clock::uptime::now() + duration);
+    }
+    template <class Rep, class Period>
+    void set_with_irq_disabled(std::chrono::duration<Rep, Period> duration) {
+        set_with_irq_disabled(osv::clock::uptime::now() + duration);
     }
     osv::clock::uptime::time_point get_timeout() {
         return _time;
