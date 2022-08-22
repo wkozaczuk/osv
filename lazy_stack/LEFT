@@ -1,4 +1,5 @@
-core/trace.cc - arch::irq_disable_notrace()
+Possibly revisit the order of "IFs" in trace.cc in respect of possible stack pre-fault
+
 =================
 arch/aarch64/gic.cc - same as above
 =================

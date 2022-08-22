@@ -247,6 +247,9 @@ void tracepoint_base::update()
     WITH_LOCK(trace_control_lock) {
         bool empty;
 
+        assert(arch::irq_enabled());
+        assert(sched::preemptable());
+        arch::ensure_next_stack_page();
         WITH_LOCK(osv::rcu_read_lock) {
             auto& probes = *probes_ptr.read();
 
@@ -376,6 +379,9 @@ extern "C" void __cyg_profile_func_enter(void *this_fn, void *call_site)
     }
     arch::irq_flag_notrace irq;
     irq.save();
+    if (irq.enabled()) {
+        sched::ensure_next_stack_page_if_preemptable();
+    }
     arch::irq_disable_notrace();
     if (func_trace_nesting++ == 0) {
         trace_function_entry(this_fn, call_site);
@@ -391,6 +397,9 @@ extern "C" void __cyg_profile_func_exit(void *this_fn, void *call_site)
     }
     arch::irq_flag_notrace irq;
     irq.save();
+    if (irq.enabled()) {
+        sched::ensure_next_stack_page_if_preemptable();
+    }
     arch::irq_disable_notrace();
     if (func_trace_nesting++ == 0) {
         trace_function_exit(this_fn, call_site);

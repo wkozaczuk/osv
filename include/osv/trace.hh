@@ -348,6 +348,9 @@ public:
         if (active) {
             arch::irq_flag_notrace irq;
             irq.save();
+            if (irq.enabled() && sched::preemptable()) {
+                arch::ensure_next_stack_page();
+            }
             arch::irq_disable_notrace();
             log(as);
             run_probes();
