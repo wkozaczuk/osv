@@ -1465,6 +1465,20 @@ void thread::sleep_impl(timer &t)
 
 void thread_handle::wake()
 {
+    assert(arch::irq_enabled());
+    assert(sched::preemptable());
+    arch::ensure_next_stack_page();
+    WITH_LOCK(rcu_read_lock) {
+        thread::detached_state* ds = _t.read();
+        if (ds) {
+            thread::wake_impl(ds);
+        }
+    }
+}
+
+void thread_handle::wake_from_kernel_or_with_irq_disabled()
+{
+    assert(!sched::thread::current()->is_app() || !arch::irq_enabled());
     WITH_LOCK(rcu_read_lock) {
         thread::detached_state* ds = _t.read();
         if (ds) {

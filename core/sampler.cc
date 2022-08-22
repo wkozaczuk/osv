@@ -106,7 +106,11 @@ static void start_on_current()
 
     if (prev_active + 1 == _n_cpus) {
         _started = true;
-        _controller.wake();
+        if (arch::irq_enabled()) {
+            _controller.wake();
+        } else {
+            _controller.wake_from_kernel_or_with_irq_disabled();
+        }
     }
 }
 
@@ -119,7 +123,11 @@ static void stop_on_current()
     _sampler->stop();
 
     if (--_active_cpus == 0) {
-        _controller.wake();
+        if (arch::irq_enabled()) {
+            _controller.wake();
+        } else {
+            _controller.wake_from_kernel_or_with_irq_disabled();
+        }
     }
 }
 

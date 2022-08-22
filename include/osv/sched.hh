@@ -825,6 +825,7 @@ public:
     }
     void reset(thread& t) { _t.assign(t._detached_state.get()); }
     void wake();
+    void wake_from_kernel_or_with_irq_disabled();
     void clear() { _t.assign(nullptr); }
     operator bool() const { return _t; }
     bool operator==(const thread_handle& x) const {

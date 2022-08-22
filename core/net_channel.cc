@@ -47,7 +47,7 @@ void net_channel::wake_pollers()
             for (pollreq* pr : *pl) {
                 // net_channel is self synchronizing
                 pr->_awake.store(true, std::memory_order_relaxed);
-                pr->_poll_thread.wake();
+                pr->_poll_thread.wake_from_kernel_or_with_irq_disabled();
             }
         }
         // can't call epoll_wake from rcu, so copy the data
