@@ -20,6 +20,11 @@ namespace arch {
 #define INSTR_SIZE_MIN 4
 #define ELF_IMAGE_START (OSV_KERNEL_VM_BASE + 0x10000)
 
+inline void ensure_next_stack_page() {
+    u64 i, offset = -4096;
+    asm volatile("ldr %0, [sp, %1]" : "=r"(i) : "r"(offset));
+}
+
 inline void irq_disable()
 {
     processor::irq_disable();

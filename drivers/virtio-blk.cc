@@ -153,7 +153,7 @@ blk::blk(virtio_device& virtio_dev)
                 gic::irq_type::IRQ_TYPE_EDGE,
                 _dev.get_irq(),
                 [=] { return this->ack_irq(); },
-                [=] { t->wake(); });
+                [=] { t->wake_with_irq_disabled(); });
     };
 #else
 #if CONF_drivers_mmio

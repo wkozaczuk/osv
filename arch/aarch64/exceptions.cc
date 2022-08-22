@@ -122,6 +122,7 @@ void interrupt_table::unregister_interrupt(interrupt *interrupt)
 
 bool interrupt_table::invoke_interrupt(unsigned int id)
 {
+    assert(!arch::irq_enabled());
     WITH_LOCK(osv::rcu_read_lock) {
         assert(id < this->nr_irqs);
         interrupt_desc *desc = this->irq_desc[id].read();
