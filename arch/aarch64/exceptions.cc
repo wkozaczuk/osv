@@ -165,6 +165,7 @@ void interrupt(exception_frame* frame)
         debug_early_u64("special InterruptID detected irq=", irq);
 
     } else {
+        assert(!arch::irq_enabled());
         if (!idt.invoke_interrupt(irq))
             debug_early_u64("unhandled InterruptID irq=", irq);
         gic::gic->end_irq(iar);

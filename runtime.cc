@@ -113,6 +113,7 @@ void abort(const char *fmt, ...)
         do {} while (true);
     }
 
+    sched::ensure_next_stack_page_if_preemptable();
     arch::irq_disable();
 
     static char msg[1024];

@@ -22,12 +22,16 @@ sgi_interrupt::~sgi_interrupt()
 
 void sgi_interrupt::send(sched::cpu* cpu)
 {
+    assert(!arch::irq_enabled() || !sched::preemptable());
     gic::gic->send_sgi(gic::sgi_filter::SGI_TARGET_LIST,
                        cpu->arch.smp_idx, get_id());
 }
 
 void sgi_interrupt::send_allbutself()
 {
+    if (arch::irq_enabled()) {
+        sched::ensure_next_stack_page_if_preemptable();
+    }
     gic::gic->send_sgi(gic::sgi_filter::SGI_TARGET_ALL_BUT_SELF,
                        0, get_id());
 }
