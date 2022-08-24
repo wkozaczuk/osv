@@ -3,7 +3,9 @@ Possibly revisit the order of "IFs" in trace.cc in respect of possible stack pre
 DIRECT calls to preempt_disable()
 ./core/per-cpu-counter.cc:14 - MAYBE this one is "do nothing" as the code between preempt_disable()
                                and preempt_disable() does not seem to using any stack
-./core/spinlock.cc
+./core/spinlock.cc - used in gic.cc (ARM) and console-multiplexer.cc => either in early boot stage OR on kernel threads OR
+                     send_sgi() called when stack would have been pre-faulted (IRQ or preemption disabled already) or was just pre-faulted
+                     earlier before the call to send_sgi()
 
 rcu_read_lock - all addressed
 
@@ -11,6 +13,7 @@ preempt_lock - all addressed
 
 ====================================
 - add core/mmu.cc double pre-fault logic (mmap(), etc)
+- measure how many times ensure_next_stack_page_if_preemptable() called
 - enable lazy_stack with conf
 - add unit tests for lazy stack
 - add tracepoint for lazy stack page fault
