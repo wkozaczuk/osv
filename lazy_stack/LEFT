@@ -12,9 +12,11 @@ rcu_read_lock - all addressed
 preempt_lock - all addressed
 
 ====================================
-- add core/mmu.cc double pre-fault logic (mmap(), etc)
-- enable lazy_stack with conf
 - add unit tests for lazy stack
 - add tracepoint for lazy stack page fault
 - measure how many times ensure_next_stack_page_if_preemptable() called
 - add Nadav's patch
+
+DONE:
+- add core/mmu.cc double pre-fault logic (mmap(), etc)
+- enable lazy_stack with conf
