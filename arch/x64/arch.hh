@@ -25,6 +25,11 @@ inline void ensure_next_stack_page() {
     asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
 }
 
+inline void ensure_next_two_stack_pages() {
+    char i;
+    asm volatile("movb -8192(%%rsp), %0" : "=r"(i));
+}
+
 inline void irq_disable()
 {
     processor::cli();

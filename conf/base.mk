@@ -13,3 +13,5 @@ conf-DEBUG_BUILD=0
 conf-debug_elf=0
 conf_hide_symbols=0
 conf_linker_extra_options=
+
+conf-lazy_stack=1
