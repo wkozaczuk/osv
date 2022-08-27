@@ -1,0 +1,17 @@
+#24 0x000000004023c4fd in __assert_fail (expr=<optimized out>, file=<optimized out>, line=<optimized out>, func=<optimized out>) at runtime.cc:151
+#25 0x000000004035d3eb in memory::pool::alloc (this=<optimized out>) at core/mempool.cc:217
+#26 0x000000004035d49b in std_malloc (size=32, alignment=16) at core/mempool.cc:1806
+#27 0x000000004035d97b in malloc (size=32) at core/mempool.cc:2025
+#28 0x000000004042b88c in operator new(unsigned long) ()
+#29 0x000000004037db76 in __gnu_cxx::new_allocator<trace_buf>::allocate (this=0x2000006ffec0, __n=<optimized out>) at /usr/include/c++/11/ext/new_allocator.h:103
+#30 std::allocator_traits<std::allocator<trace_buf> >::allocate (__n=<optimized out>, __a=...) at /usr/include/c++/11/bits/alloc_traits.h:464
+#31 std::_Vector_base<trace_buf, std::allocator<trace_buf> >::_M_allocate (__n=<optimized out>, this=<optimized out>) at /usr/include/c++/11/bits/stl_vector.h:346
+#32 std::vector<trace_buf, std::allocator<trace_buf> >::_M_realloc_insert<trace_buf&> (this=this@entry=0x2000006ffec0, __position=..., __position@entry=non-dereferenceable iterator for std::vector) at /usr/include/c++/11/bits/vector.tcc:440
+#33 0x0000000040379e96 in std::vector<trace_buf, std::allocator<trace_buf> >::emplace_back<trace_buf&> (this=0x2000006ffec0) at /usr/include/c++/11/bits/vector.tcc:121
+#34 operator() (__closure=0xffffa0000b1213e0) at core/trace.cc:729
+#35 std::__invoke_impl<void, trace::create_trace_dump()::<lambda()>&> (__f=...) at /usr/include/c++/11/bits/invoke.h:61
+#36 std::__invoke_r<void, trace::create_trace_dump()::<lambda()>&> (__fn=...) at /usr/include/c++/11/bits/invoke.h:154
+#37 std::_Function_handler<void(), trace::create_trace_dump()::<lambda()> >::_M_invoke(const std::_Any_data &) (__functor=...) at /usr/include/c++/11/bits/std_function.h:290
+#38 0x000000004037147e in sched::thread::main (this=0xffff80000b4eb040) at core/sched.cc:1298
+#39 sched::thread_main_c (t=0xffff80000b4eb040) at arch/x64/arch-switch.hh:327
+#40 0x0000000040302943 in thread_main () at arch/x64/entry.S:116
