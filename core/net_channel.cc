@@ -40,7 +40,9 @@ void net_channel::process_queue()
 
 void net_channel::wake_pollers()
 {
+#if CONF_lazy_stack_invariant
     assert(!sched::thread::current()->is_app());
+#endif
     WITH_LOCK(osv::rcu_read_lock) {
         auto pl = _pollers.read();
         if (pl) {
@@ -129,7 +131,9 @@ void classifier::remove(ipv4_tcp_conn_id id)
 
 bool classifier::post_packet(mbuf* m)
 {
+#if CONF_lazy_stack_invariant
     assert(!sched::thread::current()->is_app());
+#endif
     WITH_LOCK(osv::rcu_read_lock) {
         if (auto nc = classify_ipv4_tcp(m)) {
             log_packet_in(m, NETISR_ETHER);

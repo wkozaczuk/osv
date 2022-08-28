@@ -15,3 +15,4 @@ conf_hide_symbols=0
 conf_linker_extra_options=
 
 conf-lazy_stack=1
+conf-lazy_stack_invariant=0

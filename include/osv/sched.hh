@@ -1043,12 +1043,14 @@ inline bool preemptable()
     return !get_preempt_counter();
 }
 
+#if CONF_lazy_stack
 inline void ensure_next_stack_page_if_preemptable() {
     if (!preemptable()) {
         return;
     }
     arch::ensure_next_stack_page();
 }
+#endif
 
 inline void preempt()
 {
@@ -1343,9 +1345,13 @@ template <class Action>
 inline
 void thread::wake_with(Action action)
 {
+#if CONF_lazy_stack_invariant
     assert(arch::irq_enabled());
     assert(preemptable());
+#endif
+#if CONF_lazy_stack
     arch::ensure_next_stack_page();
+#endif
     return do_wake_with(action, (1 << unsigned(status::waiting)));
 }
 
@@ -1353,10 +1359,14 @@ template <class Action>
 inline
 void thread::wake_with_from_mutex(Action action)
 {
+#if CONF_lazy_stack_invariant
     assert(arch::irq_enabled());
+#endif
+#if CONF_lazy_stack
     if (preemptable()) {
         arch::ensure_next_stack_page();
     }
+#endif
     return do_wake_with(action, (1 << unsigned(status::waiting))
                               | (1 << unsigned(status::sending_lock)));
 }

@@ -122,7 +122,9 @@ void interrupt_table::unregister_interrupt(interrupt *interrupt)
 
 bool interrupt_table::invoke_interrupt(unsigned int id)
 {
+#if CONF_lazy_stack_invariant
     assert(!arch::irq_enabled());
+#endif
     WITH_LOCK(osv::rcu_read_lock) {
         assert(id < this->nr_irqs);
         interrupt_desc *desc = this->irq_desc[id].read();
@@ -165,7 +167,9 @@ void interrupt(exception_frame* frame)
         debug_early_u64("special InterruptID detected irq=", irq);
 
     } else {
+#if CONF_lazy_stack_invariant
         assert(!arch::irq_enabled());
+#endif
         if (!idt.invoke_interrupt(irq))
             debug_early_u64("unhandled InterruptID irq=", irq);
         gic::gic->end_irq(iar);

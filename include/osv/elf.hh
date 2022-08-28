@@ -719,8 +719,12 @@ object::lookup(const char* symbol)
 
 object *program::tls_object(ulong module)
 {
+#if CONF_lazy_stack_invariant
     assert(sched::preemptable() && arch::irq_enabled());
+#endif
+#if CONF_lazy_stack
     arch::ensure_next_stack_page();
+#endif
     SCOPE_LOCK(osv::rcu_read_lock);
     return (*(get_program()->_module_index_list_rcu.read()))[module];
 }

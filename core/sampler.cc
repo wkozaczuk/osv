@@ -187,8 +187,12 @@ void stop_sampler() throw()
 
     WITH_LOCK(migration_lock) {
         stop_sampler_ipi.send_allbutself();
+#if CONF_lazy_stack_invariant
         assert(arch::irq_enabled());
+#endif
+#if CONF_lazy_stack
         sched::ensure_next_stack_page_if_preemptable();
+#endif
         stop_on_current();
     }
 
