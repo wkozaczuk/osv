@@ -55,6 +55,8 @@ void thread::init_stack()
     if (!stack.begin) {
         stack.begin = malloc(stack.size);
         stack.deleter = stack.default_deleter;
+    } else {
+        (void) *((volatile char*)stack.begin + stack.size - 1);
     }
     void** stacktop = reinterpret_cast<void**>(stack.begin + stack.size);
     _state.fp = 0;

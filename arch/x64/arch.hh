@@ -28,6 +28,7 @@ inline void ensure_next_stack_page() {
 
 inline void ensure_next_two_stack_pages() {
     char i;
+    asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
     asm volatile("movb -8192(%%rsp), %0" : "=r"(i));
 }
 #endif

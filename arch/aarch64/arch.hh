@@ -25,6 +25,13 @@ inline void ensure_next_stack_page() {
     u64 i, offset = -4096;
     asm volatile("ldr %0, [sp, %1]" : "=r"(i) : "r"(offset));
 }
+
+inline void ensure_next_two_stack_pages() {
+    u64 i, offset = -4096;
+    asm volatile("ldr %0, [sp, %1]" : "=r"(i) : "r"(offset));
+    offset = -8192;
+    asm volatile("ldr %0, [sp, %1]" : "=r"(i) : "r"(offset));
+}
 #endif
 
 inline void irq_disable()
