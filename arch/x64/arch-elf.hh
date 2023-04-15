@@ -41,4 +41,16 @@ enum {
 
 #define ELF_KERNEL_MACHINE_TYPE 62
 
+inline void elf_entry_point(void* ep)
+{
+    asm volatile (
+        "pushq $0\n\t" // Zero
+        "pushq $0\n\t" // Environment pointers
+        "pushq $0\n\t" // Zero
+        "pushq $0\n\t" // Argument count
+        "jmpq  *%0\n\t"
+        :
+        : "r"(ep));
+}
+
 #endif /* ARCH_ELF_HH */
