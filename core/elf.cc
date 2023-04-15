@@ -885,6 +885,9 @@ constexpr Elf64_Versym old_version_symbol_mask = Elf64_Versym(1) << 15;
 
 Elf64_Sym* object::lookup_symbol_old(const char* name)
 {
+    if (!dynamic_exists(DT_SYMTAB)) {
+        return nullptr;
+    }
     auto symtab = dynamic_ptr<Elf64_Sym>(DT_SYMTAB);
     auto strtab = dynamic_ptr<char>(DT_STRTAB);
     auto hashtab = dynamic_ptr<Elf64_Word>(DT_HASH);
@@ -914,6 +917,9 @@ dl_new_hash(const char *s)
 
 Elf64_Sym* object::lookup_symbol_gnu(const char* name, bool self_lookup)
 {
+    if (!dynamic_exists(DT_SYMTAB)) {
+        return nullptr;
+    }
     auto symtab = dynamic_ptr<Elf64_Sym>(DT_SYMTAB);
     auto strtab = dynamic_ptr<char>(DT_STRTAB);
     auto hashtab = dynamic_ptr<Elf64_Word>(DT_GNU_HASH);
@@ -1016,6 +1022,9 @@ dladdr_info object::lookup_addr(const void* addr)
     if (addr < _base || addr >= _end) {
         return ret;
     }
+    if (!dynamic_exists(DT_STRTAB)) {
+        return ret;
+    }
     ret.fname = _pathname.c_str();
     ret.base = _base;
     auto strtab = dynamic_ptr<char>(DT_STRTAB);
@@ -1079,6 +1088,9 @@ void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
     if (!rpath_str.empty()) {
         boost::replace_all(rpath_str, "$ORIGIN", dirname(_pathname));
         boost::split(rpath, rpath_str, boost::is_any_of(":"));
+    }
+    if (!dynamic_exists(DT_NEEDED)) {
+        return;
     }
     auto needed = dynamic_str_array(DT_NEEDED);
     for (auto lib : needed) {
