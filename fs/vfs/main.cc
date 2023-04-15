@@ -1676,6 +1676,8 @@ TRACEPOINT(trace_vfs_fcntl, "%d %d 0x%x", int, int, int);
 TRACEPOINT(trace_vfs_fcntl_ret, "\"%s\"", int);
 TRACEPOINT(trace_vfs_fcntl_err, "%d", int);
 
+#define F_ADD_SEALS    1033
+
 extern "C" OSV_LIBC_API
 int fcntl(int fd, int cmd, int arg)
 {
@@ -1744,6 +1746,9 @@ int fcntl(int fd, int cmd, int arg)
         break;
     case F_SETOWN:
         WARN_ONCE("fcntl(F_SETOWN) stubbed\n");
+        break;
+    case F_ADD_SEALS:
+        WARN_ONCE("fcntl(F_ADD_SEALS) stubbed\n");
         break;
     default:
         kprintf("unsupported fcntl cmd 0x%x\n", cmd);

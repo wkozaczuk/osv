@@ -427,6 +427,29 @@ static int tgkill(int tgid, int tid, int sig)
 #define __NR_sys_getdents64 __NR_getdents64
 extern "C" ssize_t sys_getdents64(int fd, void *dirp, size_t count);
 
+#define __NR_sys_memfd_create SYS_memfd_create
+static int sys_memfd_create(const char *name, unsigned int flags)
+{
+    auto *file = tmpfile();
+    if (file) {
+        auto fd = fileno(file);
+        if (fd) {
+            auto fd2 = dup(fd);
+            fclose(file);
+            if (fd2) {
+               return fd2;
+            } else {
+               return -1;
+            }
+        } else {
+            fclose(file);
+            return -1;
+        }
+    } else {
+        return -1;
+    }
+}
+
 OSV_LIBC_API long syscall(long number, ...)
 {
     // Save FPU state and restore it at the end of this function
@@ -517,6 +540,8 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL3(symlinkat, const char *, int, const char *);
     SYSCALL3(sys_getdents64, int, void *, size_t);
     SYSCALL4(renameat, int, const char *, int, const char *);
+    SYSCALL3(mprotect, void *, size_t, int);
+    SYSCALL2(sys_memfd_create, const char *, unsigned int);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);

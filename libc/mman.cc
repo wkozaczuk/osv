@@ -245,12 +245,21 @@ int brk(void *addr)
     return -1;
 }
 
+static void *program_break = NULL;
+constexpr size_t sbrk_size = 1<<20;
+
 OSV_LIBC_API
 void *sbrk(intptr_t increment)
 {
-    WARN_STUBBED();
-    errno = ENOMEM;
-    return (void *)-1;
+    //WARN_STUBBED();
+    //errno = ENOMEM;
+    if (!program_break) {
+        program_break = mmap(NULL, sbrk_size, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+    }
+    if (increment) {
+        program_break += increment;
+    }
+    return program_break;
 }
 
 static unsigned posix_madvise_to_advise(int advice)
