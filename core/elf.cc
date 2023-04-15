@@ -248,10 +248,10 @@ const char * object::symbol_name(const Elf64_Sym * sym) {
 }
 
 void* object::entry_point() const {
-    if (!_is_executable) {
-        return nullptr;
+    if (_is_executable || _ehdr.e_type == ET_EXEC) {
+        return _base + _ehdr.e_entry;
     }
-    return _base + _ehdr.e_entry;
+    return nullptr;
 }
 
 file::file(program& prog, ::fileref f, std::string pathname)
