@@ -346,6 +346,7 @@ public:
     void unload_needed();
     void relocate();
     void set_base(void* base);
+    Elf64_Addr base_addr() const;
     void set_dynamic_table(Elf64_Dyn* dynamic_table);
     void* base() const;
     void* end() const;
@@ -374,6 +375,7 @@ public:
     std::vector<Elf64_Sym> symbols();
     const char * symbol_name(const Elf64_Sym *);
     void* entry_point() const;
+    bool is_dynamic() const;
     void init_static_tls();
     size_t initial_tls_size() { return _initial_tls_size; }
     void* initial_tls() { return _initial_tls.get(); }
