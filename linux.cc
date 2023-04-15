@@ -26,6 +26,7 @@
 #include <sys/socket.h>
 #include <sys/utsname.h>
 #include <sys/mman.h>
+#include <sys/uio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/select.h>
@@ -450,6 +451,21 @@ static int sys_memfd_create(const char *name, unsigned int flags)
     }
 }
 
+#define __NR_sys_brk __NR_brk
+static void *program_break = NULL;
+constexpr size_t brk_size = 1<<20;
+
+static long sys_brk(void *addr)
+{
+    if (!program_break) {
+        program_break = mmap(NULL, brk_size, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
+    }
+    if (addr) {
+        program_break = addr;
+    }
+    return (long)program_break;
+}
+
 OSV_LIBC_API long syscall(long number, ...)
 {
     // Save FPU state and restore it at the end of this function
@@ -542,6 +558,9 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL4(renameat, int, const char *, int, const char *);
     SYSCALL3(mprotect, void *, size_t, int);
     SYSCALL2(sys_memfd_create, const char *, unsigned int);
+    SYSCALL2(access, const char *, int);
+    SYSCALL1(sys_brk, void *);
+    SYSCALL3(writev, int, const struct iovec *, int);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);

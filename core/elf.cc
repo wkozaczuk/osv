@@ -549,9 +549,9 @@ void object::process_headers()
             abort("Unknown p_type in executable %s: %d\n", pathname(), phdr.p_type);
         }
     }
-    if (!is_core() && _ehdr.e_type == ET_EXEC && !_is_executable) {
-        abort("Statically linked executables are not supported!\n");
-    }
+    //if (!is_core() && _ehdr.e_type == ET_EXEC && !_is_executable) {
+    //    abort("Statically linked executables are not supported!\n");
+    //}
     if (_is_executable && _tls_segment) {
         auto app_tls_size = get_aligned_tls_size();
         ulong pie_static_tls_maximum_size = &_pie_static_tls_end - &_pie_static_tls_start;
