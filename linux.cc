@@ -466,6 +466,29 @@ static long sys_brk(void *addr)
     return (long)program_break;
 }
 
+extern long arch_prctl(int code, unsigned long addr);
+
+#define __NR_sys_set_robust_list __NR_set_robust_list
+struct robust_list {
+    struct robust_list *next;
+};
+
+struct robust_list_head {
+    struct robust_list list;
+    long futex_offset;
+    struct robust_list *list_op_pending;
+};
+
+static long sys_set_robust_list(struct robust_list_head *head, size_t len)
+{
+    return 0;
+}
+
+static long set_tid_address(int *tidptr)
+{
+    return 0;
+}
+
 OSV_LIBC_API long syscall(long number, ...)
 {
     // Save FPU state and restore it at the end of this function
@@ -561,6 +584,9 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL2(access, const char *, int);
     SYSCALL1(sys_brk, void *);
     SYSCALL3(writev, int, const struct iovec *, int);
+    SYSCALL2(arch_prctl, int, unsigned long);
+    SYSCALL2(sys_set_robust_list, struct robust_list_head *, size_t);
+    SYSCALL1(set_tid_address, int *);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
