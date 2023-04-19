@@ -81,12 +81,13 @@ void thread::switch_to()
     // barriers
     barrier();
     set_fsbase(reinterpret_cast<u64>(_tcb));
-    processor::wrmsr(msr::IA32_FS_KERNEL_BASE, reinterpret_cast<u64>(_tcb));
+    //processor::wrmsr(msr::IA32_FS_KERNEL_BASE, reinterpret_cast<u64>(_tcb));
     barrier();
     auto c = _detached_state->_cpu;
     old->_state.exception_stack = c->arch.get_exception_stack();
     c->arch.set_interrupt_stack(&_arch);
     c->arch.set_exception_stack(_state.exception_stack);
+    c->arch.kernel_tcb = reinterpret_cast<u64>(_tcb);
     auto fpucw = processor::fnstcw();
     auto mxcsr = processor::stmxcsr();
     asm volatile
