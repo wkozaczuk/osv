@@ -6,11 +6,12 @@
  */
 
 #include "arch.hh"
-#include "msr.hh"
 #include "libc/libc.hh"
 
 #include <assert.h>
 #include <stdio.h>
+
+#include <osv/sched.hh>
 
 enum {
     ARCH_SET_GS = 0x1001,
@@ -22,18 +23,11 @@ enum {
 long arch_prctl(int code, unsigned long addr)
 {
     switch (code) {
-    //case ARCH_SET_GS:
-    //    processor::wrmsr(msr::IA32_GS_BASE, addr);
-    //    asm volatile ("movq %0, %%gs" :: "r"(addr));
-    //    break;
     case ARCH_SET_FS:
-        //processor::wrmsr(msr::IA32_FS_BASE, addr);
-        //asm volatile ("movq %0, %%fs" :: "r"(addr));
+        sched::thread::current()->set_app_tcb(addr); 
         return 0;
     case ARCH_GET_FS:
-        return processor::rdmsr(msr::IA32_FS_BASE);
-    //case ARCH_GET_GS:
-    //    return processor::rdmsr(msr::IA32_GS_BASE);
+        return sched::thread::current()->get_app_tcb();
     }
     return libc_error(EINVAL);
 }
