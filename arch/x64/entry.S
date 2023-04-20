@@ -19,6 +19,25 @@
 	.cfi_def_cfa %rsp, 0
 	.cfi_offset %rip, 8
 	.cfi_offset %rsp, 32
+    # app->kernel tcb switch
+    movq %rax, %gs:8  # save register rax so we can restore it later
+    movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
+    #1. Check if counter 0 and jump over to 3 if not
+    cmpq $0, 40(%rax)
+    jne on_kernel_tcb3\name
+
+    #2. If zero set fs MSR to kernel tcb
+    movq %rbx, %gs:16  # save register rbx so we can restore it later
+    movq (%rax), %rbx # set kernel tcb
+    wrfsbase %rbx 
+    movq %gs:16, %rbx
+
+on_kernel_tcb3\name:
+    #3. Increment counter
+    incq 40(%rax)
+    #4. Restore %rax
+    movq %gs:8, %rax
+
 	pushq_cfi %rax
 	pushq_cfi %rbx
 	pushq_cfi %rcx
@@ -56,6 +75,27 @@
 	popq_cfi %rbx
 	popq_cfi %rax
 	add $8, %rsp
+    # kernel->app tcb switch
+    movq %rax, %gs:8  # save register rax so we can restore it later
+    movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
+
+    #1. Deccrement counter
+    decq 40(%rax)
+
+    #2. Check if counter 0 and jump over to 3 if not
+    cmpq $0, 40(%rax)
+    jne on_kernel_tcb4\name
+
+    #3. If zero set fs MSR to app tcb
+    movq %rbx, %gs:16  # save register rbx so we can restore it later
+    movq 32(%rax), %rbx # set to app tcb
+    wrfsbase %rbx 
+    movq %gs:16, %rbx
+
+on_kernel_tcb4\name:
+    #4. Restore %rax
+    movq %gs:8, %rax
+
 	iretq
 	.cfi_endproc
 .endm
@@ -174,6 +214,26 @@ syscall_entry:
     .cfi_register rip, rcx # rcx took previous rip value
     .cfi_register rflags, r11 # r11 took previous rflags value
     # There is no ring transition and rflags are left unchanged.
+    #
+    # app->kernel tcb switch
+    movq %rax, %gs:8  # save register rax so we can restore it later
+    movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
+    #1. Check if counter 0 and jump over to 3 if not
+    cmpq $0, 40(%rax)
+    jne on_kernel_tcb
+
+    #2. If zero set fs MSR to kernel tcb
+    movq %rbx, %gs:16  # save register rbx so we can restore it later
+    movq (%rax), %rbx # set kernel tcb
+    wrfsbase %rbx 
+    movq %gs:16, %rbx
+
+on_kernel_tcb:
+    #3. Increment counter
+    incq 40(%rax)
+    #4. Restore %rax
+    movq %gs:8, %rax
+
     #
     # Unfortunately the mov instruction cannot be used to dereference an address
     # on syscall stack pointed by address in TCB (%fs:16) - double memory dereference.
@@ -329,6 +389,27 @@ large_stack_has_been_setup:
 
     # Restore caller stack pointer
     movq %fs:24, %rsp
+
+    # kernel->app tcb switch
+    movq %rax, %gs:8  # save register rax so we can restore it later
+    movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
+
+    #1. Deccrement counter
+    decq 40(%rax)
+
+    #2. Check if counter 0 and jump over to 3 if not
+    cmpq $0, 40(%rax)
+    jne on_kernel_tcb2
+
+    #3. If zero set fs MSR to app tcb
+    movq %rbx, %gs:16  # save register rbx so we can restore it later
+    movq 32(%rax), %rbx # set to app tcb
+    wrfsbase %rbx 
+    movq %gs:16, %rbx
+
+on_kernel_tcb2:
+    #4. Restore %rax
+    movq %gs:8, %rax
 
     # jump to rcx where the syscall instruction put rip
     # (sysret would leave rxc cloberred so we have nothing to do to restore it)

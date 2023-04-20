@@ -614,6 +614,7 @@ extern "C" long syscall_wrapper(long p1, long p2, long p3, long p4, long p5, lon
 {
     int errno_backup = errno;
     // syscall and function return value are in rax
+    debug_early_u64("_syscall: ", number);
     auto ret = syscall(number, p1, p2, p3, p4, p5, p6);
     int result = -errno;
     errno = errno_backup;

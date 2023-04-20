@@ -25,6 +25,7 @@ long arch_prctl(int code, unsigned long addr)
     switch (code) {
     case ARCH_SET_FS:
         sched::thread::current()->set_app_tcb(addr); 
+        sched::thread::current()->use_app_tcb();
         return 0;
     case ARCH_GET_FS:
         return sched::thread::current()->get_app_tcb();

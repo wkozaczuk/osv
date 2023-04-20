@@ -31,7 +31,7 @@ struct thread_control_block {
     // Same as above this field could be an ordinary thread-local variable.
     void* syscall_caller_stack_pointer;
     unsigned long app_tcb;
-    long kernel_tcb_counter = 1;
+    long kernel_tcb_counter;
 };
 
 #endif /* ARCH_TLS_HH */

@@ -87,7 +87,7 @@ void thread::switch_to()
     old->_state.exception_stack = c->arch.get_exception_stack();
     c->arch.set_interrupt_stack(&_arch);
     c->arch.set_exception_stack(_state.exception_stack);
-    c->arch.kernel_tcb = reinterpret_cast<u64>(_tcb);
+    c->arch._tcb_data.kernel_tcb = reinterpret_cast<u64>(_tcb);
     auto fpucw = processor::fnstcw();
     auto mxcsr = processor::stmxcsr();
     asm volatile
@@ -260,6 +260,7 @@ void thread::setup_tcb()
     else {
         _tcb->syscall_stack_top = 0;
     }
+    _tcb->kernel_tcb_counter = 1;
 }
 
 void thread::setup_large_syscall_stack()
