@@ -308,6 +308,8 @@ void application::start_and_join(waiter* setup_waiter)
 TRACEPOINT(trace_app_main, "app=%p, cmd=%s", application*, const char*);
 TRACEPOINT(trace_app_main_ret, "return_code=%d", int);
 
+static u64 random_bytes[2];
+
 void application::main()
 {
     __libc_stack_end = __builtin_frame_address(0);
@@ -328,7 +330,7 @@ void application::main()
         // may be called twice, TLS may be overriden and the program may not
         // received correct arguments, environment variables and auxiliary
         // vector.
-        elf_entry_point(_entry_point);
+        elf_entry_point(_entry_point, _args.size(), _argv.get(), random_bytes);
     }
     // _entry_point() doesn't return
 }
@@ -360,7 +362,7 @@ void application::prepare_argv(elf::program *program)
     }
 
     // Load vdso library if available
-    int auxv_parameters_count = 2;
+    int auxv_parameters_count = 3;
     _libvdso = program->get_library("libvdso.so");
     if (!_libvdso) {
         auxv_parameters_count--;
@@ -400,6 +402,11 @@ void application::prepare_argv(elf::program *program)
 
     _auxv[auxv_idx].a_type = AT_PAGESZ;
     _auxv[auxv_idx++].a_un.a_val = sysconf(_SC_PAGESIZE);
+
+    random_bytes[0] = 123;
+    random_bytes[1] = 456;
+    _auxv[auxv_idx].a_type = AT_RANDOM;
+    _auxv[auxv_idx++].a_un.a_val = reinterpret_cast<uint64_t>(random_bytes);
 
     _auxv[auxv_idx].a_type = AT_NULL;
     _auxv[auxv_idx].a_un.a_val = 0;

@@ -587,6 +587,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL2(arch_prctl, int, unsigned long);
     SYSCALL2(sys_set_robust_list, struct robust_list_head *, size_t);
     SYSCALL1(set_tid_address, int *);
+    SYSCALL3(readlink, const char *, char *, size_t);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
@@ -615,6 +616,14 @@ extern "C" long syscall_wrapper(long p1, long p2, long p3, long p4, long p5, lon
     int errno_backup = errno;
     // syscall and function return value are in rax
     debug_early_u64("_syscall: ", number);
+    /*if (__NR_mprotect == number) {
+       debug_early_u64(" p1: ", p1);
+       debug_early_u64(" p2: ", p2);
+       debug_early_u64(" p3: ", p3);
+    }
+    if (number == 16) {
+       debug_early_u64(" ioctl", p1);
+    }*/
     auto ret = syscall(number, p1, p2, p3, p4, p5, p6);
     int result = -errno;
     errno = errno_backup;

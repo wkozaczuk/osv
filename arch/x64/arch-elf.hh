@@ -41,16 +41,40 @@ enum {
 
 #define ELF_KERNEL_MACHINE_TYPE 62
 
-inline void elf_entry_point(void* ep)
+#define _AT_RANDOM       25
+#define _AT_NULL 0
+
+struct auxv_t
 {
+  int a_type;
+  union {
+    long a_val;
+    void *a_ptr;
+    void (*a_fnc)();
+  } a_un;
+};
+
+inline void elf_entry_point(void* ep, int argc, char** argv, u64 *random_bytes)
+{
+    //u64 _argc = argc;
+    struct auxv_t auxv;
+    auxv.a_type = _AT_RANDOM;
+    auxv.a_un.a_val = reinterpret_cast<uint64_t>(random_bytes);
+
     asm volatile (
-        "pushq $0\n\t" // Zero
+        "pushq $0\n\t" // Zero AUX
+        "pushq %2\n\t" // AT_RANDOM AUX
+        "pushq %1\n\t" // AT_RANDOM AUX
+        //"pushq $0\n\t" // Zero -> really take away?
         "pushq $0\n\t" // Environment pointers
+        //"pushq %2\n\t" // Environment pointers
         "pushq $0\n\t" // Zero
         "pushq $0\n\t" // Argument count
+        //"pushq %1\n\t" // Argument count
         "jmpq  *%0\n\t"
         :
-        : "r"(ep));
+        : "r"(ep), "r"(*((u64*)&auxv)), "r"(*(((u64*)&auxv)+1)));
+        //: "r"(ep), "r"(_argc), "r"(argv));
 }
 
 #endif /* ARCH_ELF_HH */
