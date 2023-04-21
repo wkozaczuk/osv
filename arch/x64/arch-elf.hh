@@ -71,6 +71,7 @@ inline void elf_entry_point(void* ep, int argc, char** argv, u64 *random_bytes)
         "pushq $0\n\t" // Zero
         "pushq $0\n\t" // Argument count
         //"pushq %1\n\t" // Argument count
+        "movq $0, %%rdx\n\t" //fini should be null for now
         "jmpq  *%0\n\t"
         :
         : "r"(ep), "r"(*((u64*)&auxv)), "r"(*(((u64*)&auxv)+1)));
