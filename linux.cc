@@ -40,6 +40,7 @@
 #include <sys/unistd.h>
 #include <sys/random.h>
 #include <sys/vfs.h>
+#include <sys/resource.h>
 
 #include <unordered_map>
 
@@ -489,6 +490,17 @@ static long set_tid_address(int *tidptr)
     return 0;
 }
 
+#define __NR_sys_prlimit __NR_prlimit64
+static int sys_prlimit(pid_t pid, int resource, const struct rlimit *new_limit,
+    struct rlimit *old_limit)
+{
+    if (new_limit) {
+        return 0;
+    } else {
+        return getrlimit(resource, old_limit);
+    }
+}
+
 OSV_LIBC_API long syscall(long number, ...)
 {
     // Save FPU state and restore it at the end of this function
@@ -588,6 +600,9 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL2(sys_set_robust_list, struct robust_list_head *, size_t);
     SYSCALL1(set_tid_address, int *);
     SYSCALL3(readlink, const char *, char *, size_t);
+    SYSCALL0(geteuid);
+    SYSCALL0(getegid);
+    SYSCALL4(sys_prlimit, pid_t, int, const struct rlimit*, struct rlimit *);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
