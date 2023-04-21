@@ -43,6 +43,7 @@ void debug_ll(const char *fmt, ...);
 /* an early debug that does not need any c/c++ init before being usable */
 void debug_early(const char *msg);
 void debug_early_u64(const char *msg, unsigned long long val);
+void debug_early_d64(const char *msg, unsigned long long val);
 
 #ifdef __aarch64__
 #define debug_early_entry(msg) \

@@ -294,4 +294,20 @@ extern "C" {
         console::arch_early_console.write("\r\n", 2);
         console::arch_early_console.flush();
     }
+
+    void debug_early_d64(const char *msg, unsigned long long val)
+    {
+        char nr[3] = { 0 };
+
+        for (int i = 2; i >= 0; i--) {
+            unsigned char nibble = val % 10;
+            nr[i] = nibble + '0';
+            val = val / 10;
+        }
+
+        debug_early(msg);
+        console::arch_early_console.write(nr, 3);
+        console::arch_early_console.write("\r\n", 2);
+        console::arch_early_console.flush();
+    }
 }
