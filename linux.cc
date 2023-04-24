@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <time.h>
+#include <sys/time.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/socket.h>
@@ -603,6 +604,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL0(geteuid);
     SYSCALL0(getegid);
     SYSCALL4(sys_prlimit, pid_t, int, const struct rlimit*, struct rlimit *);
+    SYSCALL2(gettimeofday, struct timeval *, struct timezone *);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
@@ -630,7 +632,7 @@ extern "C" long syscall_wrapper(long p1, long p2, long p3, long p4, long p5, lon
 {
     int errno_backup = errno;
     // syscall and function return value are in rax
-    debug_early_d64(" -> syscall: ", number);
+    //debug_early_d64(" -> syscall: ", number);
     /*if (__NR_mprotect == number) {
        debug_early_u64(" p1: ", p1);
        debug_early_u64(" p2: ", p2);
