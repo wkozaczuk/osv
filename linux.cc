@@ -632,7 +632,7 @@ extern "C" long syscall_wrapper(long p1, long p2, long p3, long p4, long p5, lon
 {
     int errno_backup = errno;
     // syscall and function return value are in rax
-    //debug_early_d64(" -> syscall: ", number);
+    debug_early_d64(" -> syscall: ", number);
     /*if (__NR_mprotect == number) {
        debug_early_u64(" p1: ", p1);
        debug_early_u64(" p2: ", p2);

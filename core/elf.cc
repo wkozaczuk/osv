@@ -34,11 +34,11 @@
 #include "arch-elf.hh"
 #include "cpuid.hh"
 
-#if CONF_debug_elf
+//#if CONF_debug_elf
 #define elf_debug(format,...) kprintf("ELF [tid:%d, mod:%d, %s]: " format, sched::thread::current()->id(), _module_index, _pathname.c_str(), ##__VA_ARGS__)
-#else
-#define elf_debug(...)
-#endif
+//#else
+//#define elf_debug(...)
+//#endif
 
 TRACEPOINT(trace_elf_load, "%s", const char *);
 TRACEPOINT(trace_elf_unload, "%s", const char *);
@@ -111,6 +111,16 @@ u64 symbol_module::size() const
 
 std::atomic<ptrdiff_t> object::_static_tls_alloc;
 
+static bool endsWith(const std::string& str, const char* suffix, unsigned suffixLen)
+{
+    return str.size() >= suffixLen && 0 == str.compare(str.size()-suffixLen, suffixLen, suffix, suffixLen);
+}
+
+static bool endsWith(const std::string& str, const char* suffix)
+{
+    return endsWith(str, suffix, std::string::traits_type::length(suffix));
+}
+
 object::object(program& prog, std::string pathname)
     : _prog(prog)
     , _pathname(pathname)
@@ -128,6 +138,7 @@ object::object(program& prog, std::string pathname)
     , _visibility_thread(nullptr)
     , _visibility_level(VisibilityLevel::Public)
 {
+    _linux_interp = endsWith(pathname, "ld-linux-x86-64.so.2");
     elf_debug("Instantiated\n");
 }
 
@@ -248,7 +259,7 @@ const char * object::symbol_name(const Elf64_Sym * sym) {
 }
 
 void* object::entry_point() const {
-    if (_is_executable || _ehdr.e_type == ET_EXEC) {
+    if (_is_executable || _ehdr.e_type == ET_EXEC || _linux_interp) {
         return _base + _ehdr.e_entry;
     }
     return nullptr;
@@ -609,18 +620,20 @@ unsigned object::get_segment_mmap_permissions(const Elf64_Phdr& phdr)
 
 void object::fix_permissions()
 {
+    elf_debug("fixing permissions\n");
     if(has_non_writable_text_relocations()) {
         make_text_writable(false);
     }
 
     for (auto&& phdr : _phdrs) {
-        if (phdr.p_type != PT_GNU_RELRO)
+        if (phdr.p_type != PT_GNU_RELRO || _linux_interp) //TODO: Why?
             continue;
 
         ulong vstart = align_down(phdr.p_vaddr, mmu::page_size);
         ulong memsz = align_up(phdr.p_vaddr + phdr.p_memsz, mmu::page_size) - vstart;
 
         mmu::mprotect(_base + vstart, memsz, mmu::perm_read);
+        elf_debug("fixing non GNU_RELRO: %018p of size: 0x%x\n", _base + vstart, memsz);
     }
 }
 
@@ -872,6 +885,10 @@ void* object::resolve_pltgot(unsigned index)
 
 void object::relocate()
 {
+    if (_linux_interp) {
+        elf_debug("Using Linux dynamic linker to execute program\n");
+        return;
+    }
     assert(!dynamic_exists(DT_REL));
     if (dynamic_exists(DT_RELA)) {
         relocate_rela();

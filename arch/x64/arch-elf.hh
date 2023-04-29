@@ -61,20 +61,27 @@ inline void elf_entry_point(void* ep, int argc, char** argv, u64 *random_bytes)
     auxv.a_type = _AT_RANDOM;
     auxv.a_un.a_val = reinterpret_cast<uint64_t>(random_bytes);
 
+    u64 _argc = 0;
+    //char *arg0 = argv[0];
+    //char *arg1 = argv[1];
+
+    // Needs to be 16 bytes aligned
     asm volatile (
+        "pushq $0\n\t" // Padding
+        "pushq $0\n\t" // Zero AUX
         "pushq $0\n\t" // Zero AUX
         "pushq %2\n\t" // AT_RANDOM AUX
         "pushq %1\n\t" // AT_RANDOM AUX
-        //"pushq $0\n\t" // Zero -> really take away?
-        "pushq $0\n\t" // Environment pointers
-        //"pushq %2\n\t" // Environment pointers
         "pushq $0\n\t" // Zero
-        "pushq $0\n\t" // Argument count
-        //"pushq %1\n\t" // Argument count
+        "pushq %0\n\t" // End of environment pointers (no env)
+        //"pushq %5\n\t" // Arg 1
+        //"pushq %4\n\t" // Arg 0
+        "pushq %3\n\t" // Argument count
         "movq $0, %%rdx\n\t" //fini should be null for now
         "jmpq  *%0\n\t"
         :
-        : "r"(ep), "r"(*((u64*)&auxv)), "r"(*(((u64*)&auxv)+1)));
+        : "r"(ep), "r"(*((u64*)&auxv)), "r"(*(((u64*)&auxv)+1)), "r"(_argc));
+        //: "r"(ep), "r"(*((u64*)&auxv)), "r"(*(((u64*)&auxv)+1)), "r"(_argc), "r"(arg0), "r"(arg1));
         //: "r"(ep), "r"(_argc), "r"(argv));
 }
 
