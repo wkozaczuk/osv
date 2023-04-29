@@ -56,18 +56,15 @@ struct auxv_t
 
 inline void elf_entry_point(void* ep, int argc, char** argv, u64 *random_bytes)
 {
-    //u64 _argc = argc;
     struct auxv_t auxv;
     auxv.a_type = _AT_RANDOM;
     auxv.a_un.a_val = reinterpret_cast<uint64_t>(random_bytes);
 
     u64 _argc = argc;
-    //char *arg0 = argv[0];
-    //char *arg1 = argv[1];
 
-    // Needs to be 16 bytes aligned
+    //FIXME: Needs to be 16 bytes aligned
     asm volatile (
-        //"pushq $0\n\t" // Padding
+        "pushq $0\n\t" // Padding
         "pushq $0\n\t" // Zero AUX
         "pushq $0\n\t" // Zero AUX
         "pushq %2\n\t" // AT_RANDOM AUX
