@@ -330,7 +330,7 @@ void application::main()
         // may be called twice, TLS may be overriden and the program may not
         // received correct arguments, environment variables and auxiliary
         // vector.
-        printf("elf_entry_point: args size=%d\n", _args.size());
+        printf("elf_entry_point: args size=%d, arg0=%s, arg1=%s\n", _args.size(), _argv.get()[0], _argv.get()[1]);
         elf_entry_point(_entry_point, _args.size(), _argv.get(), random_bytes);
     }
     // _entry_point() doesn't return
