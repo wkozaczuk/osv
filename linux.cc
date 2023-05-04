@@ -21,6 +21,7 @@
 #include <errno.h>
 #include <signal.h>
 #include <time.h>
+#include <poll.h>
 #include <sys/time.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
@@ -42,6 +43,8 @@
 #include <sys/random.h>
 #include <sys/vfs.h>
 #include <sys/resource.h>
+#include <sys/sysinfo.h>
+#include <sys/sendfile.h>
 
 #include <unordered_map>
 
@@ -230,11 +233,13 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 }
 #define __NR_long_mmap __NR_mmap
 
-
-#define SYSCALL0(fn) case (__NR_##fn): return fn()
+//#define log_syscall(fn) printf("%s\n", #fn)
+#define log_syscall(fn)
+#define SYSCALL0(fn) case (__NR_##fn): log_syscall(fn); return fn()
 
 #define SYSCALL1(fn, __t1)                  \
         case (__NR_##fn): do {              \
+        log_syscall(fn);                    \
         va_list args;                       \
         __t1 arg1;                          \
         va_start(args, number);             \
@@ -245,6 +250,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 
 #define SYSCALL2(fn, __t1, __t2)            \
         case (__NR_##fn): do {              \
+        log_syscall(fn);                    \
         va_list args;                       \
         __t1 arg1;                          \
         __t2 arg2;                          \
@@ -257,6 +263,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 
 #define SYSCALL3(fn, __t1, __t2, __t3)          \
         case (__NR_##fn): do {                  \
+        log_syscall(fn);                        \
         va_list args;                           \
         __t1 arg1;                              \
         __t2 arg2;                              \
@@ -271,6 +278,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 
 #define SYSCALL4(fn, __t1, __t2, __t3, __t4)    \
         case (__NR_##fn): do {                  \
+        log_syscall(fn);                        \
         va_list args;                           \
         __t1 arg1;                              \
         __t2 arg2;                              \
@@ -287,6 +295,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 
 #define SYSCALL5(fn, __t1, __t2, __t3, __t4, __t5)    \
         case (__NR_##fn): do {                  \
+        log_syscall(fn);                        \
         va_list args;                           \
         __t1 arg1;                              \
         __t2 arg2;                              \
@@ -305,6 +314,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 
 #define SYSCALL6(fn, __t1, __t2, __t3, __t4, __t5, __t6)        \
         case (__NR_##fn): do {                                  \
+        log_syscall(fn);                                        \
         va_list args;                                           \
         __t1 arg1;                                              \
         __t2 arg2;                                              \
@@ -605,6 +615,15 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL0(getegid);
     SYSCALL4(sys_prlimit, pid_t, int, const struct rlimit*, struct rlimit *);
     SYSCALL2(gettimeofday, struct timeval *, struct timezone *);
+    SYSCALL3(poll, struct pollfd *, nfds_t, int);
+    SYSCALL0(getppid);
+    SYSCALL1(epoll_create, int);
+    SYSCALL1(sysinfo, struct sysinfo *);
+    SYSCALL1(time, time_t *);
+    SYSCALL4(sendfile, int, int, off_t *, size_t);
+    SYSCALL4(socketpair, int, int, int, int *);
+    SYSCALL2(shutdown, int, int);
+    SYSCALL1(unlink, const char *);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
@@ -632,7 +651,7 @@ extern "C" long syscall_wrapper(long p1, long p2, long p3, long p4, long p5, lon
 {
     int errno_backup = errno;
     // syscall and function return value are in rax
-    debug_early_d64(" -> syscall: ", number);
+    //debug_early_d64(" -> syscall: ", number);
     /*if (__NR_mprotect == number) {
        debug_early_u64(" p1: ", p1);
        debug_early_u64(" p2: ", p2);

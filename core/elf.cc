@@ -639,6 +639,9 @@ void object::fix_permissions()
 
 void object::make_text_writable(bool flag)
 {
+    if(flag) {
+        elf_debug("making text writable");
+    }
     for (auto&& phdr : _phdrs) {
         if (phdr.p_type != PT_LOAD)
             continue;
@@ -772,7 +775,7 @@ symbol_module object::symbol_other(unsigned idx)
 
 void object::relocate_rela()
 {
-    if(has_non_writable_text_relocations()) {
+    if(has_non_writable_text_relocations() || endsWith(_pathname, "libvdso.so")) {
         make_text_writable(true);
     }
 
@@ -798,6 +801,9 @@ extern "C" { void __elf_resolve_pltgot(void); }
 
 void object::relocate_pltgot()
 {
+    if(endsWith(_pathname, "libvdso.so")) {
+        make_text_writable(true);
+    }
     auto pltgot = dynamic_ptr<void*>(DT_PLTGOT);
     void *original_plt = nullptr;
     if (pltgot[1]) {
@@ -812,7 +818,7 @@ void object::relocate_pltgot()
     }
     bool bind_now = dynamic_exists(DT_BIND_NOW) || mlocked() ||
         (dynamic_exists(DT_FLAGS) && (dynamic_val(DT_FLAGS) & DF_BIND_NOW)) ||
-        (dynamic_exists(DT_FLAGS_1) && (dynamic_val(DT_FLAGS_1) & DF_1_NOW));
+        (dynamic_exists(DT_FLAGS_1) && (dynamic_val(DT_FLAGS_1) & DF_1_NOW)) || endsWith(_pathname, "libvdso.so");
 
     auto rel = dynamic_ptr<Elf64_Rela>(DT_JMPREL);
     auto nrel = dynamic_val(DT_PLTRELSZ) / sizeof(*rel);

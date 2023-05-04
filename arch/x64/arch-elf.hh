@@ -42,6 +42,8 @@ enum {
 #define ELF_KERNEL_MACHINE_TYPE 62
 
 #define _AT_RANDOM       25
+#define _AT_SYSINFO_EHDR 33
+#define _AT_PAGESZ       6
 #define _AT_NULL 0
 
 struct auxv_t
@@ -54,11 +56,19 @@ struct auxv_t
   } a_un;
 };
 
-inline void elf_entry_point(void* ep, int argc, char** argv, u64 *random_bytes)
+inline void elf_entry_point(void* ep, int argc, char** argv, u64 *random_bytes, uint64_t vdso_base, uint64_t page_size)
 {
-    struct auxv_t auxv;
-    auxv.a_type = _AT_RANDOM;
-    auxv.a_un.a_val = reinterpret_cast<uint64_t>(random_bytes);
+    struct auxv_t auxv_r;
+    auxv_r.a_type = _AT_RANDOM;
+    auxv_r.a_un.a_val = reinterpret_cast<uint64_t>(random_bytes);
+
+    struct auxv_t auxv_v;
+    auxv_v.a_type = _AT_SYSINFO_EHDR;
+    auxv_v.a_un.a_val = vdso_base;
+
+    struct auxv_t auxv_p;
+    auxv_p.a_type = _AT_PAGESZ;
+    auxv_p.a_un.a_val = page_size;
 
     u64 _argc = argc;
 
@@ -69,17 +79,25 @@ inline void elf_entry_point(void* ep, int argc, char** argv, u64 *random_bytes)
         "pushq $0\n\t" // Zero AUX
         "pushq %2\n\t" // AT_RANDOM AUX
         "pushq %1\n\t" // AT_RANDOM AUX
+        "pushq %4\n\t" // AT_SYSINFO_EHDR AUX
+        "pushq %3\n\t" // AT_SYSINFO_EHDR AUX
+        "pushq %6\n\t" // AT_PAGESZ AUX
+        "pushq %5\n\t" // AT_PAGESZ AUX
         "pushq $0\n\t" // Zero
         "pushq %0\n\t" // End of environment pointers (no env)
-        "pushq %5\n\t" // Arg 1
-        "pushq %4\n\t" // Arg 0
-        "pushq %3\n\t" // Argument count
+        "pushq %11\n\t" // Arg 3
+        "pushq %10\n\t" // Arg 2
+        "pushq %9\n\t" // Arg 1
+        "pushq %8\n\t" // Arg 0
+        "pushq %7\n\t" // Argument count
         "movq $0, %%rdx\n\t" //fini should be null for now
         "jmpq  *%0\n\t"
         :
-        //: "r"(ep), "r"(*((u64*)&auxv)), "r"(*(((u64*)&auxv)+1)), "r"(_argc));
-        : "r"(ep), "r"(*((u64*)&auxv)), "r"(*(((u64*)&auxv)+1)), "r"(_argc), "r"(argv[0]), "r"(argv[1]));
-        //: "r"(ep), "r"(_argc), "r"(argv));
+        : "r"(ep), 
+          "r"(*((u64*)&auxv_r)), "r"(*(((u64*)&auxv_r)+1)), 
+          "r"(*((u64*)&auxv_v)), "r"(*(((u64*)&auxv_v)+1)), 
+          "r"(*((u64*)&auxv_p)), "r"(*(((u64*)&auxv_p)+1)), 
+          "r"(_argc), "r"(argv[0]), "r"(argv[1]), "r"(argv[2]), "r"(argv[3]));
 }
 
 #endif /* ARCH_ELF_HH */
