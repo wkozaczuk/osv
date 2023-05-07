@@ -74,7 +74,7 @@ inline void elf_entry_point(void* ep, int argc, char** argv, u64 *random_bytes, 
 
     //FIXME: Needs to be 16 bytes aligned
     asm volatile (
-        "pushq $0\n\t" // Padding
+        //"pushq $0\n\t" // Padding
         "pushq $0\n\t" // Zero AUX
         "pushq $0\n\t" // Zero AUX
         "pushq %2\n\t" // AT_RANDOM AUX
@@ -85,6 +85,7 @@ inline void elf_entry_point(void* ep, int argc, char** argv, u64 *random_bytes, 
         "pushq %5\n\t" // AT_PAGESZ AUX
         "pushq $0\n\t" // Zero
         "pushq %0\n\t" // End of environment pointers (no env)
+        "pushq %12\n\t" // Arg 4
         "pushq %11\n\t" // Arg 3
         "pushq %10\n\t" // Arg 2
         "pushq %9\n\t" // Arg 1
@@ -97,7 +98,7 @@ inline void elf_entry_point(void* ep, int argc, char** argv, u64 *random_bytes, 
           "r"(*((u64*)&auxv_r)), "r"(*(((u64*)&auxv_r)+1)), 
           "r"(*((u64*)&auxv_v)), "r"(*(((u64*)&auxv_v)+1)), 
           "r"(*((u64*)&auxv_p)), "r"(*(((u64*)&auxv_p)+1)), 
-          "r"(_argc), "r"(argv[0]), "r"(argv[1]), "r"(argv[2]), "r"(argv[3]));
+          "r"(_argc), "r"(argv[0]), "r"(argv[1]), "r"(argv[2]), "r"(argv[3]), "r"(argv[4]));
 }
 
 #endif /* ARCH_ELF_HH */

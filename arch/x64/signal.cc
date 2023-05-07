@@ -69,6 +69,8 @@ void call_signal_handler(arch::signal_frame* frame)
     // divide_error(), we can probably get rid of the fpu saving here.
     sched::fpu_lock fpu;
     SCOPE_LOCK(fpu);
+    ulong* kernel_tcb;
+    asm volatile ( "movq %%gs:0, %0\n\t" : "=r"(kernel_tcb));
     if (frame->sa.sa_flags & SA_SIGINFO) {
         ucontext_t uc = {};
         auto& regs = uc.uc_mcontext.gregs;
@@ -90,7 +92,9 @@ void call_signal_handler(arch::signal_frame* frame)
         regs[REG_R14] = f.r14;
         regs[REG_R15] = f.r15;
         regs[REG_RIP] = f.rip;
+        //asm volatile("wrfsbase %0" : : "r"(kernel_tcb[4])); // app tcb
         frame->sa.sa_sigaction(frame->si.si_signo, &frame->si, &uc);
+        //asm volatile("wrfsbase %0" : : "r"(kernel_tcb[0])); // kernel tcb
         f.rax = regs[REG_RAX];
         f.rbx = regs[REG_RBX];
         f.rcx = regs[REG_RCX];
@@ -109,7 +113,9 @@ void call_signal_handler(arch::signal_frame* frame)
         f.r15 = regs[REG_R15];
         f.rip = regs[REG_RIP];
     } else {
+        //asm volatile("wrfsbase %0" : : "r"(kernel_tcb[4])); // app tcb
         frame->sa.sa_handler(frame->si.si_signo);
+        //asm volatile("wrfsbase %0" : : "r"(kernel_tcb[0])); // kernel tcb
     }
 }
 

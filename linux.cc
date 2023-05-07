@@ -571,6 +571,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL6(recvfrom, int, void *, size_t, int, struct sockaddr *, socklen_t *);
     SYSCALL3(recvmsg, int, struct msghdr *, int);
     SYSCALL3(dup3, int, int, int);
+    SYSCALL2(dup2, unsigned int , unsigned int);
     SYSCALL2(flock, int, int);
     SYSCALL4(pwrite64, int, const void *, size_t, off_t);
     SYSCALL1(fdatasync, int);

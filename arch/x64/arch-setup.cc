@@ -255,7 +255,8 @@ void init_syscall() {
     // syscall does rflag = rflag and not fmask
     // we want no minimize the impact of the syscall instruction so we choose
     // fmask as zero
-    processor::wrmsr(msr::IA32_FMASK, 0);
+    //processor::wrmsr(msr::IA32_FMASK, 0);
+    processor::wrmsr(msr::IA32_FMASK, 0x200);
     processor::wrmsr(msr::IA32_EFER,  processor::rdmsr(msr::IA32_EFER) | IA32_EFER_SCE);
 }
 }

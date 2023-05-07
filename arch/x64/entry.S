@@ -19,25 +19,6 @@
 	.cfi_def_cfa %rsp, 0
 	.cfi_offset %rip, 8
 	.cfi_offset %rsp, 32
-    # app->kernel tcb switch
-    movq %rax, %gs:8  # save register rax so we can restore it later
-    movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
-    #1. Check if counter 0 and jump over to 3 if not
-    cmpq $0, 40(%rax)
-    jne on_kernel_tcb3\name
-
-    #2. If zero set fs MSR to kernel tcb
-    movq %rbx, %gs:16  # save register rbx so we can restore it later
-    movq (%rax), %rbx # set kernel tcb
-    wrfsbase %rbx 
-    movq %gs:16, %rbx
-
-on_kernel_tcb3\name:
-    #3. Increment counter
-    incq 40(%rax)
-    #4. Restore %rax
-    movq %gs:8, %rax
-
 	pushq_cfi %rax
 	pushq_cfi %rbx
 	pushq_cfi %rcx
@@ -53,12 +34,49 @@ on_kernel_tcb3\name:
 	pushq_cfi %r13
 	pushq_cfi %r14
 	pushq_cfi %r15
+
+# Potential app->kernel tcb switch
+	movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
+	#1. Check if app tcb set and otherwise continue (kernel or "normal" app thread)
+	cmpq $0, 32(%rax)
+	je 2f
+
+	#2. Check if counter 0 and otherwise continue (kernel or "normal" app thread)
+	cmpq $0, 40(%rax)
+	jne 1f
+
+	#3. Set fs MSR to kernel tcb
+	movq (%rax), %rbx # set kernel tcb
+	wrfsbase %rbx
+1:
+	#4. Increment counter
+	incq 40(%rax)
+2:
 	mov %rsp, %rdi
 	subq $8, %rsp # 16-byte alignment
 	.cfi_adjust_cfa_offset 8
 	call \handler
 	addq $8, %rsp # 16-byte alignment
 	.cfi_adjust_cfa_offset -8
+
+# Potential kernel->app tcb switch
+	movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
+	#1. Check if app tcb set and otherwise continue (kernel or "normal" app thread)
+	cmpq $0, 32(%rax)
+	je 3f
+
+	#2. Decrement counter
+	decq 40(%rax)
+
+	#3. Check if counter 0 and jump over to 3 if not
+	cmpq $0, 40(%rax)
+	jne 3f
+
+	#4. If zero set fs MSR to app tcb
+	movq 32(%rax), %rbx # set to app tcb
+	wrfsbase %rbx
+
+3:
 	popq_cfi %r15
 	popq_cfi %r14
 	popq_cfi %r13
@@ -75,27 +93,6 @@ on_kernel_tcb3\name:
 	popq_cfi %rbx
 	popq_cfi %rax
 	add $8, %rsp
-    # kernel->app tcb switch
-    movq %rax, %gs:8  # save register rax so we can restore it later
-    movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
-
-    #1. Deccrement counter
-    decq 40(%rax)
-
-    #2. Check if counter 0 and jump over to 3 if not
-    cmpq $0, 40(%rax)
-    jne on_kernel_tcb4\name
-
-    #3. If zero set fs MSR to app tcb
-    movq %rbx, %gs:16  # save register rbx so we can restore it later
-    movq 32(%rax), %rbx # set to app tcb
-    wrfsbase %rbx 
-    movq %gs:16, %rbx
-
-on_kernel_tcb4\name:
-    #4. Restore %rax
-    movq %gs:8, %rax
-
 	iretq
 	.cfi_endproc
 .endm
@@ -220,7 +217,7 @@ syscall_entry:
     movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
     #1. Check if counter 0 and jump over to 3 if not
     cmpq $0, 40(%rax)
-    jne on_kernel_tcb
+    jne 4f
 
     #2. If zero set fs MSR to kernel tcb
     movq %rbx, %gs:16  # save register rbx so we can restore it later
@@ -228,7 +225,7 @@ syscall_entry:
     wrfsbase %rbx 
     movq %gs:16, %rbx
 
-on_kernel_tcb:
+4:
     #3. Increment counter
     incq 40(%rax)
     #4. Restore %rax
@@ -356,7 +353,9 @@ large_stack_has_been_setup:
     # it is still 16-byte aligned and we don't need to adjust it here.
 
     # FPU save/restore is done inside the wrapper
+    sti //enable interrupts
     callq syscall_wrapper
+    cli //disable interrupts
 
     popq_cfi %r9
     # in Linux user and kernel return value are in rax so we have nothing to do for return values
@@ -399,7 +398,7 @@ large_stack_has_been_setup:
 
     #2. Check if counter 0 and jump over to 3 if not
     cmpq $0, 40(%rax)
-    jne on_kernel_tcb2
+    jne 5f
 
     #3. If zero set fs MSR to app tcb
     movq %rbx, %gs:16  # save register rbx so we can restore it later
@@ -407,7 +406,7 @@ large_stack_has_been_setup:
     wrfsbase %rbx 
     movq %gs:16, %rbx
 
-on_kernel_tcb2:
+5:
     #4. Restore %rax
     movq %gs:8, %rax
 
