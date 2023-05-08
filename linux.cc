@@ -512,6 +512,32 @@ static int sys_prlimit(pid_t pid, int resource, const struct rlimit *new_limit,
     }
 }
 
+#define __NR_sys_clone __NR_clone
+#define CLONE_THREAD    0x00010000
+static sched::thread *t;
+static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *ctid, unsigned long newtls)
+{
+    if (!(flags & CLONE_THREAD)) {
+       errno = ENOSYS;
+       return -1;
+    }
+    u64 start = reinterpret_cast<u64*>(child_stack)[0];
+    u64 arg = reinterpret_cast<u64*>(child_stack)[1];
+    printf("-> start: %p\n", start);
+    printf("-> stack: %p\n", child_stack);
+    auto stack = sched::thread::stack_info(child_stack - (1024 * 1024), 1024 * 1024);
+    t = sched::thread::make([=] {
+       asm volatile("wrfsbase %0" : : "r"(newtls));
+       asm volatile("movq %0, %%rdi" : : "r"(arg));
+       asm volatile("jmpq *%0": : "r"(start));
+       //start(arg)
+    }, sched::thread::attr().stack(stack), false, true);
+    t->set_app_tcb(newtls);
+    t->use_app_tcb();
+    t->start();
+    return 0;
+}
+
 OSV_LIBC_API long syscall(long number, ...)
 {
     // Save FPU state and restore it at the end of this function
@@ -625,6 +651,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL4(socketpair, int, int, int, int *);
     SYSCALL2(shutdown, int, int);
     SYSCALL1(unlink, const char *);
+    SYSCALL5(sys_clone, unsigned long, void *, int *, int *, unsigned long);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
