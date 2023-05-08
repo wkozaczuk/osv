@@ -233,7 +233,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 }
 #define __NR_long_mmap __NR_mmap
 
-//#define log_syscall(fn) printf("%s\n", #fn)
+//#define log_syscall(fn) printf("tid:%d %s\n", sched::thread::current()->id(), #fn)
 #define log_syscall(fn)
 #define SYSCALL0(fn) case (__NR_##fn): log_syscall(fn); return fn()
 
@@ -368,7 +368,8 @@ int rt_sigprocmask(int how, sigset_t * nset, sigset_t * oset, size_t sigsetsize)
 
 static int sys_exit(int ret)
 {
-    exit(ret);
+    //exit(ret);
+    sched::thread::current()->exit();
     return 0;
 }
 
@@ -525,14 +526,14 @@ static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *cti
     u64 arg = reinterpret_cast<u64*>(child_stack)[1];
     printf("-> start: %p\n", start);
     printf("-> stack: %p\n", child_stack);
+    //TODO: Possibly create small kernel stack and switch to the app one before jumping later
     auto stack = sched::thread::stack_info(child_stack - (1024 * 1024), 1024 * 1024);
     t = sched::thread::make([=] {
        asm volatile("wrfsbase %0" : : "r"(newtls));
        asm volatile("movq %0, %%rdi" : : "r"(arg));
        asm volatile("jmpq *%0": : "r"(start));
-       //start(arg)
     }, sched::thread::attr().stack(stack), false, true);
-    t->set_app_tcb(newtls);
+    t->set_app_tcb(newtls); //TODO: Possibly do it in the start routine
     t->use_app_tcb();
     t->start();
     return 0;
@@ -652,6 +653,9 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL2(shutdown, int, int);
     SYSCALL1(unlink, const char *);
     SYSCALL5(sys_clone, unsigned long, void *, int *, int *, unsigned long);
+    SYSCALL3(readv, unsigned long, const struct iovec *, unsigned long);
+    SYSCALL2(getrusage, int, struct rusage *);
+    SYSCALL3(accept, int, struct sockaddr *, socklen_t *);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);

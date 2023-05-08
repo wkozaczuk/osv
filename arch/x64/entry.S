@@ -268,12 +268,16 @@ syscall_entry:
     # Call setup_large_syscall_stack to setup large call stack
     # This function does not take any arguments nor returns anything.
     # It ends up allocating large stack and storing its address in tcb
+    sti //enable interrupts
     callq setup_large_syscall_stack
+    cli
     movq %fs:16, %rsp  // Switch stack to large stack
     subq $128, %rsp    // Skip 128 bytes of large stack so that we can restore all registers saved above (16 pushes).
                        // Please note that these 128 bytes have been copied by setup_large_syscall_stack function
                        // so that we do not have to pop and then push same registers again.
+    sti
     callq free_tiny_syscall_stack
+    cli
 
     # Restore all registers
     popq %r15
