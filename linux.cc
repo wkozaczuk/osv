@@ -515,7 +515,7 @@ static int sys_prlimit(pid_t pid, int resource, const struct rlimit *new_limit,
 
 #define __NR_sys_clone __NR_clone
 #define CLONE_THREAD    0x00010000
-static sched::thread *t;
+//static sched::thread *t;
 static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *ctid, unsigned long newtls)
 {
     if (!(flags & CLONE_THREAD)) {
@@ -528,12 +528,46 @@ static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *cti
     printf("-> stack: %p\n", child_stack);
     //TODO: Possibly create small kernel stack and switch to the app one before jumping later
     auto stack = sched::thread::stack_info(child_stack - (1024 * 1024), 1024 * 1024);
-    t = sched::thread::make([=] {
+    auto t = sched::thread::make([=] {
        asm volatile("wrfsbase %0" : : "r"(newtls));
        asm volatile("movq %0, %%rdi" : : "r"(arg));
        asm volatile("jmpq *%0": : "r"(start));
     }, sched::thread::attr().stack(stack), false, true);
     t->set_app_tcb(newtls); //TODO: Possibly do it in the start routine
+    t->use_app_tcb();
+    t->start();
+    return 0;
+}
+
+struct clone_args {
+     u64 flags;
+     u64 pidfd;
+     u64 child_tid;
+     u64 parent_tid;
+     u64 exit_signal;
+     u64 stack;
+     u64 stack_size;
+     u64 tls;
+};
+
+#define __NR_sys_clone3 535 //435 is correct
+static int sys_clone3(struct clone_args *args, size_t size, u64 start, u64 arg1, u64 arg2)
+{
+    if (!(args->flags & CLONE_THREAD)) {
+       errno = ENOSYS;
+       return -1;
+    }
+    printf("-> start: %p\n", start);
+    printf("-> arg1: %p\n", arg1);
+    printf("-> arg2: %p\n", arg2);
+    //TODO: Possibly create small kernel stack and switch to the app one before jumping later
+    auto stack = sched::thread::stack_info(reinterpret_cast<void*>(args->stack), args->stack_size);
+    auto t = sched::thread::make([=] {
+       asm volatile("wrfsbase %0" : : "r"(args->tls));
+       asm volatile("movq %0, %%rdi" : : "r"(arg2));
+       asm volatile("jmpq *%0": : "r"(start));
+    }, sched::thread::attr().stack(stack), false, true);
+    t->set_app_tcb(args->tls); //TODO: Possibly do it in the start routine
     t->use_app_tcb();
     t->start();
     return 0;
@@ -656,6 +690,9 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL3(readv, unsigned long, const struct iovec *, unsigned long);
     SYSCALL2(getrusage, int, struct rusage *);
     SYSCALL3(accept, int, struct sockaddr *, socklen_t *);
+    SYSCALL1(fchdir, unsigned int);
+    SYSCALL5(sys_clone3, struct clone_args *, size_t, u64, u64, u64);
+    SYSCALL1(pipe, int*);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
