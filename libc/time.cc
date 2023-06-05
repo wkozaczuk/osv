@@ -15,7 +15,7 @@
 #include <osv/sched.hh>
 #include "pthread.hh"
 
-u64 convert(const timespec& ts)
+static u64 convert(const timespec& ts)
 {
     return ts.tv_sec * 1000000000 + ts.tv_nsec;
 }
@@ -36,6 +36,9 @@ int gettimeofday(struct timeval* tv, struct timezone* tz)
 OSV_LIBC_API
 int nanosleep(const struct timespec* req, struct timespec* rem)
 {
+    if (!req || req->tv_nsec < 0 || req->tv_nsec >= 1000000000L || req->tv_sec < 0)
+        return libc_error(EINVAL);
+
     sched::thread::sleep(std::chrono::nanoseconds(convert(*req)));
     return 0;
 }
@@ -127,4 +130,31 @@ clock_t clock(void)
     struct timespec ts;
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
     return ts.tv_sec * 1000000000L + ts.tv_nsec;
+}
+
+OSV_LIBC_API
+int clock_nanosleep(clockid_t clock_id, int flags,
+                    const struct timespec *request,
+                    struct timespec *remain)
+{
+    /* XXX we are implementing really only CLOCK_MONOTONIC, */
+    /* and we don't support remain, due to signals. */
+    if (remain) {
+        UNIMPLEMENTED("clock_nanosleep(): remain not supported, due to signals");
+    }
+    if (clock_id != CLOCK_MONOTONIC) {
+        UNIMPLEMENTED("clock_nanosleep(): only CLOCK_MONOTONIC is supported");
+    }
+
+    switch (flags) {
+    case 0:
+        return nanosleep(request, NULL);
+    case TIMER_ABSTIME: {
+        sched::thread::sleep_until(osv::clock::uptime::time_point(
+                                 osv::clock::uptime::duration(convert(*request))));
+        return 0;
+    }
+    default:
+        return libc_error(EINVAL);
+    }
 }
