@@ -462,21 +462,6 @@ static int sys_memfd_create(const char *name, unsigned int flags)
     }
 }
 
-#define __NR_sys_brk __NR_brk
-static void *program_break = NULL;
-constexpr size_t brk_size = 1<<20;
-
-static long sys_brk(void *addr)
-{
-    if (!program_break) {
-        program_break = mmap(NULL, brk_size, PROT_READ|PROT_WRITE, MAP_ANONYMOUS|MAP_PRIVATE, -1, 0);
-    }
-    if (addr) {
-        program_break = addr;
-    }
-    return (long)program_break;
-}
-
 extern long arch_prctl(int code, unsigned long addr);
 
 #define __NR_sys_set_robust_list __NR_set_robust_list
@@ -569,6 +554,21 @@ static int sys_clone3(struct clone_args *args, size_t size, u64 start, u64 arg1,
     t->use_app_tcb();
     t->start();
     return 0;
+}
+
+#define __NR_sys_brk __NR_brk
+void *get_program_break();
+static long sys_brk(void *addr)
+{
+    // The brk syscall is almost the same as the brk() function
+    // except it needs to return new program break on success
+    // and old one on failure
+    void *old_break = get_program_break();
+    if (!brk(addr)) {
+        return reinterpret_cast<long>(get_program_break());
+    } else {
+        return reinterpret_cast<long>(old_break);
+    }
 }
 
 OSV_LIBC_API long syscall(long number, ...)
