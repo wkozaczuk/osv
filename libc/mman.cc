@@ -325,9 +325,6 @@ int brk(void *addr)
     return internal_brk(addr);
 }
 
-static void *program_break = NULL;
-constexpr size_t sbrk_size = 1<<20;
-
 OSV_LIBC_API
 void *sbrk(intptr_t increment)
 {
