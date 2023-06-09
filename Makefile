@@ -1016,6 +1016,7 @@ objects += arch/x64/prctl.o
 objects += arch/x64/vmlinux.o
 objects += arch/x64/vmlinux-boot64.o
 objects += arch/x64/pvh-boot.o
+objects += arch/x64/syscall.o
 ifeq ($(conf_drivers_acpi),1)
 objects += $(acpi)
 endif
