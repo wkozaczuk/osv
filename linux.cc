@@ -691,6 +691,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL1(fchdir, unsigned int);
     SYSCALL5(sys_clone3, struct clone_args *, size_t, u64, u64, u64);
     SYSCALL1(pipe, int*);
+    SYSCALL2(fstatfs, unsigned int, struct statfs *);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);

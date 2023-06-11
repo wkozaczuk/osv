@@ -69,7 +69,11 @@ output_manifest()
 	echo "# --------------------" | tee -a $OUTPUT
 	echo "# Dependencies" | tee -a $OUTPUT
 	echo "# --------------------" | tee -a $OUTPUT
-	if [[ $conf_hide_symbols == 1 ]]; then
+	if [[ $dl == "linux" ]]; then
+		lddtree $so_files | grep -v "not found" | grep -v "$so_filter" | \
+			sed 's/.*=> //' | awk '// { printf("%s: %s\n", $0, $0); }' | sort | uniq | tee -a $OUTPUT
+		echo "/etc/ld.so.cache: /etc/ld.so.cache" | tee -a $OUTPUT
+	elif [[ $conf_hide_symbols == 1 ]]; then
 		lddtree $so_files | grep -v "not found" | grep -v "$so_filter" | grep -v "ld-linux-${MACHINE}" | \
 			grep -Pv 'lib(gcc_s|resolv|c|m|pthread|dl|rt|aio|xenstore|crypt|selinux)\.so([\d.]+)?' | \
 			sed 's/ =>/:/' | sed 's/^\s*lib/\/usr\/lib\/lib/' | sort | uniq | tee -a $OUTPUT
