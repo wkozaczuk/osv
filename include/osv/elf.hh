@@ -420,7 +420,6 @@ private:
 protected:
     program& _prog;
     std::string _pathname;
-    bool _linux_interp;
     Elf64_Ehdr _ehdr;
     std::vector<Elf64_Phdr> _phdrs;
     void* _base;

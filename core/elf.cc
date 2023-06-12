@@ -138,7 +138,6 @@ object::object(program& prog, std::string pathname)
     , _visibility_thread(nullptr)
     , _visibility_level(VisibilityLevel::Public)
 {
-    _linux_interp = endsWith(pathname, "ld-linux-x86-64.so.2");
     elf_debug("Instantiated\n");
 }
 
@@ -259,7 +258,7 @@ const char * object::symbol_name(const Elf64_Sym * sym) {
 }
 
 void* object::entry_point() const {
-    if (_is_executable || _ehdr.e_type == ET_EXEC || _linux_interp) {
+    if (_is_executable || _ehdr.e_type == ET_EXEC || (!_is_executable && _ehdr.e_type == ET_DYN)) {
         return _base + _ehdr.e_entry;
     }
     return nullptr;
@@ -626,7 +625,7 @@ void object::fix_permissions()
     }
 
     for (auto&& phdr : _phdrs) {
-        if (phdr.p_type != PT_GNU_RELRO || _linux_interp) //TODO: Why?
+        if (phdr.p_type != PT_GNU_RELRO || (!_is_executable && _ehdr.e_type == ET_DYN)) //TODO: Why?
             continue;
 
         ulong vstart = align_down(phdr.p_vaddr, mmu::page_size);
@@ -826,7 +825,7 @@ void object::relocate_pltgot()
         auto info = p->r_info;
         u32 type = info & 0xffffffff;
         void *addr = _base + p->r_offset;
-        assert(type == ARCH_JUMP_SLOT || type == ARCH_TLSDESC);
+        assert(type == ARCH_JUMP_SLOT || type == ARCH_TLSDESC || type == R_X86_64_IRELATIVE);
         if (type == ARCH_JUMP_SLOT) {
             if (bind_now) {
                 // If on-load binding is requested (instead of the default lazy
@@ -847,6 +846,8 @@ void object::relocate_pltgot()
                 // make sure it is relocated relative to the object base.
                 *static_cast<u64*>(addr) += reinterpret_cast<u64>(_base);
             }
+        } else if (type == R_X86_64_IRELATIVE) {
+            *static_cast<void**>(addr) = reinterpret_cast<void *(*)()>(_base + p->r_addend)();
         } else {
             u32 sym = info >> 32;
             arch_relocate_tls_desc(sym, addr, p->r_addend);
@@ -891,10 +892,6 @@ void* object::resolve_pltgot(unsigned index)
 
 void object::relocate()
 {
-    if (_linux_interp) {
-        elf_debug("Using Linux dynamic linker to execute program\n");
-        return;
-    }
     assert(!dynamic_exists(DT_REL));
     if (dynamic_exists(DT_RELA)) {
         relocate_rela();
