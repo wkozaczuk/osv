@@ -330,8 +330,7 @@ void application::main()
         // may be called twice, TLS may be overriden and the program may not
         // received correct arguments, environment variables and auxiliary
         // vector.
-        printf("elf_entry_point: args size=%d, arg0=%s, arg1=%s\n", _args.size(), _argv.get()[0], _argv.get()[1]);
-        elf_entry_point(_entry_point, _args.size(), _argv.get(), random_bytes, reinterpret_cast<uint64_t>(_libvdso->base()), sysconf(_SC_PAGESIZE));
+        elf_entry_point(_entry_point, _args.size(), _argv.get(), _argv_size);
     }
     // _entry_point() doesn't return
 }
@@ -371,7 +370,8 @@ void application::prepare_argv(elf::program *program)
     }
 
     // Allocate the continuous buffer for argv[] and envp[]
-    _argv.reset(new char*[_args.size() + 1 + envcount + 1 + sizeof(Elf64_auxv_t) * (auxv_parameters_count + 1)]);
+    _argv_size = _args.size() + 1 + envcount + 1 + sizeof(Elf64_auxv_t) * (auxv_parameters_count + 1);
+    _argv.reset(new char*[_argv_size]);
 
     // Fill the argv part of these buffers
     char *ab = _argv_buf.get();

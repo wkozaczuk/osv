@@ -41,64 +41,30 @@ enum {
 
 #define ELF_KERNEL_MACHINE_TYPE 62
 
-#define _AT_RANDOM       25
-#define _AT_SYSINFO_EHDR 33
-#define _AT_PAGESZ       6
-#define _AT_NULL 0
+#define SAFETY_BUFFER 256
+#include <osv/align.hh>
 
-struct auxv_t
+inline void elf_entry_point(void* ep, int argc, char** argv, int argv_size)
 {
-  int a_type;
-  union {
-    long a_val;
-    void *a_ptr;
-    void (*a_fnc)();
-  } a_un;
-};
+    int argc_plus_argv_stack_size = argv_size + 1;
 
-inline void elf_entry_point(void* ep, int argc, char** argv, u64 *random_bytes, uint64_t vdso_base, uint64_t page_size)
-{
-    struct auxv_t auxv_r;
-    auxv_r.a_type = _AT_RANDOM;
-    auxv_r.a_un.a_val = reinterpret_cast<uint64_t>(random_bytes);
+    void *stack;
+    asm volatile ("movq %%rsp, %0" : "=r"(stack));
 
-    struct auxv_t auxv_v;
-    auxv_v.a_type = _AT_SYSINFO_EHDR;
-    auxv_v.a_un.a_val = vdso_base;
+    stack -= (SAFETY_BUFFER + argc_plus_argv_stack_size * sizeof(char*));
+    stack = align_down(stack, 16);
+    printf("Executing static executable [%s] with stack set at:%018p\n", argv[0], stack);
 
-    struct auxv_t auxv_p;
-    auxv_p.a_type = _AT_PAGESZ;
-    auxv_p.a_un.a_val = page_size;
+    *reinterpret_cast<u64*>(stack) = argc;
+    memcpy(stack + sizeof(char*), argv, argv_size * sizeof(char*));
 
-    u64 _argc = argc;
-
-    //FIXME: Needs to be 16 bytes aligned
+    //TODO: Reset SSE2 and floating point registers
     asm volatile (
-        //"pushq $0\n\t" // Padding
-        "pushq $0\n\t" // Zero AUX
-        "pushq $0\n\t" // Zero AUX
-        "pushq %2\n\t" // AT_RANDOM AUX
-        "pushq %1\n\t" // AT_RANDOM AUX
-        "pushq %4\n\t" // AT_SYSINFO_EHDR AUX
-        "pushq %3\n\t" // AT_SYSINFO_EHDR AUX
-        "pushq %6\n\t" // AT_PAGESZ AUX
-        "pushq %5\n\t" // AT_PAGESZ AUX
-        "pushq $0\n\t" // Zero
-        "pushq %0\n\t" // End of environment pointers (no env)
-        "pushq %12\n\t" // Arg 4
-        "pushq %11\n\t" // Arg 3
-        "pushq %10\n\t" // Arg 2
-        "pushq %9\n\t" // Arg 1
-        "pushq %8\n\t" // Arg 0
-        "pushq %7\n\t" // Argument count
-        "movq $0, %%rdx\n\t" //fini should be null for now
-        "jmpq  *%0\n\t"
+        "movq %1, %%rsp\n\t" //set stack
+        "movq $0, %%rdx\n\t" //fini should be null for now (should be fixed?)
+        "jmpq *%0\n\t"
         :
-        : "r"(ep), 
-          "r"(*((u64*)&auxv_r)), "r"(*(((u64*)&auxv_r)+1)), 
-          "r"(*((u64*)&auxv_v)), "r"(*(((u64*)&auxv_v)+1)), 
-          "r"(*((u64*)&auxv_p)), "r"(*(((u64*)&auxv_p)+1)), 
-          "r"(_argc), "r"(argv[0]), "r"(argv[1]), "r"(argv[2]), "r"(argv[3]), "r"(argv[4]));
+        : "r"(ep), "r"(stack));
 }
 
 #endif /* ARCH_ELF_HH */

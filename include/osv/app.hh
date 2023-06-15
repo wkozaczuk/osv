@@ -242,6 +242,7 @@ private:
     // retained as member variable so that it later can be passed as argument by either
     // application::main and application::run_main() or application::run_main() called
     // from __libc_start_main()
+    int _argv_size;
     std::unique_ptr<char *[]> _argv;
     std::unique_ptr<char []> _argv_buf; // actual arguments content _argv points to
 
