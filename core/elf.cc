@@ -111,16 +111,6 @@ u64 symbol_module::size() const
 
 std::atomic<ptrdiff_t> object::_static_tls_alloc;
 
-static bool endsWith(const std::string& str, const char* suffix, unsigned suffixLen)
-{
-    return str.size() >= suffixLen && 0 == str.compare(str.size()-suffixLen, suffixLen, suffix, suffixLen);
-}
-
-static bool endsWith(const std::string& str, const char* suffix)
-{
-    return endsWith(str, suffix, std::string::traits_type::length(suffix));
-}
-
 object::object(program& prog, std::string pathname)
     : _prog(prog)
     , _pathname(pathname)
@@ -639,7 +629,7 @@ void object::fix_permissions()
 void object::make_text_writable(bool flag)
 {
     if(flag) {
-        elf_debug("making text writable");
+        elf_debug("making text writable\n");
     }
     for (auto&& phdr : _phdrs) {
         if (phdr.p_type != PT_LOAD)
@@ -774,7 +764,7 @@ symbol_module object::symbol_other(unsigned idx)
 
 void object::relocate_rela()
 {
-    if(has_non_writable_text_relocations() || endsWith(_pathname, "libvdso.so")) {
+    if(has_non_writable_text_relocations()) {
         make_text_writable(true);
     }
 
@@ -800,7 +790,7 @@ extern "C" { void __elf_resolve_pltgot(void); }
 
 void object::relocate_pltgot()
 {
-    if(endsWith(_pathname, "libvdso.so")) {
+    if(dynamic_exists(DT_PLTREL)) { //TODO: This makes libvdso.so work, but is it really correct?
         make_text_writable(true);
     }
     auto pltgot = dynamic_ptr<void*>(DT_PLTGOT);
@@ -817,7 +807,7 @@ void object::relocate_pltgot()
     }
     bool bind_now = dynamic_exists(DT_BIND_NOW) || mlocked() ||
         (dynamic_exists(DT_FLAGS) && (dynamic_val(DT_FLAGS) & DF_BIND_NOW)) ||
-        (dynamic_exists(DT_FLAGS_1) && (dynamic_val(DT_FLAGS_1) & DF_1_NOW)) || endsWith(_pathname, "libvdso.so");
+        (dynamic_exists(DT_FLAGS_1) && (dynamic_val(DT_FLAGS_1) & DF_1_NOW));
 
     auto rel = dynamic_ptr<Elf64_Rela>(DT_JMPREL);
     auto nrel = dynamic_val(DT_PLTRELSZ) / sizeof(*rel);
