@@ -45,6 +45,7 @@
 #include <sys/resource.h>
 #include <sys/sysinfo.h>
 #include <sys/sendfile.h>
+#include <sys/prctl.h>
 
 #include <unordered_map>
 
@@ -477,12 +478,14 @@ struct robust_list_head {
 
 static long sys_set_robust_list(struct robust_list_head *head, size_t len)
 {
+    //TODO: Again important on thread exit
     return 0;
 }
 
 static long set_tid_address(int *tidptr)
 {
-    return 0;
+    //TODO: Save clear_id to wake futex on exit of the thread
+    return sched::thread::current()->id();
 }
 
 #define __NR_sys_prlimit __NR_prlimit64
@@ -692,6 +695,9 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL5(sys_clone3, struct clone_args *, size_t, u64, u64, u64);
     SYSCALL1(pipe, int*);
     SYSCALL2(fstatfs, unsigned int, struct statfs *);
+    SYSCALL1(umask, mode_t);
+    SYSCALL5(prctl, int, unsigned long, unsigned long, unsigned long, unsigned long);
+    SYSCALL1(chdir, const char *);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
