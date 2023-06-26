@@ -219,7 +219,7 @@ application::application(const std::string& command,
 
     _main = _lib->lookup<int (int, char**)>(main_function_name.c_str());
     if (!_main) {
-        _entry_point = reinterpret_cast<void(*)()>(_lib->entry_point());
+        _entry_point = _lib->entry_point();
     }
     if (!_entry_point && !_main) {
         throw launch_error("Failed looking up main");
@@ -308,6 +308,8 @@ void application::start_and_join(waiter* setup_waiter)
 TRACEPOINT(trace_app_main, "app=%p, cmd=%s", application*, const char*);
 TRACEPOINT(trace_app_main_ret, "return_code=%d", int);
 
+static u64 random_bytes[2];
+
 void application::main()
 {
     __libc_stack_end = __builtin_frame_address(0);
@@ -328,7 +330,11 @@ void application::main()
         // may be called twice, TLS may be overriden and the program may not
         // received correct arguments, environment variables and auxiliary
         // vector.
-        _entry_point();
+        //TODO: This is not quite correct as we should differentiate between
+        //invoking entry_point of statically linked executable (1) and the app
+        //that ends up calling __libc_start_main() -> see issue https://github.com/cloudius-systems/osv/issues/350
+        //and commit 0f75b3af75fe5e4c3b20b93cc8bbc5a56951ee5e
+        elf_entry_point(_entry_point, _args.size(), _argv.get(), _argv_size);
     }
     // _entry_point() doesn't return
 }
@@ -360,7 +366,7 @@ void application::prepare_argv(elf::program *program)
     }
 
     // Load vdso library if available
-    int auxv_parameters_count = 2;
+    int auxv_parameters_count = 3;
     _libvdso = program->get_library("libvdso.so");
     if (!_libvdso) {
         auxv_parameters_count--;
@@ -368,7 +374,8 @@ void application::prepare_argv(elf::program *program)
     }
 
     // Allocate the continuous buffer for argv[] and envp[]
-    _argv.reset(new char*[_args.size() + 1 + envcount + 1 + sizeof(Elf64_auxv_t) * (auxv_parameters_count + 1)]);
+    _argv_size = _args.size() + 1 + envcount + 1 + sizeof(Elf64_auxv_t) * (auxv_parameters_count + 1);
+    _argv.reset(new char*[_argv_size]);
 
     // Fill the argv part of these buffers
     char *ab = _argv_buf.get();
@@ -400,6 +407,11 @@ void application::prepare_argv(elf::program *program)
 
     _auxv[auxv_idx].a_type = AT_PAGESZ;
     _auxv[auxv_idx++].a_un.a_val = sysconf(_SC_PAGESIZE);
+
+    random_bytes[0] = rand();
+    random_bytes[1] = rand();
+    _auxv[auxv_idx].a_type = AT_RANDOM;
+    _auxv[auxv_idx++].a_un.a_val = reinterpret_cast<uint64_t>(random_bytes);
 
     _auxv[auxv_idx].a_type = AT_NULL;
     _auxv[auxv_idx].a_un.a_val = 0;
