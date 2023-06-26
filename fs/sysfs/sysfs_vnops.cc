@@ -89,6 +89,10 @@ sysfs_mount(mount* mp, const char *dev, int flags, const void* data)
     auto system = make_shared<pseudo_dir_node>(inode_count++);
     system->add("node", node);
 
+    auto cpu = make_shared<pseudo_dir_node>(inode_count++);
+    cpu->add("online", inode_count++, [] { return "0-0"; });
+    system->add("cpu", cpu);
+
     auto devices = make_shared<pseudo_dir_node>(inode_count++);
     devices->add("system", system);
 
