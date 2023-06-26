@@ -235,13 +235,14 @@ private:
     std::shared_ptr<elf::object> _libenviron;
     std::shared_ptr<elf::object> _libvdso;
     main_func_t* _main;
-    void (*_entry_point)();
+    void* _entry_point;
     static app_registry apps;
 
     // _argv is set by prepare_argv() called from the constructor and needs to be
     // retained as member variable so that it later can be passed as argument by either
     // application::main and application::run_main() or application::run_main() called
     // from __libc_start_main()
+    int _argv_size;
     std::unique_ptr<char *[]> _argv;
     std::unique_ptr<char []> _argv_buf; // actual arguments content _argv points to
 

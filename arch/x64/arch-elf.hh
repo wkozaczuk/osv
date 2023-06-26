@@ -41,4 +41,30 @@ enum {
 
 #define ELF_KERNEL_MACHINE_TYPE 62
 
+#define SAFETY_BUFFER 256
+#include <osv/align.hh>
+
+inline void elf_entry_point(void* ep, int argc, char** argv, int argv_size)
+{
+    int argc_plus_argv_stack_size = argv_size + 1;
+
+    void *stack;
+    asm volatile ("movq %%rsp, %0" : "=r"(stack));
+
+    stack -= (SAFETY_BUFFER + argc_plus_argv_stack_size * sizeof(char*));
+    stack = align_down(stack, 16);
+    printf("Executing static executable [%s] with stack set at:%018p\n", argv[0], stack);
+
+    *reinterpret_cast<u64*>(stack) = argc;
+    memcpy(stack + sizeof(char*), argv, argv_size * sizeof(char*));
+
+    //TODO: Reset SSE2 and floating point registers
+    asm volatile (
+        "movq %1, %%rsp\n\t" //set stack
+        "movq $0, %%rdx\n\t" //fini should be null for now (should be fixed?)
+        "jmpq *%0\n\t"
+        :
+        : "r"(ep), "r"(stack));
+}
+
 #endif /* ARCH_ELF_HH */
