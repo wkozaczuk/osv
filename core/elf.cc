@@ -34,11 +34,11 @@
 #include "arch-elf.hh"
 #include "cpuid.hh"
 
-#if CONF_debug_elf
+//#if CONF_debug_elf
 #define elf_debug(format,...) kprintf("ELF [tid:%d, mod:%d, %s]: " format, sched::thread::current()->id(), _module_index, _pathname.c_str(), ##__VA_ARGS__)
-#else
-#define elf_debug(...)
-#endif
+//#else
+//#define elf_debug(...)
+//#endif
 
 TRACEPOINT(trace_elf_load, "%s", const char *);
 TRACEPOINT(trace_elf_unload, "%s", const char *);
@@ -248,10 +248,15 @@ const char * object::symbol_name(const Elf64_Sym * sym) {
 }
 
 void* object::entry_point() const {
-    if (!_is_executable) {
-        return nullptr;
+    if (_is_executable || _ehdr.e_type == ET_EXEC || (!_is_executable && _ehdr.e_type == ET_DYN)) {
+        return _base + _ehdr.e_entry;
     }
-    return _base + _ehdr.e_entry;
+    return nullptr;
+}
+
+bool object::is_dynamic() const
+{
+    return _ehdr.e_type == ET_DYN;
 }
 
 file::file(program& prog, ::fileref f, std::string pathname)
@@ -381,6 +386,15 @@ void object::set_base(void* base)
 
     _end = _base + q->p_vaddr + q->p_memsz;
     elf_debug("The base set to: %018p and end: %018p\n", _base, _end);
+}
+
+Elf64_Addr object::base_addr() const
+{
+    auto p = std::min_element(_phdrs.begin(), _phdrs.end(),
+                              [](Elf64_Phdr a, Elf64_Phdr b)
+                                  { return a.p_type == PT_LOAD
+                                        && a.p_vaddr < b.p_vaddr; });
+    return p->p_vaddr;
 }
 
 void* object::base() const
@@ -535,9 +549,9 @@ void object::process_headers()
             abort("Unknown p_type in executable %s: %d\n", pathname(), phdr.p_type);
         }
     }
-    if (!is_core() && _ehdr.e_type == ET_EXEC && !_is_executable) {
-        abort("Statically linked executables are not supported!\n");
-    }
+    //if (!is_core() && _ehdr.e_type == ET_EXEC && !_is_executable) {
+    //    abort("Statically linked executables are not supported!\n");
+    //}
     if (_is_executable && _tls_segment) {
         auto app_tls_size = get_aligned_tls_size();
         ulong pie_static_tls_maximum_size = &_pie_static_tls_end - &_pie_static_tls_start;
@@ -595,23 +609,28 @@ unsigned object::get_segment_mmap_permissions(const Elf64_Phdr& phdr)
 
 void object::fix_permissions()
 {
+    elf_debug("fixing permissions\n");
     if(has_non_writable_text_relocations()) {
         make_text_writable(false);
     }
 
     for (auto&& phdr : _phdrs) {
-        if (phdr.p_type != PT_GNU_RELRO)
+        if (phdr.p_type != PT_GNU_RELRO || (!_is_executable && _ehdr.e_type == ET_DYN)) //TODO: Why?
             continue;
 
         ulong vstart = align_down(phdr.p_vaddr, mmu::page_size);
         ulong memsz = align_up(phdr.p_vaddr + phdr.p_memsz, mmu::page_size) - vstart;
 
         mmu::mprotect(_base + vstart, memsz, mmu::perm_read);
+        elf_debug("fixing non GNU_RELRO: %018p of size: 0x%x\n", _base + vstart, memsz);
     }
 }
 
 void object::make_text_writable(bool flag)
 {
+    if(flag) {
+        elf_debug("making text writable\n");
+    }
     for (auto&& phdr : _phdrs) {
         if (phdr.p_type != PT_LOAD)
             continue;
@@ -771,6 +790,9 @@ extern "C" { void __elf_resolve_pltgot(void); }
 
 void object::relocate_pltgot()
 {
+    if(dynamic_exists(DT_PLTREL)) { //TODO: This makes libvdso.so work, but is it really correct?
+        make_text_writable(true);
+    }
     auto pltgot = dynamic_ptr<void*>(DT_PLTGOT);
     void *original_plt = nullptr;
     if (pltgot[1]) {
@@ -793,7 +815,7 @@ void object::relocate_pltgot()
         auto info = p->r_info;
         u32 type = info & 0xffffffff;
         void *addr = _base + p->r_offset;
-        assert(type == ARCH_JUMP_SLOT || type == ARCH_TLSDESC);
+        assert(type == ARCH_JUMP_SLOT || type == ARCH_TLSDESC || type == R_X86_64_IRELATIVE);
         if (type == ARCH_JUMP_SLOT) {
             if (bind_now) {
                 // If on-load binding is requested (instead of the default lazy
@@ -814,6 +836,8 @@ void object::relocate_pltgot()
                 // make sure it is relocated relative to the object base.
                 *static_cast<u64*>(addr) += reinterpret_cast<u64>(_base);
             }
+        } else if (type == R_X86_64_IRELATIVE) {
+            *static_cast<void**>(addr) = reinterpret_cast<void *(*)()>(_base + p->r_addend)();
         } else {
             u32 sym = info >> 32;
             arch_relocate_tls_desc(sym, addr, p->r_addend);
@@ -885,6 +909,9 @@ constexpr Elf64_Versym old_version_symbol_mask = Elf64_Versym(1) << 15;
 
 Elf64_Sym* object::lookup_symbol_old(const char* name)
 {
+    if (!dynamic_exists(DT_SYMTAB)) {
+        return nullptr;
+    }
     auto symtab = dynamic_ptr<Elf64_Sym>(DT_SYMTAB);
     auto strtab = dynamic_ptr<char>(DT_STRTAB);
     auto hashtab = dynamic_ptr<Elf64_Word>(DT_HASH);
@@ -914,6 +941,9 @@ dl_new_hash(const char *s)
 
 Elf64_Sym* object::lookup_symbol_gnu(const char* name, bool self_lookup)
 {
+    if (!dynamic_exists(DT_SYMTAB)) {
+        return nullptr;
+    }
     auto symtab = dynamic_ptr<Elf64_Sym>(DT_SYMTAB);
     auto strtab = dynamic_ptr<char>(DT_STRTAB);
     auto hashtab = dynamic_ptr<Elf64_Word>(DT_GNU_HASH);
@@ -1016,6 +1046,9 @@ dladdr_info object::lookup_addr(const void* addr)
     if (addr < _base || addr >= _end) {
         return ret;
     }
+    if (!dynamic_exists(DT_STRTAB)) {
+        return ret;
+    }
     ret.fname = _pathname.c_str();
     ret.base = _base;
     auto strtab = dynamic_ptr<char>(DT_STRTAB);
@@ -1079,6 +1112,9 @@ void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
     if (!rpath_str.empty()) {
         boost::replace_all(rpath_str, "$ORIGIN", dirname(_pathname));
         boost::split(rpath, rpath_str, boost::is_any_of(":"));
+    }
+    if (!dynamic_exists(DT_NEEDED)) {
+        return;
     }
     auto needed = dynamic_str_array(DT_NEEDED);
     for (auto lib : needed) {
@@ -1427,7 +1463,12 @@ program::load_object(std::string name, std::vector<std::string> extra_path,
         trace_elf_load(name.c_str());
         auto ef = std::shared_ptr<object>(new file(*this, f, name),
                 [=](object *obj) { remove_object(obj); });
-        ef->set_base(_next_alloc);
+        if (ef->is_dynamic()) {
+            ef->set_base(_next_alloc);
+        } else {
+            auto base = ef->base_addr();
+            ef->set_base(reinterpret_cast<void*>(base));
+        }
         ef->set_visibility(ThreadOnly);
         // We need to push the object at the end of the list (so that the main
         // shared object gets searched before the shared libraries it uses),
@@ -1449,7 +1490,9 @@ program::load_object(std::string name, std::vector<std::string> extra_path,
         loaded_objects.push_back(ef);
         ef->load_needed(loaded_objects);
         ef->relocate();
-        ef->fix_permissions();
+        if (ef->is_dynamic()) {
+            ef->fix_permissions();
+        }
         _files[name] = ef;
         _files[ef->soname()] = ef;
         return ef;
