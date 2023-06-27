@@ -11,6 +11,7 @@
 #include "processor.hh"
 #include "exceptions.hh"
 #include "cpuid.hh"
+#include "msr.hh"
 #include "osv/pagealloc.hh"
 #include <xmmintrin.h>
 
@@ -36,6 +37,11 @@ namespace sched {
 struct arch_cpu;
 struct arch_thread;
 
+struct tcb_data {
+    u64 kernel_tcb;
+    u64 tmp[2];
+};
+
 struct arch_cpu {
     arch_cpu();
     processor::aligned_task_state_segment atss;
@@ -46,6 +52,7 @@ struct arch_cpu {
     u32 apic_id;
     u32 acpi_id;
     u64 gdt[nr_gdt];
+    tcb_data _tcb_data;
     void init_on_cpu();
     void set_ist_entry(unsigned ist, char* base, size_t size);
     char* get_ist_entry(unsigned ist);
@@ -181,6 +188,8 @@ inline void arch_cpu::init_on_cpu()
     processor::init_fpu();
 
     processor::init_syscall();
+
+    processor::wrmsr(msr::IA32_GS_BASE, reinterpret_cast<u64>(&_tcb_data.kernel_tcb));
 }
 
 struct exception_guard {

@@ -90,6 +90,7 @@ void thread::switch_to()
     old->_state.exception_stack = c->arch.get_exception_stack();
     c->arch.set_interrupt_stack(&_arch);
     c->arch.set_exception_stack(_state.exception_stack);
+    c->arch._tcb_data.kernel_tcb = reinterpret_cast<u64>(_tcb);
     auto fpucw = processor::fnstcw();
     auto mxcsr = processor::stmxcsr();
     asm volatile
@@ -124,6 +125,7 @@ void thread::switch_to_first()
     remote_thread_local_var(percpu_base) = _detached_state->_cpu->percpu_base;
     _detached_state->_cpu->arch.set_interrupt_stack(&_arch);
     _detached_state->_cpu->arch.set_exception_stack(&_arch);
+    _detached_state->_cpu->arch._tcb_data.kernel_tcb = reinterpret_cast<u64>(_tcb);
     asm volatile
         ("mov %c[rsp](%0), %%rsp \n\t"
          "mov %c[rbp](%0), %%rbp \n\t"
@@ -266,6 +268,8 @@ void thread::setup_tcb()
     else {
         _tcb->syscall_stack_top = 0;
     }
+    _tcb->kernel_tcb_counter = 1;
+    _tcb->app_tcb = 0;
 }
 
 void thread::setup_large_syscall_stack()

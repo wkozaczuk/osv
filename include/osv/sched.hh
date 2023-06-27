@@ -804,6 +804,9 @@ private:
     std::shared_ptr<osv::application_runtime> _app_runtime;
 public:
     void destroy();
+    unsigned long get_app_tcb() { return _tcb->app_tcb; }
+    void set_app_tcb(unsigned long tcb) { _tcb->app_tcb = tcb; }
+    void use_app_tcb() { _tcb->kernel_tcb_counter--; }
 private:
 #ifdef __aarch64__
     friend void ::destroy_current_cpu_terminating_thread();
