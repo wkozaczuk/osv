@@ -393,16 +393,14 @@ static int sys_ioctl(unsigned int fd, unsigned int command, unsigned long arg)
 
 static int pselect6(int nfds, fd_set *readfds, fd_set *writefds,
                    fd_set *exceptfds, const struct timespec *timeout_ts,
-                   void *sig)
+                   const sigset_t* sigmask)
 {
-    // As explained in the pselect(2) manual page, the system call pselect accepts
-    // pointer to a structure holding pointer to sigset_t and its size which is different
-    // the glibc version of pselect(). For now we are delaying implementation of this call
-    // scenario and raising an error when such call happens.
-    if(sig) {
-        WARN_ONCE("pselect6(): unimplemented with not-null sigmask\n");
-        errno = ENOSYS;
-        return -1;
+    if(sigmask) {
+        sigset_t origmask;
+        pthread_sigmask(SIG_SETMASK, sigmask, &origmask);
+        int ret = pselect(nfds, readfds, writefds, exceptfds, timeout_ts, NULL);
+        pthread_sigmask(SIG_SETMASK, &origmask, NULL);
+        return ret;
     }
 
     return pselect(nfds, readfds, writefds, exceptfds, timeout_ts, NULL);
@@ -504,7 +502,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL2(flock, int, int);
     SYSCALL4(pwrite64, int, const void *, size_t, off_t);
     SYSCALL1(fdatasync, int);
-    SYSCALL6(pselect6, int, fd_set *, fd_set *, fd_set *, const struct timespec *, void *);
+    SYSCALL6(pselect6, int, fd_set *, fd_set *, fd_set *, const struct timespec *, const sigset_t*);
     SYSCALL3(fcntl, int, int, int);
     SYSCALL4(pread64, int, void *, size_t, off_t);
     SYSCALL2(ftruncate, int, off_t);
