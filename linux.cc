@@ -45,6 +45,7 @@
 #include <sys/resource.h>
 #include <sys/sysinfo.h>
 #include <sys/sendfile.h>
+#include <sys/prctl.h>
 
 #include <unordered_map>
 
@@ -668,6 +669,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL1(pipe, int*);
     SYSCALL2(fstatfs, unsigned int, struct statfs *);
     SYSCALL1(umask, mode_t);
+    SYSCALL5(prctl, int, unsigned long, unsigned long, unsigned long, unsigned long);
     SYSCALL1(chdir, const char *);
     }
 
