@@ -63,6 +63,7 @@ int clock_gettime(clockid_t clk_id, struct timespec* ts)
     switch (clk_id) {
     case CLOCK_BOOTTIME:
     case CLOCK_MONOTONIC:
+    case CLOCK_MONOTONIC_COARSE:
         fill_ts(osv::clock::uptime::now().time_since_epoch(), ts);
         break;
     case CLOCK_REALTIME:
