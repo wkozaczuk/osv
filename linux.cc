@@ -440,6 +440,8 @@ static int tgkill(int tgid, int tid, int sig)
 #define __NR_sys_getdents64 __NR_getdents64
 extern "C" ssize_t sys_getdents64(int fd, void *dirp, size_t count);
 
+extern long arch_prctl(int code, unsigned long addr);
+
 #define __NR_sys_set_robust_list __NR_set_robust_list
 struct robust_list {
     struct robust_list *next;
@@ -494,8 +496,8 @@ static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *cti
        asm volatile("movq %0, %%rdi" : : "r"(arg));
        asm volatile("jmpq *%0": : "r"(start));
     }, sched::thread::attr().stack(stack), false, true);
-    //t->set_app_tcb(newtls); //TODO: Possibly do it in the start routine
-    //t->use_app_tcb();
+    t->set_app_tcb(newtls); //TODO: Possibly do it in the start routine
+    t->use_app_tcb();
     t->start();
     return 0;
 }
@@ -528,8 +530,8 @@ static int sys_clone3(struct clone_args *args, size_t size, u64 start, u64 arg1,
        asm volatile("movq %0, %%rdi" : : "r"(arg2));
        asm volatile("jmpq *%0": : "r"(start));
     }, sched::thread::attr().stack(stack), false, true);
-    //t->set_app_tcb(args->tls); //TODO: Possibly do it in the start routine
-    //t->use_app_tcb();
+    t->set_app_tcb(args->tls); //TODO: Possibly do it in the start routine
+    t->use_app_tcb();
     t->start();
     return 0;
 }
@@ -644,6 +646,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL2(access, const char *, int);
     SYSCALL1(sys_brk, void *);
     SYSCALL3(writev, int, const struct iovec *, int);
+    SYSCALL2(arch_prctl, int, unsigned long);
     SYSCALL2(sys_set_robust_list, struct robust_list_head *, size_t);
     SYSCALL1(set_tid_address, int *);
     SYSCALL3(readlink, const char *, char *, size_t);
