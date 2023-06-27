@@ -21,11 +21,14 @@
 #include <errno.h>
 #include <signal.h>
 #include <time.h>
+#include <poll.h>
+#include <sys/time.h>
 #include <sys/epoll.h>
 #include <sys/eventfd.h>
 #include <sys/socket.h>
 #include <sys/utsname.h>
 #include <sys/mman.h>
+#include <sys/uio.h>
 #include <stdlib.h>
 #include <signal.h>
 #include <sys/select.h>
@@ -39,6 +42,9 @@
 #include <sys/unistd.h>
 #include <sys/random.h>
 #include <sys/vfs.h>
+#include <sys/resource.h>
+#include <sys/sysinfo.h>
+#include <sys/sendfile.h>
 
 #include <unordered_map>
 
@@ -227,11 +233,13 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 }
 #define __NR_long_mmap __NR_mmap
 
-
-#define SYSCALL0(fn) case (__NR_##fn): return fn()
+//#define log_syscall(fn) printf("tid:%d %s\n", sched::thread::current()->id(), #fn)
+#define log_syscall(fn)
+#define SYSCALL0(fn) case (__NR_##fn): log_syscall(fn); return fn()
 
 #define SYSCALL1(fn, __t1)                  \
         case (__NR_##fn): do {              \
+        log_syscall(fn);                    \
         va_list args;                       \
         __t1 arg1;                          \
         va_start(args, number);             \
@@ -242,6 +250,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 
 #define SYSCALL2(fn, __t1, __t2)            \
         case (__NR_##fn): do {              \
+        log_syscall(fn);                    \
         va_list args;                       \
         __t1 arg1;                          \
         __t2 arg2;                          \
@@ -254,6 +263,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 
 #define SYSCALL3(fn, __t1, __t2, __t3)          \
         case (__NR_##fn): do {                  \
+        log_syscall(fn);                        \
         va_list args;                           \
         __t1 arg1;                              \
         __t2 arg2;                              \
@@ -268,6 +278,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 
 #define SYSCALL4(fn, __t1, __t2, __t3, __t4)    \
         case (__NR_##fn): do {                  \
+        log_syscall(fn);                        \
         va_list args;                           \
         __t1 arg1;                              \
         __t2 arg2;                              \
@@ -284,6 +295,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 
 #define SYSCALL5(fn, __t1, __t2, __t3, __t4, __t5)    \
         case (__NR_##fn): do {                  \
+        log_syscall(fn);                        \
         va_list args;                           \
         __t1 arg1;                              \
         __t2 arg2;                              \
@@ -302,6 +314,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 
 #define SYSCALL6(fn, __t1, __t2, __t3, __t4, __t5, __t6)        \
         case (__NR_##fn): do {                                  \
+        log_syscall(fn);                                        \
         va_list args;                                           \
         __t1 arg1;                                              \
         __t2 arg2;                                              \
@@ -355,7 +368,8 @@ int rt_sigprocmask(int how, sigset_t * nset, sigset_t * oset, size_t sigsetsize)
 
 static int sys_exit(int ret)
 {
-    exit(ret);
+    //exit(ret);
+    sched::thread::current()->exit();
     return 0;
 }
 
@@ -424,6 +438,100 @@ static int tgkill(int tgid, int tid, int sig)
 
 #define __NR_sys_getdents64 __NR_getdents64
 extern "C" ssize_t sys_getdents64(int fd, void *dirp, size_t count);
+
+#define __NR_sys_set_robust_list __NR_set_robust_list
+struct robust_list {
+    struct robust_list *next;
+};
+
+struct robust_list_head {
+    struct robust_list list;
+    long futex_offset;
+    struct robust_list *list_op_pending;
+};
+
+static long sys_set_robust_list(struct robust_list_head *head, size_t len)
+{
+    //TODO: Again important on thread exit
+    return 0;
+}
+
+static long set_tid_address(int *tidptr)
+{
+    //TODO: Save clear_id to wake futex on exit of the thread
+    return sched::thread::current()->id();
+}
+
+#define __NR_sys_prlimit __NR_prlimit64
+static int sys_prlimit(pid_t pid, int resource, const struct rlimit *new_limit,
+    struct rlimit *old_limit)
+{
+    if (new_limit) {
+        return 0;
+    } else {
+        return getrlimit(resource, old_limit);
+    }
+}
+
+#define __NR_sys_clone __NR_clone
+#define CLONE_THREAD    0x00010000
+//static sched::thread *t;
+static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *ctid, unsigned long newtls)
+{
+    if (!(flags & CLONE_THREAD)) {
+       errno = ENOSYS;
+       return -1;
+    }
+    u64 start = reinterpret_cast<u64*>(child_stack)[0];
+    u64 arg = reinterpret_cast<u64*>(child_stack)[1];
+    printf("-> start: %p\n", start);
+    printf("-> stack: %p\n", child_stack);
+    //TODO: Possibly create small kernel stack and switch to the app one before jumping later
+    auto stack = sched::thread::stack_info(child_stack - (1024 * 1024), 1024 * 1024);
+    auto t = sched::thread::make([=] {
+       asm volatile("wrfsbase %0" : : "r"(newtls));
+       asm volatile("movq %0, %%rdi" : : "r"(arg));
+       asm volatile("jmpq *%0": : "r"(start));
+    }, sched::thread::attr().stack(stack), false, true);
+    //t->set_app_tcb(newtls); //TODO: Possibly do it in the start routine
+    //t->use_app_tcb();
+    t->start();
+    return 0;
+}
+
+struct clone_args {
+     u64 flags;
+     u64 pidfd;
+     u64 child_tid;
+     u64 parent_tid;
+     u64 exit_signal;
+     u64 stack;
+     u64 stack_size;
+     u64 tls;
+};
+
+#define __NR_sys_clone3 535 //435 is correct
+static int sys_clone3(struct clone_args *args, size_t size, u64 start, u64 arg1, u64 arg2)
+{
+    if (!(args->flags & CLONE_THREAD)) {
+       errno = ENOSYS;
+       return -1;
+    }
+    printf("-> start: %p\n", start);
+    printf("-> arg1: %p\n", arg1);
+    printf("-> arg2: %p\n", arg2);
+    //TODO: Possibly create small kernel stack and switch to the app one before jumping later
+    auto stack = sched::thread::stack_info(reinterpret_cast<void*>(args->stack), args->stack_size);
+    auto t = sched::thread::make([=] {
+       asm volatile("wrfsbase %0" : : "r"(args->tls));
+       asm volatile("movq %0, %%rdi" : : "r"(arg2));
+       asm volatile("jmpq *%0": : "r"(start));
+    }, sched::thread::attr().stack(stack), false, true);
+    //t->set_app_tcb(args->tls); //TODO: Possibly do it in the start routine
+    //t->use_app_tcb();
+    t->start();
+    return 0;
+}
 
 #define __NR_sys_brk __NR_brk
 void *get_program_break();
@@ -499,6 +607,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL6(recvfrom, int, void *, size_t, int, struct sockaddr *, socklen_t *);
     SYSCALL3(recvmsg, int, struct msghdr *, int);
     SYSCALL3(dup3, int, int, int);
+    SYSCALL2(dup2, unsigned int , unsigned int);
     SYSCALL2(flock, int, int);
     SYSCALL4(pwrite64, int, const void *, size_t, off_t);
     SYSCALL1(fdatasync, int);
@@ -530,7 +639,36 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL3(symlinkat, const char *, int, const char *);
     SYSCALL3(sys_getdents64, int, void *, size_t);
     SYSCALL4(renameat, int, const char *, int, const char *);
+    SYSCALL3(mprotect, void *, size_t, int);
+    SYSCALL2(access, const char *, int);
     SYSCALL1(sys_brk, void *);
+    SYSCALL3(writev, int, const struct iovec *, int);
+    SYSCALL2(sys_set_robust_list, struct robust_list_head *, size_t);
+    SYSCALL1(set_tid_address, int *);
+    SYSCALL3(readlink, const char *, char *, size_t);
+    SYSCALL0(geteuid);
+    SYSCALL0(getegid);
+    SYSCALL4(sys_prlimit, pid_t, int, const struct rlimit*, struct rlimit *);
+    SYSCALL2(gettimeofday, struct timeval *, struct timezone *);
+    SYSCALL3(poll, struct pollfd *, nfds_t, int);
+    SYSCALL0(getppid);
+    SYSCALL1(epoll_create, int);
+    SYSCALL1(sysinfo, struct sysinfo *);
+    SYSCALL1(time, time_t *);
+    SYSCALL4(sendfile, int, int, off_t *, size_t);
+    SYSCALL4(socketpair, int, int, int, int *);
+    SYSCALL2(shutdown, int, int);
+    SYSCALL1(unlink, const char *);
+    SYSCALL5(sys_clone, unsigned long, void *, int *, int *, unsigned long);
+    SYSCALL3(readv, unsigned long, const struct iovec *, unsigned long);
+    SYSCALL2(getrusage, int, struct rusage *);
+    SYSCALL3(accept, int, struct sockaddr *, socklen_t *);
+    SYSCALL1(fchdir, unsigned int);
+    SYSCALL5(sys_clone3, struct clone_args *, size_t, u64, u64, u64);
+    SYSCALL1(pipe, int*);
+    SYSCALL2(fstatfs, unsigned int, struct statfs *);
+    SYSCALL1(umask, mode_t);
+    SYSCALL1(chdir, const char *);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
