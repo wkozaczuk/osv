@@ -19,6 +19,34 @@ syscall_entry:
     .cfi_register rflags, r11 # r11 took previous rflags value
     # There is no ring transition and rflags are left unchanged.
     #
+    # Potenial app->kernel tcb switch
+    cli
+    movq %rax, %gs:8  # save register rax so we can restore it later
+    movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
+
+    #1. Check if special app tcb set and otherwise continue
+    cmpq $0, 32(%rax)
+    je 2f
+
+    #2. Check if counter 0 and jump over to 3 if not
+    cmpq $0, 40(%rax)
+    jne 1f
+
+    #2. If zero set fs MSR to kernel tcb
+    movq %rbx, %gs:16  # save register rbx so we can restore it later
+    movq (%rax), %rbx  # set kernel tcb
+    wrfsbase %rbx
+    movq %gs:16, %rbx
+
+1:
+    #3. Increment counter
+    incq 40(%rax)
+    #4. Restore %rax
+2:
+    movq %gs:8, %rax
+    sti
+
+    #
     # Unfortunately the mov instruction cannot be used to dereference an address
     # on syscall stack pointed by address in TCB (%fs:16) - double memory dereference.
     # Therefore we are forced to save caller stack address in a field in TCB.
@@ -30,7 +58,7 @@ syscall_entry:
 
     # Skip large syscall stack setup if it has been already setup
     cmpq $0, (%rsp)  // Check if we are on tiny or large stack
-    jne 1f
+    jne 3f
 
     # We are on small stack
     # Save all registers
@@ -80,7 +108,7 @@ syscall_entry:
     popq %rcx
     popq %rcx
 
-1:
+3:
     .cfi_def_cfa %rsp, 0
 
     # We need to save and restore the caller's %rbp anyway, so let's also
@@ -173,6 +201,33 @@ syscall_entry:
 
     # Restore caller stack pointer
     movq %fs:24, %rsp
+
+    cli
+    # kernel->app tcb switch
+    movq %rax, %gs:8  # save register rax so we can restore it later
+    movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
+
+    #1. Check if special app tcb set and otherwise continue
+    cmpq $0, 32(%rax)
+    je 4f
+
+    #2. Decrement counter
+    decq 40(%rax)
+
+    #3. Check if counter 0 and jump over to 3 if not
+    cmpq $0, 40(%rax)
+    jne 4f
+
+    #4. If zero set fs MSR to app tcb
+    movq %rbx, %gs:16  # save register rbx so we can restore it later
+    movq 32(%rax), %rbx # set to app tcb
+    wrfsbase %rbx
+    movq %gs:16, %rbx
+
+4:
+    #4. Restore %rax
+    movq %gs:8, %rax
+    sti
 
     # jump to rcx where the syscall instruction put rip
     # (sysret would leave rxc cloberred so we have nothing to do to restore it)

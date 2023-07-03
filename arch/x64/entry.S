@@ -34,12 +34,49 @@
 	pushq_cfi %r13
 	pushq_cfi %r14
 	pushq_cfi %r15
+
+# Potential app->kernel tcb switch
+	movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
+	#1. Check if special app tcb set and otherwise continue (kernel or "normal" app thread)
+	cmpq $0, 32(%rax)
+	je 2f
+
+	#2. Check if counter 0 and otherwise continue (kernel or "normal" app thread)
+	cmpq $0, 40(%rax)
+	jne 1f
+
+	#3. Set fs MSR to kernel tcb
+	movq (%rax), %rbx # set kernel tcb
+	wrfsbase %rbx
+1:
+	#4. Increment counter
+	incq 40(%rax)
+2:
 	mov %rsp, %rdi
 	subq $8, %rsp # 16-byte alignment
 	.cfi_adjust_cfa_offset 8
 	call \handler
 	addq $8, %rsp # 16-byte alignment
 	.cfi_adjust_cfa_offset -8
+
+# Potential kernel->app tcb switch
+	movq %gs:0, %rax  # copy address of kernel tcb to the temp register rax
+	#1. Check if app tcb set and otherwise continue (kernel or "normal" app thread)
+	cmpq $0, 32(%rax)
+	je 3f
+
+	#2. Decrement counter
+	decq 40(%rax)
+
+	#3. Check if counter 0 and jump over to 3 if not
+	cmpq $0, 40(%rax)
+	jne 3f
+
+	#4. If zero set fs MSR to app tcb
+	movq 32(%rax), %rbx # set to app tcb
+	wrfsbase %rbx
+
+3:
 	popq_cfi %r15
 	popq_cfi %r14
 	popq_cfi %r13
