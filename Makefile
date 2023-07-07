@@ -1850,6 +1850,9 @@ musl += time/wcsftime.o
 musl += time/ftime.o
 $(out)/libc/time/ftime.o: CFLAGS += -Ilibc/include
 
+libc += vdso/vdso_kernel.o
+libc_to_hide += vdso/vdso_kernel.o
+
 musl += termios/tcflow.o
 
 musl += unistd/sleep.o
