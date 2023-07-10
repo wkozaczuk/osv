@@ -395,6 +395,20 @@ static long sys_getcwd(char *buf, unsigned long size)
     return strlen(ret) + 1;
 }
 
+#define __NR_sys_getcpu __NR_getcpu
+static long sys_getcpu(unsigned int *cpu, unsigned int *node, void *tcache)
+{
+    if (cpu) {
+        *cpu = sched::cpu::current()->id;
+    }
+
+    if (node) {
+       *node = 0;
+    }
+
+    return 0;
+}
+
 #define __NR_sys_ioctl __NR_ioctl
 //
 // We need to define explicit sys_ioctl that takes these 3 parameters to conform
@@ -456,12 +470,14 @@ struct robust_list_head {
 static long sys_set_robust_list(struct robust_list_head *head, size_t len)
 {
     //TODO: Again important on thread exit
+    printf("CALLED sys_set_robust_list\n");
     return 0;
 }
 
 static long set_tid_address(int *tidptr)
 {
     //TODO: Save clear_id to wake futex on exit of the thread
+    printf("CALLED set_tid_address\n");
     return sched::thread::current()->id();
 }
 
@@ -478,12 +494,24 @@ static int sys_prlimit(pid_t pid, int resource, const struct rlimit *new_limit,
 
 #define __NR_sys_clone __NR_clone
 #define CLONE_THREAD    0x00010000
+#define CLONE_CHILD_SETTID	0x01000000
+#define CLONE_PARENT_SETTID	0x00100000
+#define CLONE_CHILD_CLEARTID	0x00200000
 //static sched::thread *t;
 static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *ctid, unsigned long newtls)
 {
     if (!(flags & CLONE_THREAD)) {
        errno = ENOSYS;
        return -1;
+    }
+    if ((flags & CLONE_CHILD_SETTID)) {
+       printf("-> CLONE_CHILD_SETTID\n");
+    }
+    if ((flags & CLONE_PARENT_SETTID)) {
+       printf("-> CLONE_PARENT_SETTID\n");
+    }
+    if ((flags & CLONE_CHILD_CLEARTID)) {
+       printf("-> CLONE_CHILD_CLEARTID\n");
     }
     u64 start = reinterpret_cast<u64*>(child_stack)[0];
     u64 arg = reinterpret_cast<u64*>(child_stack)[1];
@@ -496,6 +524,9 @@ static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *cti
        asm volatile("movq %0, %%rdi" : : "r"(arg));
        asm volatile("jmpq *%0": : "r"(start));
     }, sched::thread::attr().stack(stack), false, true);
+    if ((flags & CLONE_PARENT_SETTID)) {
+       *ptid = t->id();
+    }
     t->set_app_tcb(newtls); //TODO: Possibly do it in the start routine
     t->use_app_tcb();
     t->start();
@@ -550,6 +581,37 @@ static long sys_brk(void *addr)
         return reinterpret_cast<long>(old_break);
     }
 }
+
+struct statx_timestamp
+{
+    int64_t tv_sec;
+    uint32_t tv_nsec;
+    int32_t statx_timestamp_pad1[1];
+};
+struct statx {
+    uint32_t stx_mask;
+    uint32_t stx_blksize;
+    uint64_t stx_attributes;
+    uint32_t stx_nlink;
+    uint32_t stx_uid;
+    uint32_t stx_gid;
+    uint16_t stx_mode;
+    uint16_t __statx_pad1[1];
+    uint64_t stx_ino;
+    uint64_t stx_size;
+    uint64_t stx_blocks;
+    uint64_t stx_attributes_mask;
+    struct statx_timestamp stx_atime;
+    struct statx_timestamp stx_btime;
+    struct statx_timestamp stx_ctime;
+    struct statx_timestamp stx_mtime;
+    uint32_t stx_rdev_major;
+    uint32_t stx_rdev_minor;
+    uint32_t stx_dev_major;
+    uint32_t stx_dev_minor;
+    uint64_t __statx_pad2[14];
+};
+extern "C" int statx(int dirfd, const char* pathname, int flags, unsigned int mask, struct statx *buf);
 
 OSV_LIBC_API long syscall(long number, ...)
 {
@@ -609,6 +671,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL3(sendmsg, int, const struct msghdr *, int);
     SYSCALL6(recvfrom, int, void *, size_t, int, struct sockaddr *, socklen_t *);
     SYSCALL3(recvmsg, int, struct msghdr *, int);
+    SYSCALL1(dup, int);
     SYSCALL3(dup3, int, int, int);
     SYSCALL2(dup2, unsigned int , unsigned int);
     SYSCALL2(flock, int, int);
@@ -674,6 +737,10 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL1(umask, mode_t);
     SYSCALL5(prctl, int, unsigned long, unsigned long, unsigned long, unsigned long);
     SYSCALL1(chdir, const char *);
+    SYSCALL3(sys_getcpu, unsigned int *, unsigned int *, void *);
+    SYSCALL5(statx, int, const char *, int, unsigned int, struct statx *);
+    SYSCALL4(faccessat, int, const char *, int, int);
+    SYSCALL4(clock_nanosleep, clockid_t, int, const struct timespec *, struct timespec *);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
