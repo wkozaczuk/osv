@@ -67,6 +67,7 @@ int clock_gettime(clockid_t clk_id, struct timespec* ts)
     case CLOCK_BOOTTIME:
     case CLOCK_MONOTONIC:
     case CLOCK_MONOTONIC_COARSE:
+    case CLOCK_MONOTONIC_RAW:
         fill_ts(osv::clock::uptime::now().time_since_epoch(), ts);
         break;
     case CLOCK_REALTIME:
@@ -99,11 +100,14 @@ OSV_LIBC_API
 int clock_getres(clockid_t clk_id, struct timespec* ts)
 {
     switch (clk_id) {
+    case CLOCK_BOOTTIME:
     case CLOCK_REALTIME:
     case CLOCK_REALTIME_COARSE:
     case CLOCK_PROCESS_CPUTIME_ID:
     case CLOCK_THREAD_CPUTIME_ID:
     case CLOCK_MONOTONIC:
+    case CLOCK_MONOTONIC_COARSE:
+    case CLOCK_MONOTONIC_RAW:
         break;
     default:
         if (clk_id < _OSV_CLOCK_SLOTS) {
@@ -142,12 +146,16 @@ int clock_nanosleep(clockid_t clock_id, int flags,
     if (remain) {
         UNIMPLEMENTED("clock_nanosleep(): remain not supported, due to signals");
     }
-    if (clock_id != CLOCK_MONOTONIC) {
+    if (clock_id != CLOCK_MONOTONIC && clock_id != CLOCK_REALTIME) {
         UNIMPLEMENTED("clock_nanosleep(): only CLOCK_MONOTONIC is supported");
     }
 
     switch (flags) {
     case 0:
+        if (clock_id == CLOCK_REALTIME) {
+           sched::thread::sleep(std::chrono::nanoseconds(10));
+           return 0;
+        } else
         return nanosleep(request, NULL);
     case TIMER_ABSTIME: {
         sched::thread::sleep_until(osv::clock::uptime::time_point(

@@ -366,7 +366,7 @@ void application::prepare_argv(elf::program *program)
     }
 
     // Load vdso library if available
-    int auxv_parameters_count = 3;
+    int auxv_parameters_count = 4;
     _libvdso = program->get_library("libvdso.so");
     if (!_libvdso) {
         auxv_parameters_count--;
@@ -407,6 +407,9 @@ void application::prepare_argv(elf::program *program)
 
     _auxv[auxv_idx].a_type = AT_PAGESZ;
     _auxv[auxv_idx++].a_un.a_val = sysconf(_SC_PAGESIZE);
+
+    _auxv[auxv_idx].a_type = AT_MINSIGSTKSZ;
+    _auxv[auxv_idx++].a_un.a_val = sysconf(_SC_MINSIGSTKSZ);
 
     random_bytes[0] = rand();
     random_bytes[1] = rand();
