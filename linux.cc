@@ -457,27 +457,17 @@ extern "C" ssize_t sys_getdents64(int fd, void *dirp, size_t count);
 extern long arch_prctl(int code, unsigned long addr);
 
 #define __NR_sys_set_robust_list __NR_set_robust_list
-struct robust_list {
-    struct robust_list *next;
-};
-
-struct robust_list_head {
-    struct robust_list list;
-    long futex_offset;
-    struct robust_list *list_op_pending;
-};
-
 static long sys_set_robust_list(struct robust_list_head *head, size_t len)
 {
-    //TODO: Again important on thread exit
     printf("CALLED sys_set_robust_list\n");
+    sched::thread::current()->set_robust_list(head);
     return 0;
 }
 
 static long set_tid_address(int *tidptr)
 {
-    //TODO: Save clear_id to wake futex on exit of the thread
     printf("CALLED set_tid_address\n");
+    sched::thread::current()->set_clear_id(tidptr);
     return sched::thread::current()->id();
 }
 
@@ -507,12 +497,6 @@ static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *cti
     if ((flags & CLONE_CHILD_SETTID)) {
        printf("-> CLONE_CHILD_SETTID\n");
     }
-    if ((flags & CLONE_PARENT_SETTID)) {
-       printf("-> CLONE_PARENT_SETTID\n");
-    }
-    if ((flags & CLONE_CHILD_CLEARTID)) {
-       printf("-> CLONE_CHILD_CLEARTID\n");
-    }
     u64 start = reinterpret_cast<u64*>(child_stack)[0];
     u64 arg = reinterpret_cast<u64*>(child_stack)[1];
     printf("-> start: %p\n", start);
@@ -525,7 +509,12 @@ static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *cti
        asm volatile("jmpq *%0": : "r"(start));
     }, sched::thread::attr().stack(stack), false, true);
     if ((flags & CLONE_PARENT_SETTID)) {
+       printf("-> CLONE_PARENT_SETTID\n");
        *ptid = t->id();
+    }
+    if ((flags & CLONE_CHILD_CLEARTID)) {
+       printf("-> CLONE_CHILD_CLEARTID\n");
+       t->set_clear_id(ctid);
     }
     t->set_app_tcb(newtls); //TODO: Possibly do it in the start routine
     t->use_app_tcb();
