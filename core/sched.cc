@@ -36,6 +36,8 @@ MAKE_SYMBOL(sched::preempt);
 MAKE_SYMBOL(sched::preempt_disable);
 MAKE_SYMBOL(sched::preempt_enable);
 
+int futex(int *uaddr, int op, int val, const struct timespec *timeout, int *uaddr2, uint32_t val3);
+
 __thread char* percpu_base;
 
 extern char _percpu_start[], _percpu_end[];
@@ -1164,6 +1166,8 @@ thread::thread(std::function<void ()> func, attr attr, bool main, bool app)
     }
 
     _parent_id = s_current ? s_current->id() : 0;
+    _clear_id = nullptr;
+    _robust_list_head = nullptr;
 }
 
 static std::list<std::function<void ()>> exit_notifiers
@@ -1441,6 +1445,11 @@ void thread::stop_wait()
 void thread::complete()
 {
     run_exit_notifiers();
+
+    if (_clear_id) {
+       *_clear_id = 0;
+       futex(_clear_id, 1, 1, nullptr, nullptr, 0);
+    }
 
     auto value = detach_state::attached;
     _detach_state.compare_exchange_strong(value, detach_state::attached_complete);
