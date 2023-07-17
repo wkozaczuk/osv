@@ -34,7 +34,6 @@
 #include <sys/select.h>
 #include <sys/mman.h>
 #include <sys/types.h>
-#include <sys/socket.h>
 #include <sys/stat.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
@@ -46,6 +45,7 @@
 #include <sys/sysinfo.h>
 #include <sys/sendfile.h>
 #include <sys/prctl.h>
+#include <sys/timerfd.h>
 
 #include <unordered_map>
 
@@ -503,11 +503,13 @@ static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *cti
     printf("-> stack: %p\n", child_stack);
     //TODO: Possibly create small kernel stack and switch to the app one before jumping later
     auto stack = sched::thread::stack_info(child_stack - (1024 * 1024), 1024 * 1024);
+    auto parent_pinned_cpu = sched::thread::current()->pinned() ? sched::cpu::current() : nullptr;
     auto t = sched::thread::make([=] {
        asm volatile("wrfsbase %0" : : "r"(newtls));
        asm volatile("movq %0, %%rdi" : : "r"(arg));
        asm volatile("jmpq *%0": : "r"(start));
-    }, sched::thread::attr().stack(stack), false, true);
+    }, sched::thread::attr().stack(stack).pin(parent_pinned_cpu), false, true);
+    //TODO: See if need to inherit signal mask
     if ((flags & CLONE_PARENT_SETTID)) {
        printf("-> CLONE_PARENT_SETTID\n");
        *ptid = t->id();
@@ -730,6 +732,19 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL5(statx, int, const char *, int, unsigned int, struct statx *);
     SYSCALL4(faccessat, int, const char *, int, int);
     SYSCALL4(clock_nanosleep, clockid_t, int, const struct timespec *, struct timespec *);
+    SYSCALL2(kill, pid_t, int);
+    SYSCALL1(alarm, unsigned int);
+    SYSCALL4(utimensat, int, const char *, const struct timespec*, int);
+    SYSCALL2(symlink, const char *, const char *);
+    SYSCALL1(rmdir, const char *);
+    SYSCALL4(mknodat, int, const char *, mode_t, unsigned);
+    SYSCALL2(sethostname, char *, int);
+    SYSCALL2(creat, const char *, mode_t);
+    SYSCALL2(timerfd_create, int, int);
+    SYSCALL4(timerfd_settime, int, int, const struct itimerspec *, struct itimerspec *);
+    SYSCALL2(timerfd_gettime, int, struct itimerspec*);
+    SYSCALL2(chmod, const char *, mode_t);
+    SYSCALL2(fchmod, int, mode_t);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
@@ -755,6 +770,10 @@ extern "C" long syscall_wrapper(long number, long p1, long p2, long p3, long p4,
 extern "C" long syscall_wrapper(long p1, long p2, long p3, long p4, long p5, long p6, long number)
 #endif
 {
+    //if (number == __NR_socket) {
+    //   printf("socket: arg1:%ld\n", p1);
+    //}
+
     int errno_backup = errno;
     // syscall and function return value are in rax
     auto ret = syscall(number, p1, p2, p3, p4, p5, p6);

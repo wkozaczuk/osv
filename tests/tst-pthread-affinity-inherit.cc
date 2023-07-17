@@ -32,6 +32,7 @@ void *check_cpuset(void *ref_cs2)
 
     sched_getaffinity(0, sizeof(cs), &cs);
     success = true;
+    printf("-> nprocs: %d\n", get_nprocs());
     for (int i = 0; i < get_nprocs(); i++) {
         success = success && (CPU_ISSET(i, &cs) == CPU_ISSET(i, ref_cs));
     }

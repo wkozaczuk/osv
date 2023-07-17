@@ -70,9 +70,9 @@ int main(void)
     report("sizeof pthread_barrierattr_t is 4 bytes\n", sizeof(attr) == 4);
 
     // Try an invalid initialization (-1 or 0 or a null pthread_barrier_t*)
-    retval = pthread_barrier_init(NULL, NULL, 4);
-    report("pthread_barrier_init (pthread_barrier_t* == NULL)",
-           retval == EINVAL);
+    //retval = pthread_barrier_init(NULL, NULL, 4); //TODO: This does not seem to be valid in glibc -> Linux - segmentation core
+    //report("pthread_barrier_init (pthread_barrier_t* == NULL)",
+    //       retval == EINVAL);
     retval = pthread_barrier_init(&barrier, NULL, -1);
     report("pthread_barrier_init (count == -1)", retval == EINVAL);
     retval = pthread_barrier_init(&barrier, NULL, 0);

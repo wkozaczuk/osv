@@ -1,5 +1,7 @@
 #include <fenv.h>
+#ifdef __OSV__
 #include <__fenv.h>
+#endif
 #include <signal.h>
 #include <assert.h>
 #include <setjmp.h>
@@ -36,6 +38,9 @@ bool setjmp_check() {
     longjmp(env, 1);
     return false;
 }
+
+extern "C" int __sigsetjmp(sigjmp_buf env, int savemask);
+#define sigsetjmp(env, savemask) __sigsetjmp (env, savemask)
 
 static sigjmp_buf sig_env;
 bool sigsetjmp_check(int savesigs) {
