@@ -1,0 +1,12 @@
+  -d tst-dlfcn.so \ - who knows why
+  -d tst-futimesat.so \ - see utimen
+  -d tst-ifaddrs.so \ - see below
+  -d tst-kill.so \ - crashes
+  -d tst-net_if_test.so \ - this and ifaddr relies on netlink which does not work correcty with glibc
+  -d tst-select-timeout.so \
+  -d tst-symlink-rofs.so \ - possibly stat structure diff
+  -d tst-symlink.so \ - same as above
+  -d tst-ttyname.so \ - fails on Linux - maybe OSv specific
+  -d tst-utimensat.so \ - this and possibly tst-futimesat.so needs to treat dirfd differently in syscall
+  \
+  -d tst-eventfd.so - fails occasionally

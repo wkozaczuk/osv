@@ -141,22 +141,9 @@ int clock_nanosleep(clockid_t clock_id, int flags,
                     const struct timespec *request,
                     struct timespec *remain)
 {
-    /* XXX we are implementing really only CLOCK_MONOTONIC, */
-    /* and we don't support remain, due to signals. */
-    if (remain) {
-        UNIMPLEMENTED("clock_nanosleep(): remain not supported, due to signals");
-    }
-    if (clock_id != CLOCK_MONOTONIC && clock_id != CLOCK_REALTIME) {
-        UNIMPLEMENTED("clock_nanosleep(): only CLOCK_MONOTONIC is supported");
-    }
-
     switch (flags) {
     case 0:
-        if (clock_id == CLOCK_REALTIME) {
-           sched::thread::sleep(std::chrono::nanoseconds(10));
-           return 0;
-        } else
-        return nanosleep(request, NULL);
+        return nanosleep(request, NULL); //TODO: Think if we need to differentiate between different clocks
     case TIMER_ABSTIME: {
         sched::thread::sleep_until(osv::clock::uptime::time_point(
                                  osv::clock::uptime::duration(convert(*request))));

@@ -1,0 +1,4395 @@
+  TEST java-perms                          SKIPPED
+  TEST java_no_wrapper                     SKIPPED
+  TEST tcp_close_without_reading_on_fc     SKIPPED
+  TEST tcp_close_without_reading_on_qemu   SKIPPED
+  TEST tracing_smoke_test                  SKIPPED
+  TEST tst-af-local.so                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-af-local.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 146.08 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-af-local.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: socketpair call
+PASS: write to empty socket
+PASS: read after write
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: read before write
+PASS: poll() (immediate, no events)
+PASS: poll() (timeout, no events)
+PASS: poll() (immediate, has event)
+PASS: read after poll
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: waiting poll
+PASS: read after waiting poll
+-> Handling robust list
+PASS: write to polling socket
+PASS: write, other side closed
+PASS: read, other side closed
+PASS: socketpair call
+PASS: shutdown SHUT_RD
+PASS: can't read from SHUT_RD socket
+PASS: write to socket with other side SHUT_RD
+PASS: SHUT_RD socket can still be written
+PASS: read from socket with other side SHUT_RD
+PASS: close after SHUT_RD
+PASS: close when other end is SHUT_RD
+PASS: socketpair call
+PASS: shutdown SHUT_WR
+PASS: can't write to SHUT_WR socket
+PASS: read from socket with other side SHUT_WR
+PASS: write to socket with other side SHUT_WR
+PASS: SHUT_WR socket can still be read
+PASS: close after SHUT_WR
+PASS: close when other end is SHUT_WR
+PASS: create many sockets
+SUMMARY: 30 tests, 0 failures
+ OK  (2.673 s)
+  TEST tst-align.so                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-align.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 148.99 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-align.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Testing posix_memalign alignment=8, size=8
+PASS: posix_memalign 8 8
+PASS: achieved desired alignment
+WARNING: exceeded desired alignment - got 16
+Testing posix_memalign alignment=8, size=16
+PASS: posix_memalign 8 16
+PASS: achieved desired alignment
+WARNING: exceeded desired alignment - got 16
+Testing posix_memalign alignment=8, size=80
+PASS: posix_memalign 8 80
+PASS: achieved desired alignment
+WARNING: exceeded desired alignment - got 32
+Testing posix_memalign alignment=1024, size=8
+PASS: posix_memalign 1024 8
+PASS: achieved desired alignment
+Testing posix_memalign alignment=8, size=4
+PASS: posix_memalign 8 4
+PASS: achieved desired alignment
+WARNING: exceeded desired alignment - got 16
+Testing posix_memalign alignment=8, size=8
+PASS: posix_memalign 8 8
+PASS: achieved desired alignment
+WARNING: exceeded desired alignment - got 16
+Testing posix_memalign alignment=16, size=16
+PASS: posix_memalign 16 16
+PASS: achieved desired alignment
+Testing posix_memalign alignment=16, size=32
+PASS: posix_memalign 16 32
+PASS: achieved desired alignment
+Testing posix_memalign alignment=16, size=160
+PASS: posix_memalign 16 160
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=16
+PASS: posix_memalign 1024 16
+PASS: achieved desired alignment
+Testing posix_memalign alignment=16, size=8
+PASS: posix_memalign 16 8
+PASS: achieved desired alignment
+WARNING: exceeded desired alignment - got 32
+Testing posix_memalign alignment=16, size=8
+PASS: posix_memalign 16 8
+PASS: achieved desired alignment
+WARNING: exceeded desired alignment - got 32
+Testing posix_memalign alignment=32, size=32
+PASS: posix_memalign 32 32
+PASS: achieved desired alignment
+Testing posix_memalign alignment=32, size=64
+PASS: posix_memalign 32 64
+PASS: achieved desired alignment
+Testing posix_memalign alignment=32, size=320
+PASS: posix_memalign 32 320
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=32
+PASS: posix_memalign 1024 32
+PASS: achieved desired alignment
+Testing posix_memalign alignment=32, size=16
+PASS: posix_memalign 32 16
+PASS: achieved desired alignment
+Testing posix_memalign alignment=32, size=8
+PASS: posix_memalign 32 8
+PASS: achieved desired alignment
+Testing posix_memalign alignment=64, size=64
+PASS: posix_memalign 64 64
+PASS: achieved desired alignment
+Testing posix_memalign alignment=64, size=128
+PASS: posix_memalign 64 128
+PASS: achieved desired alignment
+Testing posix_memalign alignment=64, size=640
+PASS: posix_memalign 64 640
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=64
+PASS: posix_memalign 1024 64
+PASS: achieved desired alignment
+Testing posix_memalign alignment=64, size=32
+PASS: posix_memalign 64 32
+PASS: achieved desired alignment
+Testing posix_memalign alignment=64, size=8
+PASS: posix_memalign 64 8
+PASS: achieved desired alignment
+Testing posix_memalign alignment=128, size=128
+PASS: posix_memalign 128 128
+PASS: achieved desired alignment
+Testing posix_memalign alignment=128, size=256
+PASS: posix_memalign 128 256
+PASS: achieved desired alignment
+Testing posix_memalign alignment=128, size=1280
+PASS: posix_memalign 128 1280
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=128
+PASS: posix_memalign 1024 128
+PASS: achieved desired alignment
+Testing posix_memalign alignment=128, size=64
+PASS: posix_memalign 128 64
+PASS: achieved desired alignment
+Testing posix_memalign alignment=128, size=8
+PASS: posix_memalign 128 8
+PASS: achieved desired alignment
+Testing posix_memalign alignment=256, size=256
+PASS: posix_memalign 256 256
+PASS: achieved desired alignment
+Testing posix_memalign alignment=256, size=512
+PASS: posix_memalign 256 512
+PASS: achieved desired alignment
+Testing posix_memalign alignment=256, size=2560
+PASS: posix_memalign 256 2560
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=256
+PASS: posix_memalign 1024 256
+PASS: achieved desired alignment
+Testing posix_memalign alignment=256, size=128
+PASS: posix_memalign 256 128
+PASS: achieved desired alignment
+Testing posix_memalign alignment=256, size=8
+PASS: posix_memalign 256 8
+PASS: achieved desired alignment
+Testing posix_memalign alignment=512, size=512
+PASS: posix_memalign 512 512
+PASS: achieved desired alignment
+Testing posix_memalign alignment=512, size=1024
+PASS: posix_memalign 512 1024
+PASS: achieved desired alignment
+Testing posix_memalign alignment=512, size=5120
+PASS: posix_memalign 512 5120
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=512
+PASS: posix_memalign 1024 512
+PASS: achieved desired alignment
+Testing posix_memalign alignment=512, size=256
+PASS: posix_memalign 512 256
+PASS: achieved desired alignment
+Testing posix_memalign alignment=512, size=8
+PASS: posix_memalign 512 8
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=1024
+PASS: posix_memalign 1024 1024
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=2048
+PASS: posix_memalign 1024 2048
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=10240
+PASS: posix_memalign 1024 10240
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=1024
+PASS: posix_memalign 1024 1024
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=512
+PASS: posix_memalign 1024 512
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=8
+PASS: posix_memalign 1024 8
+PASS: achieved desired alignment
+Testing posix_memalign alignment=2048, size=2048
+PASS: posix_memalign 2048 2048
+PASS: achieved desired alignment
+Testing posix_memalign alignment=2048, size=4096
+PASS: posix_memalign 2048 4096
+PASS: achieved desired alignment
+Testing posix_memalign alignment=2048, size=20480
+PASS: posix_memalign 2048 20480
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=2048
+PASS: posix_memalign 1024 2048
+PASS: achieved desired alignment
+Testing posix_memalign alignment=2048, size=1024
+PASS: posix_memalign 2048 1024
+PASS: achieved desired alignment
+Testing posix_memalign alignment=2048, size=8
+PASS: posix_memalign 2048 8
+PASS: achieved desired alignment
+Testing posix_memalign alignment=4096, size=4096
+PASS: posix_memalign 4096 4096
+PASS: achieved desired alignment
+Testing posix_memalign alignment=4096, size=8192
+PASS: posix_memalign 4096 8192
+PASS: achieved desired alignment
+Testing posix_memalign alignment=4096, size=40960
+PASS: posix_memalign 4096 40960
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=4096
+PASS: posix_memalign 1024 4096
+PASS: achieved desired alignment
+Testing posix_memalign alignment=4096, size=2048
+PASS: posix_memalign 4096 2048
+PASS: achieved desired alignment
+Testing posix_memalign alignment=4096, size=8
+PASS: posix_memalign 4096 8
+PASS: achieved desired alignment
+Testing posix_memalign alignment=8192, size=8192
+PASS: posix_memalign 8192 8192
+PASS: achieved desired alignment
+Testing posix_memalign alignment=8192, size=16384
+PASS: posix_memalign 8192 16384
+PASS: achieved desired alignment
+Testing posix_memalign alignment=8192, size=81920
+PASS: posix_memalign 8192 81920
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=8192
+PASS: posix_memalign 1024 8192
+PASS: achieved desired alignment
+Testing posix_memalign alignment=8192, size=4096
+PASS: posix_memalign 8192 4096
+PASS: achieved desired alignment
+Testing posix_memalign alignment=8192, size=8
+PASS: posix_memalign 8192 8
+PASS: achieved desired alignment
+Testing posix_memalign alignment=16384, size=16384
+PASS: posix_memalign 16384 16384
+PASS: achieved desired alignment
+Testing posix_memalign alignment=16384, size=32768
+PASS: posix_memalign 16384 32768
+PASS: achieved desired alignment
+Testing posix_memalign alignment=16384, size=163840
+PASS: posix_memalign 16384 163840
+PASS: achieved desired alignment
+Testing posix_memalign alignment=1024, size=16384
+PASS: posix_memalign 1024 16384
+PASS: achieved desired alignment
+Testing posix_memalign alignment=16384, size=8192
+PASS: posix_memalign 16384 8192
+PASS: achieved desired alignment
+Testing posix_memalign alignment=16384, size=8
+PASS: posix_memalign 16384 8
+PASS: achieved desired alignment
+SUMMARY: 144 tests, 0 failures
+ OK  (0.543 s)
+  TEST tst-bitset-iter.so                 Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-bitset-iter.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.65 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-bitset-iter.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 8 test cases...
+
+[1;32;49m*** No errors detected
+[0;39;49m OK  (0.369 s)
+  TEST tst-brk.so                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-brk.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 149.93 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-brk.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+tst-brk.so: /home/wkozaczuk/projects/osv-true-master/tests/tst-brk.c:43: main: Assertion `free_memory() <= info.freeram - HUGE_PAGE_SIZE' failed.
+ OK  (0.365 s)
+  TEST tst-bsd-tcp1.so                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-bsd-tcp1.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 156.43 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-bsd-tcp1.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 2 test cases...
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+-> Handling robust list
+
+[1;32;49m*** No errors detected
+[0;39;49m OK  (1.434 s)
+  TEST tst-calloc.so                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-calloc.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.11 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-calloc.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: calloc(1, 10)
+PASS: calloc(2, 5)
+PASS: calloc(1, 0)
+PASS: calloc(0, 1)
+PASSED
+ OK  (0.373 s)
+  TEST tst-chdir-rofs.so                  Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-chdir-rofs.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 148.71 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-chdir-rofs.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+SUMMARY: 24 tests, 0 failures
+ OK  (0.385 s)
+  TEST tst-chdir.so                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-chdir.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.67 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-chdir.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+SUMMARY: 20 tests, 0 failures
+ OK  (0.390 s)
+  TEST tst-chmod.so                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-chmod.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.67 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-chmod.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+SUMMARY: 26 tests, 0 failures
+ OK  (0.373 s)
+  TEST tst-concurrent-init.so             Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-concurrent-init.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.80 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-concurrent-init.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+constructing
+-> start: 0x20007f0a0580
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f407ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f508ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f609ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+PASS: mycounter constructed once
+PASS: thread 0
+PASS: thread 0 slow enough
+PASS: thread 1
+PASS: thread 1 slow enough
+PASS: thread 2
+PASS: thread 2 slow enough
+PASS: thread 3
+PASS: thread 3 slow enough
+PASS: thread 4
+PASS: thread 4 slow enough
+SUMMARY: 11 tests, 0 failures
+ OK  (1.415 s)
+  TEST tst-concurrent-read-rofs.so        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-concurrent-read-rofs.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.60 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-concurrent-read-rofs.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> Handling robust list
+-> start: 0x20007f0a0580
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f407ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f508ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f609ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f70aef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f80bef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f90cef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fa0def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fb0eef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+Identical count 1000
+ OK  (0.400 s)
+  TEST tst-console.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-console.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.58 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-console.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+*** try inputting something here in 3 seconds (followed by newline) ***
+PASS: no more available characters
+*** try inputting something here in 3 seconds (followed by newline) ***
+PASS: no more available characters
+PASS: fd 0 is a tty
+PASS: open() /dev/console for reading
+PASS: open()ed fd is a tty
+PASS: close opened()ed fd
+SUMMARY: 6 tests, 0 failures
+ OK  (6.435 s)
+  TEST tst-ctype.so                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-ctype.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 149.79 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-ctype.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 32 test cases...
+*** longjmp causes uninitialized stack frame ***: terminated
+*** longjmp causes uninitialized stack frame ***: terminated
+** OK  (0.509 s)
+  TEST tst-cxxlocale.so                   Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-cxxlocale.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 148.39 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-cxxlocale.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: nonexistant locale throws exception
+PASS: std::isspace of ' ', with default locale
+PASS: std::isspace of 'a', with default locale
+PASS: s should be "word1"
+PASS: C toupper
+PASS: C toupper
+PASS: C toupper
+PASS: C toupper
+PASS: C tolower
+PASS: C tolower
+PASS: C tolower
+PASS: C tolower
+PASS: std::toupper with default locale
+PASS: std::toupper with default locale
+PASS: std::toupper with default locale
+PASS: std::toupper with default locale
+PASS: std::tolower with default locale
+PASS: std::tolower with default locale
+PASS: std::tolower with default locale
+PASS: std::tolower with default locale
+SUMMARY: 20 tests, 0 failures
+ OK  (0.430 s)
+  TEST tst-dlfcn.so                        SKIPPED
+  TEST tst-dns-resolver.so                 SKIPPED
+  TEST tst-elf-init.so                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-elf-init.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 149.80 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-elf-init.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Constructor
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+test_symbol_lookup_function at level: 2
+-> Handling robust list
+test_symbol_lookup_function at level: 1
+-> Handling robust list
+test_symbol_lookup_function at level: 0
+Main
+test_symbol_lookup_function at level: 0
+ OK  (0.401 s)
+  TEST tst-elf-permissions.so             Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-elf-permissions.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.85 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-elf-permissions.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running elf segments permissions tests
+elf segments permissions tests succeeded
+ OK  (0.364 s)
+  TEST tst-epoll.so                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-epoll.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.94 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-epoll.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: epoll_create
+PASS: create pipe
+PASS: epoll_wait for empty epoll
+PASS: epoll_wait on non-epoll fd
+PASS: epoll_ctl_add
+PASS: epoll_wait returns nothing
+PASS: write single character
+PASS: poll finds fd
+PASS: epoll_wait finds fd
+PASS: epoll_wait finds again (because not EPOLLET)
+PASS: read after poll
+PASS: epoll after read
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: write single character
+PASS: epoll_wait in thread
+PASS: read after poll
+PASS: epoll after read
+-> Handling robust list
+PASS: epoll timeout
+PASS: epoll_ctl_mod
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: epoll_wait in thread
+PASS: write single character
+PASS: epoll_wait in thread
+PASS: read the last byte on the pipe
+-> Handling robust list
+PASS: epoll_ctl_mod
+PASS: epoll_ctl_mod
+PASS: epoll nothing happened yet
+PASS: write single character
+PASS: epoll_wait finds fd
+PASS: epoll_wait doesn't find again (because of EPOLLET)
+PASS: epoll timeout doesn't return immediately (EPOLLET)
+PASS: write single character
+PASS: epoll_wait false positive (fine)
+PASS: read one byte out of 2 on the pipe
+PASS: now epoll_wait doesn't find this fd (EPOLLET)
+PASS: but poll() does find this fd
+PASS: read the last byte on the pipe
+PASS: add dup() fd
+PASS: del fd
+PASS: EEXIST
+PASS: epoll_create
+PASS: create pipe
+PASS: epoll_ctl ADD
+PASS: write
+PASS: epoll_wait
+PASS: write
+PASS: epoll_wait
+PASS: epoll_ctl MOD
+PASS: epoll_wait
+PASS: epoll_ctl ADD
+PASS: errno == EEXIST
+PASS: epoll_ctl DEL
+PASS: epoll_create
+PASS: open file
+PASS: epoll_ctl ADD
+PASS: epoll_wait
+PASS: epoll_ctl DEL
+PASS: epoll_create
+PASS: server socket
+PASS: bind serverfd
+PASS: listen on serverfd
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: client socket
+PASS: connect to server
+-> Handling robust list
+PASS: accepted client
+PASS: epoll_ctl ADD
+PASS: epoll_wait for EPOLLRDHUP
+PASS: epoll_create
+PASS: socketpair() succeeded
+PASS: epoll_crtl() succeeded
+PASS: EPOLLRDHUP active
+SUMMARY: 68, 0 failures
+ OK  (1.577 s)
+  TEST tst-eventfd.so                      SKIPPED
+  TEST tst-except.so                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-except.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.75 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-except.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: catch 1
+PASS: _Unwind_Resume
+caught unhandled exception
+PASS: unhandled exception
+
+SUMMARY: 3 tests, 0 failures
+ OK  (0.374 s)
+  TEST tst-faccessat.so                   Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-faccessat.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.57 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-faccessat.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 439
+syscall(): unimplemented system call 439
+syscall(): unimplemented system call 439
+syscall(): unimplemented system call 439
+syscall(): unimplemented system call 439
+syscall(): unimplemented system call 439
+SUMMARY: 11 tests, 0 failures
+ OK  (0.417 s)
+  TEST tst-fcntl.so                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-fcntl.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.59 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-fcntl.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: open
+PASS: GETFL access mode
+PASS: GETFL rest
+PASS: F_SETFL O_NONBLOCK
+PASS: F_GETFL
+PASS: GETFD default
+PASS: SETFD FD_CLOEXEC
+PASS: GETFD
+PASS: GETFL
+PASS: GETFL dup
+PASS: SETFL bogus
+PASS: GETFL bogus
+PASS: fcntl on closed fd
+SUMMARY: 13 tests, 0 failures
+ OK  (0.373 s)
+  TEST tst-feexcept.so                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-feexcept.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 155.92 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-feexcept.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+SUMMARY: 14 tests, 0 failures
+ OK  (0.416 s)
+  TEST tst-fread.so                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-fread.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 145.09 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-fread.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+opening /dev/vblk0.1
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-fread.cc:64.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-fread.cc:68.
+opening /
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-fread.cc:77.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-fread.cc:80.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-fread.cc:81.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-fread.cc:82.
+SUMMARY: 6 tests, 0 failures
+ OK  (0.360 s)
+  TEST tst-fstatat.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-fstatat.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 142.04 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-fstatat.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+SUMMARY: 27 tests, 0 failures
+ OK  (0.372 s)
+  TEST tst-futimesat.so                    SKIPPED
+  TEST tst-getdents.so                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-getdents.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.75 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-getdents.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+--------------- nread=191 ---------------
+inode#    file type  d_reclen  d_off   d_name
+       0  directory    21          1   .
+       1  directory    22          2   ..
+       2  directory    21          3   2
+       3  regular      27          4   cpuinfo
+       4  regular      27          5   meminfo
+       5  regular      26          6   mounts
+       6  directory    24          7   self
+       7  directory    23          8   sys
+--------------- nread=118 ---------------
+inode#    file type  d_reclen  d_off   d_name
+       0  directory    21          1   .
+       1  directory    22          2   ..
+       2  directory    21          3   2
+       3  regular      27          4   cpuinfo
+       4  regular      27          5   meminfo
+--------------- nread=73 ---------------
+inode#    file type  d_reclen  d_off   d_name
+       5  regular      26          6   mounts
+       6  directory    24          7   self
+       7  directory    23          8   sys
+ OK  (0.379 s)
+  TEST tst-getopt-pie.so                  Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-getopt-pie.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.85 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-getopt-pie.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running test: tst-getopt1 ...
+Running test: tst-getopt2 ...
+Running test: tst-getopt3 ...
+Running test: tst-getopt4 ...
+Running test: tst-getopt5 ...
+Running test: tst-getopt6 ...
+Running test: tst-getopt7 ...
+Running test: tst-getopt8 ...
+Running test: tst-getopt9 ...
+Running test: tst-getopt10 ...
+Running test: tst-getopt_long1 ...
+option -c with value `bula'
+Running test: tst-getopt_long2 ...
+option -c with value `bula'
+option -f with value `x.txt'
+ OK  (0.408 s)
+  TEST tst-getopt.so                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-getopt.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.47 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-getopt.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running test: tst-getopt1 ...
+Running test: tst-getopt2 ...
+Running test: tst-getopt3 ...
+Running test: tst-getopt4 ...
+Running test: tst-getopt5 ...
+Running test: tst-getopt6 ...
+Running test: tst-getopt7 ...
+Running test: tst-getopt8 ...
+Running test: tst-getopt9 ...
+Running test: tst-getopt10 ...
+Running test: tst-getopt_long1 ...
+option -c with value `bula'
+Running test: tst-getopt_long2 ...
+option -c with value `bula'
+option -f with value `x.txt'
+ OK  (0.375 s)
+  TEST tst-hello.so                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-hello.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.65 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-hello.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Hello World
+ OK  (0.408 s)
+  TEST tst-hostname.so                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-hostname.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.74 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-hostname.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:79.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:79.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:80.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:83.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:83.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:84.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:87.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:87.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:90.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:90.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:91.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:93.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:93.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:94.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:99.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-hostname.cc:99.
+SUMMARY: 16 tests, 0 failures
+ OK  (0.388 s)
+  TEST tst-ifaddrs.so                      SKIPPED
+  TEST tst-kill.so                         SKIPPED
+  TEST tst-libc-locking.so                Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-libc-locking.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.83 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-libc-locking.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 1 test case...
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+-> Handling robust list
+
+[1;32;49m*** No errors detected
+[0;39;49m OK  (0.873 s)
+  TEST tst-math.so                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-math.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.16 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-math.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+SUMMARY: 8 tests, 0 failures
+ OK  (0.356 s)
+  TEST tst-memmove.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-memmove.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.14 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-memmove.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASSED
+ OK  (0.435 s)
+  TEST tst-mmap-file.so                   Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-mmap-file.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.39 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-mmap-file.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: open
+PASS: ftruncate
+PASS: write pattern to MAP_SHARED
+PASS: verify pattern was written to file
+PASS: write pattern to MAP_PRIVATE
+PASS: verify pattern didn't change
+PASS: write pattern to partial MAP_SHARED
+PASS: verify pattern didn't change in unmapped part
+PASS: verify pattern changed in mapped part
+PASS: force EINVAL by not passing neither MAP_PRIVATE nor MAP_SHARED.
+PASS: force EINVAL by passing both MAP_PRIVATE and MAP_SHARED.
+PASS: force EBADF by passing an invalid file descriptor.
+PASS: force EINVAL by passing an unaligned offset.
+PASS: force EINVAL by passing length equals to zero.
+PASS: force EINVAL by passing an unaligned addr and the flag MAP_FIXED.
+PASS: passed an aligned addr and MAP_FIXED, then mmap should return exactly the specified addr.
+PASS: close
+PASS: open file again: O_WRONLY
+PASS: force EACCES by private mapping a file that is not opened for reading
+PASS: close again
+PASS: open file again: O_WRONLY
+PASS: force EACCES by shared mapping a file that is not read-write (and PROT_WRITE is set)
+PASS: close again
+PASS: munmap: force EINVAL by passing unaligned addr.
+PASS: munmap: force EINVAL by passing length equals to zero.
+PASS: open file again: O_RDONLY
+PASS: mprotect: try to add write permission to read only mmap.
+PASS: munmap temporary mapping
+PASS: close again
+PASS: test_mmap_with_file_removed succeeded
+SUMMARY: 30 tests, 0 failures
+ OK  (0.570 s)
+  TEST tst-mmx-fpu.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-mmx-fpu.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.10 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-mmx-fpu.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Hello from C code, nan
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+MMX START: 10.500000
+-> start: 0x20007f0a0580
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+FPU START: 10.500000
+MMX END: 11.500000
+-> Handling robust listFPU END: 11.500000
+
+-> Handling robust list
+ OK  (0.750 s)
+  TEST tst-net_if_test.so                  SKIPPED
+  TEST tst-netlink.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-netlink.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.94 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-netlink.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+--------- Interfaces (layer 2) ------
+---> Receiving messages!
+... received response: 16!
+Interface 1: up=1
+	name=lo0
+	address=40:00:00:00:10:00
+... received response: 16!
+Interface 2: up=1
+	name=eth0
+	address=52:54:00:12:34:56
+... received response: 3!
+---> Receiving messages!
+... received response: 16!
+Interface 1: up=1
+	name=lo0
+	address=40:00:00:00:10:00
+... received response: 16!
+Interface 2: up=1
+	name=eth0
+	address=52:54:00:12:34:56
+... received response: 3!
+---> Receiving messages!
+... received response: 16!
+Interface 1: up=1
+	name=lo0
+	address=40:00:00:00:10:00
+... received response: 16!
+Interface 2: up=1
+	name=eth0
+	address=52:54:00:12:34:56
+... received response: 3!
+--------- IP Addresses (layer 3) ----
+---> Receiving messages!
+... received response: 20!
+Address 1:
+	interface ip=127.0.0.1
+	label=lo0
+... received response: 20!
+Address 2:
+	interface ip=192.168.122.15
+	broadcast ip=192.168.122.255
+	label=eth0
+... received response: 3!
+---> Receiving messages!
+... received response: 20!
+Address 1:
+	interface ip=127.0.0.1
+	label=lo0
+... received response: 20!
+Address 2:
+	interface ip=192.168.122.15
+	broadcast ip=192.168.122.255
+	label=eth0
+... received response: 3!
+---> Receiving messages!
+... received response: 20!
+Address 1:
+	interface ip=127.0.0.1
+	label=lo0
+... received response: 20!
+Address 2:
+	interface ip=192.168.122.15
+	broadcast ip=192.168.122.255
+	label=eth0
+... received response: 3!
+--------- Neighbor Table Entries ----
+---> Receiving messages!
+... received response: 28!
+Neighbour Table Entry 2:
+	ndm_state=NUD_REACHABLE
+	IP address=192.168.122.15
+	L2 address=52:54:00:12:34:56
+... received response: 3!
+---> Receiving messages!
+... received response: 28!
+Neighbour Table Entry 2:
+	ndm_state=NUD_REACHABLE
+	IP address=192.168.122.15
+	L2 address=52:54:00:12:34:56
+... received response: 3!
+---> Receiving messages!
+... received response: 28!
+Neighbour Table Entry 2:
+	ndm_state=NUD_REACHABLE
+	IP address=192.168.122.15
+	L2 address=52:54:00:12:34:56
+... received response: 3!
+--------- Testing invalid type request ---
+---> Receiving messages!
+... received response: 2!
+--------- Testing corrupt request ---
+---> Receiving messages!
+... received response: 2!
+ OK  (0.433 s)
+  TEST tst-non-fpic.so                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-non-fpic.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.82 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-non-fpic.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Hello
+ OK  (0.371 s)
+  TEST tst-non-pie.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-non-pie.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.15 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-non-pie.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Hello from C code
+ OK  (0.361 s)
+  TEST tst-nway-merger.so                 Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-nway-merger.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 153.49 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-nway-merger.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+(123,1) (321,2) (123,3) (312,4) (123,5) (321,6) (312,6) (321,7) (312,8) (123,9) (123,10) (312,11) (312,12) (321,13) (312,14) 
+(123,1) (321,2) (123,3) (312,4) (123,5) (321,6) (312,6) (321,7) (312,8) (123,9) (123,10) (312,11) (312,12) (321,13) (312,14) 
+(NSt7__cxx114listIPNS0_I9my_structSaIS1_EEESaIS4_EEE) nway_merge tesing is ok
+(123,1) (321,2) (123,3) (312,4) (123,5) (321,6) (312,6) (321,7) (312,8) (123,9) (123,10) (312,11) (312,12) (321,13) (312,14) 
+(123,1) (321,2) (123,3) (312,4) (123,5) (321,6) (312,6) (321,7) (312,8) (123,9) (123,10) (312,11) (312,12) (321,13) (312,14) 
+(St6vectorIPS_I9my_structSaIS0_EESaIS3_EE) nway_merge tesing is ok
+(123,1) (321,2) (123,3) (312,4) (123,5) (321,6) (312,6) (321,7) (312,8) (123,9) (123,10) (312,11) (312,12) (321,13) (312,14) 
+(123,1) (321,2) (123,3) (312,4) (123,5) (321,6) (312,6) (321,7) (312,8) (123,9) (123,10) (312,11) (312,12) (321,13) (312,14) 
+(St5arrayIPSt6vectorI9my_structSaIS1_EELm3EE) nway_merge tesing is ok
+(123,1) (321,2) (123,3) (312,4) (123,5) (321,6) (312,6) (321,7) (312,8) (123,9) (123,10) (312,11) (312,12) (321,13) (312,14) 
+(123,1) (321,2) (123,3) (312,4) (123,5) (321,6) (312,6) (321,7) (312,8) (123,9) (123,10) (312,11) (312,12) (321,13) (312,14) 
+(St5arrayIP12my_spsc_ringI9my_structLj8EELm3EE) nway_merge tesing is ok
+ OK  (0.429 s)
+  TEST tst-openat.so                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-openat.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.03 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-openat.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+chdir: PASS
+creat: PASS
+opendir: PASS
+dirfd: PASS
+openat: PASS
+opendir: PASS
+dirfd: PASS
+openat: PASS
+mkdir: PASS
+opendir: PASS
+dirfd: PASS
+openat: PASS
+openat: PASS
+openat: PASS
+ OK  (0.368 s)
+  TEST tst-pipe.so                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-pipe.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.44 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-pipe.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: pipe call
+PASS: write to empty socket
+PASS: read after write
+PASS: write to read end should fail
+PASS: read to write end should fail
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: read before write
+-> Handling robust list
+PASS: poll() (immediate, no events)
+PASS: poll() (timeout, no events)
+PASS: poll() (immediate, has event)
+PASS: read after poll
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: waiting poll
+PASS: read after waiting poll
+-> Handling robust list
+PASS: write to polling socket
+PASS: poll() (no output on read end)
+PASS: poll() (no input on write end)
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: write size-100 bytes to empty pipe
+PASS: read size-100 bytes from pipe
+PASS: write 400 bytes is atomic
+PASS: read 400 bytes written atomicly
+PASS: partial read of the 20000 bytes
+(read 8192)
+PASS: write 20000 bytes until complete
+-> Handling robust list
+PASS: partial read of the 20000 bytes
+(read 8192)
+PASS: partial read of the 20000 bytes
+(read 3616)
+PASS: writev
+PASS: read after writev
+PASS: write for readv
+PASS: readv
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: large writev
+-> Handling robust list
+PASS: read of large writev
+PASS: close read side first
+PASS: write, other side closed
+PASS: close also write side
+PASS: pipe call
+PASS: close write side first
+PASS: read, other side closed
+PASS: close also read side
+PASS: pipe call
+PASS: set read side to nonblocking
+PASS: read from empty nonblocking pipe
+PASS: small write to empty pipe
+PASS: partial read from nonblocking pipe
+PASS: set write side to nonblocking
+PASS: small write to empty nonblocking pipe
+PASS: small write to non-empty nonblocking pipe
+PASS: partial write to nonblocking pipe
+PASS: write to full nonblocking pipe
+PASS: read entire nonblocking pipe
+PASS: close read side
+PASS: close write side
+n=16380
+PASS: create many pipes
+PASS: pipe call
+PASS: write to empty socket
+PASS: close write side with non-empty buffer
+PASS: read after write side closed
+PASS: close also read side
+PASS: pipe call
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: write to empty socket
+PASS: blocking read, may wake up with write side closed
+PASS: close write side with non-empty buffer
+PASS: close also read side
+-> Handling robust list
+PASS: pipe call
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: close write side
+-> Handling robust list
+PASS: wait for pipe to be readable
+PASS: POLLHUP signaled
+PASS: close also read side
+PASS: pipe call
+PASS: close write side
+PASS: pipe is readable
+PASS: POLLHUP signaled
+PASS: close also read side
+PASS: pipe call
+PASS: empty pipe is ready for write
+PASS: set write side to nonblocking
+PASS: large write to fill pipe
+PASS: set write side to blocking
+PASS: full pipe is not ready for write
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: close read side
+-> Handling robust list
+PASS: wait for pipe to be ready for write
+PASS: POLLERR signaled
+PASS: close also write side
+PASS: pipe call
+PASS: close read side
+PASS: closed pipe is ready for write
+PASS: POLLERR signaled
+PASS: closed pipe has a non-user-requested event
+PASS: POLLERR signaled
+PASS: close also write side
+SUMMARY: 87 tests, 0 failures
+ OK  (6.666 s)
+  TEST tst-poll.so                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-poll.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 146.81 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-poll.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 3 test cases...
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+
+[1;32;49m*** No errors detected
+[0;39;49m OK  (0.455 s)
+  TEST tst-printf.so                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-printf.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.89 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-printf.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: snprintf with n=-1
+PASS: strcmp that result
+PASS: snprintf with n=2^40
+PASS: strcmp that result
+PASS: Lf
+PASS: llf
+PASS: Ld
+PASS: lld
+SUMMARY: 8 tests, 0 failures
+ OK  (0.386 s)
+  TEST tst-promise.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-promise.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 143.20 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-promise.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 1 test case...
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+
+-> Handling robust list
+[1;32;49m*** No errors detected
+[0;39;49m OK  (0.359 s)
+  TEST tst-pthread-affinity-inherit.so    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-affinity-inherit.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.31 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-affinity-inherit.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+starting pthread affinity inherited from parent test
+PASS: main is pinned to exactly get_nprocs cpus
+PASS: main is pinned to all cpus
+new threads from unpinned parent sequential test:
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+new threads from unpinned parent sequential test (attr with unset cpuset):
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+new threads from unpinned parent sequential test (attr=NULL):
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+new threads from unpinned parent parallel test:
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f607ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+new threads from unpinned parent parallel test (attr with unset cpuset):
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f607ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+new threads from unpinned parent parallel test (attr=NULL):
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f607ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+new threads from pinned parent sequential test:
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+new threads from pinned parent sequential test (cpuset for different cpu):
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust listsyscall(): unimplemented system call 435
+
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust listsyscall(): unimplemented system call 435
+
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust listsyscall(): unimplemented system call 435
+
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust listnew threads from pinned parent sequential test (attr with unset cpuset):
+
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+new threads from pinned parent sequential test (attr=NULL):
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+new threads from pinned parent parallel test:
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_listsyscall(): unimplemented system call 435
+
+-> nprocs: 4
+-> start: 0x20007f2a0580PASS: child pinning is equal to reference cpuset
+
+PASS: started on the correct CPU
+-> stack: 0x20007f607ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTIDPASS: re-scheduled on the correct CPU
+
+-> Handling robust listsyscall(): unimplemented system call 435
+
+CALLED sys_set_robust_list
+-> start: 0x20007f2a0580-> nprocs: 4
+
+PASS: child pinning is equal to reference cpuset
+-> stack: 0x20007f506ef0PASS: started on the correct CPU
+
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+PASS: re-scheduled on the correct CPU
+syscall(): unimplemented system call 435
+CALLED sys_set_robust_list
+-> nprocs: 4
+-> Handling robust listPASS: child pinning is equal to reference cpuset
+
+PASS: started on the correct CPU
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTIDPASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_listsyscall(): unimplemented system call 435
+
+-> nprocs: 4
+-> start: 0x20007f2a0580PASS: child pinning is equal to reference cpuset
+
+PASS: started on the correct CPU
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTIDPASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+syscall(): unimplemented system call 435
+CALLED sys_set_robust_list
+-> nprocs: 4
+-> start: 0x20007f2a0580PASS: child pinning is equal to reference cpuset
+
+PASS: started on the correct CPU
+-> stack: 0x20007f607ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTIDPASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+CALLED sys_set_robust_listsyscall(): unimplemented system call 435
+
+-> nprocs: 4
+-> start: 0x20007f2a0580PASS: child pinning is equal to reference cpuset
+
+PASS: started on the correct CPU
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTIDPASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust listnew threads from pinned parent parallel test (attr with unset cpuset):
+
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f607ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+new threads from pinned parent parallel test (attr=NULL):
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f607ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> nprocs: 4
+PASS: child pinning is equal to reference cpuset
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+SUMMARY: 170 tests / 0 failures
+ OK  (0.809 s)
+  TEST tst-pthread-affinity.so            Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-affinity.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.12 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-affinity.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+starting pthread affinity test
+sequential test:
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust listsyscall(): unimplemented system call 435
+
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust listsyscall(): unimplemented system call 435
+
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust listparallel test:
+
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: started on the correct CPU
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580PASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+syscall(): unimplemented system call 435
+CALLED sys_set_robust_list
+PASS: started on the correct CPU
+-> start: 0x20007f0a0580
+-> stack: 0x20007f407ef0
+-> CLONE_PARENT_SETTIDPASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_listsyscall(): unimplemented system call 435
+
+PASS: started on the correct CPU
+-> start: 0x20007f0a0580
+-> stack: 0x20007f508ef0
+-> CLONE_PARENT_SETTIDPASS: re-scheduled on the correct CPU
+
+-> Handling robust list
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
+-> Handling robust listPASS: smaller cpusetsize
+
+PASS: All bits were set
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f508ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: getaffinity
+PASS: thread is initially unpinned
+PASS: setaffinity
+PASS: getaffinity
+PASS: thread is now pinned to cpu 0
+PASS: setaffinity
+PASS: getaffinity
+PASS: thread is now unpinned again
+-> Handling robust list
+SUMMARY: 26 tests / 0 failures
+ OK  (0.425 s)
+  TEST tst-pthread-barrier.so             Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-barrier.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 147.99 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-barrier.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Sizeof pthread_barrier_t    : 32
+PASS: sizeof pthread_barrier_t is 32 bytes
+
+Sizeof pthread_barrierattr_t: 4
+PASS: sizeof pthread_barrierattr_t is 4 bytes
+
+PASS: pthread_barrier_init (count == -1)
+PASS: pthread_barrier_init (count == 0)
+PASS: pthread_barrier_init (count == INT_MAX)
+PASS: pthread_barrier_init
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+[Thread 0] starting...
+[Thread 0] waiting on barrier
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+[Thread 1] starting...
+[Thread 1] waiting on barrier
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f607ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+[Thread 2] starting...
+[Thread 2] waiting on barrier
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f708ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+[Thread 3] starting...
+[Thread 3] waiting on barrier
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f809ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+[Thread 4] starting...
+[Thread 4] waiting on barrier
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f90aef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+[Thread 5] starting...
+[Thread 5] waiting on barrier
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007fa0bef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+[Thread 6] starting...
+[Thread 6] waiting on barrier
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007fb0cef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+[Thread 7] starting...
+[Thread 7] waiting on barrier
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007fc0def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+[Thread 8] starting...
+[Thread 8] waiting on barrier
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007fd0eef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+[Thread 9] starting...
+[Thread 9] waiting on barrier
+[Thread 9] crossed barrier with -1
+[Thread 0] crossed barrier with 0
+[Thread 1] crossed barrier with 0
+[Thread 2] crossed barrier with 0
+[Thread 3] crossed barrier with 0
+[Thread 4] crossed barrier with 0
+[Thread 4] waiting on barrier
+[Thread 5] crossed barrier with 0
+[Thread 6] crossed barrier with 0
+[Thread 6] waiting on barrier
+[Thread 7] crossed barrier with 0
+[Thread 7] waiting on barrier
+[Thread 8] crossed barrier with 0
+[Thread 8] waiting on barrier
+[Thread 2] waiting on barrier
+[Thread 3] waiting on barrier
+[Thread 0] waiting on barrier
+[Thread 5] waiting on barrier
+[Thread 1] waiting on barrier
+[Thread 9] waiting on barrier
+[Thread 4] crossed barrier with 0
+[Thread 6] crossed barrier with 0
+[Thread 6] waiting on barrier
+[Thread 7] crossed barrier with 0
+[Thread 8] crossed barrier with 0
+[Thread 8] waiting on barrier
+[Thread 2] crossed barrier with 0
+[Thread 2] waiting on barrier
+[Thread 3] crossed barrier with 0
+[Thread 0] crossed barrier with 0
+[Thread 5] crossed barrier with 0
+[Thread 1] crossed barrier with 0
+[Thread 1] waiting on barrier
+[Thread 9] crossed barrier with -1
+[Thread 3] waiting on barrier
+[Thread 0] waiting on barrier
+[Thread 4] waiting on barrier
+[Thread 5] waiting on barrier
+[Thread 9] waiting on barrier
+[Thread 7] waiting on barrier
+[Thread 6] crossed barrier with 0
+[Thread 8] crossed barrier with 0
+[Thread 8] waiting on barrier
+[Thread 2] crossed barrier with 0
+[Thread 1] crossed barrier with 0
+[Thread 3] crossed barrier with 0
+[Thread 0] crossed barrier with 0
+[Thread 0] waiting on barrier
+[Thread 4] crossed barrier with 0
+[Thread 4] waiting on barrier
+[Thread 5] crossed barrier with 0
+[Thread 5] waiting on barrier
+[Thread 9] crossed barrier with 0
+[Thread 9] waiting on barrier
+[Thread 7] crossed barrier with -1
+[Thread 7] waiting on barrier
+[Thread 2] waiting on barrier
+[Thread 3] waiting on barrier
+[Thread 6] waiting on barrier
+[Thread 1] waiting on barrier
+[Thread 8] crossed barrier with 0
+[Thread 0] crossed barrier with 0
+[Thread 4] crossed barrier with 0
+[Thread 5] crossed barrier with 0
+[Thread 9] crossed barrier with 0
+[Thread 7] crossed barrier with 0
+[Thread 2] crossed barrier with 0
+[Thread 3] crossed barrier with 0
+[Thread 6] crossed barrier with 0
+[Thread 1] crossed barrier with -1
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+PASS: pthread_barrier_wait (special retvals)
+SUMMARY: 7 tests / 0 failures
+ OK  (0.603 s)
+  TEST tst-pthread-clock.so               Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-clock.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 149.56 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-clock.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+tst-pthread-clock.so: /home/wkozaczuk/projects/osv-true-master/tests/tst-pthread-clock.cc:34: pclock: Assertion `clock_gettime(cid, &ts) != -1' failed.
+ OK  (4.467 s)
+  TEST tst-pthread-create.so              Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-create.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 148.13 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-create.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+starting pthread create test
+PASS: mmap
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20000020fef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: test_pthread_create_unpopulated_stack
+SUMMARY: 2 tests / 0 failures
+ OK  (0.359 s)
+  TEST tst-pthread-setcancelstate.so      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-setcancelstate.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 155.81 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-setcancelstate.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Testing pthread_setcancelstate..
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+Thread 1: Verified default cancel state is 0
+Thread 1: Verified persistence of set cancel state (1)
+Thread 1: Attempt to set invalid cancel state (100) returned 22
+-> start: 0x20007f0a0580
+-> Handling robust list
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+Thread 2: Verified default cancel state is 0
+Thread 2: Verified persistence of set cancel state (1)
+Thread 2: Attempt to set invalid cancel state (100) returned 22
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f407ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+Thread 3: Verified default cancel state is 0
+Thread 3: Verified persistence of set cancel state (1)
+Thread 3: Attempt to set invalid cancel state (100) returned 22
+-> Handling robust list
+Testing completed.
+ OK  (0.399 s)
+  TEST tst-pthread-tsd.so                 Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-tsd.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 145.63 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread-tsd.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: pthread_key_create
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: pthread_setspecific
+PASS: pthread_create
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+syscall(): unimplemented system call 435
+-> Handling robust list
+-> start: 0x20007f0a0580
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: pthread_setspecific
+PASS: pthread_create
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f407ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: pthread_setspecific
+PASS: pthread_create
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f508ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: pthread_setspecific
+PASS: pthread_create
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f609ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: pthread_setspecific
+PASS: pthread_create
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f70aef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: pthread_setspecific
+PASS: pthread_create
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f80bef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: pthread_setspecific
+PASS: pthread_create
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f90cef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: pthread_setspecific
+PASS: pthread_create
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fa0def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: pthread_setspecific
+PASS: pthread_create
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fb0eef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+PASS: pthread_setspecific
+PASS: pthread_create
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+-> Handling robust list
+PASS: pthread_join
+PASS: pthread_join
+PASS: pthread_join
+PASS: pthread_join
+PASS: pthread_join
+PASS: pthread_join
+PASS: pthread_join
+PASS: pthread_join
+PASS: pthread_join
+PASS: pthread_join
+PASS: 10 constructions
+PASS: 10 destructions
+PASS: 10 recursive destructions
+SUMMARY: 64 tests / 0 failures
+ OK  (0.419 s)
+  TEST tst-pthread.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 153.86 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-pthread.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+starting pthread test
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+starting secondary
+PASS: pthread_cond_wait
+PASS: pthread_cond_timedwait (long)
+PASS: pthread_cond_timedwait (short)
+-> Handling robust list
+PASS: pthread_condattr_init
+PASS: pthread_condattr_setclock
+PASS: pthread_cond_init
+PASS: pthread_condattr_destroy
+PASS: clock_gettime(CLOCK_MONOTONIC)
+PASS: pthread_cond_timedwait (short)
+PASS: should have not returned immediately
+ts  = 0,112725226
+ts2 = 0,615132980
+ns = 502407754
+SUMMARY: 10 tests / 0 failures
+ OK  (0.894 s)
+  TEST tst-queue-mpsc.so                  Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-queue-mpsc.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 154.46 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-queue-mpsc.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running lockfree multi-producer single-consumer queue tests
+test1
+test2
+test3
+test4
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f407ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f508ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f609ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f70aef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f80bef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f90cef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fa0def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fb0eef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fc0fef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fd10ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fe11ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ff12ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080013ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080114ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080215ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080316ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080417ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080518ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080619ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+test5
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080518ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080417ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080316ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080215ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080114ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080013ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ff12ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fe11ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fd10ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fc0fef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fb0eef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fa0def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f90cef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f80bef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f70aef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f609ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f508ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f407ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080619ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+.......................................................................................................................................................................................................-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+.
+done with nsomething=-> Handling robust list2000000
+ nnothing=168963
+-> Handling robust listlockfree MPSC queue tests succeeded
+
+ OK  (4.956 s)
+  TEST tst-read.so                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-read.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.02 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-read.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-read.cc:65.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-read.cc:65.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-read.cc:67.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-read.cc:67.
+SUMMARY: 4 tests, 0 failures
+ OK  (0.369 s)
+  TEST tst-readdir-rofs.so                Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-readdir-rofs.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 149.09 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-readdir-rofs.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Testing readdir() and related functions
+PASS: mkdir
+PASS: opendir
+PASS: readdir first entry
+PASS: first directory entry is .
+PASS: readdir second entry
+PASS: second directory entry is ..
+PASS: no third directory entry
+PASS: closedir
+PASS: creat
+PASS: opendir
+PASS: readdir
+PASS: first entry is .
+PASS: readdir
+PASS: second entry is ..
+PASS: readdir
+PASS: third entry is aaa
+PASS: no more entries
+PASS: closedir
+PASS: opendir
+PASS: readdir_r
+PASS: first entry is .
+PASS: readdir_r
+PASS: second entry is ..
+PASS: readdir_r
+PASS: third entry is aaa
+PASS: no more entries
+PASS: closedir
+PASS: opendir
+PASS: readdir_r
+PASS: first entry is .
+PASS: readdir_r
+PASS: first entry is .
+PASS: readdir_r
+PASS: second entry is ..
+PASS: readdir_r
+PASS: third entry is aaa
+PASS: no more entries
+PASS: readdir_r
+PASS: first entry is .
+PASS: readdir_r
+PASS: second entry is ..
+PASS: readdir_r
+PASS: third entry is aaa
+PASS: no more entries
+PASS: closedir
+PASS: opendir
+PASS: readdir_r
+PASS: first entry is .
+PASS: telldir
+PASS: readdir_r
+PASS: second entry is ..
+PASS: readdir_r
+PASS: third entry is aaa
+PASS: no more entries
+PASS: readdir_r
+PASS: second entry is ..
+PASS: readdir_r
+PASS: third entry is aaa
+PASS: no more entries
+PASS: closedir
+PASS: unlink aaa
+PASS: rmdir
+PASS: mknod
+SUMMARY: 63 tests, 0 failures
+ OK  (0.373 s)
+  TEST tst-realloc.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-realloc.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.69 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-realloc.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASSED realloc() for original_size: 1, new_size: 2
+PASSED realloc() for original_size: 2, new_size: 1
+PASSED realloc() for original_size: 4, new_size: 7
+PASSED realloc() for original_size: 7, new_size: 4
+PASSED realloc() for original_size: 63, new_size: 128
+PASSED realloc() for original_size: 128, new_size: 63
+PASSED realloc() for original_size: 4000, new_size: 5000
+PASSED realloc() for original_size: 5000, new_size: 4000
+PASSED realloc() for original_size: 4096, new_size: 4096
+PASSED realloc() for original_size: 1048576, new_size: 1048576
+PASSED realloc() for original_size: 1048576, new_size: 1050880
+PASSED realloc() for original_size: 1050880, new_size: 1048576
+PASSED realloc() for original_size: 2097152, new_size: 2097152
+PASSED realloc() for original_size: 2097152, new_size: 3148032
+PASSED realloc() for original_size: 3148032, new_size: 2097152
+PASSED realloc() for original_size: 6293760, new_size: 6291456
+PASSED realloc() for original_size: 4194304, new_size: 6291456
+PASSED realloc() for original_size: 6291456, new_size: 4196608
+tst-realloc.so: /home/wkozaczuk/projects/osv-true-master/tests/tst-realloc.cc:44: test_usable_size: Assertion `expected_usable_size == malloc_usable_size(ptr)' failed.
+ OK  (0.437 s)
+  TEST tst-regex.so                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-regex.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.53 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-regex.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: sizeof(regoff_t) should 4, like in Linux
+PASS: regcomp successful
+PASS: regexec successful
+PASS: first match start-offset
+PASS: first match end-offset
+PASS: second match start-offset
+PASS: second match end-offset
+SUMMARY: 7 tests, 0 failures
+ OK  (0.361 s)
+  TEST tst-remove.so                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-remove.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.64 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-remove.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+SUMMARY: 38 tests, 0 failures
+ OK  (0.358 s)
+  TEST tst-resolve.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-resolve.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 149.65 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-resolve.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Target value:	0x05050505
+Success:	nonexistant = 0x05050505
+Success:	debug = 0x05050505
+Success:	condvar_wait = 0x05050505
+The time:	1689484063
+success.
+ OK  (0.510 s)
+  TEST tst-ring-spsc-wraparound.so        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-ring-spsc-wraparound.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.24 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-ring-spsc-wraparound.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+ OK  (0.355 s)
+  TEST tst-seek.so                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-seek.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 153.43 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-seek.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 2 test cases...
+
+[1;32;49m*** No errors detected
+[0;39;49m OK  (0.363 s)
+  TEST tst-select-timeout.so               SKIPPED
+  TEST tst-semaphore.so                   Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-semaphore.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.45 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-semaphore.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+Thread 1: Incremented 1th
+-> start: 0x20007f0a0580
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTIDThread 1: Incremented 2th
+
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+Thread 2: Incremented 1th
+syscall(): unimplemented system call 435
+Thread 1: Incremented 3th
+-> start: 0x20007f0a0580
+-> stack: 0x20007f407ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+Thread 3: Incremented 1th
+Thread 3: Incremented 2th
+Thread 2: Incremented 2th
+syscall(): unimplemented system call 435
+Thread 1: Incremented 4th
+Thread 3: Incremented 3th
+-> start: 0x20007f0a0580
+-> stack: 0x20007f508ef0Thread 2: Incremented 3th
+Thread 2: Incremented 4th
+
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+Thread 4: Incremented 1th
+Thread 2: Incremented 5th
+Thread 1: Incremented 5th
+Thread 3: Incremented 4th
+Thread 3: Incremented 5th
+syscall(): unimplemented system call 435
+Thread 4: Incremented 2th
+Thread 3: Incremented 6th
+-> start: 0x20007f0a0580Thread 2: Incremented 6th
+
+-> stack: 0x20007f609ef0
+-> CLONE_PARENT_SETTIDThread 4: Incremented 3th
+Thread 1: Incremented 6th
+
+-> CLONE_CHILD_CLEARTID
+Thread 3: Incremented 7th
+Thread 4: Incremented 4th
+Thread 1: Incremented 7th
+CALLED sys_set_robust_list
+Thread 5: Incremented 1th
+Thread 5: Incremented 2th
+Thread 2: Incremented 7th
+Thread 3: Incremented 8th
+syscall(): unimplemented system call 435
+Thread 5: Incremented 3th
+Thread 5: Incremented 4th
+Thread 4: Incremented 5th
+Thread 2: Incremented 8th
+Thread 1: Incremented 8th
+Thread 5: Incremented 5th
+Thread 4: Incremented 6th
+Thread 4: Incremented 7th
+Thread 3: Incremented 9th
+Thread 2: Incremented 9th
+-> start: 0x20007f0a0580Thread 4: Incremented 8th
+
+-> stack: 0x20007f70aef0Thread 1: Incremented 9th
+Thread 1: Incremented 10th
+Thread 3: Incremented 10th
+Thread 5: Incremented 6th
+Thread 2: Incremented 10th
+
+-> CLONE_PARENT_SETTID
+-> Handling robust list
+-> CLONE_CHILD_CLEARTIDThread 4: Incremented 9th
+Thread 4: Incremented 10th
+
+-> Handling robust list
+Thread 5: Incremented 7th
+CALLED sys_set_robust_list
+Thread 6: Incremented 1th
+-> Handling robust list
+-> Handling robust list
+syscall(): unimplemented system call 435
+Thread 5: Incremented 8th
+-> start: 0x20007f0a0580
+-> stack: 0x20007f80bef0
+-> CLONE_PARENT_SETTIDThread 6: Incremented 2th
+Thread 6: Incremented 3th
+
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+Thread 7: Incremented 1th
+Thread 6: Incremented 4th
+syscall(): unimplemented system call 435
+Thread 5: Incremented 9th
+-> start: 0x20007f0a0580
+-> stack: 0x20007f90cef0Thread 7: Incremented 2th
+Thread 7: Incremented 3th
+
+-> CLONE_PARENT_SETTIDThread 6: Incremented 5th
+
+-> CLONE_CHILD_CLEARTIDThread 7: Incremented 4th
+
+CALLED sys_set_robust_list
+Thread 8: Incremented 1th
+Thread 5: Incremented 10th
+-> Handling robust list
+Thread 6: Incremented 6th
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580Thread 7: Incremented 5th
+Thread 6: Incremented 7th
+
+-> stack: 0x20007fa0def0
+-> CLONE_PARENT_SETTID
+Thread 8: Incremented 2th
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+Thread 9: Incremented 1th
+Thread 9: Incremented 2th
+Thread 7: Incremented 6th
+Thread 6: Incremented 8th
+syscall(): unimplemented system call 435
+Thread 9: Incremented 3th
+-> start: 0x20007f0a0580Thread 8: Incremented 3th
+Thread 8: Incremented 4th
+Thread 7: Incremented 7th
+
+-> stack: 0x20007fb0eef0Thread 6: Incremented 9th
+Thread 8: Incremented 5th
+
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTIDThread 7: Incremented 8th
+Thread 7: Incremented 9th
+Thread 9: Incremented 4th
+
+CALLED sys_set_robust_list
+Thread 10: Incremented 1th
+Thread 6: Incremented 10th
+Thread 7: Incremented 10th
+-> Handling robust list
+Thread 9: Incremented 5th
+Thread 8: Incremented 6th
+Thread 9: Incremented 6th
+Thread 10: Incremented 2th
+Thread 8: Incremented 7th
+Thread 8: Incremented 8th
+-> Handling robust list
+Thread 8: Incremented 9th
+Thread 9: Incremented 7th
+Thread 10: Incremented 3th
+Thread 8: Incremented 10th
+-> Handling robust list
+Thread 9: Incremented 8th
+Thread 9: Incremented 9th
+Thread 10: Incremented 4th
+Thread 9: Incremented 10th
+Thread 10: Incremented 5th
+Thread 10: Incremented 6th
+Thread 10: Incremented 7th
+-> Handling robust list
+Thread 10: Incremented 8th
+Thread 10: Incremented 9th
+Thread 10: Incremented 10th
+-> Handling robust list
+ OK  (0.452 s)
+  TEST tst-sendfile.so                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-sendfile.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.29 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-sendfile.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: Generate a file with random contents.
+PASS: open testfile for reading
+PASS: mmap testfile
+
+
+test sendfile via partial file copy keeping offset as NULL
+PASS: out_fd is file: copying first 10 bytes ,offset = NULL
+PASS: out_fd is file: copying next 1014 bytes ,offset = NULL
+PASS: out_fd is file: copying next 2048 bytes ,offset = NULL
+PASS: out_fd is file: copying next 2560 bytes ,offset = NULL
+PASS: set readfd to beginning of file
+PASS: copy entire file
+
+
+test sendfile via partial file copy by varying offset
+PASS: out_fd is file: copying first 10 bytes ,offset = 0
+PASS: out_fd is file: copying next 1014 bytes ,offset = 10
+PASS: out_fd is file: copying next 2048 bytes ,offset = 1024
+PASS: out_fd is file: copying next 2560 bytes ,offset = 3072
+PASS: set readfd to beginning of file
+PASS: copy entire file
+
+
+test sendfile via partial file transfer over tcp keeping offset as NULL
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: out_fd is socket: copying first 10 bytes ,offset = NULL
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: out_fd is socket: copying next 1014 bytes ,offset = NULL
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: out_fd is socket: copying next 2048 bytes ,offset = NULL
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: out_fd is socket: copying next 2560 bytes ,offset = NULL
+PASS: set readfd to beginning of file
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: copy entire file
+
+
+test sendfile via partial file transfer over tcp by varying offset
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: out_fd is socket: copying first 10 bytes ,offset = 0
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: out_fd is socket: copying next 1014 bytes ,offset = 10
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: out_fd is socket: copying next 2048 bytes ,offset = 1024
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: out_fd is socket: copying next 2560 bytes ,offset = 3072
+PASS: set readfd to beginning of file
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f506ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+PASS: copy entire file
+
+
+PASS: set readfd to beginning of file
+PASS: file size extent
+PASS: set readfd to beginning of file
+PASS: file size extent with offset
+PASS: set readfd to beginning of file
+PASS: file size extent with offset (tail)
+PASS: set readfd to beginning of file
+PASS: file size extent with offset (tail, no bytes)
+PASS: test for bad out_fd
+PASS: open dummy testfile in write mode
+PASS: test for bad in_fd
+PASS: close the dummy testfile
+PASS: open dummy testfile in read only mode
+PASS: test for bad mode of out_fd
+PASS: close the dummy testfile
+PASS: remove the testfile
+SUMMARY: 43 tests, 0 failures
+ OK  (1.002 s)
+  TEST tst-setjmp.so                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-setjmp.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.94 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-setjmp.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+After setjmp()!
+Back from longjmp()!
+After sigsetjmp()!
+Back from siglongjmp()!
+After sigsetjmp()!
+Back from siglongjmp()!
+SUMMARY: 3 tests, 0 failures
+ OK  (0.375 s)
+  TEST tst-shm.so                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-shm.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.68 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-shm.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running shm tests
+syscall(): unimplemented system call 29
+Cannot create shm segment for key 1: Function not implemented
+ OK  (0.368 s)
+  TEST tst-sigaction.so                   Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-sigaction.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.88 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-sigaction.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+test_handler called, sig=15, global=0
+global now 1, test_handler called
+ OK  (0.364 s)
+  TEST tst-sigaltstack.so                 Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-sigaltstack.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.42 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-sigaltstack.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+SUMMARY: 6 tests, 0 failures
+ OK  (0.366 s)
+  TEST tst-sigwait.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-sigwait.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 153.28 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-sigwait.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 128
+-> Handling robust list
+tst-sigwait.so: /home/wkozaczuk/projects/osv-true-master/tests/tst-sigwait.cc:41: main: Assertion `sig == SIGUSR1' failed.
+ OK  (0.512 s)
+  TEST tst-sleep.so                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-sleep.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 149.96 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-sleep.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+starting sleep test
+PASS: sleep 2 seconds finished successfully
+PASS: and slept for roughly 2 seconds
+SUMMARY: 2 tests, 0 failures
+ OK  (2.379 s)
+  TEST tst-stat.so                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-stat.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.25 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-stat.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 1 test case...
+
+[1;32;49m*** No errors detected
+[0;39;49m OK  (0.373 s)
+  TEST tst-stdio-rofs.so                  Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-stdio-rofs.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 153.60 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-stdio-rofs.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 109 test cases...
+*** longjmp causes uninitialized stack frame ***: terminated
+*** longjmp causes uninitialized stack frame ***: terminated
+** OK  (0.380 s)
+  TEST tst-strerror_r.so                  Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-strerror_r.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 149.94 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-strerror_r.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: strerror_r() called from a _GNU_SOURCE binary
+Test complete (0/1 failures)
+ OK  (0.367 s)
+  TEST tst-string.so                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-string.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.12 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-string.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 4 test cases...
+*** longjmp causes uninitialized stack frame ***: terminated
+*** longjmp causes uninitialized stack frame ***: terminated
+** OK  (0.357 s)
+  TEST tst-symlink-rofs.so                 SKIPPED
+  TEST tst-symlink.so                      SKIPPED
+  TEST tst-syscall.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-syscall.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 149.79 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-syscall.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+got tid=44
+tst-syscall.so: /home/wkozaczuk/projects/osv-true-master/tests/tst-syscall.cc:74: main: Assertion `fd > 0' failed.
+ OK  (0.368 s)
+  TEST tst-tcp-cork.so                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-tcp-cork.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 150.15 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-tcp-cork.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+test 0 0 time (ms): 100 
+PASS: Without TCP_CORK, delayed ack comes into play
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+test 1 0 time (ms): 5 
+PASS: With TCP_CORK, no nagle so no delayed ack
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+test 0 1 time (ms): 5 
+PASS: With TCP_NODELAY, no nagle so no delayed ack
+SUMMARY: 3 tests, 0 failures
+ OK  (4.916 s)
+  TEST tst-tcp-listen.so                  Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-tcp-listen.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 149.81 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-tcp-listen.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 2 test cases...
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f407ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f508ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f609ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f70aef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f80bef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f90cef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fa0def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fb0eef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fc0fef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fd10ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fe11ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ff12ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080013ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080114ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080215ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> Handling robust list
+-> start: 0x20007f0a0580
+-> stack: 0x200080316ef0
+-> Handling robust list
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080417ef0
+-> Handling robust list
+-> CLONE_PARENT_SETTID
+-> Handling robust list
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080518ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080619ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> Handling robust list
+-> Handling robust list
+-> start: 0x20007f0a0580
+-> stack: 0x20008071aef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+-> Handling robust listsyscall(): unimplemented system call 435
+
+-> Handling robust list
+-> start: 0x20007f0a0580
+-> Handling robust list
+-> stack: 0x20008081bef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+-> Handling robust listsyscall(): unimplemented system call 435
+
+-> Handling robust list
+CALLED sys_set_robust_list
+-> start: 0x20007f0a0580
+-> stack: 0x20008091cef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080a1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+syscall(): unimplemented system call 435
+CALLED sys_set_robust_list
+-> Handling robust list
+-> start: 0x20007f0a0580
+-> Handling robust list
+-> stack: 0x200080b1eef0
+-> CLONE_PARENT_SETTID
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> CLONE_CHILD_CLEARTID
+syscall(): unimplemented system call 435
+-> Handling robust list
+CALLED sys_set_robust_list
+-> start: 0x20007f0a0580
+-> stack: 0x200080c1fef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080d20ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080e21ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x200080f22ef0
+-> CLONE_PARENT_SETTID
+-> Handling robust list
+-> Handling robust list
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+[1;32;49m*** No errors detected
+[0;39;49m
+-> Handling robust list
+ OK  (0.925 s)
+  TEST tst-tcp-nbwrite.so                 Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-tcp-nbwrite.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 153.38 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-tcp-nbwrite.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+Client total: read 600000
+Server thinks it sent 600000, client received 600000
+PASS: Test with blocking write()
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+Client total: read 51200
+Server thinks it sent 51200, client received 51200
+PASS: Test with non-blocking write()
+SUMMARY: 2 tests, 0 failures
+ OK  (2.595 s)
+  TEST tst-tcp-siocoutq.so                Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-tcp-siocoutq.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.87 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-tcp-siocoutq.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+server: sleep for 5 seconds..
+client: at first stage unsent 0 total socket size 16384
+unsent 8192
+unsent 16384
+-> Handling robust list
+PASS: TIOCOUTQ test
+SUMMARY: 1 tests, 0 failures
+ OK  (6.542 s)
+  TEST tst-tcp-v6.so                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-tcp-v6.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.97 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-tcp-v6.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: open AF_INET socket succeeds
+PASS: open AF_INET6 socket fails
+PASS: failure should be EAFNOSUPPORT
+SUMMARY: 3 tests, 0 failures
+ OK  (0.380 s)
+  TEST tst-thread-local.so                Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-thread-local.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 153.15 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-thread-local.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+constructor
+PASS: default value on main thread
+PASS: original value on main thread
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11deb0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+constructor
+PASS: 2 in second thread
+destructor
+PASS: original value on main thread
+-> Handling robust list
+PASS: original value on main thread
+PASS: 2 constructions
+PASS: 1 destructions
+PASS: default value on main thread
+PASS: original value on main thread
+syscall(): unimplemented system call 435
+-> start: 0x20007f2a0580
+-> stack: 0x20007f11deb0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+constructor
+PASS: default value in second thread
+PASS: hey in second thread
+destructor
+-> Handling robust list
+PASS: original value on main thread
+PASS: original value on main thread
+SUMMARY: 13 tests, 0 failures
+destructor
+ OK  (0.381 s)
+  TEST tst-time.so                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-time.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 144.07 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-time.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 32 test cases...
+*** longjmp causes uninitialized stack frame ***: terminated
+*** longjmp causes uninitialized stack frame ***: terminated
+** OK  (1.387 s)
+  TEST tst-timerfd.so                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-timerfd.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 154.08 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-timerfd.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:67.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:67.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:72.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:74.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:74.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:76.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:76.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:80.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:80.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:82.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:82.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:86.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:87.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:88.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:88.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:94.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:94.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:95.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:95.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:97.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:98.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:100.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:101.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:102.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:103.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:104.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:104.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:109.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:111.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:111.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:112.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:114.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:125.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:125.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:126.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:126.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:128.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:129.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:130.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:130.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:135.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:135.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:137.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:138.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:139.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:141.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:144.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:144.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:147.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:147.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:150.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:150.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:151.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:152.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:152.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:156.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:156.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:161.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:161.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:163.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:164.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:166.
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:179.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:179.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:172.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:173.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:175.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:184.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:184.
+-> Handling robust list
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:186.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:187.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:188.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:189.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:191.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:195.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:195.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:198.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:198.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:199.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:200.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:201.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:202.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:203.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:206.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:206.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:207.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:208.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:209.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:210.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:211.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:214.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:214.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:215.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:216.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:217.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:218.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:219.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:223.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:223.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:225.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:225.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:226.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:227.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:228.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:229.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:230.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:67.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:67.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:72.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:74.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:74.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:76.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:76.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:80.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:80.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:82.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:82.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:86.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:87.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:88.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:88.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:94.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:94.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:95.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:95.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:97.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:98.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:100.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:101.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:102.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:103.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:104.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:104.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:109.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:111.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:111.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:112.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:114.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:125.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:125.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:126.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:126.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:128.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:129.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:130.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:130.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:135.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:135.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:137.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:138.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:139.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:141.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:144.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:144.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:147.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:147.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:150.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:150.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:151.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:152.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:152.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:156.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:156.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:161.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:161.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:163.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:164.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:166.
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:179.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:179.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:172.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:173.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:175.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:184.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:184.
+-> Handling robust list
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:186.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:187.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:188.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:189.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:191.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:195.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:195.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:198.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:198.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:199.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:200.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:201.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:202.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:203.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:206.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:206.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:207.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:208.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:209.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:210.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:211.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:214.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:214.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:215.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:216.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:217.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:218.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:219.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:223.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:223.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:225.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:225.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:226.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:227.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:228.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:229.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-timerfd.cc:230.
+SUMMARY: 212 tests, 0 failures
+ OK  (12.757 s)
+  TEST tst-truncate.so                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-truncate.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 142.14 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-truncate.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 76
+truncate64: Function not implemented
+ OK  (0.356 s)
+  TEST tst-ttyname.so                      SKIPPED
+  TEST tst-uio.so                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-uio.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 149.08 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-uio.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:81.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:81.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:88.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:88.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:89.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:90.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:91.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:96.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:96.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:102.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:102.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:103.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:104.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:105.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:107.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:107.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:108.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:109.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:122.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:122.
+File size: 106408
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:132.
+read() at 0 got 1024.
+read() at 1024 got 2048.
+read() at 3072 got 4096.
+read() at 7168 got 8192.
+read() at 15360 got 16384.
+read() at 31744 got 32768.
+read() at 64512 got 41896.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:159.
+fread() at 0 got 1024.
+fread() at 1024 got 2048.
+fread() at 3072 got 4096.
+fread() at 7168 got 8192.
+fread() at 15360 got 16384.
+fread() at 31744 got 32768.
+fread() at 64512 got 41896.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:184.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:186.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:196.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:196.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:205.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:205.
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:230.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:230.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:216.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:216.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:217.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:219.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:220.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:221.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:222.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:223.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:224.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:231.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:231.
+-> Handling robust list
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:238.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:238.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:249.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:250.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:251.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:252.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:253.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:254.
+OK: /home/wkozaczuk/projects/osv-true-master/tests/tst-uio.cc:255.
+SUMMARY: 64 tests, 0 failures
+ OK  (1.482 s)
+  TEST tst-utimensat.so                    SKIPPED
+  TEST tst-utimes.so                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-utimes.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 152.77 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-utimes.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+PASS: create a file
+PASS: close the file
+PASS: create a link
+PASS: stat the file
+ino: 3 - old -> st_atim: 1689484104:573757797 - st_mtim: 1689484104:574150963
+PASS: check if utimes worked successfully!
+utimes return: 0
+PASS: stat the file again
+PASS: check changes made to atime
+PASS: check changes made to mtime
+ino: 3 - new -> st_atim: 1234:0 - st_mtim: 0:1234000
+PASS: check if lutimes worked successfully!
+PASS: check if lutimes made no changes to atime
+PASS: check if lutimes made no changes to mtime
+PASS: stat the link
+PASS: check if lutimes changes to link's atime
+PASS: check if lutimes made changes to link's mtime
+PASS: check if utimes followed the link!
+PASS: stat the file again
+PASS: check if utimes changes to link target's atime
+PASS: check if utimes made changes to link target's mtime
+PASS: check if utimes failed as desired!
+PASS: utimes works with NULL as argument
+PASS: remove the link
+PASS: remove the file
+SUMMARY: 22 tests, 0 failures
+ OK  (0.541 s)
+  TEST tst-vblk.so                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-vblk.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 151.45 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-vblk.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+vblk test passed
+ OK  (0.389 s)
+  TEST tst-wctype.so                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-wctype.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 153.02 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-wctype.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+Running 24 test cases...
+*** longjmp causes uninitialized stack frame ***: terminated
+*** longjmp causes uninitialized stack frame ***: terminated
+ OK  (0.397 s)
+  TEST tst-yield.so                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib64/ld-linux-x86-64.so.2 /tests/tst-yield.so --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-57-g79724e30
+eth0: 192.168.122.15
+Booted up in 148.47 ms
+Cmdline: /lib64/ld-linux-x86-64.so.2 /tests/tst-yield.so
+Executing static executable [/lib64/ld-linux-x86-64.so.2] with stack set at:0x0000200000200b80
+CALLED set_tid_address
+CALLED sys_set_robust_list
+starting yield test
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007ef1def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f306ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f407ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f508ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f609ef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f70aef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f80bef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007f90cef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fa0def0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+syscall(): unimplemented system call 435
+-> start: 0x20007f0a0580
+-> stack: 0x20007fb0eef0
+-> CLONE_PARENT_SETTID
+-> CLONE_CHILD_CLEARTID
+CALLED sys_set_robust_list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+-> Handling robust list
+yield test successful
+-> Handling robust list
+ OK  (6.898 s)
+OK (103 tests run, 99.585 s)

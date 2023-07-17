@@ -32,7 +32,7 @@ class Test(object):
 class SingleCommandTest(Test):
     def __init__(self, name, command):
         super(SingleCommandTest, self).__init__(name)
-        self.command = command
+        self.command = '/lib64/ld-linux-x86-64.so.2 %s' % command
 
     def run(self):
         run_command_in_guest(self.command, hypervisor=self.hypervisor, run_py_args=self.run_py_args).join()

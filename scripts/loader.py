@@ -726,7 +726,7 @@ class osv_syms(gdb.Command):
             flags = flagstr(ulong(vma['_flags']))
             perm = permstr(ulong(vma['_perm']))
 
-            if 'F' in flags and 'x' in perm:
+            if 'F' in flags:## and 'x' in perm:
                 file_vma = vma.cast(gdb.lookup_type('mmu::file_vma').pointer())
                 file_ptr = file_vma['_file']['px'].cast(gdb.lookup_type('file').pointer())
                 dentry_ptr = file_ptr['f_dentry']['px'].cast(gdb.lookup_type('dentry').pointer())

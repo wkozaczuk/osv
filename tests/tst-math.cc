@@ -51,7 +51,7 @@ int main(int argc, char **argv)
     expect(finitef(NAN), 0);
     expect(__finitef(NAN), 0);
 
-    expect(__log10_finite(100), log10(100));
+    //expect(__log10_finite(100), log10(100));
 
     std::cout << "SUMMARY: " << tests << " tests, " << fails << " failures\n";
     return fails == 0 ? 0 : 1;

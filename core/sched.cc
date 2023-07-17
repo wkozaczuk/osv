@@ -1442,13 +1442,37 @@ void thread::stop_wait()
     assert(st.load() == status::running);
 }
 
+// See https://www.kernel.org/doc/Documentation/robust-futexes.txt
+#define FUTEX_OWNER_DIED	0x40000000
+#define FUTEX_KEY_ADDR(x, o)    ((int *)((u8 *)(x) + (o)))
 void thread::complete()
 {
     run_exit_notifiers();
 
     if (_clear_id) {
-       *_clear_id = 0;
-       futex(_clear_id, 1, 1, nullptr, nullptr, 0);
+        *_clear_id = 0;
+        futex(_clear_id, 1, 1, nullptr, nullptr, 0);
+    }
+
+    if (_robust_list_head) {
+        printf("-> Handling robust list\n");
+        robust_list_head *h = _robust_list_head;
+        robust_list *l;
+        int *uaddr;
+
+        if (h->list_op_pending) {
+            printf("-> Handling robust list : list_op_pending\n");
+            uaddr = FUTEX_KEY_ADDR(h->list_op_pending, h->futex_offset);
+            *uaddr |= FUTEX_OWNER_DIED;
+            futex(uaddr, 1, 1, nullptr, nullptr, 0);
+        }
+
+        for (l = &h->list; (void*)l != (void*)h; l = l->next) {
+            printf("-> Handling robust list : list item\n");
+            uaddr = FUTEX_KEY_ADDR(l, h->futex_offset);
+            *uaddr |= FUTEX_OWNER_DIED;
+            futex(uaddr, 1, 1, nullptr, nullptr, 0);
+        }
     }
 
     auto value = detach_state::attached;
