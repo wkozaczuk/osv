@@ -35,6 +35,7 @@
 #include <sys/mman.h>
 #include <sys/types.h>
 #include <sys/stat.h>
+#include <sys/statx.h>
 #include <fcntl.h>
 #include <sys/ioctl.h>
 #include <sys/file.h>
@@ -46,6 +47,7 @@
 #include <sys/sendfile.h>
 #include <sys/prctl.h>
 #include <sys/timerfd.h>
+#include <termios.h>
 
 #include <unordered_map>
 
@@ -415,9 +417,39 @@ static long sys_getcpu(unsigned int *cpu, unsigned int *node, void *tcache)
 // to Linux signature of this system call. The underlying ioctl function which we delegate to
 // is variadic and takes slightly different paremeters and therefore cannot be used directly
 // as other system call implementations can.
+#define KERNEL_NCCS 19
+
+// This structure is exactly what glibc expects to receive when calling ioctl()
+// with TCGET and is defined in sysdeps/unix/sysv/linux/kernel_termios.h.
+struct __kernel_termios {
+    tcflag_t c_iflag;
+    tcflag_t c_oflag;
+    tcflag_t c_cflag;
+    tcflag_t c_lflag;
+    cc_t c_line;
+    cc_t c_cc[KERNEL_NCCS];
+};
+
 static int sys_ioctl(unsigned int fd, unsigned int command, unsigned long arg)
 {
-    return ioctl(fd, command, arg);
+    if (command == TCGETS) {
+       //The termios structure is slightly different from the version of it used
+       //by the syscall so let us translate it manually
+       termios _termios;
+       auto ret = ioctl(fd, command, &_termios);
+       if (!ret) {
+           __kernel_termios *ktermios = reinterpret_cast<__kernel_termios*>(arg);
+           ktermios->c_iflag = _termios.c_iflag;
+           ktermios->c_oflag = _termios.c_oflag;
+           ktermios->c_cflag = _termios.c_cflag;
+           ktermios->c_lflag = _termios.c_lflag;
+           ktermios->c_line = _termios.c_line;
+           memcpy(&ktermios->c_cc[0], &_termios.c_cc[0], KERNEL_NCCS * sizeof (cc_t));
+       }
+       return ret;
+    } else {
+       return ioctl(fd, command, arg);
+    }
 }
 
 static int pselect6(int nfds, fd_set *readfds, fd_set *writefds,
@@ -729,9 +761,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL5(prctl, int, unsigned long, unsigned long, unsigned long, unsigned long);
     SYSCALL1(chdir, const char *);
     SYSCALL3(sys_getcpu, unsigned int *, unsigned int *, void *);
-    SYSCALL5(statx, int, const char *, int, unsigned int, struct statx *);
     SYSCALL4(faccessat, int, const char *, int, int);
-    SYSCALL4(clock_nanosleep, clockid_t, int, const struct timespec *, struct timespec *);
     SYSCALL2(kill, pid_t, int);
     SYSCALL1(alarm, unsigned int);
     SYSCALL4(utimensat, int, const char *, const struct timespec*, int);
@@ -745,6 +775,8 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL2(timerfd_gettime, int, struct itimerspec*);
     SYSCALL2(chmod, const char *, mode_t);
     SYSCALL2(fchmod, int, mode_t);
+    SYSCALL4(clock_nanosleep, clockid_t, int, const struct timespec *, struct timespec *);
+    SYSCALL5(statx, int, const char *, int, unsigned int, struct statx *);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
