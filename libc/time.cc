@@ -152,21 +152,3 @@ clock_t clock(void)
     clock_gettime(CLOCK_PROCESS_CPUTIME_ID, &ts);
     return ts.tv_sec * 1000000000L + ts.tv_nsec;
 }
-
-OSV_LIBC_API
-int clock_nanosleep(clockid_t clock_id, int flags,
-                    const struct timespec *request,
-                    struct timespec *remain)
-{
-    switch (flags) {
-    case 0:
-        return nanosleep(request, NULL); //TODO: Think if we need to differentiate between different clocks
-    case TIMER_ABSTIME: {
-        sched::thread::sleep_until(osv::clock::uptime::time_point(
-                                 osv::clock::uptime::duration(convert(*request))));
-        return 0;
-    }
-    default:
-        return libc_error(EINVAL);
-    }
-}

@@ -16,14 +16,6 @@ SECTIONS
     .eh_frame_hdr : { *(.eh_frame_hdr) } : eh_frame_hdr : text
     .eh_frame : { *(.eh_frame) } : text
     .text : { *(.text*) } : text
-
-    /* 2 vvar pages follow the text:
-     *   i. 1 for variables in the vva
-     *  ii. 1 for the pvclock page
-     */
-    vvar_page = ALIGN(4096);
-    __vdso_vdso_dat = vvar_page + 128;
-    pvclock_page = vvar_page + 4096;
 }
 
 /*
@@ -44,13 +36,8 @@ VERSION
 {
     LINUX_2.6 {
         global:
-            clock_gettime;
             __vdso_clock_gettime;
-            gettimeofday;
             __vdso_gettimeofday;
-            getcpu;
-            __vdso_getcpu;
-            time;
             __vdso_time;
         local:
             *;
