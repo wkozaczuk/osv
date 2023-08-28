@@ -65,9 +65,9 @@ find_library()
 output_manifest()
 {
 	local so_files="$1"
-        local so_filter="$2"
+	local so_filter="$2"
 	echo "# --------------------" | tee -a $OUTPUT
-	echo "# Dependencies" | tee -a $OUTPUT
+	echo "# Dependencies        " | tee -a $OUTPUT
 	echo "# --------------------" | tee -a $OUTPUT
 	if [[ $dl == "linux" ]]; then
 		lddtree $so_files | grep -v "not found" | grep -v "$so_filter" | \

@@ -308,8 +308,6 @@ void application::start_and_join(waiter* setup_waiter)
 TRACEPOINT(trace_app_main, "app=%p, cmd=%s", application*, const char*);
 TRACEPOINT(trace_app_main_ret, "return_code=%d", int);
 
-static u64 random_bytes[2];
-
 void application::main()
 {
     __libc_stack_end = __builtin_frame_address(0);
@@ -339,6 +337,8 @@ void application::main()
     // _entry_point() doesn't return
 }
 
+static u64 random_bytes[2];
+
 void application::prepare_argv(elf::program *program)
 {
     // Prepare program_* variable used by the libc
@@ -363,6 +363,17 @@ void application::prepare_argv(elf::program *program)
     int envcount = 0;
     while (environ[envcount]) {
         envcount++;
+    }
+
+    // Initialize random bytes array so it can be passed as AT_RANDOM auxv vector
+    //TODO: Ideally we would love to use something better than the pseudo-random scheme below
+    //based on the time since epoch and rand_r(). But the getrandom() at this points does
+    //no always work and is also very slow. Once we figure out how to fix or improve it
+    //we may refine it with a better solution. For now it will do.
+    auto d = osv::clock::wall::now().time_since_epoch();
+    unsigned seed = std::chrono::duration_cast<std::chrono::nanoseconds>(d).count() % 1000000000;
+    for (unsigned idx = 0; idx < sizeof(random_bytes)/(sizeof(int)); idx++) {
+        reinterpret_cast<int*>(random_bytes)[idx] = rand_r(&seed);
     }
 
     int auxv_parameters_count = 4;
@@ -402,8 +413,6 @@ void application::prepare_argv(elf::program *program)
     _auxv[auxv_idx].a_type = AT_MINSIGSTKSZ;
     _auxv[auxv_idx++].a_un.a_val = sysconf(_SC_MINSIGSTKSZ);
 
-    random_bytes[0] = rand();
-    random_bytes[1] = rand();
     _auxv[auxv_idx].a_type = AT_RANDOM;
     _auxv[auxv_idx++].a_un.a_val = reinterpret_cast<uint64_t>(random_bytes);
 

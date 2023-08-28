@@ -736,7 +736,6 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL4(utimensat, int, const char *, const struct timespec*, int);
     SYSCALL2(symlink, const char *, const char *);
     SYSCALL1(rmdir, const char *);
-    SYSCALL4(mknodat, int, const char *, mode_t, unsigned);
     SYSCALL2(sethostname, char *, int);
     SYSCALL2(creat, const char *, mode_t);
     SYSCALL2(timerfd_create, int, int);
@@ -745,6 +744,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL2(chmod, const char *, mode_t);
     SYSCALL2(fchmod, int, mode_t);
     SYSCALL4(clock_nanosleep, clockid_t, int, const struct timespec *, struct timespec *);
+    SYSCALL4(mknodat, int, const char *, mode_t, dev_t);
     SYSCALL5(statx, int, const char *, int, unsigned int, struct statx *);
     }
 

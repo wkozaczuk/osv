@@ -1,5 +1,3 @@
-OUTPUT_FORMAT("elf64-x86-64")
-
 SECTIONS
 {
     . = SIZEOF_HEADERS;
@@ -18,28 +16,12 @@ SECTIONS
     .text : { *(.text*) } : text
 }
 
-/*
- * We specify the program headers to ensure that there is only a single
- * PT_LOAD segment
- * - put ELF header + program headers in text
- */
+/* Enforce single PT_LOAD segment by specifying all
+   headers/segments using PHDRS */
 PHDRS
 {
     text PT_LOAD FILEHDR PHDRS FLAGS(5); /*rd+exec*/
     dynamic PT_DYNAMIC FLAGS(4); /*rdonly*/
     /*note PT_NOTE FLAGS(4);*/
     eh_frame_hdr PT_GNU_EH_FRAME FLAGS(4);
-}
-
-/* Pretend like we are Linux 2.6 */
-VERSION
-{
-    LINUX_2.6 {
-        global:
-            __vdso_clock_gettime;
-            __vdso_gettimeofday;
-            __vdso_time;
-        local:
-            *;
-    };
 }

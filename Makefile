@@ -2129,7 +2129,7 @@ def_symbols = --defsym=OSV_KERNEL_BASE=$(kernel_base) \
               --defsym=OSV_KERNEL_VM_SHIFT=$(kernel_vm_shift)
 endif
 
-$(out)/loader.elf: $(stage1_targets) arch/$(arch)/loader.ld $(out)/bootfs.o $(out)/libvdso.o $(loader_options_dep) $(version_script_file)
+$(out)/loader.elf: $(stage1_targets) arch/$(arch)/loader.ld $(out)/bootfs.o $(out)/libvdso-content.o $(loader_options_dep) $(version_script_file)
 	$(call quiet, $(LD) -o $@ $(def_symbols) \
 		-Bdynamic --export-dynamic --eh-frame-hdr --enable-new-dtags -L$(out)/arch/$(arch) \
             $(patsubst %version_script,--version-script=%version_script,$(patsubst %.ld,-T %.ld,$^)) \
@@ -2141,7 +2141,7 @@ $(out)/loader.elf: $(stage1_targets) arch/$(arch)/loader.ld $(out)/bootfs.o $(ou
 	@scripts/libosv.py $(out)/osv.syms $(out)/libosv.ld `scripts/osv-version.sh` | $(CC) -c -o $(out)/osv.o -x assembler -
 	$(call quiet, $(CC) $(out)/osv.o -nostdlib -shared -o $(out)/libosv.so -T $(out)/libosv.ld, LIBOSV.SO)
 
-$(out)/zfs_builder.elf: $(stage1_targets) arch/$(arch)/loader.ld $(out)/zfs_builder_bootfs.o $(out)/libvdso.o $(loader_options_dep) $(version_script_file)
+$(out)/zfs_builder.elf: $(stage1_targets) arch/$(arch)/loader.ld $(out)/zfs_builder_bootfs.o $(out)/libvdso-content.o $(loader_options_dep) $(version_script_file)
 	$(call quiet, $(LD) -o $@ $(def_symbols) \
 		-Bdynamic --export-dynamic --eh-frame-hdr --enable-new-dtags -L$(out)/arch/$(arch) \
             $(patsubst %version_script,--version-script=%version_script,$(patsubst %.ld,-T %.ld,$^)) \
@@ -2165,7 +2165,7 @@ $(out)/libenviron.so: $(environ_sources)
 $(out)/libvdso.so: libc/vdso/vdso.c
 	$(makedir)
 	$(call quiet, $(CC) $(CFLAGS) -c -fPIC -o $(out)/libvdso.o libc/vdso/vdso.c, CC libvdso.o)
-	$(call quiet, $(LD) -shared -fPIC -z now -o $(out)/libvdso.so $(out)/libvdso.o -T libc/vdso/vdso.lds, LINK libvdso.so)
+	$(call quiet, $(LD) -shared -fPIC -z now -o $(out)/libvdso.so $(out)/libvdso.o -T libc/vdso/vdso.lds --version-script=libc/vdso/$(arch)/vdso.version, LINK libvdso.so)
 
 bootfs_manifest ?= bootfs.manifest.skel
 
@@ -2193,8 +2193,8 @@ $(out)/bootfs.o: ASFLAGS += -I$(out)
 $(out)/libvdso-stripped.so: $(out)/libvdso.so
 	$(call quiet, $(STRIP) $(out)/libvdso.so -o $(out)/libvdso-stripped.so, STRIP libvdso.so -> libvdso-stripped.so)
 
-$(out)/libvdso.o: $(out)/libvdso-stripped.so
-$(out)/libvdso.o: ASFLAGS += -I$(out)
+$(out)/libvdso-content.o: $(out)/libvdso-stripped.so
+$(out)/libvdso-content.o: ASFLAGS += -I$(out)
 
 # Standard C++ library
 libstd_dir := $(dir $(shell $(CXX) -print-file-name=libstdc++.so))
