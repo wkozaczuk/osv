@@ -15,7 +15,7 @@
 #include <osv/sched.hh>
 #include "pthread.hh"
 
-static u64 convert(const timespec& ts)
+u64 convert(const timespec& ts)
 {
     return ts.tv_sec * 1000000000 + ts.tv_nsec;
 }
@@ -36,9 +36,6 @@ int gettimeofday(struct timeval* tv, struct timezone* tz)
 OSV_LIBC_API
 int nanosleep(const struct timespec* req, struct timespec* rem)
 {
-    if (!req || req->tv_nsec < 0 || req->tv_nsec >= 1000000000L || req->tv_sec < 0)
-        return libc_error(EINVAL);
-
     sched::thread::sleep(std::chrono::nanoseconds(convert(*req)));
     return 0;
 }

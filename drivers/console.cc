@@ -68,16 +68,7 @@ console_ioctl(u_long request, void *arg)
 {
     switch (request) {
     case TCGETS:
-        //*static_cast<termios*>(arg) = tio;
-        {
-          termios *in = static_cast<termios*>(arg);
-          in->c_iflag = tio.c_iflag;
-          in->c_oflag = tio.c_oflag;
-          in->c_cflag = tio.c_cflag;
-          in->c_lflag = tio.c_lflag;
-          in->c_line = tio.c_line;
-          //.c_cc = {/*VINTR*/'\3', /*VQUIT*/'\34', /*VERASE*/'\177', /*VKILL*/0,
-        }
+        *static_cast<termios*>(arg) = tio;
         return 0;
     case TCSETS:
         // FIXME: We may need to lock this, since the writers are
