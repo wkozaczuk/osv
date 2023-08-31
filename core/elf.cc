@@ -123,7 +123,7 @@ object::object(program& prog, std::string pathname)
     , _initial_tls_size(0)
     , _dynamic_table(nullptr)
     , _module_index(_prog.register_dtv(this))
-    , _is_executable(false)
+    , _is_dynamically_linked_executable(false)
     , _init_called(false)
     , _eh_frame(0)
     , _visibility_thread(nullptr)
@@ -249,15 +249,7 @@ const char * object::symbol_name(const Elf64_Sym * sym) {
 }
 
 void* object::entry_point() const {
-    if (_is_executable || _ehdr.e_type == ET_EXEC || (!_is_executable && _ehdr.e_type == ET_DYN)) {
-        return _base + _ehdr.e_entry;
-    }
-    return nullptr;
-}
-
-bool object::is_dynamic() const
-{
-    return _ehdr.e_type == ET_DYN;
+    return _base + _ehdr.e_entry;
 }
 
 file::file(program& prog, ::fileref f, std::string pathname)
@@ -371,13 +363,13 @@ void object::set_base(void* base)
                               [](const Elf64_Phdr* a, const Elf64_Phdr* b)
                                   { return a->p_vaddr < b->p_vaddr; });
 
-    if (!is_core() && is_non_pie_executable()) {
-        // Verify non-PIE executable does not collide with the kernel
+    if (!is_core() && !is_pic()) {
+        // Verify non-PIC executable ((aka position dependent)) does not collide with the kernel
         if (intersects_with_kernel(p->p_vaddr) || intersects_with_kernel(q->p_vaddr + q->p_memsz)) {
-            abort("Non-PIE executable [%s] collides with kernel: [%p-%p] !\n",
+            abort("Non-PIC executable [%s] collides with kernel: [%p-%p] !\n",
                     pathname().c_str(), p->p_vaddr, q->p_vaddr + q->p_memsz);
         }
-        // Override the passed in value as the base for non-PIEs (Position Dependant Executables)
+        // Override the passed in value as the base for non-PICs (Position Dependant Executables)
         // needs to be set to 0 because all the addresses in it are absolute
         _base = 0x0;
     } else {
@@ -387,15 +379,6 @@ void object::set_base(void* base)
 
     _end = _base + q->p_vaddr + q->p_memsz;
     elf_debug("The base set to: %018p and end: %018p\n", _base, _end);
-}
-
-Elf64_Addr object::base_addr() const
-{
-    auto p = std::min_element(_phdrs.begin(), _phdrs.end(),
-                              [](Elf64_Phdr a, Elf64_Phdr b)
-                                  { return a.p_type == PT_LOAD
-                                        && a.p_vaddr < b.p_vaddr; });
-    return p->p_vaddr;
 }
 
 void* object::base() const
@@ -498,7 +481,7 @@ void object::process_headers()
             _dynamic_table = reinterpret_cast<Elf64_Dyn*>(_base + phdr.p_vaddr);
             break;
         case PT_INTERP:
-            _is_executable = true;
+            _is_dynamically_linked_executable = true;
             break;
         case PT_NOTE: {
             if (phdr.p_memsz < 16) {
@@ -550,10 +533,10 @@ void object::process_headers()
             abort("Unknown p_type in executable %s: %d\n", pathname(), phdr.p_type);
         }
     }
-    //if (!is_core() && _ehdr.e_type == ET_EXEC && !_is_executable) {
-    //    abort("Statically linked executables are not supported!\n");
-    //}
-    if (_is_executable && _tls_segment) {
+    /*if (!is_core() && is_statically_linked()) {
+        abort("Statically linked executables are not supported yet!\n");
+    }*/
+    if (_is_dynamically_linked_executable && _tls_segment) {
         auto app_tls_size = get_aligned_tls_size();
         ulong pie_static_tls_maximum_size = &_pie_static_tls_end - &_pie_static_tls_start;
         if (app_tls_size > pie_static_tls_maximum_size) {
@@ -610,28 +593,29 @@ unsigned object::get_segment_mmap_permissions(const Elf64_Phdr& phdr)
 
 void object::fix_permissions()
 {
-    elf_debug("fixing permissions\n");
     if(has_non_writable_text_relocations()) {
         make_text_writable(false);
     }
 
+    //Full RELRO applies to dynamically linked executables only
+    if (is_statically_linked()) {
+        return;
+    }
+
+    //Process GNU_RELRO segments only to make GOT and others read-only
     for (auto&& phdr : _phdrs) {
-        if (phdr.p_type != PT_GNU_RELRO || (!_is_executable && _ehdr.e_type == ET_DYN)) //TODO: Why?
+        if (phdr.p_type != PT_GNU_RELRO)
             continue;
 
         ulong vstart = align_down(phdr.p_vaddr, mmu::page_size);
         ulong memsz = align_up(phdr.p_vaddr + phdr.p_memsz, mmu::page_size) - vstart;
 
         mmu::mprotect(_base + vstart, memsz, mmu::perm_read);
-        elf_debug("fixing non GNU_RELRO: %018p of size: 0x%x\n", _base + vstart, memsz);
     }
 }
 
 void object::make_text_writable(bool flag)
 {
-    if(flag) {
-        elf_debug("making text writable\n");
-    }
     for (auto&& phdr : _phdrs) {
         if (phdr.p_type != PT_LOAD)
             continue;
@@ -791,9 +775,6 @@ extern "C" { void __elf_resolve_pltgot(void); }
 
 void object::relocate_pltgot()
 {
-    if(dynamic_exists(DT_PLTREL)) { //TODO: This makes libvdso.so work, but is it really correct?
-        make_text_writable(true);
-    }
     auto pltgot = dynamic_ptr<void*>(DT_PLTGOT);
     void *original_plt = nullptr;
     if (pltgot[1]) {
@@ -1099,6 +1080,9 @@ static std::string dirname(std::string path)
 
 void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
 {
+    if (!dynamic_exists(DT_NEEDED)) {
+        return;
+    }
     std::vector<std::string> rpath;
 
     std::string rpath_str;
@@ -1113,9 +1097,6 @@ void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
     if (!rpath_str.empty()) {
         boost::replace_all(rpath_str, "$ORIGIN", dirname(_pathname));
         boost::split(rpath, rpath_str, boost::is_any_of(":"));
-    }
-    if (!dynamic_exists(DT_NEEDED)) {
-        return;
     }
     auto needed = dynamic_str_array(DT_NEEDED);
     for (auto lib : needed) {
@@ -1297,7 +1278,7 @@ void object::init_static_tls()
         if (obj->is_core()) {
             continue;
         }
-        if (obj->is_executable()) {
+        if (obj->is_dynamically_linked_executable()) {
             obj->prepare_local_tls(_initial_tls_offsets);
             elf_debug("Initialized local-exec static TLS for %s\n", obj->pathname().c_str());
         }
@@ -1480,12 +1461,7 @@ program::load_object(std::string name, std::vector<std::string> extra_path,
         trace_elf_load(name.c_str());
         auto ef = std::shared_ptr<object>(new file(*this, f, name),
                 [=](object *obj) { remove_object(obj); });
-        if (ef->is_dynamic()) {
-            ef->set_base(_next_alloc);
-        } else {
-            auto base = ef->base_addr();
-            ef->set_base(reinterpret_cast<void*>(base));
-        }
+        ef->set_base(_next_alloc);
         ef->set_visibility(ThreadOnly);
         // We need to push the object at the end of the list (so that the main
         // shared object gets searched before the shared libraries it uses),
@@ -1501,15 +1477,13 @@ program::load_object(std::string name, std::vector<std::string> extra_path,
         osv::rcu_dispose(old_modules);
         ef->load_segments();
         ef->process_headers();
-        if (!ef->is_non_pie_executable())
+        if (ef->is_pic())
            _next_alloc = ef->end();
         add_debugger_obj(ef.get());
         loaded_objects.push_back(ef);
         ef->load_needed(loaded_objects);
         ef->relocate();
-        if (ef->is_dynamic()) {
-            ef->fix_permissions();
-        }
+        ef->fix_permissions();
         _files[name] = ef;
         _files[ef->soname()] = ef;
         return ef;
