@@ -381,10 +381,14 @@ public:
     bool is_pic() { return _ehdr.e_type != ET_EXEC; }
     std::vector<ptrdiff_t>& initial_tls_offsets() { return _initial_tls_offsets; }
     bool is_dynamically_linked_executable() { return _is_dynamically_linked_executable; }
+    bool is_statically_linked() { return !_is_dynamically_linked_executable && _ehdr.e_entry; }
     ulong get_tls_size();
     ulong get_aligned_tls_size();
     void copy_local_tls(void* to_addr);
     void* eh_frame_addr() { return _eh_frame; }
+    Elf64_Half headers_count() { return _ehdr.e_phnum; }
+    Elf64_Half headers_size() { return _ehdr.e_phentsize; }
+    void* headers_start() { return _headers_start; }
 protected:
     virtual void load_segment(const Elf64_Phdr& segment) = 0;
     virtual void unload_segment(const Elf64_Phdr& segment) = 0;
@@ -415,7 +419,6 @@ private:
     void prepare_local_tls(std::vector<ptrdiff_t>& offsets);
     void alloc_static_tls();
     void make_text_writable(bool flag);
-    bool is_statically_linked() { return !_is_dynamically_linked_executable && _ehdr.e_entry; }
 protected:
     program& _prog;
     std::string _pathname;
@@ -440,6 +443,7 @@ protected:
     bool is_core();
     bool _init_called;
     void* _eh_frame;
+    void* _headers_start;
 
     std::unordered_map<std::string,void*> _cached_symbols;
 

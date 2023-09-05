@@ -23,4 +23,31 @@ enum {
 
 #define ELF_KERNEL_MACHINE_TYPE 183
 
+#define SAFETY_BUFFER 256
+#include <osv/align.hh>
+
+inline void elf_entry_point(void* ep, int argc, char** argv, int argv_size)
+{
+    //The layout of the stack and state of all relevant registers is similar
+    //to how it looks for x86_64. The main difference (possibly for now)
+    //is the inlined assembly
+    int argc_plus_argv_stack_size = argv_size + 1;
+
+    void *stack;
+    asm volatile ("mov %0, sp" : "=r"(stack));
+
+    stack -= (SAFETY_BUFFER + argc_plus_argv_stack_size * sizeof(char*));
+    stack = align_down(stack, 16);
+
+    *reinterpret_cast<u64*>(stack) = argc;
+    memcpy(stack + sizeof(char*), argv, argv_size * sizeof(char*));
+
+    //Set stack pointer and jump to the ELF entry point
+    asm volatile (
+        "mov sp, %1\n\t" //set stack
+        "blr %0\n\t"
+        :
+        : "r"(ep), "r"(stack));
+}
+
 #endif /* ARCH_ELF_HH */
