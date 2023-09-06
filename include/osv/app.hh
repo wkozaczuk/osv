@@ -217,6 +217,7 @@ private:
     void start_and_join(waiter* setup_waiter);
     void main();
     void prepare_argv(elf::program *program);
+    void augment_auxv();
     void run_main();
     friend void ::__libc_start_main(int(*)(int, char**), int, char**, void(*)(),
         void(*)(), void(*)(), void*);
@@ -234,7 +235,7 @@ private:
     std::shared_ptr<elf::object> _lib;
     std::shared_ptr<elf::object> _libenviron;
     main_func_t* _main;
-    void* _entry_point;
+    void (*_entry_point)();
     static app_registry apps;
 
     // _argv is set by prepare_argv() called from the constructor and needs to be
@@ -244,6 +245,8 @@ private:
     int _argv_size;
     std::unique_ptr<char *[]> _argv;
     std::unique_ptr<char []> _argv_buf; // actual arguments content _argv points to
+    Elf64_auxv_t* _auxv;
+    int _auxv_idx;
 
     // Must be destroyed before _lib, because contained function objects may
     // have destructors which are part of the application's code.

@@ -47,22 +47,29 @@ enum {
 
 inline void elf_entry_point(void* ep, int argc, char** argv, int argv_size)
 {
+    //The layout of the stack and state of all relevant registers is described
+    //in detail in the section 3.4 (Process Initialization) of the System V Application
+    //Binary Interface AMD64 Architecture Processor Supplement Draft Version 0.95
+    //(see https://refspecs.linuxfoundation.org/elf/x86_64-abi-0.95.pdf)
     int argc_plus_argv_stack_size = argv_size + 1;
 
     void *stack;
     asm volatile ("movq %%rsp, %0" : "=r"(stack));
-
+    //
+    //According to the document above the stack pointer should be 16-bytes aligned
     stack -= (SAFETY_BUFFER + argc_plus_argv_stack_size * sizeof(char*));
     stack = align_down(stack, 16);
-    printf("Executing static executable [%s] with stack set at:%018p\n", argv[0], stack);
 
+    //... and it should start with argc, followed by argv, environment pointers and
+    //auxiliary vector entries. For details look at application::prepare_argv()
     *reinterpret_cast<u64*>(stack) = argc;
     memcpy(stack + sizeof(char*), argv, argv_size * sizeof(char*));
 
-    //TODO: Reset SSE2 and floating point registers
+    //TODO: Reset SSE2 and floating point registers and RFLAGS
+    //Set stack pointer, reset rdx and jump to the ELF entry point
     asm volatile (
         "movq %1, %%rsp\n\t" //set stack
-        "movq $0, %%rdx\n\t" //fini should be null for now (should be fixed?)
+        "movq $0, %%rdx\n\t" //fini should be 0 for now (TODO: Eventually point to atexit())
         "jmpq *%0\n\t"
         :
         : "r"(ep), "r"(stack));
