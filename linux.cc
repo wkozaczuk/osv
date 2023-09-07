@@ -529,18 +529,46 @@ static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *cti
     if ((flags & CLONE_CHILD_SETTID)) {
        printf("-> CLONE_CHILD_SETTID\n");
     }
-    u64 start = reinterpret_cast<u64*>(child_stack)[0];
-    u64 arg = reinterpret_cast<u64*>(child_stack)[1];
-    printf("-> start: %p\n", start);
-    printf("-> stack: %p\n", child_stack);
+    //u64 start = reinterpret_cast<u64*>(child_stack)[0];
+    //u64 arg = reinterpret_cast<u64*>(child_stack)[1];
+    u64 start = *reinterpret_cast<u64*>(sched::thread::current()->get_syscall_stack_top() - 8);
+    printf("-> start:  %p\n", start);
+    printf("-> stack:  %p\n", child_stack);
+    printf("-> newtls: %p\n", newtls);
     //TODO: Possibly create small kernel stack and switch to the app one before jumping later
-    auto stack = sched::thread::stack_info(child_stack - (1024 * 1024), 1024 * 1024);
+    //auto stack = sched::thread::stack_info(child_stack - (1024 * 1024), 1024 * 1024);
     auto parent_pinned_cpu = sched::thread::current()->pinned() ? sched::cpu::current() : nullptr;
     auto t = sched::thread::make([=] {
-       asm volatile("wrfsbase %0" : : "r"(newtls));
-       asm volatile("movq %0, %%rdi" : : "r"(arg));
-       asm volatile("jmpq *%0": : "r"(start));
-    }, sched::thread::attr().stack(stack).pin(parent_pinned_cpu), false, true);
+       debug_early("clone: in the child thread\n");
+       asm volatile
+         ("cli \n\t"
+          "movq %%fs:16, %%rsp \n\t" //Switch to syscall stack
+          "subq $1, %%fs:40 \n\t"    //Use app TCB
+          "subq $144, %%rsp \n\t"
+          "popq %%r15 \n\t"
+          "wrfsbase %%r15 \n\t"      //Switch to app TCB
+          "popq %%r15 \n\t"
+          "popq %%r14 \n\t"
+          "popq %%r13 \n\t"
+          "popq %%r12 \n\t"
+          "popq %%r11 \n\t"
+          "popq %%r10 \n\t"
+          "popq %%r9  \n\t"
+          "popq %%r8  \n\t"
+          "popq %%rdi \n\t"
+          "popq %%rsi \n\t"
+          "popq %%rdx \n\t"
+          "popq %%rbx \n\t"
+          "addq $8, %%rsp \n\t"
+          "popq %%rbp \n\t"
+          "popq %%rcx \n\t"
+          "popq %%rax \n\t"
+          "pushq %%r11 \n\t"
+          "popfq \n\t"
+          "popq %%rsp \n\t"
+          "sti \n\t"
+          "jmpq *%%rcx \n\t" : :);
+    }, sched::thread::attr().stack(4096 * 4).pin(parent_pinned_cpu), false, true);
     //TODO: See if need to inherit signal mask
     if ((flags & CLONE_PARENT_SETTID)) {
        printf("-> CLONE_PARENT_SETTID\n");
@@ -550,10 +578,16 @@ static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *cti
        printf("-> CLONE_CHILD_CLEARTID\n");
        t->set_clear_id(ctid);
     }
+    //Copy all registers
+    memcpy(t->get_syscall_stack_top() - 136, sched::thread::current()->get_syscall_stack_top() - 120, 120);
+    *reinterpret_cast<u64*>(t->get_syscall_stack_top() - 8) = reinterpret_cast<u64>(child_stack);
+    //Set RAX to 0
+    *reinterpret_cast<u64*>(t->get_syscall_stack_top() - 16) = 0;
+    *reinterpret_cast<u64*>(t->get_syscall_stack_top() - 144) = newtls;
     t->set_app_tcb(newtls); //TODO: Possibly do it in the start routine
-    t->use_app_tcb();
+    //t->use_app_tcb();
     t->start();
-    return 0;
+    return t->id();
 }
 
 struct clone_args {
@@ -567,27 +601,27 @@ struct clone_args {
      u64 tls;
 };
 
-#define __NR_sys_clone3 535 //435 is correct
-static int sys_clone3(struct clone_args *args, size_t size, u64 start, u64 arg1, u64 arg2)
+#define __NR_sys_clone3 935 //435 is correct
+static int sys_clone3(struct clone_args *args, size_t size)
 {
     if (!(args->flags & CLONE_THREAD)) {
        errno = ENOSYS;
        return -1;
     }
+    u64 start = *reinterpret_cast<u64*>(sched::thread::current()->get_syscall_stack_top() - 8);
     printf("-> start: %p\n", start);
-    printf("-> arg1: %p\n", arg1);
-    printf("-> arg2: %p\n", arg2);
     //TODO: Possibly create small kernel stack and switch to the app one before jumping later
     auto stack = sched::thread::stack_info(reinterpret_cast<void*>(args->stack), args->stack_size);
     auto t = sched::thread::make([=] {
        asm volatile("wrfsbase %0" : : "r"(args->tls));
-       asm volatile("movq %0, %%rdi" : : "r"(arg2));
+       //asm volatile("movq %0, %%rdi" : : "r"(arg2));
+       asm volatile("movq $0, %rax");
        asm volatile("jmpq *%0": : "r"(start));
     }, sched::thread::attr().stack(stack), false, true);
     t->set_app_tcb(args->tls); //TODO: Possibly do it in the start routine
     t->use_app_tcb();
     t->start();
-    return 0;
+    return t->id();
 }
 
 #define __NR_sys_brk __NR_brk
@@ -723,7 +757,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL2(getrusage, int, struct rusage *);
     SYSCALL3(accept, int, struct sockaddr *, socklen_t *);
     SYSCALL1(fchdir, unsigned int);
-    SYSCALL5(sys_clone3, struct clone_args *, size_t, u64, u64, u64);
+    SYSCALL2(sys_clone3, struct clone_args *, size_t);
     SYSCALL1(pipe, int*);
     SYSCALL2(fstatfs, unsigned int, struct statfs *);
     SYSCALL1(umask, mode_t);
@@ -777,6 +811,7 @@ extern "C" long syscall_wrapper(long p1, long p2, long p3, long p4, long p5, lon
 
     int errno_backup = errno;
     // syscall and function return value are in rax
+    printf("-> syscall: %ld\n", number);
     auto ret = syscall(number, p1, p2, p3, p4, p5, p6);
     int result = -errno;
     errno = errno_backup;

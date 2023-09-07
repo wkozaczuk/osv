@@ -187,10 +187,10 @@ OSV_LIBC_API
 int sigprocmask(int how, const sigset_t* _set, sigset_t* _oldset)
 {
     auto set = from_libc(_set);
-    auto oldset = from_libc(_oldset);
-    if (oldset) {
+    //auto oldset = from_libc(_oldset);
+    /*if (oldset) {
         *oldset = *thread_signals();
-    }
+    }*/
     if (set) {
         switch (how) {
         case SIG_BLOCK:

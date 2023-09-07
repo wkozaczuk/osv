@@ -264,6 +264,8 @@ void thread::setup_tcb()
         // Set a canary value at the bottom of the tiny stack to catch potential overflow
         // caused by setup_large_syscall_stack()
         *reinterpret_cast<u64*>(tiny_syscall_stack_begin) = STACK_CANARY;
+        debug_early_u64("-> setting TCB to: ", reinterpret_cast<u64>(_tcb));
+        debug_early_u64("-> setting syscall_stack_top to: ", reinterpret_cast<u64>(_tcb->syscall_stack_top));
     }
     else {
         _tcb->syscall_stack_top = 0;
@@ -340,6 +342,10 @@ void thread::free_tcb()
             _tcb->syscall_stack_top - LARGE_SYSCALL_STACK_DEPTH;
         free(syscall_stack_begin);
     }
+}
+
+void* thread::get_syscall_stack_top() {
+    return _tcb->syscall_stack_top;
 }
 
 void thread_main_c(thread* t)
