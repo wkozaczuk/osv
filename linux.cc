@@ -519,7 +519,6 @@ static int sys_prlimit(pid_t pid, int resource, const struct rlimit *new_limit,
 #define CLONE_CHILD_SETTID	0x01000000
 #define CLONE_PARENT_SETTID	0x00100000
 #define CLONE_CHILD_CLEARTID	0x00200000
-//static sched::thread *t;
 static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *ctid, unsigned long newtls)
 {
     if (!(flags & CLONE_THREAD)) {
@@ -529,14 +528,8 @@ static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *cti
     if ((flags & CLONE_CHILD_SETTID)) {
        printf("-> CLONE_CHILD_SETTID\n");
     }
-    //u64 start = reinterpret_cast<u64*>(child_stack)[0];
-    //u64 arg = reinterpret_cast<u64*>(child_stack)[1];
-    u64 start = *reinterpret_cast<u64*>(sched::thread::current()->get_syscall_stack_top() - 8);
-    printf("-> start:  %p\n", start);
     printf("-> stack:  %p\n", child_stack);
     printf("-> newtls: %p\n", newtls);
-    //TODO: Possibly create small kernel stack and switch to the app one before jumping later
-    //auto stack = sched::thread::stack_info(child_stack - (1024 * 1024), 1024 * 1024);
     auto parent_pinned_cpu = sched::thread::current()->pinned() ? sched::cpu::current() : nullptr;
     auto t = sched::thread::make([=] {
        debug_early("clone: in the child thread\n");
@@ -585,7 +578,6 @@ static int sys_clone(unsigned long flags, void *child_stack, int *ptid, int *cti
     *reinterpret_cast<u64*>(t->get_syscall_stack_top() - 16) = 0;
     *reinterpret_cast<u64*>(t->get_syscall_stack_top() - 144) = newtls;
     t->set_app_tcb(newtls); //TODO: Possibly do it in the start routine
-    //t->use_app_tcb();
     t->start();
     return t->id();
 }
@@ -601,27 +593,16 @@ struct clone_args {
      u64 tls;
 };
 
-#define __NR_sys_clone3 935 //435 is correct
+#define __NR_sys_clone3 435 //435 is correct
 static int sys_clone3(struct clone_args *args, size_t size)
 {
-    if (!(args->flags & CLONE_THREAD)) {
-       errno = ENOSYS;
-       return -1;
-    }
-    u64 start = *reinterpret_cast<u64*>(sched::thread::current()->get_syscall_stack_top() - 8);
-    printf("-> start: %p\n", start);
-    //TODO: Possibly create small kernel stack and switch to the app one before jumping later
-    auto stack = sched::thread::stack_info(reinterpret_cast<void*>(args->stack), args->stack_size);
-    auto t = sched::thread::make([=] {
-       asm volatile("wrfsbase %0" : : "r"(args->tls));
-       //asm volatile("movq %0, %%rdi" : : "r"(arg2));
-       asm volatile("movq $0, %rax");
-       asm volatile("jmpq *%0": : "r"(start));
-    }, sched::thread::attr().stack(stack), false, true);
-    t->set_app_tcb(args->tls); //TODO: Possibly do it in the start routine
-    t->use_app_tcb();
-    t->start();
-    return t->id();
+    //printf("sys_clone3 with args: %p\n", args);
+    return sys_clone(
+       args->flags,
+       reinterpret_cast<void*>(args->stack),
+       reinterpret_cast<int*>(args->parent_tid),
+       reinterpret_cast<int*>(args->child_tid),
+       args->tls);
 }
 
 #define __NR_sys_brk __NR_brk
@@ -811,7 +792,7 @@ extern "C" long syscall_wrapper(long p1, long p2, long p3, long p4, long p5, lon
 
     int errno_backup = errno;
     // syscall and function return value are in rax
-    printf("-> syscall: %ld\n", number);
+    //printf("-> syscall: %ld\n", number);
     auto ret = syscall(number, p1, p2, p3, p4, p5, p6);
     int result = -errno;
     errno = errno_backup;
