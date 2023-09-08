@@ -599,7 +599,7 @@ static int sys_clone3(struct clone_args *args, size_t size)
     //printf("sys_clone3 with args: %p\n", args);
     return sys_clone(
        args->flags,
-       reinterpret_cast<void*>(args->stack),
+       reinterpret_cast<void*>(args->stack + args->stack_size),
        reinterpret_cast<int*>(args->parent_tid),
        reinterpret_cast<int*>(args->child_tid),
        args->tls);
