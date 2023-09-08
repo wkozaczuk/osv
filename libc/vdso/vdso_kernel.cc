@@ -14,7 +14,11 @@ public:
         asm volatile ( "movq %%gs:0, %0\n\t" : "=r"(_kernel_tcb));
         
         //Switch to kernel tcb if app tcb present
+        //TODO: Ideally switch to the kernel app stack
         if (_kernel_tcb->app_tcb && !_kernel_tcb->kernel_tcb_counter) {
+            //To avoid page faults on user lazy stack when interrupts are disabled
+            char i;
+            asm volatile("movb -4096(%%rsp), %0" : "=r"(i));
             arch::irq_disable();
             sched::set_fsbase(reinterpret_cast<u64>(_kernel_tcb->self));
         }
