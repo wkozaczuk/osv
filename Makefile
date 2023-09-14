@@ -1012,6 +1012,7 @@ objects += arch/x64/ioapic.o
 objects += arch/x64/apic.o
 objects += arch/x64/apic-clock.o
 objects += arch/x64/entry-xen.o
+objects += arch/x64/prctl.o
 objects += arch/x64/vmlinux.o
 objects += arch/x64/vmlinux-boot64.o
 objects += arch/x64/pvh-boot.o
@@ -1849,6 +1850,9 @@ musl += time/timegm.o
 musl += time/wcsftime.o
 musl += time/ftime.o
 $(out)/libc/time/ftime.o: CFLAGS += -Ilibc/include
+
+libc += vdso/vdso_kernel.o
+libc_to_hide += vdso/vdso_kernel.o
 
 musl += termios/tcflow.o
 
