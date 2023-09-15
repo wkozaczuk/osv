@@ -64,12 +64,15 @@ void set_fsbase_fsgsbase(u64 v)
     processor::wrfsbase(v);
 }
 
+bool fsgsbase_avail = false;
+
 extern "C"
 void (*resolve_set_fsbase(void))(u64 v)
 {
     // can't use processor::features, because it is not initialized
     // early enough.
     if (processor::features().fsgsbase) {
+        fsgsbase_avail = true;
         return set_fsbase_fsgsbase;
     } else {
         return set_fsbase_msr;

@@ -10,12 +10,24 @@
 
 #include "arch.hh"
 #include "arch-tls.hh"
+#include <osv/barrier.hh>
 
 namespace sched {
-    void set_fsbase(u64 v);
+    extern bool fsgsbase_avail;
 }
 
 namespace arch {
+
+inline void set_fsbase(u64 v)
+{
+    barrier();
+    if (sched::fsgsbase_avail) {
+        processor::wrfsbase(v);
+    } else {
+        processor::wrmsr(msr::IA32_FS_BASE, v);
+    }
+    barrier();
+}
 
 //TODO: Possibly use inline
 class tls_switch_on_exception_stack {
@@ -27,7 +39,7 @@ public:
         if (_kernel_tcb->app_tcb) {
             //Switch to kernel tcb if app tcb present and on app tcb
             if (!_kernel_tcb->kernel_tcb_counter) {
-                sched::set_fsbase(reinterpret_cast<u64>(_kernel_tcb->self));
+                set_fsbase(reinterpret_cast<u64>(_kernel_tcb->self));
             }
             _kernel_tcb->kernel_tcb_counter++;
         }
@@ -38,7 +50,7 @@ public:
             _kernel_tcb->kernel_tcb_counter--;
             if (!_kernel_tcb->kernel_tcb_counter) {
                 //Restore app tcb
-                sched::set_fsbase(reinterpret_cast<u64>(_kernel_tcb->app_tcb));
+                set_fsbase(reinterpret_cast<u64>(_kernel_tcb->app_tcb));
             }
         }
     }
@@ -54,7 +66,7 @@ public:
             //Switch to kernel tcb if app tcb present and on app tcb
             arch::irq_disable();
             if (!_kernel_tcb->kernel_tcb_counter) {
-                sched::set_fsbase(reinterpret_cast<u64>(_kernel_tcb->self));
+                set_fsbase(reinterpret_cast<u64>(_kernel_tcb->self));
             }
             _kernel_tcb->kernel_tcb_counter++;
             arch::irq_enable();
@@ -67,7 +79,7 @@ public:
             _kernel_tcb->kernel_tcb_counter--;
             if (!_kernel_tcb->kernel_tcb_counter) {
                 //Restore app tcb
-                sched::set_fsbase(reinterpret_cast<u64>(_kernel_tcb->app_tcb));
+                set_fsbase(reinterpret_cast<u64>(_kernel_tcb->app_tcb));
             }
             arch::irq_enable();
         }
@@ -85,14 +97,14 @@ public:
             //To avoid page faults on user stack when interrupts are disabled
             arch::ensure_next_stack_page();
             arch::irq_disable();
-            sched::set_fsbase(reinterpret_cast<u64>(_kernel_tcb->self));
+            set_fsbase(reinterpret_cast<u64>(_kernel_tcb->self));
         }
     }
 
     ~tls_switch_on_user_stack() {
         //Restore app tcb
         if (_kernel_tcb->app_tcb && !_kernel_tcb->kernel_tcb_counter) {
-            sched::set_fsbase(reinterpret_cast<u64>(_kernel_tcb->app_tcb));
+            set_fsbase(reinterpret_cast<u64>(_kernel_tcb->app_tcb));
             arch::irq_enable();
         }
     }
