@@ -405,6 +405,19 @@ static long sys_getcpu(unsigned int *cpu, unsigned int *node, void *tcache)
     return 0;
 }
 
+#define __NR_sys_set_robust_list __NR_set_robust_list
+static long sys_set_robust_list(struct robust_list_head *head, size_t len)
+{
+    sched::thread::current()->set_robust_list(head);
+    return 0;
+}
+
+static long set_tid_address(int *tidptr)
+{
+    sched::thread::current()->set_clear_id(tidptr);
+    return sched::thread::current()->id();
+}
+
 #define __NR_sys_ioctl __NR_ioctl
 //
 // We need to define explicit sys_ioctl that takes these 3 parameters to conform
@@ -660,6 +673,8 @@ OSV_LIBC_API long syscall(long number, ...)
 #ifdef __x86_64__
     SYSCALL2(arch_prctl, int, unsigned long);
 #endif
+    SYSCALL2(sys_set_robust_list, struct robust_list_head *, size_t);
+    SYSCALL1(set_tid_address, int *);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);

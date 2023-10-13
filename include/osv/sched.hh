@@ -31,6 +31,16 @@
 
 typedef float runtime_t;
 
+struct robust_list {
+    struct robust_list *next;
+};
+
+struct robust_list_head {
+    struct robust_list list;
+    long futex_offset;
+    struct robust_list *list_op_pending;
+};
+
 extern "C" {
 void smp_main();
 #ifdef __aarch64__
@@ -737,6 +747,12 @@ public:
     {
         return _parent_id;
     }
+    void set_clear_id(int *clear_id) {
+        _clear_id = clear_id;
+    }
+    void set_robust_list(robust_list_head *list_head) {
+        _robust_list_head = list_head;
+    }
 private:
     virtual void timer_fired() override;
     struct detached_state;
@@ -882,6 +898,11 @@ private:
             osv::clock::uptime::time_point &running_since,
             osv::clock::uptime::duration &total_cpu_time);
     unsigned int _parent_id;
+    //These two variables are only meaningful when running statically
+    //linked executables or dynamically linked ones launched by the
+    //Linux dynamic linker
+    int *_clear_id;
+    robust_list_head *_robust_list_head;
 };
 
 class thread_handle {
