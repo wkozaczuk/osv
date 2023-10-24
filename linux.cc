@@ -580,7 +580,7 @@ static long sys_brk(void *addr)
 TRACEPOINT(trace_syscall_open, "%d <= \"%s\" 0x%x", int, const char *, int);
 #endif
 TRACEPOINT(trace_syscall_read, "0x%x <= %d %p 0x%x", ssize_t, int, char *, size_t);
-TRACEPOINT(trace_syscall_uname, "%d <= ", int, struct utsname *);
+TRACEPOINT(trace_syscall_uname, "%d <= %p", int, struct utsname *);
 TRACEPOINT(trace_syscall_write, "0x%x <= %d %p 0x%x", ssize_t, int, const void *, size_t);
 TRACEPOINT(trace_syscall_gettid, "%d <=", pid_t);
 TRACEPOINT(trace_syscall_clock_gettime, "%d <= %d %p", int, clockid_t, struct timespec *);
@@ -714,6 +714,7 @@ TRACEPOINT(trace_syscall_sys_clone3, "%d <= %p %lu", int, struct clone_args *, s
 TRACEPOINT(trace_syscall_prlimit64, "%d <= %u %d %p %p", int, pid_t, int, const struct rlimit *, struct rlimit *);
 TRACEPOINT(trace_syscall_msync, "%d <= 0x%x %lu %d", int, void *, size_t, int);
 TRACEPOINT(trace_syscall_rename, "%d <= %s %s", int, const char *, const char *);
+TRACEPOINT(trace_syscall_truncate, "%d <= %s %ld", int, const char *, off_t);
 
 OSV_LIBC_API long syscall(long number, ...)
 {
@@ -862,6 +863,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL4(prlimit64, pid_t, int, const struct rlimit *, struct rlimit *);
     SYSCALL3(msync, void *, size_t, int);
     SYSCALL2(rename, const char *, const char *);
+    SYSCALL2(truncate, const char *, off_t);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);
