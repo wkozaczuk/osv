@@ -70,7 +70,7 @@ int main(int argc, char **argv)
     expect(tid, gettid());
 
     // test mmap as it takes 6 parameters
-    int fd = open("/tests/tst-mmap.so", O_RDONLY, 0666);
+    int fd = open("/tests/tst-mmap", O_RDONLY, 0666);
     assert(fd > 0);
 
     void *addr = NULL;

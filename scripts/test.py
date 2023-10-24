@@ -40,7 +40,7 @@ class TestRunnerTest(SingleCommandTest):
 # the list of tests actually in the image form the image's manifest file.
 test_files = []
 is_comment = re.compile("^[ \t]*(|#.*|\[manifest])$")
-is_test = re.compile("^/tests/tst-.*.so")
+is_test = re.compile("^/tests/tst-.*")
 
 def running_with_kvm_on(arch, hypervisor):
     if os.path.exists('/dev/kvm') and arch == host_arch and hypervisor in ['qemu', 'qemu_microvm', 'firecracker']:

@@ -14,6 +14,8 @@
 #include <sys/mman.h>
 
 #include <iostream>
+extern "C" int __sigsetjmp(sigjmp_buf env, int savemask);
+#define sigsetjmp(env, savemask) __sigsetjmp (env, savemask)
 
 static int tests = 0, fails = 0;
 

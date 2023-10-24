@@ -1,0 +1,144 @@
+./RUN_tests_hidden.sh 
+  TEST java-perms                          OK  (0.470 s)
+  TEST java_no_wrapper                     OK  (0.693 s)
+  TEST tcp_close_without_reading_on_fc     SKIPPED
+  TEST tcp_close_without_reading_on_qemu   OK  (0.410 s)
+  TEST tracing_smoke_test                  OK  (23.491 s)
+  TEST tst-af-local.so                     OK  (2.416 s)
+  TEST tst-align.so                        OK  (0.430 s)
+  TEST tst-app.so                          SKIPPED
+  TEST tst-async.so                        SKIPPED
+  TEST tst-bitset-iter.so                  OK  (0.309 s)
+  TEST tst-brk.so                          OK  (0.298 s)
+  TEST tst-bsd-evh.so                      SKIPPED
+  TEST tst-bsd-kthread.so                  OK  (0.498 s)
+  TEST tst-bsd-taskqueue.so                SKIPPED
+  TEST tst-bsd-tcp1-zrcv.so                SKIPPED
+  TEST tst-bsd-tcp1-zsnd.so                SKIPPED
+  TEST tst-bsd-tcp1-zsndrcv.so             SKIPPED
+  TEST tst-bsd-tcp1.so                     OK  (1.331 s)
+  TEST tst-calloc.so                       OK  (0.308 s)
+  TEST tst-chdir-rofs.so                   OK  (0.302 s)
+  TEST tst-chdir.so                        OK  (0.305 s)
+  TEST tst-chmod.so                        OK  (0.307 s)
+  TEST tst-clock.so                        SKIPPED
+  TEST tst-commands.so                     OK  (0.384 s)
+  TEST tst-concurrent-init.so              OK  (1.320 s)
+  TEST tst-concurrent-read-rofs.so         OK  (0.313 s)
+  TEST tst-condvar.so                      SKIPPED
+  TEST tst-console.so                      OK  (6.317 s)
+  TEST tst-crypt.so                        OK  (0.309 s)
+  TEST tst-ctype.so                        OK  (0.313 s)
+  TEST tst-cxxlocale.so                    OK  (0.315 s)
+  TEST tst-dax.so                          SKIPPED
+  TEST tst-dlfcn.so                        OK  (0.326 s)
+  TEST tst-dns-resolver.so                 SKIPPED
+  TEST tst-elf-init.so                     OK  (0.300 s)
+  TEST tst-elf-permissions.so              OK  (0.308 s)
+  TEST tst-epoll.so                        OK  (1.451 s)
+  TEST tst-eventfd.so                      OK  (0.617 s)
+  TEST tst-except.so                       OK  (0.313 s)
+  TEST tst-faccessat.so                    OK  (0.307 s)
+  TEST tst-fcntl.so                        OK  (0.303 s)
+  TEST tst-feexcept.so                     OK  (0.310 s)
+  TEST tst-fpu.so                          SKIPPED
+  TEST tst-fread.so                        OK  (0.310 s)
+  TEST tst-fstatat.so                      OK  (0.321 s)
+  TEST tst-futimesat.so                    OK  (0.310 s)
+  TEST tst-getdents.so                     OK  (0.330 s)
+  TEST tst-getopt-pie.so                   OK  (0.307 s)
+  TEST tst-getopt.so                       OK  (0.307 s)
+  TEST tst-hello.so                        OK  (0.301 s)
+  TEST tst-hostname.so                     OK  (0.327 s)
+  TEST tst-hub.so                          SKIPPED
+  TEST tst-huge.so                         SKIPPED
+  TEST tst-ifaddrs.so                      OK  (0.323 s)
+  TEST tst-kill.so                         OK  (5.902 s)
+  TEST tst-libc-locking.so                 OK  (0.772 s)
+  TEST tst-math.so                         OK  (0.312 s)
+  TEST tst-memmove.so                      OK  (0.325 s)
+  TEST tst-mmap-file.so                    OK  (0.398 s)
+  TEST tst-mmap.so                         SKIPPED
+  TEST tst-mmx-fpu.so                      OK  (0.686 s)
+  TEST tst-namespace.so                    SKIPPED
+  TEST tst-net_if_test.so                  OK  (0.310 s)
+  TEST tst-netlink.so                      OK  (0.337 s)
+  TEST tst-non-fpic.so                     OK  (0.297 s)
+  TEST tst-non-pie.so                      OK  (0.304 s)
+  TEST tst-nway-merger.so                  OK  (0.337 s)
+  TEST tst-openat.so                       OK  (0.305 s)
+  TEST tst-options.so                      OK  (0.314 s)
+  TEST tst-pin.so                          SKIPPED
+  TEST tst-pipe.so                         OK  (6.489 s)
+  TEST tst-poll.so                         OK  (0.358 s)
+  TEST tst-preempt.so                      SKIPPED
+  TEST tst-printf.so                       OK  (0.310 s)
+  TEST tst-promise.so                      OK  (0.313 s)
+  TEST tst-pthread-affinity-inherit.so     OK  (0.510 s)
+  TEST tst-pthread-affinity.so             OK  (0.322 s)
+  TEST tst-pthread-barrier.so              OK  (0.348 s)
+  TEST tst-pthread-clock.so                OK  (4.326 s)
+  TEST tst-pthread-create.so               OK  (0.297 s)
+  TEST tst-pthread-setcancelstate.so       OK  (0.310 s)
+  TEST tst-pthread-tsd.so                  OK  (0.347 s)
+  TEST tst-pthread.so                      OK  (0.812 s)
+  TEST tst-queue-mpsc.so                   OK  (1.903 s)
+  TEST tst-rcu-hashtable.so                SKIPPED
+  TEST tst-rcu-list.so                     SKIPPED
+  TEST tst-read.so                         OK  (0.323 s)
+  TEST tst-readdir-rofs.so                 OK  (0.324 s)
+  TEST tst-realloc.so                      OK  (0.383 s)
+  TEST tst-regex.so                        OK  (0.316 s)
+  TEST tst-reloc.so                        OK  (0.305 s)
+  TEST tst-remove.so                       OK  (0.308 s)
+  TEST tst-resolve.so                      OK  (0.302 s)
+  TEST tst-ring-spsc-wraparound.so         OK  (0.315 s)
+  TEST tst-run.so                          SKIPPED
+  TEST tst-sampler.so                      SKIPPED
+  TEST tst-seek.so                         OK  (0.307 s)
+  TEST tst-select-timeout.so               OK  (0.622 s)
+  TEST tst-sem-timed-wait.so               SKIPPED
+  TEST tst-semaphore.so                    OK  (0.351 s)
+  TEST tst-sendfile.so                     OK  (0.586 s)
+  TEST tst-setjmp.so                       OK  (0.306 s)
+  TEST tst-shm.so                          OK  (0.321 s)
+  TEST tst-sigaction.so                    OK  (0.308 s)
+  TEST tst-sigaltstack.so                  OK  (0.312 s)
+  TEST tst-sigwait.so                      OK  (0.312 s)
+  TEST tst-sleep.so                        OK  (2.309 s)
+  TEST tst-small-malloc.so                 SKIPPED
+  TEST tst-stat.so                         OK  (0.314 s)
+  TEST tst-stdio-rofs.so                   OK  (0.499 s)
+  TEST tst-strerror_r.so                   OK  (0.305 s)
+  TEST tst-string.so                       OK  (0.313 s)
+  TEST tst-symlink-rofs.so                 OK  (0.322 s)
+  TEST tst-symlink.so                      OK  (1.349 s)
+  TEST tst-syscall.so                      OK  (0.304 s)
+  TEST tst-tcp-cork.so                     OK  (4.830 s)
+  TEST tst-tcp-listen.so                   OK  (0.495 s)
+  TEST tst-tcp-nbwrite.so                  OK  (2.527 s)
+  TEST tst-tcp-siocoutq.so                 OK  (6.304 s)
+  TEST tst-tcp-v6.so                       OK  (0.306 s)
+  TEST tst-thread-local.so                 OK  (0.325 s)
+  TEST tst-threadcomplete.so               SKIPPED
+  TEST tst-time.so                         OK  (1.325 s)
+  TEST tst-timer-set.so                    OK  (0.316 s)
+  TEST tst-timerfd.so                      OK  (12.471 s)
+  TEST tst-tls-gold.so                     OK  (0.325 s)
+  TEST tst-tls-pie.so                      OK  (0.315 s)
+  TEST tst-tls.so                          OK  (0.316 s)
+  TEST tst-tracepoint.so                   SKIPPED
+  TEST tst-truncate.so                     OK  (0.296 s)
+  TEST tst-ttyname.so                      OK  (0.304 s)
+  TEST tst-uio.so                          OK  (1.374 s)
+  TEST tst-unordered-ring-mpsc.so          SKIPPED
+  TEST tst-utimensat.so                    OK  (0.321 s)
+  TEST tst-utimes.so                       OK  (0.321 s)
+  TEST tst-vblk.so                         OK  (0.332 s)
+  TEST tst-vfs.so                          SKIPPED
+  TEST tst-wait-for.so                     SKIPPED
+  TEST tst-wctype.so                       OK  (0.315 s)
+  TEST tst-without-namespace.so            SKIPPED
+  TEST tst-yield.so                        OK  (1.191 s)
+  TEST tst-zfs-mount.so                    OK  (0.317 s)
+OK (142 tests run, 121.498 s)
