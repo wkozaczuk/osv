@@ -114,6 +114,8 @@ int main(int argc, char *argv[])
 
     /* Force utimensat to fail when dirfd was AT_FDCWD and pathname is NULL */
     ret = utimensat(AT_FDCWD, NULL, times, 0);
+    printf("Ret:%d, errno:%d\n", ret, errno);
+    //report(ret == -1 && errno == EINVAL, "utimensat fails when dirfd is AT_FDCWD and pathname is NULL");
     report(ret == -1 && errno == EFAULT, "utimensat fails when dirfd is AT_FDCWD and pathname is NULL");
 
     /* Force utimensat to fail with invalid flags */
