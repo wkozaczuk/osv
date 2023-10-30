@@ -48,6 +48,7 @@
 #include <sys/prctl.h>
 #include <sys/timerfd.h>
 #include <sys/resource.h>
+#include <sys/shm.h>
 #include <termios.h>
 #include <poll.h>
 #include "tls-switch.hh"
@@ -58,7 +59,7 @@
 
 extern "C" int eventfd2(unsigned int, int);
 
-extern "C" OSV_LIBC_API long gettid()
+extern "C" OSV_LIBC_API pid_t gettid()
 {
     return sched::thread::current()->id();
 }
@@ -239,6 +240,11 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 }
 #define __NR_long_mmap __NR_mmap
 
+// Only void* return value of mmap is type casted, as syscall returns long.
+long long_shmat(int shmid, const void *shmaddr, int shmflg) {
+    return (long) shmat(shmid, shmaddr, shmflg);
+}
+#define __NR_long_shmat __NR_shmat
 
 #define SYSCALL0(fn) case (__NR_##fn): do { long ret = fn(); trace_syscall_##fn(ret); return ret; } while (0)
 
@@ -373,6 +379,16 @@ int rt_sigaction(int sig, const struct k_sigaction * act, struct k_sigaction * o
 int rt_sigprocmask(int how, sigset_t * nset, sigset_t * oset, size_t sigsetsize)
 {
     return sigprocmask(how, nset, oset);
+}
+
+int rt_sigtimedwait(const sigset_t *set, siginfo_t *info, const struct timespec *timeout, size_t sigsetsize)
+{
+    if (!timeout || (!timeout->tv_sec && !timeout->tv_nsec)) {
+        return sigwaitinfo(set, info);
+    } else {
+        errno = ENOSYS;
+        return -1;
+    }
 }
 
 #define __NR_sys_exit __NR_exit
@@ -576,6 +592,9 @@ static long sys_brk(void *addr)
     }
 }
 
+#define __NR_sys_utimensat __NR_utimensat
+int sys_utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags);
+
 #ifdef SYS_open
 TRACEPOINT(trace_syscall_open, "%d <= \"%s\" 0x%x", int, const char *, int);
 #endif
@@ -602,6 +621,7 @@ TRACEPOINT(trace_syscall_long_mmap, "0x%x <= 0x%x %lu %d %d %d %lu", long, void 
 TRACEPOINT(trace_syscall_munmap, "%d <= 0x%x %lu", int, void *, size_t);
 TRACEPOINT(trace_syscall_rt_sigaction, "%d <= %d %p %p %lu", int, int, const struct k_sigaction *, struct k_sigaction *, size_t);
 TRACEPOINT(trace_syscall_rt_sigprocmask, "%d <= %d %p %p %lu", int, int, sigset_t *, sigset_t *, size_t);
+TRACEPOINT(trace_syscall_rt_sigtimedwait, "%d <= %p %p %p %lu", int, const sigset_t *, siginfo_t *, const struct timespec *, size_t);
 TRACEPOINT(trace_syscall_sys_exit, "%d <= %d", int, int);
 TRACEPOINT(trace_syscall_sigaltstack, "%d <= %p %p", int, const stack_t *, stack_t *);
 #ifdef SYS_select
@@ -694,7 +714,7 @@ TRACEPOINT(trace_syscall_chdir, "%d <= \"%s\"", int, const char *);
 TRACEPOINT(trace_syscall_faccessat, "%d <= %d \"%s\" %d %d", int, int, const char *, int, int);
 TRACEPOINT(trace_syscall_kill, "%d <= %d %d", int, pid_t, int);
 TRACEPOINT(trace_syscall_alarm, "%d <= %u", int, unsigned int);
-TRACEPOINT(trace_syscall_utimensat, "%d <= %d \"%s\" %p %d", int, int, const char *, const struct timespec*, int);
+TRACEPOINT(trace_syscall_sys_utimensat, "%d <= %d \"%s\" %p %d", int, int, const char *, const struct timespec*, int);
 TRACEPOINT(trace_syscall_symlink, "%d <= \"%s\" \"%s\"", int, const char *, const char *);
 TRACEPOINT(trace_syscall_rmdir, "%d <= \"%s\"", int, const char *);
 TRACEPOINT(trace_syscall_sethostname, "%d <= \"%s\" %d", int, const char *, int);
@@ -715,6 +735,10 @@ TRACEPOINT(trace_syscall_prlimit64, "%d <= %u %d %p %p", int, pid_t, int, const 
 TRACEPOINT(trace_syscall_msync, "%d <= 0x%x %lu %d", int, void *, size_t, int);
 TRACEPOINT(trace_syscall_rename, "%d <= %s %s", int, const char *, const char *);
 TRACEPOINT(trace_syscall_truncate, "%d <= %s %ld", int, const char *, off_t);
+TRACEPOINT(trace_syscall_long_shmat, "0x%x <= %d 0x%x %d", long, int, const void *, int);
+TRACEPOINT(trace_syscall_shmctl, "%d <= %d %d %p", int, int, int, struct shmid_ds *);
+TRACEPOINT(trace_syscall_shmdt, "%d <= 0x%x", int, const void *)
+TRACEPOINT(trace_syscall_shmget, "%d <= %d %lu %d", int, key_t, size_t, int);
 
 OSV_LIBC_API long syscall(long number, ...)
 {
@@ -749,6 +773,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL2(munmap, void *, size_t);
     SYSCALL4(rt_sigaction, int, const struct k_sigaction *, struct k_sigaction *, size_t);
     SYSCALL4(rt_sigprocmask, int, sigset_t *, sigset_t *, size_t);
+    SYSCALL4(rt_sigtimedwait, const sigset_t *, siginfo_t *, const struct timespec *, size_t);
     SYSCALL1(sys_exit, int);
     SYSCALL2(sigaltstack, const stack_t *, stack_t *);
 #ifdef SYS_select
@@ -841,7 +866,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL4(faccessat, int, const char *, int, int);
     SYSCALL2(kill, pid_t, int);
     SYSCALL1(alarm, unsigned int);
-    SYSCALL4(utimensat, int, const char *, const struct timespec*, int);
+    SYSCALL4(sys_utimensat, int, const char *, const struct timespec*, int);
     SYSCALL2(symlink, const char *, const char *);
     SYSCALL1(rmdir, const char *);
     SYSCALL2(sethostname, const char *, int);
@@ -864,6 +889,10 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL3(msync, void *, size_t, int);
     SYSCALL2(rename, const char *, const char *);
     SYSCALL2(truncate, const char *, off_t);
+    SYSCALL3(long_shmat, int, const void *, int);
+    SYSCALL3(shmctl, int, int, struct shmid_ds *);
+    SYSCALL1(shmdt, const void *);
+    SYSCALL3(shmget, key_t, size_t, int);
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);

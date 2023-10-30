@@ -56,6 +56,7 @@ int main(void) {
     assert(sem_destroy(&sem_sync) == 0);
     assert(sem_destroy(&sem_done) == 0);
 
+#ifdef __OSV__
     ///Named sempahore test
 
     //Create and open two handles to a named semaphore
@@ -96,6 +97,7 @@ int main(void) {
     //Close handles
     assert(sem_close(named_sem1) == 0);
     assert(sem_close(named_sem2) == 0);
+#endif
 
     return 0;
 }

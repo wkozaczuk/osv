@@ -639,7 +639,12 @@ int __fxstatat(int ver, int dirfd, const char *pathname, struct stat *st,
     }
 
     if (pathname[0] == '/' || dirfd == AT_FDCWD) {
-        return stat(pathname, st);
+        if (flags & AT_SYMLINK_NOFOLLOW) {
+            return lstat(pathname, st);
+        }
+        else {
+            return stat(pathname, st);
+        }
     }
     // If AT_EMPTY_PATH and pathname is an empty string, fstatat() operates on
     // dirfd itself, and in that case it doesn't have to be a directory.
@@ -2055,7 +2060,22 @@ int utimensat(int dirfd, const char *pathname, const struct timespec times[2], i
 {
     trace_vfs_utimensat(pathname);
 
-    auto error = sys_utimensat(dirfd, pathname, times, flags);
+    auto error = sys_utimensat(dirfd, pathname, times, flags, false);
+    if (error) {
+        trace_vfs_utimensat_err(error);
+        errno = error;
+        return -1;
+    }
+
+    trace_vfs_utimensat_ret();
+    return 0;
+}
+
+int sys_utimensat(int dirfd, const char *pathname, const struct timespec times[2], int flags)
+{
+    trace_vfs_utimensat(pathname);
+
+    auto error = sys_utimensat(dirfd, pathname, times, flags, true);
     if (error) {
         trace_vfs_utimensat_err(error);
         errno = error;

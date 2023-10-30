@@ -99,6 +99,7 @@ int main(int ac, char** av)
     sleep(1);
 
     s = pthread_getcpuclockid(pthread_self(), &cid);
+    printf("Current tid:%d\n", gettid());
     assert(s == 0);
     s = pthread_getcpuclockid(thread, &ccid);
     assert(s == 0);
@@ -108,7 +109,7 @@ int main(int ac, char** av)
     // with our id should yield the same results. Acceptable differences
     // are only due to callers being separated in time.
     auto self = pclock(CLOCK_THREAD_CPUTIME_ID);
-    printf("-> Ale 2.1\n");
+    printf("-> Ale 2.1 cid=%d, %x\n", cid, cid);
     auto selfid = pclock(cid);
     printf("-> Ale 2.2\n");
 

@@ -325,7 +325,7 @@ int pthread_getcpuclockid(pthread_t thread, clockid_t *clock_id)
     if (clock_id) {
         pthread *p = pthread::from_libc(thread);
         auto id = p->_thread->id();
-        *clock_id = id + _OSV_CLOCK_SLOTS;
+        *clock_id = (-id-1)*8U + 6;
     }
     return 0;
 }

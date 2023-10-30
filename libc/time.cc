@@ -96,11 +96,13 @@ int clock_gettime(clockid_t clk_id, struct timespec* ts)
         break;
 
     default:
-        if (clk_id < _OSV_CLOCK_SLOTS) {
-            return libc_error(EINVAL);
-        } else {
-            auto thread = sched::thread::find_by_id(clk_id - _OSV_CLOCK_SLOTS);
+        pid_t tid = (-clk_id-2)/8;
+        printf("clock_gettime: tid=%d\n", tid);
+        auto thread = sched::thread::find_by_id(tid);
+        if (thread) {
             fill_ts(thread->thread_clock(), ts);
+        } else {
+            return libc_error(EINVAL);
         }
     }
 

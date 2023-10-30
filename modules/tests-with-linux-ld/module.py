@@ -10,3 +10,5 @@ if host_arch == 'x86_64' and os.getenv('ARCH') == 'aarch64':
         os.remove(_java_test_commands_file)
 else:
     api.require('java-tests')
+
+api.require('dl_tests')

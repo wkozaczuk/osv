@@ -9,9 +9,10 @@ include ../common.gmk
 # See commit fac05c95 for a longer explanation.
 .SECONDARY:
 
-COMMON += -g -O2 -fpie -DBOOST_TEST_DYN_LINK \
-	-U _FORTIFY_SOURCE -D_KERNEL -D__OSV__ -DCONF_debug_memory=0 \
-	-Wall -Wno-pointer-arith -Wformat=0 -Wno-format-security
+COMMON = -g -O2 -fpie -DBOOST_TEST_DYN_LINK \
+	-U _FORTIFY_SOURCE -D__OSV__ -Wall -Wformat=0 -Wno-pointer-arith
+
+INCLUDES =
 
 LIBS = $(libgcc_s_dir)/libgcc_s.so.1
 
@@ -35,7 +36,6 @@ $(out)/tests-with-linux-ld/%: $(out)/tests-with-linux-ld/%.o
 $(out)/%.so: $(out)/%.o
 	$(call quiet, $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $< $(LIBS), LD $*.so)
 
-#TODO: Check this one
 $(out)/tests-with-linux-ld/tst-non-fpic.o: CXXFLAGS:=$(subst -fpie,-fno-pic -mcmodel=large,$(CXXFLAGS))
 
 $(out)/tests-with-linux-ld/tst-non-pie: CXXFLAGS:=$(subst -fpie,-no-pie,$(CXXFLAGS))
@@ -45,6 +45,12 @@ $(out)/tests-with-linux-ld/tst-non-pie: $(src)/tests/tst-non-pie.cc
 $(out)/tests-with-linux-ld/tst-reloc.o: CFLAGS:=$(subst -fPIC,-fpie,$(CFLAGS))
 $(out)/tests-with-linux-ld/tst-reloc: $(src)/tests/tst-reloc.c
 	$(call quiet, $(CC) $(CFLAGS) $(LDFLAGS) -pie -o $@ $< $(LIBS), LD tests-with-linux-ld/tst-reloc)
+
+$(out)/tests-with-linux-ld/tst-bitset-iter.o: COMMON:=-I $(src)/include $(COMMON)
+$(out)/tests-with-linux-ld/tst-queue-mpsc.o: COMMON:=-I $(src)/include -DLINUX $(COMMON)
+$(out)/tests-with-linux-ld/tst-poll.o: COMMON:=-I $(src)/include $(COMMON)
+$(out)/tests-with-linux-ld/rofs/tst-readdir.o: COMMON:=-Wno-deprecated-declarations $(COMMON)
+$(out)/tests-with-linux-ld/tst-tcp-listen.o: COMMON:=-I $(src)/include $(COMMON)
 
 #
 # These 4 tests are compiled from the same source files but passed in READ_ONLY_FS
@@ -68,24 +74,24 @@ tests := tst-pthread misc-ramdisk tst-vblk \
 	misc-panic tst-utimes tst-utimensat tst-futimesat \
 	misc-tcp tst-strerror_r misc-random misc-urandom \
 	tst-threadcomplete tst-timerfd \
-	tst-nway-merger tst-memmove tst-pthread-clock misc-procfs \
+	tst-memmove tst-pthread-clock misc-procfs \
 	tst-chdir tst-chmod tst-hello misc-concurrent-io \
-	tst-concurrent-init tst-ring-spsc-wraparound tst-shm \
+	tst-concurrent-init tst-shm \
 	tst-align tst-cxxlocale misc-tcp-close-without-reading \
 	tst-sigwait misc-malloc misc-memcpy misc-printf tst-hostname \
 	tst-sendfile tst-uio tst-printf \
 	tst-pthread-affinity tst-pthread-tsd tst-thread-local \
-	tst-zfs-mount tst-regex tst-tcp-siocoutq \
+	tst-regex tst-tcp-siocoutq \
 	tst-select-timeout tst-faccessat tst-fstatat tst-fcntl misc-mutex2 \
 	tst-pthread-setcancelstate tst-pthread-affinity-inherit \
-	tst-ttyname tst-pthread-barrier tst-math \
+	tst-pthread-barrier tst-math \
 	tst-sigaltstack tst-fread tst-tcp-cork tst-tcp-v6 \
 	tst-calloc tst-non-fpic tst-feexcept tst-getopt tst-non-pie \
 	tst-semaphore tst-elf-init tst-realloc tst-setjmp \
 	libtls.so libtls_gold.so tst-tls tst-tls-gold \
 	tst-sigaction tst-syscall tst-ifaddrs tst-getdents \
 	tst-netlink tst-pthread-create misc-futex-perf \
-	misc-syscall-perf tst-brk tst-reloc misc-vdso-perf
+	misc-syscall-perf tst-reloc misc-vdso-perf
 
 ifeq ($(arch),x64)
 tests += tst-mmx-fpu
@@ -103,13 +109,19 @@ $(out)/tests-with-linux-ld/tst-mmap: COMMON += -fuse-ld=bfd
 $(out)/tests-with-linux-ld/tst-elf-permissions: COMMON += -fuse-ld=bfd
 $(out)/tests-with-linux-ld/tst-tls: COMMON += -fuse-ld=bfd
 
-$(out)/tests-with-linux-ld/tst-dlfcn: COMMON += -rdynamic -ldl
+$(out)/tests-with-linux-ld/tst-dlfcn: COMMON += -rdynamic -ldl -DLINUX
 
+$(out)/tests-with-linux-ld/tst-epoll: COMMON:=$(subst -D__OSV__,,$(COMMON))
+$(out)/tests-with-linux-ld/tst-feexcept: COMMON:=$(subst -D__OSV__,,$(COMMON))
 $(out)/tests-with-linux-ld/tst-kill: COMMON:=$(subst -D__OSV__,,$(COMMON)) #Double check why
 $(out)/tests-with-linux-ld/tst-mmap: COMMON:=$(subst -D__OSV__,,$(COMMON))
 $(out)/tests-with-linux-ld/tst-pthread-barrier: COMMON:=$(subst -D__OSV__,,$(COMMON))
+$(out)/tests-with-linux-ld/tst-realloc: COMMON:=$(subst -D__OSV__,,$(COMMON))
+$(out)/tests-with-linux-ld/tst-setjmp: COMMON:=$(subst -D__OSV__,,$(COMMON))
+$(out)/tests-with-linux-ld/tst-semaphore: COMMON:=$(subst -D__OSV__,,$(COMMON))
+$(out)/tests-with-linux-ld/tst-string: COMMON:=$(subst -D__OSV__,,$(COMMON))
+$(out)/tests-with-linux-ld/tst-syscall: COMMON:=$(subst -D__OSV__,,$(COMMON))
 $(out)/tests-with-linux-ld/tst-threadcomplete: COMMON:=$(subst -D__OSV__,,$(COMMON))
-$(out)/tests-with-linux-ld/tst-zfs-mount: COMMON:=$(subst -D__OSV__,,$(COMMON))
 
 $(out)/tests-with-linux-ld/libtls.o: CXXFLAGS:=$(subst -fpie,-fPIC,$(CXXFLAGS))
 

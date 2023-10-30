@@ -16,7 +16,7 @@ def tcp_close_without_reading(hypervisor, host_name):
     run_args = []
     if os.uname().machine != arch:
         run_args=['--arch', arch, '-c', '2']
-    server = run_command_in_guest('/tests/misc-tcp-close-without-reading.so',
+    server = run_command_in_guest('/lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/misc-tcp-close-without-reading',
         forward=[(host_port, 7777)], hypervisor=hypervisor, run_py_args=run_args)
 
     wait_for_line(server, 'listening...')

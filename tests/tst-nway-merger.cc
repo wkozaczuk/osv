@@ -12,7 +12,6 @@
 #include <list>
 #include <array>
 #include <typeinfo>
-//#include <boost/lockfree/spsc_queue.hpp>
 #include "lockfree/ring.hh"
 
 using namespace std;
