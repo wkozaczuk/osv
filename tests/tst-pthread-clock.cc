@@ -93,30 +93,24 @@ int main(int ac, char** av)
     auto wall = br - base;
     pass_if((t * 100) / wall > 50, "Time not being spent by main thread");
 
-    printf("-> Ale\n");
     s = pthread_create(&thread, NULL, thread_start, NULL);
     assert(s == 0);
     sleep(1);
 
     s = pthread_getcpuclockid(pthread_self(), &cid);
-    printf("Current tid:%d\n", gettid());
     assert(s == 0);
     s = pthread_getcpuclockid(thread, &ccid);
     assert(s == 0);
-    printf("-> Ale 2\n");
 
     // Asking for CLOCK_THREAD_CPUTIME_ID or asking for a specific thread
     // with our id should yield the same results. Acceptable differences
     // are only due to callers being separated in time.
     auto self = pclock(CLOCK_THREAD_CPUTIME_ID);
-    printf("-> Ale 2.1 cid=%d, %x\n", cid, cid);
     auto selfid = pclock(cid);
-    printf("-> Ale 2.2\n");
 
     // This is the child thread. It ran while we slept for 1 second.
     // We won't run for the full second, but should be close to it.
     auto child = pclock(ccid);
-    printf("-> Ale 3\n");
 
     pass_if((child * 100) / 1000000000 > 80, "Child thread ran for a lot less than one second");
     pass_if((self * 100) / selfid > 98, "thread clock mismatch");

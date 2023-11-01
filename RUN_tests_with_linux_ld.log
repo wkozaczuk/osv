@@ -1,48 +1,31 @@
-  TEST java-perms                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /usr/lib/jvm/java/bin/java -cp /tests/java/tests.jar io.osv.TestDomainPermissions ! --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+  TEST java-perms                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /usr/bin/java -cp /tests/java/tests.jar io.osv.TestDomainPermissions ! --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.79 ms
-Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /usr/lib/jvm/java/bin/java -cp /tests/java/tests.jar io.osv.TestDomainPermissions !
-syscall(): unimplemented system call 334
-syscall(): unimplemented system call 439
- OK  (0.509 s)
-  TEST java_no_wrapper                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /usr/lib/jvm/java/bin/java -cp /tests/java/tests.jar org.junit.runner.JUnitCore io.osv.BasicTests ! --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+Booted up in 122.46 ms
+Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /usr/bin/java -cp /tests/java/tests.jar io.osv.TestDomainPermissions !
+/usr/bin/java: error while loading shared libraries: libjli.so: cannot open shared object file: No such file or directory
+ OK  (0.314 s)
+  TEST java_no_wrapper                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /usr/bin/java -cp /tests/java/tests.jar org.junit.runner.JUnitCore io.osv.BasicTests ! --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 117.35 ms
-Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /usr/lib/jvm/java/bin/java -cp /tests/java/tests.jar org.junit.runner.JUnitCore io.osv.BasicTests !
-syscall(): unimplemented system call 334
-syscall(): unimplemented system call 439
-JUnit version 4.13.1
-..WARNING: fcntl(F_SETLK) stubbed
-Oct 30, 2023 11:41:25 PM io.osv.LoggingTest lambda$testLogger$0
-INFO: ctx
-Oct 30, 2023 11:41:25 PM io.osv.LoggingTest lambda$testLogger$0
-WARNING: ctx
-Oct 30, 2023 11:41:25 PM io.osv.LoggingTest lambda$testLogger$0
-INFO: ctx
-Oct 30, 2023 11:41:25 PM io.osv.LoggingTest lambda$testLogger$0
-WARNING: ctx
-
-Time: 0.116
-
-OK (2 tests)
-
- OK  (0.690 s)
+Booted up in 124.48 ms
+Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /usr/bin/java -cp /tests/java/tests.jar org.junit.runner.JUnitCore io.osv.BasicTests !
+/usr/bin/java: error while loading shared libraries: libjli.so: cannot open shared object file: No such file or directory
+ OK  (0.323 s)
   TEST tcp_close_without_reading_on_fc     SKIPPED
   TEST tcp_close_without_reading_on_qemu  Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/misc-tcp-close-without-reading --pass-args=-monitor unix:qemu-monitor,server,nowait --forward tcp::7777-:7777 --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 117.30 ms
+Booted up in 124.25 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/misc-tcp-close-without-reading
 syscall(): unimplemented system call 334
 listening...
- OK  (0.426 s)
+ OK  (0.421 s)
   TEST tracing_smoke_test                  SKIPPED
   TEST tst-af-local                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-af-local --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.02 ms
+Booted up in 115.29 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-af-local
 syscall(): unimplemented system call 334
 PASS: socketpair call
@@ -76,11 +59,11 @@ PASS: close after SHUT_WR
 PASS: close when other end is SHUT_WR
 PASS: create many sockets
 SUMMARY: 30 tests, 0 failures
- OK  (2.435 s)
+ OK  (2.429 s)
   TEST tst-align                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-align --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 128.67 ms
+Booted up in 115.94 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-align
 syscall(): unimplemented system call 334
 Testing posix_memalign alignment=8, size=8
@@ -307,31 +290,31 @@ Testing posix_memalign alignment=16384, size=8
 PASS: posix_memalign 16384 8
 PASS: achieved desired alignment
 SUMMARY: 144 tests, 0 failures
- OK  (0.454 s)
+ OK  (0.444 s)
   TEST tst-bitset-iter                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-bitset-iter --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 115.53 ms
+Booted up in 116.03 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-bitset-iter
 syscall(): unimplemented system call 334
 Running 8 test cases...
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (0.326 s)
+[0;39;49m OK  (0.318 s)
   TEST tst-bsd-tcp1                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-bsd-tcp1 --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.81 ms
+Booted up in 121.02 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-bsd-tcp1
 syscall(): unimplemented system call 334
 Running 2 test cases...
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (1.338 s)
+[0;39;49m OK  (1.347 s)
   TEST tst-calloc                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-calloc --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.81 ms
+Booted up in 117.69 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-calloc
 syscall(): unimplemented system call 334
 PASS: calloc(1, 10)
@@ -339,35 +322,35 @@ PASS: calloc(2, 5)
 PASS: calloc(1, 0)
 PASS: calloc(0, 1)
 PASSED
- OK  (0.322 s)
+ OK  (0.317 s)
   TEST tst-chdir                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-chdir --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.94 ms
+Booted up in 120.73 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-chdir
 syscall(): unimplemented system call 334
 SUMMARY: 20 tests, 0 failures
- OK  (0.319 s)
+ OK  (0.328 s)
   TEST tst-chdir-rofs                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-chdir-rofs --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 114.31 ms
+Booted up in 120.80 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-chdir-rofs
 syscall(): unimplemented system call 334
 SUMMARY: 24 tests, 0 failures
- OK  (0.319 s)
+ OK  (0.314 s)
   TEST tst-chmod                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-chmod --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 115.04 ms
+Booted up in 114.39 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-chmod
 syscall(): unimplemented system call 334
 SUMMARY: 26 tests, 0 failures
- OK  (0.326 s)
+ OK  (0.314 s)
   TEST tst-concurrent-init                Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-concurrent-init --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 115.12 ms
+Booted up in 117.16 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-concurrent-init
 syscall(): unimplemented system call 334
 constructing
@@ -383,19 +366,19 @@ PASS: thread 3 slow enough
 PASS: thread 4
 PASS: thread 4 slow enough
 SUMMARY: 11 tests, 0 failures
- OK  (1.325 s)
+ OK  (1.323 s)
   TEST tst-concurrent-read-rofs           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-concurrent-read-rofs --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 117.02 ms
+Booted up in 118.41 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-concurrent-read-rofs
 syscall(): unimplemented system call 334
 Identical count 1000
- OK  (0.318 s)
+ OK  (0.315 s)
   TEST tst-console                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-console --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 118.58 ms
+Booted up in 119.69 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-console
 syscall(): unimplemented system call 334
 *** try inputting something here in 3 seconds (followed by newline) ***
@@ -407,21 +390,21 @@ PASS: open() /dev/console for reading
 PASS: open()ed fd is a tty
 PASS: close opened()ed fd
 SUMMARY: 6 tests, 0 failures
- OK  (6.325 s)
+ OK  (6.336 s)
   TEST tst-ctype                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-ctype --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.84 ms
+Booted up in 116.95 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-ctype
 syscall(): unimplemented system call 334
 Running 32 test cases...
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (0.340 s)
+[0;39;49m OK  (0.316 s)
   TEST tst-cxxlocale                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-cxxlocale --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.33 ms
+Booted up in 115.97 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-cxxlocale
 syscall(): unimplemented system call 334
 PASS: nonexistant locale throws exception
@@ -445,22 +428,22 @@ PASS: std::tolower with default locale
 PASS: std::tolower with default locale
 PASS: std::tolower with default locale
 SUMMARY: 20 tests, 0 failures
- OK  (0.339 s)
+ OK  (0.331 s)
   TEST tst-dlfcn                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-dlfcn --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.59 ms
+Booted up in 117.95 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-dlfcn
 syscall(): unimplemented system call 334
 Running 14 test cases...
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (0.324 s)
+[0;39;49m OK  (0.333 s)
   TEST tst-dns-resolver                    SKIPPED
   TEST tst-elf-init                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-elf-init --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 117.97 ms
+Booted up in 122.47 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-elf-init
 syscall(): unimplemented system call 334
 Constructor
@@ -469,20 +452,20 @@ test_symbol_lookup_function at level: 1
 test_symbol_lookup_function at level: 0
 Main
 test_symbol_lookup_function at level: 0
- OK  (0.318 s)
+ OK  (0.328 s)
   TEST tst-elf-permissions                Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-elf-permissions --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.34 ms
+Booted up in 118.45 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-elf-permissions
 syscall(): unimplemented system call 334
 Running elf segments permissions tests
 elf segments permissions tests succeeded
- OK  (0.321 s)
+ OK  (0.327 s)
   TEST tst-epoll                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-epoll --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.41 ms
+Booted up in 121.52 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-epoll
 syscall(): unimplemented system call 334
 PASS: epoll_create
@@ -548,78 +531,19 @@ PASS: socketpair() succeeded
 PASS: epoll_crtl() succeeded
 PASS: EPOLLRDHUP active
 SUMMARY: 62, 0 failures
- OK  (1.465 s)
+ OK  (1.469 s)
   TEST tst-eventfd                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-eventfd --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 123.70 ms
+Booted up in 117.91 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-eventfd
 syscall(): unimplemented system call 334
-eventfd: running basic test:  PASS
-eventfd: Running semaphore_test:  PASS
-eventfd: running simple threaded test:  PASS
-eventfd: running poll test: page fault outside application, addr: 0x000020008649d000
-[registers]
-RIP: 0x000000004037efbf <sched::thread::complete()+143>
-RFL: 0x0000000000010202  CS:  0x0000000000000008  SS:  0x0000000000000010
-RAX: 0x000020008649d920  RBX: 0x000000004086ea60  RCX: 0x0000000000000025  RDX: 0x000040000008e7a8
-RSI: 0x000040000169f980  RDI: 0x000040000008b040  RBP: 0x000040000256fae0  R8:  0x00000000223a92ddpage fault outside application, addr: 0x0000200084f88000
-[registers]
-RIP: 0x000000004037efbf <sched::thread::complete()+143>
-RFL: 0x0000000000010202  CS:  0x0000000000000008  SS:  0x0000000000000010
-RAX: 0x0000200084f88920  RBX: 0x000000004086ea60  RCX: 0x0000000000000027  RDX: 0x000040000008e7a8
-RSI: 0x000040000169f980  RDI: 0x000040000008b040  RBP: 0x0000400002376ae0  R8:  0x0000000022877ae9page fault outside application, addr: 0x0000200085790000
-[registers]
-RIP: 0x000000004037efbf <sched::thread::complete()+143>
-RFL: 0x0000000000010202  CS:  0x0000000000000008  SS:  0x0000000000000010
-RAX: 0x0000200085790920  RBX: 0x000000004086ea60  RCX: 0x0000000000000028  RDX: 0x000040000008e7a8
-RSI: 0x000040000008e540  RDI: 0x000040000008b040  RBP: 0x0000400002403ae0  R8:  0x0000000022d3f85page fault outside application, addr: 0x000020008669f000
-[registers]
-RIP: 0x000000004037efbf <sched::thread::complete()+143>
-RFL: 0x0000000000010202  CS:  0x0000000000000008  SS:  0x0000000000000010
-RAX: 0x000020008669f920  RBX: 0x000000004086ea60  RCX: 0x0000000000000026  RDX: 0x000040000008e7a8
-RSI: 0x0000400000993f90  RDI: 0x000040000008b040  RBP: 0x00004000025a7ae0  R8:  0x0000000023page fault outside application, addr: 0x0000200086ba4000
-[registers]
-RIP: 0x000000004037efbf <sched::thread::complete()+143>
-RFL: 0x0000000000010202  CS:  0x0000000000000008  SS:  0x0000000000000010
-RAX: 0x0000200086ba4920  RBX: 0x000000004086ea60  RCX: 0x0000000000000838  RDX: 0x0000000000000000
-RSI: 0x0000000000000038  RDI: 0x00006000001743f0  RBP: 0x0000400002633ae0  R8:  0x000060page fault outside application, addr: 0x0000200085b94000
-[registers]
-RIP: 0x000000004037efbf <sched::thread::complete()+143>
-RFL: 0x0000000000010202  CS:  0x0000000000000008  SS:  0x0000000000000010
-RAX: 0x0000200085b94920  RBX: 0x000000004086ea60  RCX: 0x0000000000000838  RDX: 0x0000000000000000
-RSI: 0x0000000000000038  RDI: 0x00006000001743f0  RBP: 0x0000400002473ae0  R8:  0x0000600000093960page fault outside application, addr: 0x0000200086da6000
-[registers]
-RIP: 0x000000004037efbf <sched::thread::complete()+143>
-RFL: 0x0000000000010202  CS:  0x0000000000000008  SS:  0x0000000000000010
-RAX: 0x0000200086da6920  RBX: 0x000000004086ea60  RCX: 0x0000000000000024  RDX: 0x000040000008e7a8
-pa
-ge faultR00090:02 8 a30fx300000 0 0R01000:2 80ax30f0300000 0 0R01000:0 000x000000 0 0R01010:0 000x00000  R11: 0x0000000000000000  R12:[ r0exg0i0s0t0e4r0s0]00
-2459040
-RR1133::  00xx00000000000000002288aa33ff330000    RR1144::  00xx00000000000000000000000000000000    RR1155::  00x0000000000000000  RSP: 0x00R0F0L4:0 000x0020407030a0d0000
-0010202  CS: A b0oxr0t0e0d00
-00
-0[0b0a0c0k0t0r0a8c e ]SS
-:  0x0000000000000010
-0x0000RxA0X0:0 002x000000806290a020982609 a 2R9B2X0:   0RxB0X0:0 00x000000004086ea60  RCX: 0x00x00000000000000004poaugtes ifdaeu latp poluitcsaitdieo na,p paldidcration, addr: 0x00002000860990000
-x000000004030aa82 [<r?e?g?i+s1t0e7r6s9]31
-202>
-RIP: 0x00000000401x50 0<0s0c0h0e0d0:4:0t3h7rfe1a1d5: :<esxcihte(d):+:2t1h>re
-a de:(:)e+x1i4t3(>)+
-21>
-RFL: 0x0000000000010202  CS:01x20107030>00
-0 00400030700020a0d0 0<0s8y s cSaSl:l + 102x107030>00
-00000000010
-RAX: 00x000000004000307017ae <4s0y3s7c1a7lale_ w<rsaypspcearl+l1_2w6r>ap
-p e8r6+e1a2660>  
-RCX: 0x0000000000000027  RDX: 0x00000x4000000000000080e470a3830
-6d1 <ppapglei cfaatuilotn ,o uatdsdirde application, addr: 00xx000000002200000078e6c2994ba06050 <
-???+2127120997>
-[registers] OK  (0.887 s)
+eventfd: running poll test:  PASS
+ OK  (0.327 s)
   TEST tst-except                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-except --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 131.38 ms
+Booted up in 118.74 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-except
 syscall(): unimplemented system call 334
 PASS: catch 1
@@ -628,11 +552,11 @@ caught unhandled exception
 PASS: unhandled exception
 
 SUMMARY: 3 tests, 0 failures
- OK  (0.331 s)
+ OK  (0.318 s)
   TEST tst-faccessat                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-faccessat --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.61 ms
+Booted up in 117.88 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-faccessat
 syscall(): unimplemented system call 334
 syscall(): unimplemented system call 439
@@ -642,11 +566,11 @@ syscall(): unimplemented system call 439
 syscall(): unimplemented system call 439
 syscall(): unimplemented system call 439
 SUMMARY: 11 tests, 0 failures
- OK  (0.331 s)
+ OK  (0.318 s)
   TEST tst-fcntl                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-fcntl --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.70 ms
+Booted up in 120.04 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-fcntl
 syscall(): unimplemented system call 334
 PASS: open
@@ -663,19 +587,19 @@ PASS: SETFL bogus
 PASS: GETFL bogus
 PASS: fcntl on closed fd
 SUMMARY: 13 tests, 0 failures
- OK  (0.315 s)
+ OK  (0.325 s)
   TEST tst-feexcept                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-feexcept --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 123.35 ms
+Booted up in 116.21 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-feexcept
 syscall(): unimplemented system call 334
 SUMMARY: 14 tests, 0 failures
- OK  (0.311 s)
+ OK  (0.320 s)
   TEST tst-fread                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-fread --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.04 ms
+Booted up in 120.20 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-fread
 syscall(): unimplemented system call 334
 opening /dev/vblk0.1
@@ -687,19 +611,19 @@ OK: /home/wkozaczuk/projects/osv-master/tests/tst-fread.cc:80.
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-fread.cc:81.
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-fread.cc:82.
 SUMMARY: 6 tests, 0 failures
- OK  (0.330 s)
+ OK  (0.341 s)
   TEST tst-fstatat                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-fstatat --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.70 ms
+Booted up in 116.42 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-fstatat
 syscall(): unimplemented system call 334
 SUMMARY: 27 tests, 0 failures
- OK  (0.322 s)
+ OK  (0.321 s)
   TEST tst-futimesat                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-futimesat --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 121.22 ms
+Booted up in 116.12 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-futimesat
 syscall(): unimplemented system call 334
 PASS: create folder foo
@@ -720,11 +644,11 @@ PASS: close file bar
 PASS: remove the file bar
 PASS: remove the folder foo
 SUMMARY: 17 tests, 0 failures
- OK  (0.322 s)
+ OK  (0.320 s)
   TEST tst-getdents                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-getdents --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.62 ms
+Booted up in 121.76 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-getdents
 syscall(): unimplemented system call 334
 --------------- nread=191 ---------------
@@ -749,11 +673,11 @@ inode#    file type  d_reclen  d_off   d_name
        5  regular      26          6   mounts
        6  directory    24          7   self
        7  directory    23          8   sys
- OK  (0.328 s)
+ OK  (0.339 s)
   TEST tst-getopt                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-getopt --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.11 ms
+Booted up in 118.77 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-getopt
 syscall(): unimplemented system call 334
 Running test: tst-getopt1 ...
@@ -771,19 +695,19 @@ option -c with value `bula'
 Running test: tst-getopt_long2 ...
 option -c with value `bula'
 option -f with value `x.txt'
- OK  (0.328 s)
+ OK  (0.320 s)
   TEST tst-hello                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-hello --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.66 ms
+Booted up in 120.78 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-hello
 syscall(): unimplemented system call 334
 Hello World
- OK  (0.323 s)
+ OK  (0.317 s)
   TEST tst-hostname                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-hostname --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.39 ms
+Booted up in 118.12 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-hostname
 syscall(): unimplemented system call 334
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-hostname.cc:79.
@@ -803,11 +727,11 @@ OK: /home/wkozaczuk/projects/osv-master/tests/tst-hostname.cc:94.
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-hostname.cc:99.
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-hostname.cc:99.
 SUMMARY: 16 tests, 0 failures
- OK  (0.339 s)
+ OK  (0.348 s)
   TEST tst-ifaddrs                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-ifaddrs --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 121.96 ms
+Booted up in 118.83 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-ifaddrs
 syscall(): unimplemented system call 334
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-ifaddrs.cc:70.
@@ -846,11 +770,11 @@ eth0     AF_INET (2)
 		address: <192.168.122.15>
 		netmask: 255.255.255.0
 SUMMARY: 19 tests, 0 failures
- OK  (0.343 s)
+ OK  (0.349 s)
   TEST tst-kill                           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-kill --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 114.77 ms
+Booted up in 118.72 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-kill
 syscall(): unimplemented system call 334
 PASS: 'global' initially 0
@@ -905,46 +829,46 @@ PASS: kill SIGUSR1 and pid 2 succeeds
 PASS: global now 1, process correctly interrupted with pid 2
 PASS: with SA_RESETHAND, signal handler is reset
 SUMMARY: 43 tests, 0 failures
- OK  (5.885 s)
+ OK  (5.896 s)
   TEST tst-libc-locking                   Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-libc-locking --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 123.33 ms
+Booted up in 119.17 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-libc-locking
 syscall(): unimplemented system call 334
 Running 1 test case...
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (0.640 s)
+[0;39;49m OK  (0.623 s)
   TEST tst-math                           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-math --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 117.53 ms
+Booted up in 118.39 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-math
 syscall(): unimplemented system call 334
 SUMMARY: 8 tests, 0 failures
- OK  (0.316 s)
+ OK  (0.334 s)
   TEST tst-memmove                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-memmove --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.96 ms
+Booted up in 115.82 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-memmove
 syscall(): unimplemented system call 334
 PASSED
- OK  (0.331 s)
+ OK  (0.324 s)
   TEST tst-mmap                           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-mmap --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.34 ms
+Booted up in 118.94 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-mmap
 syscall(): unimplemented system call 334
 Running mmap tests
 mmap tests succeeded
- OK  (0.316 s)
+ OK  (0.325 s)
   TEST tst-mmap-file                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-mmap-file --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 118.89 ms
+Booted up in 117.38 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-mmap-file
 syscall(): unimplemented system call 334
 PASS: open
@@ -978,11 +902,11 @@ PASS: munmap temporary mapping
 PASS: close again
 PASS: test_mmap_with_file_removed succeeded
 SUMMARY: 30 tests, 0 failures
- OK  (0.417 s)
+ OK  (0.410 s)
   TEST tst-mmx-fpu                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-mmx-fpu --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.31 ms
+Booted up in 116.22 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-mmx-fpu
 syscall(): unimplemented system call 334
 Hello from C code, nan
@@ -990,11 +914,11 @@ MMX START: 10.500000
 FPU START: 10.500000
 MMX END: 11.500000
 FPU END: 11.500000
- OK  (0.619 s)
+ OK  (0.689 s)
   TEST tst-net_if_test                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-net_if_test --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.95 ms
+Booted up in 118.71 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-net_if_test
 syscall(): unimplemented system call 334
 Running 4 test cases...
@@ -1002,11 +926,11 @@ Running 4 test cases...
 	2	eth0
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (0.326 s)
+[0;39;49m OK  (0.322 s)
   TEST tst-netlink                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-netlink --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.03 ms
+Booted up in 118.77 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-netlink
 syscall(): unimplemented system call 334
 --------- Interfaces (layer 2) ------
@@ -1102,27 +1026,27 @@ Neighbour Table Entry 2:
 --------- Testing corrupt request ---
 ---> Receiving messages!
 ... received response: 2!
- OK  (0.346 s)
+ OK  (0.348 s)
   TEST tst-non-fpic                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-non-fpic --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 117.57 ms
+Booted up in 126.20 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-non-fpic
 syscall(): unimplemented system call 334
 Hello
- OK  (0.321 s)
+ OK  (0.326 s)
   TEST tst-non-pie                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-non-pie --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.56 ms
+Booted up in 118.92 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-non-pie
 syscall(): unimplemented system call 334
 Hello from C code
- OK  (0.315 s)
+ OK  (0.310 s)
   TEST tst-openat                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-openat --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 121.87 ms
+Booted up in 117.88 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-openat
 syscall(): unimplemented system call 334
 chdir: PASS
@@ -1139,11 +1063,11 @@ dirfd: PASS
 openat: PASS
 openat: PASS
 openat: PASS
- OK  (0.324 s)
+ OK  (0.321 s)
   TEST tst-pipe                           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pipe --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.72 ms
+Booted up in 118.31 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pipe
 syscall(): unimplemented system call 334
 PASS: pipe call
@@ -1168,8 +1092,8 @@ PASS: read 400 bytes written atomicly
 PASS: partial read of the 20000 bytes
 (read 8192)
 PASS: partial read of the 20000 bytes
-PASS: write 20000 bytes until complete
 (read 8192)
+PASS: write 20000 bytes until complete
 PASS: partial read of the 20000 bytes
 (read 3616)
 PASS: writev
@@ -1238,21 +1162,21 @@ PASS: closed pipe has a non-user-requested event
 PASS: POLLERR signaled
 PASS: close also write side
 SUMMARY: 87 tests, 0 failures
- OK  (6.501 s)
+ OK  (6.510 s)
   TEST tst-poll                           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-poll --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 121.68 ms
+Booted up in 116.16 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-poll
 syscall(): unimplemented system call 334
 Running 3 test cases...
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (0.396 s)
+[0;39;49m OK  (0.383 s)
   TEST tst-printf                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-printf --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 118.55 ms
+Booted up in 117.97 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-printf
 syscall(): unimplemented system call 334
 PASS: snprintf with n=-1
@@ -1264,21 +1188,21 @@ PASS: llf
 PASS: Ld
 PASS: lld
 SUMMARY: 8 tests, 0 failures
- OK  (0.316 s)
+ OK  (0.321 s)
   TEST tst-promise                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-promise --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.14 ms
+Booted up in 118.68 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-promise
 syscall(): unimplemented system call 334
 Running 1 test case...
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (0.335 s)
+[0;39;49m OK  (0.315 s)
   TEST tst-pthread                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.96 ms
+Booted up in 118.35 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread
 syscall(): unimplemented system call 334
 starting pthread test
@@ -1293,15 +1217,15 @@ PASS: pthread_condattr_destroy
 PASS: clock_gettime(CLOCK_MONOTONIC)
 PASS: pthread_cond_timedwait (short)
 PASS: should have not returned immediately
-ts  = 0,95962600
-ts2 = 0,597981770
-ns = 502019170
+ts  = 0,96541799
+ts2 = 0,598547412
+ns = 502005613
 SUMMARY: 10 tests / 0 failures
- OK  (0.831 s)
+ OK  (0.840 s)
   TEST tst-pthread-affinity               Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-affinity --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.88 ms
+Booted up in 123.63 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-affinity
 syscall(): unimplemented system call 334
 starting pthread affinity test
@@ -1334,11 +1258,11 @@ PASS: setaffinity
 PASS: getaffinity
 PASS: thread is now unpinned again
 SUMMARY: 26 tests / 0 failures
- OK  (0.343 s)
+ OK  (0.357 s)
   TEST tst-pthread-affinity-inherit       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-affinity-inherit --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.40 ms
+Booted up in 117.03 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-affinity-inherit
 syscall(): unimplemented system call 334
 starting pthread affinity inherited from parent test
@@ -1481,9 +1405,9 @@ PASS: child pinning is equal to reference cpuset
 PASS: started on the correct CPU
 PASS: child pinning is equal to reference cpuset
 PASS: started on the correct CPU
-PASS: re-scheduled on the correct CPU
 PASS: child pinning is equal to reference cpuset
 PASS: started on the correct CPU
+PASS: re-scheduled on the correct CPU
 PASS: re-scheduled on the correct CPU
 PASS: re-scheduled on the correct CPU
 PASS: re-scheduled on the correct CPU
@@ -1508,8 +1432,8 @@ PASS: re-scheduled on the correct CPU
 PASS: child pinning is equal to reference cpuset
 PASS: started on the correct CPU
 PASS: re-scheduled on the correct CPU
-PASS: re-scheduled on the correct CPU
 PASS: child pinning is equal to reference cpuset
+PASS: re-scheduled on the correct CPU
 PASS: started on the correct CPU
 PASS: re-scheduled on the correct CPU
 new threads from pinned parent parallel test (attr=NULL):
@@ -1521,16 +1445,16 @@ PASS: re-scheduled on the correct CPU
 PASS: child pinning is equal to reference cpuset
 PASS: started on the correct CPU
 PASS: re-scheduled on the correct CPU
-PASS: re-scheduled on the correct CPU
 PASS: child pinning is equal to reference cpuset
+PASS: re-scheduled on the correct CPU
 PASS: started on the correct CPU
 PASS: re-scheduled on the correct CPU
 SUMMARY: 170 tests / 0 failures
- OK  (0.502 s)
+ OK  (0.525 s)
   TEST tst-pthread-barrier                Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-barrier --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.87 ms
+Booted up in 116.50 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-barrier
 syscall(): unimplemented system call 334
 Sizeof pthread_barrier_t    : 32
@@ -1548,126 +1472,125 @@ PASS: pthread_barrier_init
 [Thread 1] starting...
 [Thread 1] waiting on barrier
 [Thread 2] starting...
+[Thread 2] waiting on barrier
 [Thread 3] starting...
+[Thread 3] waiting on barrier
 [Thread 4] starting...
+[Thread 4] waiting on barrier
 [Thread 5] starting...
+[Thread 5] waiting on barrier
 [Thread 6] starting...
+[Thread 6] waiting on barrier
 [Thread 7] starting...
 [Thread 8] starting...
-[Thread 8] waiting on barrier
 [Thread 9] starting...
-[Thread 7] waiting on barrier
-[Thread 5] waiting on barrier
-[Thread 6] waiting on barrier
-[Thread 3] waiting on barrier
-[Thread 4] waiting on barrier
-[Thread 2] waiting on barrier
+[Thread 8] waiting on barrier
 [Thread 9] waiting on barrier
-[Thread 9] crossed barrier with -1
+[Thread 7] waiting on barrier
+[Thread 7] crossed barrier with -1
 [Thread 8] crossed barrier with 0
-[Thread 7] crossed barrier with 0
-[Thread 5] crossed barrier with 0
-[Thread 6] crossed barrier with 0
+[Thread 9] crossed barrier with 0
+[Thread 8] waiting on barrier
+[Thread 7] waiting on barrier
+[Thread 9] waiting on barrier
+[Thread 2] crossed barrier with 0
+[Thread 1] crossed barrier with 0
 [Thread 3] crossed barrier with 0
 [Thread 4] crossed barrier with 0
+[Thread 3] waiting on barrier
+[Thread 5] crossed barrier with 0
+[Thread 1] waiting on barrier
+[Thread 2] waiting on barrier
+[Thread 6] crossed barrier with 0
+[Thread 0] crossed barrier with 0
 [Thread 4] waiting on barrier
-[Thread 2] crossed barrier with 0
-[Thread 7] waiting on barrier
 [Thread 5] waiting on barrier
-[Thread 8] waiting on barrier
 [Thread 6] waiting on barrier
+[Thread 0] waiting on barrier
+[Thread 4] crossed barrier with 0
+[Thread 5] crossed barrier with 0
+[Thread 5] waiting on barrier
+[Thread 6] crossed barrier with 0
+[Thread 0] crossed barrier with -1
+[Thread 0] waiting on barrier
+[Thread 4] waiting on barrier
+[Thread 6] waiting on barrier
+[Thread 7] crossed barrier with 0
+[Thread 8] crossed barrier with 0
+[Thread 9] crossed barrier with 0
+[Thread 7] waiting on barrier
 [Thread 9] waiting on barrier
+[Thread 8] waiting on barrier
+[Thread 1] crossed barrier with 0
+[Thread 2] crossed barrier with 0
+[Thread 2] waiting on barrier
+[Thread 3] crossed barrier with 0
+[Thread 1] waiting on barrier
+[Thread 3] waiting on barrier
+[Thread 3] crossed barrier with -1
+[Thread 5] crossed barrier with 0
+[Thread 5] waiting on barrier
 [Thread 3] waiting on barrier
 [Thread 0] crossed barrier with 0
+[Thread 4] crossed barrier with 0
+[Thread 6] crossed barrier with 0
+[Thread 2] crossed barrier with 0
 [Thread 1] crossed barrier with 0
 [Thread 2] waiting on barrier
-[Thread 0] waiting on barrier
 [Thread 1] waiting on barrier
-[Thread 1] crossed barrier with -1
-[Thread 0] crossed barrier with 0
-[Thread 1] waiting on barrier
+[Thread 4] waiting on barrier
 [Thread 0] waiting on barrier
-[Thread 5] crossed barrier with 0
 [Thread 7] crossed barrier with 0
 [Thread 8] crossed barrier with 0
-[Thread 6] crossed barrier with 0
-[Thread 5] waiting on barrier
+[Thread 9] crossed barrier with 0
 [Thread 7] waiting on barrier
 [Thread 8] waiting on barrier
-[Thread 9] crossed barrier with 0
-[Thread 3] crossed barrier with 0
+[Thread 9] waiting on barrier
 [Thread 6] waiting on barrier
-[Thread 2] crossed barrier with 0
-[Thread 4] crossed barrier with 0
-[Thread 9] waiting on barrier
-[Thread 2] waiting on barrier
-[Thread 3] waiting on barrier
-[Thread 4] waiting on barrier
-[Thread 9] crossed barrier with 0
-[Thread 2] crossed barrier with 0
-[Thread 2] waiting on barrier
+[Thread 6] crossed barrier with -1
+[Thread 5] crossed barrier with 0
 [Thread 3] crossed barrier with 0
-[Thread 3] waiting on barrier
-[Thread 4] crossed barrier with -1
-[Thread 9] waiting on barrier
-[Thread 4] waiting on barrier
+[Thread 2] crossed barrier with 0
 [Thread 1] crossed barrier with 0
-[Thread 0] crossed barrier with 0
-[Thread 5] crossed barrier with 0
-[Thread 5] waiting on barrier
-[Thread 7] crossed barrier with 0
-[Thread 7] waiting on barrier
-[Thread 8] crossed barrier with 0
-[Thread 8] waiting on barrier
-[Thread 6] crossed barrier with 0
-[Thread 6] waiting on barrier
-[Thread 0] waiting on barrier
-[Thread 1] waiting on barrier
-[Thread 1] crossed barrier with -1
-[Thread 0] crossed barrier with 0
-[Thread 2] crossed barrier with 0
-[Thread 3] crossed barrier with 0
-[Thread 9] crossed barrier with 0
 [Thread 4] crossed barrier with 0
-[Thread 5] crossed barrier with 0
+[Thread 0] crossed barrier with 0
 [Thread 7] crossed barrier with 0
 [Thread 8] crossed barrier with 0
-[Thread 6] crossed barrier with 0
+[Thread 9] crossed barrier with 0
 PASS: pthread_barrier_wait (special retvals)
 SUMMARY: 7 tests / 0 failures
- OK  (0.379 s)
+ OK  (0.381 s)
   TEST tst-pthread-clock                  Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-clock --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 117.56 ms
+Booted up in 119.52 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-clock
 syscall(): unimplemented system call 334
 -> Ale
-Current tid:44
 -> Ale 2
 -> Ale 2.1 cid=-354, fffffe9e
 clock_gettime: tid=44
 -> Ale 2.2
 clock_gettime: tid=45
 -> Ale 3
-before 1022480327 after 1022480750
+before 1022452513 after 1022452924
 PASSED
- OK  (4.433 s)
+ OK  (4.427 s)
   TEST tst-pthread-create                 Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-create --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 118.23 ms
+Booted up in 122.58 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-create
 syscall(): unimplemented system call 334
 starting pthread create test
 PASS: mmap
 PASS: test_pthread_create_unpopulated_stack
 SUMMARY: 2 tests / 0 failures
- OK  (0.316 s)
+ OK  (0.325 s)
   TEST tst-pthread-setcancelstate         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-setcancelstate --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 122.55 ms
+Booted up in 118.48 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-setcancelstate
 syscall(): unimplemented system call 334
 Testing pthread_setcancelstate..
@@ -1681,11 +1604,11 @@ Thread 3: Verified default cancel state is 0
 Thread 3: Verified persistence of set cancel state (1)
 Thread 3: Attempt to set invalid cancel state (100) returned 22
 Testing completed.
- OK  (0.348 s)
+ OK  (0.316 s)
   TEST tst-pthread-tsd                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-tsd --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.32 ms
+Booted up in 119.12 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-pthread-tsd
 syscall(): unimplemented system call 334
 PASS: pthread_key_create
@@ -1698,27 +1621,27 @@ PASS: pthread_setspecific
 PASS: pthread_setspecific
 PASS: pthread_setspecific
 PASS: pthread_setspecific
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+PASS: pthread_getspecific
+PASS: pthread_key_create (key_recur)
+PASS: pthread_setspecific (key_recur)
+PASS: pthread_create
 PASS: pthread_create
 PASS: pthread_setspecific
 PASS: pthread_getspecific
 PASS: pthread_key_create (key_recur)
 PASS: pthread_setspecific (key_recur)
-PASS: pthread_getspecific
-PASS: pthread_key_create (key_recur)
-PASS: pthread_setspecific (key_recur)
-PASS: pthread_getspecific
-PASS: pthread_key_create (key_recur)
-PASS: pthread_setspecific (key_recur)
-PASS: pthread_getspecific
-PASS: pthread_key_create (key_recur)
-PASS: pthread_setspecific (key_recur)
-PASS: pthread_getspecific
-PASS: pthread_key_create (key_recur)
-PASS: pthread_setspecific (key_recur)
-PASS: pthread_getspecific
-PASS: pthread_key_create (key_recur)
-PASS: pthread_setspecific (key_recur)
-PASS: pthread_create
 PASS: pthread_setspecific
 PASS: pthread_create
 PASS: pthread_getspecific
@@ -1753,11 +1676,11 @@ PASS: 10 constructions
 PASS: 10 destructions
 PASS: 10 recursive destructions
 SUMMARY: 64 tests / 0 failures
- OK  (0.354 s)
+ OK  (0.347 s)
   TEST tst-queue-mpsc                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-queue-mpsc --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.92 ms
+Booted up in 117.37 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-queue-mpsc
 syscall(): unimplemented system call 334
 Running lockfree multi-producer single-consumer queue tests
@@ -1769,11 +1692,11 @@ test5
 ........................................................................................................................................................................................................
 done with nsomething=2000000 nnothing=0
 lockfree MPSC queue tests succeeded
- OK  (3.685 s)
+ OK  (5.009 s)
   TEST tst-read                           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-read --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.41 ms
+Booted up in 116.54 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-read
 syscall(): unimplemented system call 334
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-read.cc:65.
@@ -1781,11 +1704,11 @@ OK: /home/wkozaczuk/projects/osv-master/tests/tst-read.cc:65.
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-read.cc:67.
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-read.cc:67.
 SUMMARY: 4 tests, 0 failures
- OK  (0.323 s)
+ OK  (0.329 s)
   TEST tst-readdir-rofs                   Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-readdir-rofs --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 118.80 ms
+Booted up in 119.19 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-readdir-rofs
 syscall(): unimplemented system call 334
 Testing readdir() and related functions
@@ -1853,11 +1776,11 @@ PASS: unlink aaa
 PASS: rmdir
 PASS: mknod
 SUMMARY: 63 tests, 0 failures
- OK  (0.340 s)
+ OK  (0.330 s)
   TEST tst-realloc                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-realloc --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.37 ms
+Booted up in 120.00 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-realloc
 syscall(): unimplemented system call 334
 PASSED realloc() for original_size: 1, new_size: 2
@@ -1879,11 +1802,11 @@ PASSED realloc() for original_size: 6293760, new_size: 6291456
 PASSED realloc() for original_size: 4194304, new_size: 6291456
 PASSED realloc() for original_size: 6291456, new_size: 4196608
 PASSED
- OK  (0.390 s)
+ OK  (0.388 s)
   TEST tst-regex                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-regex --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 115.80 ms
+Booted up in 120.19 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-regex
 syscall(): unimplemented system call 334
 PASS: sizeof(regoff_t) should 4, like in Linux
@@ -1894,11 +1817,11 @@ PASS: first match end-offset
 PASS: second match start-offset
 PASS: second match end-offset
 SUMMARY: 7 tests, 0 failures
- OK  (0.320 s)
+ OK  (0.326 s)
   TEST tst-reloc                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-reloc --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.27 ms
+Booted up in 114.22 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-reloc
 syscall(): unimplemented system call 334
 func_resolver
@@ -1906,40 +1829,40 @@ func_resolver
 42
  OK  (0.309 s)
   TEST tst-remove                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-remove --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 121.77 ms
+Booted up in 122.07 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-remove
 syscall(): unimplemented system call 334
 SUMMARY: 38 tests, 0 failures
- OK  (0.314 s)
+ OK  (0.327 s)
   TEST tst-resolve                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-resolve --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.24 ms
+Booted up in 119.93 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-resolve
 syscall(): unimplemented system call 334
 Target value:	0x05050505
 Success:	nonexistant = 0x05050505
 Success:	debug = 0x05050505
 Success:	condvar_wait = 0x05050505
-The time:	1698709339
+The time:	1698865926
 success.
- OK  (0.322 s)
+ OK  (0.324 s)
   TEST tst-seek                           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-seek --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 117.58 ms
+Booted up in 115.43 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-seek
 syscall(): unimplemented system call 334
 Running 2 test cases...
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (0.321 s)
+[0;39;49m OK  (0.322 s)
   TEST tst-select-timeout                 Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-select-timeout --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 118.55 ms
+Booted up in 118.85 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-select-timeout
 syscall(): unimplemented system call 334
 PASS: create pipe
@@ -1953,11 +1876,11 @@ PASS: write single character
 PASS: select with fd event and null timeout
 PASS: read
 SUMMARY: 10, 0 failures
- OK  (0.645 s)
+ OK  (0.632 s)
   TEST tst-semaphore                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-semaphore --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 117.86 ms
+Booted up in 118.14 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-semaphore
 syscall(): unimplemented system call 334
 Thread 1: Incremented 1th
@@ -1993,12 +1916,12 @@ Thread 1: Incremented 3th
 Thread 1: Incremented 4th
 Thread 8: Incremented 3th
 Thread 3: Incremented 4th
-Thread 9: Incremented 4th
-Thread 4: Incremented 4th
-Thread 4: Incremented 5th
-Thread 6: Incremented 4th
 Thread 5: Incremented 4th
+Thread 9: Incremented 4th
+Thread 9: Incremented 5th
+Thread 6: Incremented 4th
 Thread 7: Incremented 4th
+Thread 4: Incremented 4th
 Thread 8: Incremented 4th
 Thread 8: Incremented 5th
 Thread 10: Incremented 4th
@@ -2006,65 +1929,65 @@ Thread 3: Incremented 5th
 Thread 6: Incremented 5th
 Thread 2: Incremented 5th
 Thread 2: Incremented 6th
-Thread 9: Incremented 5th
 Thread 5: Incremented 5th
+Thread 7: Incremented 5th
 Thread 10: Incremented 5th
 Thread 1: Incremented 5th
 Thread 1: Incremented 6th
-Thread 7: Incremented 5th
-Thread 4: Incremented 6th
-Thread 3: Incremented 6th
+Thread 4: Incremented 5th
 Thread 9: Incremented 6th
-Thread 9: Incremented 7th
-Thread 6: Incremented 6th
+Thread 3: Incremented 6th
 Thread 5: Incremented 6th
+Thread 5: Incremented 7th
+Thread 6: Incremented 6th
 Thread 7: Incremented 6th
 Thread 8: Incremented 6th
-Thread 8: Incremented 7th
-Thread 10: Incremented 6th
+Thread 4: Incremented 6th
 Thread 4: Incremented 7th
+Thread 10: Incremented 6th
+Thread 9: Incremented 7th
 Thread 6: Incremented 7th
 Thread 2: Incremented 7th
 Thread 2: Incremented 8th
 Thread 3: Incremented 7th
-Thread 5: Incremented 7th
-Thread 10: Incremented 7th
-Thread 1: Incremented 7th
-Thread 1: Incremented 8th
 Thread 7: Incremented 7th
+Thread 1: Incremented 7th
+Thread 10: Incremented 7th
+Thread 10: Incremented 8th
+Thread 8: Incremented 7th
 Thread 9: Incremented 8th
 Thread 3: Incremented 8th
-Thread 4: Incremented 8th
-Thread 4: Incremented 9th
-Thread 6: Incremented 8th
 Thread 5: Incremented 8th
+Thread 5: Incremented 9th
+Thread 6: Incremented 8th
 Thread 7: Incremented 8th
+Thread 4: Incremented 8th
 Thread 8: Incremented 8th
 Thread 8: Incremented 9th
-Thread 10: Incremented 8th
+Thread 1: Incremented 8th
 Thread 9: Incremented 9th
 Thread 6: Incremented 9th
 Thread 2: Incremented 9th
 Thread 2: Incremented 10th
 Thread 3: Incremented 9th
-Thread 5: Incremented 9th
-Thread 10: Incremented 9th
-Thread 1: Incremented 9th
-Thread 1: Incremented 10th
 Thread 7: Incremented 9th
-Thread 9: Incremented 10th
-Thread 4: Incremented 10th
-Thread 3: Incremented 10th
-Thread 6: Incremented 10th
-Thread 5: Incremented 10th
-Thread 8: Incremented 10th
-Thread 7: Incremented 10th
+Thread 1: Incremented 9th
+Thread 10: Incremented 9th
 Thread 10: Incremented 10th
+Thread 4: Incremented 9th
+Thread 9: Incremented 10th
+Thread 3: Incremented 10th
+Thread 5: Incremented 10th
+Thread 6: Incremented 10th
+Thread 7: Incremented 10th
+Thread 8: Incremented 10th
+Thread 4: Incremented 10th
+Thread 1: Incremented 10th
  OK  (0.363 s)
   TEST tst-sendfile                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-sendfile --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.57 ms
+Booted up in 118.65 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-sendfile
 syscall(): unimplemented system call 334
 PASS: Generate a file with random contents.
@@ -2125,11 +2048,11 @@ PASS: test for bad mode of out_fd
 PASS: close the dummy testfile
 PASS: remove the testfile
 SUMMARY: 43 tests, 0 failures
- OK  (0.593 s)
+ OK  (0.599 s)
   TEST tst-setjmp                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-setjmp --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 118.60 ms
+Booted up in 117.13 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-setjmp
 syscall(): unimplemented system call 334
 After setjmp()!
@@ -2139,11 +2062,11 @@ Back from siglongjmp()!
 After sigsetjmp()!
 Back from siglongjmp()!
 SUMMARY: 3 tests, 0 failures
- OK  (0.318 s)
+ OK  (0.320 s)
   TEST tst-shm                            Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-shm --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 117.18 ms
+Booted up in 115.99 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-shm
 syscall(): unimplemented system call 334
 Running shm tests
@@ -2156,77 +2079,77 @@ Attached addr2: 0x200000209000
  shmctl IPC_RMID 3
  shmdt 
 shm test 2 succeeded
- OK  (0.322 s)
+ OK  (0.319 s)
   TEST tst-sigaction                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-sigaction --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.98 ms
+Booted up in 120.49 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-sigaction
 syscall(): unimplemented system call 334
 test_handler called, sig=15, global=0
 global now 1, test_handler called
- OK  (0.332 s)
+ OK  (0.331 s)
   TEST tst-sigaltstack                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-sigaltstack --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.04 ms
+Booted up in 121.23 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-sigaltstack
 syscall(): unimplemented system call 334
 SUMMARY: 6 tests, 0 failures
- OK  (0.319 s)
+ OK  (0.322 s)
   TEST tst-sigwait                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-sigwait --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.75 ms
+Booted up in 120.60 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-sigwait
 syscall(): unimplemented system call 334
 PASSED
- OK  (0.320 s)
+ OK  (0.324 s)
   TEST tst-sleep                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-sleep --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 113.67 ms
+Booted up in 118.96 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-sleep
 syscall(): unimplemented system call 334
 starting sleep test
 PASS: sleep 2 seconds finished successfully
 PASS: and slept for roughly 2 seconds
 SUMMARY: 2 tests, 0 failures
- OK  (2.311 s)
+ OK  (2.323 s)
   TEST tst-stat                           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-stat --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.90 ms
+Booted up in 117.44 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-stat
 syscall(): unimplemented system call 334
 Running 1 test case...
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (0.329 s)
+[0;39;49m OK  (0.318 s)
   TEST tst-stdio-rofs                      SKIPPED
   TEST tst-strerror_r                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-strerror_r --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 121.22 ms
+Booted up in 116.09 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-strerror_r
 syscall(): unimplemented system call 334
 PASS: strerror_r() called from a _GNU_SOURCE binary
 Test complete (0/1 failures)
- OK  (0.321 s)
+ OK  (0.315 s)
   TEST tst-string                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-string --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.28 ms
+Booted up in 120.38 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-string
 syscall(): unimplemented system call 334
 Running 4 test cases...
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (0.336 s)
+[0;39;49m OK  (0.334 s)
   TEST tst-symlink                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-symlink --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.28 ms
+Booted up in 117.21 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-symlink
 syscall(): unimplemented system call 334
 Testing symlink() and related functions.
@@ -2372,11 +2295,11 @@ PASS: rmdir
 PASS: closedir(test_dir)
 PASS: rmdir
 SUMMARY: 141 tests, 0 failures
- OK  (1.366 s)
+ OK  (1.362 s)
   TEST tst-symlink-rofs                   Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-symlink-rofs --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.51 ms
+Booted up in 118.84 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-symlink-rofs
 syscall(): unimplemented system call 334
 Testing symlink() and related functions.
@@ -2406,11 +2329,11 @@ PASS: file mode
 PASS: closedir(test_dir)
 PASS: rmdir
 SUMMARY: 25 tests, 0 failures
- OK  (0.335 s)
+ OK  (0.322 s)
   TEST tst-syscall                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-syscall --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.07 ms
+Booted up in 116.69 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-syscall
 syscall(): unimplemented system call 334
 got tid=44
@@ -2418,9 +2341,9 @@ syscall(): unimplemented system call 999
 SUMMARY: 4 tests, 0 failures
  OK  (0.323 s)
   TEST tst-tcp-cork                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tcp-cork --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.19 ms
+Booted up in 119.34 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tcp-cork
 syscall(): unimplemented system call 334
 test 0 0 time (ms): 100 
@@ -2430,21 +2353,21 @@ PASS: With TCP_CORK, no nagle so no delayed ack
 test 0 1 time (ms): 5 
 PASS: With TCP_NODELAY, no nagle so no delayed ack
 SUMMARY: 3 tests, 0 failures
- OK  (4.853 s)
+ OK  (4.861 s)
   TEST tst-tcp-listen                     Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tcp-listen --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.39 ms
+Booted up in 117.59 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tcp-listen
 syscall(): unimplemented system call 334
 Running 2 test cases...
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (0.450 s)
+[0;39;49m OK  (0.522 s)
   TEST tst-tcp-nbwrite                    Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tcp-nbwrite --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 122.65 ms
+Booted up in 116.28 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tcp-nbwrite
 syscall(): unimplemented system call 334
 Client total: read 600000
@@ -2454,11 +2377,11 @@ Client total: read 51200
 Server thinks it sent 51200, client received 51200
 PASS: Test with non-blocking write()
 SUMMARY: 2 tests, 0 failures
- OK  (2.535 s)
+ OK  (2.531 s)
   TEST tst-tcp-siocoutq                   Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tcp-siocoutq --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 121.25 ms
+Booted up in 112.49 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tcp-siocoutq
 syscall(): unimplemented system call 334
 server: sleep for 5 seconds..
@@ -2467,31 +2390,31 @@ unsent 8192
 unsent 16384
 PASS: TIOCOUTQ test
 SUMMARY: 1 tests, 0 failures
- OK  (6.338 s)
+ OK  (6.318 s)
   TEST tst-tcp-v6                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tcp-v6 --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.08 ms
+Booted up in 117.34 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tcp-v6
 syscall(): unimplemented system call 334
 PASS: open AF_INET socket succeeds
 PASS: open AF_INET6 socket fails
 PASS: failure should be EAFNOSUPPORT
 SUMMARY: 3 tests, 0 failures
- OK  (0.317 s)
+ OK  (0.318 s)
   TEST tst-thread-local                   Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-thread-local --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 122.16 ms
+Booted up in 116.23 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-thread-local
 syscall(): unimplemented system call 334
 constructor
 PASS: default value on main thread
 PASS: original value on main thread
+PASS: original value on main thread
 constructor
 PASS: 2 in second thread
 destructor
-PASS: original value on main thread
 PASS: original value on main thread
 PASS: 2 constructions
 PASS: 1 destructions
@@ -2507,9 +2430,9 @@ SUMMARY: 13 tests, 0 failures
 destructor
  OK  (0.332 s)
   TEST tst-threadcomplete                 Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-threadcomplete --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.13 ms
+Booted up in 115.42 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-threadcomplete
 syscall(): unimplemented system call 334
 Starting detach tests...
@@ -2517,22 +2440,22 @@ Starting join tests...
 Starting thread-on-heap tests... (no load)
 Starting thread-on-heap tests... (loaded)
 Passed
- OK  (0.415 s)
+ OK  (0.406 s)
   TEST tst-time                           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-time --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.65 ms
+Booted up in 123.23 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-time
 syscall(): unimplemented system call 334
 Running 32 test cases...
 clock_gettime: tid=0
 
 [1;32;49m*** No errors detected
-[0;39;49m OK  (1.350 s)
+[0;39;49m OK  (1.358 s)
   TEST tst-timerfd                        Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-timerfd --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 122.82 ms
+Booted up in 116.94 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-timerfd
 syscall(): unimplemented system call 334
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-timerfd.cc:67.
@@ -2748,11 +2671,11 @@ OK: /home/wkozaczuk/projects/osv-master/tests/tst-timerfd.cc:228.
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-timerfd.cc:229.
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-timerfd.cc:230.
 SUMMARY: 212 tests, 0 failures
- OK  (12.477 s)
+ OK  (12.478 s)
   TEST tst-tls                            Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tls --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 118.25 ms
+Booted up in 116.24 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tls
 syscall(): unimplemented system call 334
 PASS: v1
@@ -2786,9 +2709,9 @@ PASS: v5 modified
 SUMMARY: 28 tests, 0 failures
  OK  (0.323 s)
   TEST tst-tls-gold                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tls-gold --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 116.62 ms
+Booted up in 118.42 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-tls-gold
 syscall(): unimplemented system call 334
 PASS: v1
@@ -2820,19 +2743,19 @@ PASS: ex3 modified in new thread
 PASS: v1 modified in new thread
 PASS: v5 modified
 SUMMARY: 28 tests, 0 failures
- OK  (0.328 s)
+ OK  (0.337 s)
   TEST tst-truncate                       Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-truncate --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 120.77 ms
+Booted up in 119.41 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-truncate
 syscall(): unimplemented system call 334
 Ok
  OK  (0.317 s)
   TEST tst-uio                            Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-uio --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.21 ms
+Booted up in 121.09 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-uio
 syscall(): unimplemented system call 334
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-uio.cc:81.
@@ -2909,25 +2832,87 @@ OK: /home/wkozaczuk/projects/osv-master/tests/tst-uio.cc:253.
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-uio.cc:254.
 OK: /home/wkozaczuk/projects/osv-master/tests/tst-uio.cc:255.
 SUMMARY: 72 tests, 0 failures
- OK  (1.394 s)
-  TEST tst-utimensat                       SKIPPED
-  TEST tst-utimes                          SKIPPED
-  TEST tst-vblk                           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-vblk --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+ OK  (1.395 s)
+  TEST tst-utimensat                      Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-utimensat --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 117.76 ms
+Booted up in 120.13 ms
+Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-utimensat
+syscall(): unimplemented system call 334
+PASS: create folder foo
+PASS: create file bar
+PASS: close file bar
+PASS: open folder foo
+PASS: utimensat worked successfully using absolute path
+PASS: stat the file
+PASS: check atime changes
+PASS: check mtime changes
+PASS: change directory to tmp
+PASS: utimensat worked successfully with AT_FDCWD
+PASS: utimensat works with dirfd and relative path
+PASS: utimensat fails with invalid dirfd
+PASS: utimensat works with times == NULL
+PASS: utimensat fails when dirfd is AT_FDCWD and pathname is NULL
+PASS: utimensat fails with invalid flags
+PASS: utimensat fails with invalid value in times
+PASS: utimensat fails with non-existent path
+PASS: utimensat fails with empty pathname
+PASS: closing dirfd
+PASS: open file bar with dirfd
+PASS: utimensat fails when dirfd points to file and relative pathname is given
+PASS: remove the file bar
+PASS: remove the folder foo
+SUMMARY: 23 tests, 0 failures
+ OK  (0.335 s)
+  TEST tst-utimes                         Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-utimes --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-88-g74cced89
+eth0: 192.168.122.15
+Booted up in 120.92 ms
+Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-utimes
+syscall(): unimplemented system call 334
+PASS: create a file
+PASS: close the file
+PASS: create a link
+PASS: stat the file
+ino: 3 - old -> st_atim: 1698865967:430957520 - st_mtim: 1698865967:431365849
+PASS: check if utimes worked successfully!
+utimes return: 0
+PASS: stat the file again
+PASS: check changes made to atime
+PASS: check changes made to mtime
+ino: 3 - new -> st_atim: 1234:0 - st_mtim: 0:1234000
+PASS: check if lutimes worked successfully!
+PASS: check if lutimes made no changes to atime
+PASS: check if lutimes made no changes to mtime
+PASS: stat the link
+PASS: check if lutimes changes to link's atime
+PASS: check if lutimes made changes to link's mtime
+PASS: check if utimes followed the link!
+PASS: stat the file again
+PASS: check if utimes changes to link target's atime
+PASS: check if utimes made changes to link target's mtime
+PASS: check if utimes failed as desired!
+PASS: utimes works with NULL as argument
+PASS: remove the link
+PASS: remove the file
+SUMMARY: 22 tests, 0 failures
+ OK  (0.330 s)
+  TEST tst-vblk                           Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-vblk --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
+OSv v0.57.0-88-g74cced89
+eth0: 192.168.122.15
+Booted up in 121.43 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-vblk
 syscall(): unimplemented system call 334
 vblk test passed
- OK  (0.356 s)
+ OK  (0.344 s)
   TEST tst-wctype                          SKIPPED
   TEST tst-yield                          Running OSv on qemu with parameters: [-s -e --power-off-on-abort /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-yield --pass-args=-monitor unix:qemu-monitor,server,nowait --block-device-cache unsafe]
-OSv v0.57.0-87-g517460c1
+OSv v0.57.0-88-g74cced89
 eth0: 192.168.122.15
-Booted up in 119.63 ms
+Booted up in 118.37 ms
 Cmdline: /lib/x86_64-linux-gnu/ld-linux-x86-64.so.2 /tests/tst-yield
 syscall(): unimplemented system call 334
 starting yield test
 yield test successful
- OK  (6.025 s)
-OK (103 tests run, 101.228 s)
+ OK  (5.793 s)
+OK (103 tests run, 101.956 s)

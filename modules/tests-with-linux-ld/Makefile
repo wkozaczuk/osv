@@ -110,6 +110,7 @@ $(out)/tests-with-linux-ld/tst-elf-permissions: COMMON += -fuse-ld=bfd
 $(out)/tests-with-linux-ld/tst-tls: COMMON += -fuse-ld=bfd
 
 $(out)/tests-with-linux-ld/tst-dlfcn: COMMON += -rdynamic -ldl -DLINUX
+$(out)/tests-with-linux-ld/tst-utimensat: COMMON += -DLINUX
 
 $(out)/tests-with-linux-ld/tst-epoll: COMMON:=$(subst -D__OSV__,,$(COMMON))
 $(out)/tests-with-linux-ld/tst-feexcept: COMMON:=$(subst -D__OSV__,,$(COMMON))
