@@ -1456,13 +1456,7 @@ void thread::complete()
     //linked executables or dynamically linked ones launched by the
     //Linux dynamic linker. More specifically it gets triggered only
     //when set_tid_address and set_robust_list get called
-    //For more details about clear_id read CLONE_CHILD_CLEARTID section
-    //of https://man7.org/linux/man-pages/man2/clone.2.html
-    if (_clear_id) {
-        *_clear_id = 0;
-        futex(_clear_id, 1, 1, nullptr, nullptr, 0);
-    }
-    //
+
     //See https://www.kernel.org/doc/Documentation/robust-futexes.txt for
     //details on what this Linux specific logic that only applies
     //to statically linked executables
@@ -1482,6 +1476,13 @@ void thread::complete()
             *uaddr |= FUTEX_OWNER_DIED;
             futex(uaddr, 1, 1, nullptr, nullptr, 0);
         }
+    }
+
+    //For more details about clear_id read CLONE_CHILD_CLEARTID section
+    //of https://man7.org/linux/man-pages/man2/clone.2.html
+    if (_clear_id) {
+        *_clear_id = 0;
+        futex(_clear_id, 1, 1, nullptr, nullptr, 0);
     }
 
     auto value = detach_state::attached;
