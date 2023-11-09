@@ -1,0 +1,17 @@
+-- INTERFACE --
+readelf -W -s build/release/bsd/sys/contrib/ena_com/ena_eth_com.o | grep FUNC | grep GLOBAL
+    10: 0000000000000000    35 FUNC    LOCAL  DEFAULT    5 _GLOBAL__sub_I_ena_com_prepare_tx
+    21: 0000000000000370   857 FUNC    GLOBAL DEFAULT    1 ena_com_prepare_tx
+    23: 00000000000006d0   452 FUNC    GLOBAL DEFAULT    1 ena_com_rx_pkt
+    24: 00000000000008a0   183 FUNC    GLOBAL DEFAULT    1 ena_com_add_single_rx_desc
+    25: 0000000000000960    64 FUNC    GLOBAL DEFAULT    1 ena_com_cq_empty
+
+-- DEPENDS ON --
+readelf -W -s build/release/bsd/sys/contrib/ena_com/ena_eth_com.o | grep UND
+     0: 0000000000000000     0 NOTYPE  LOCAL  DEFAULT  UND 
+    20: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND memset
+    22: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND memcpy
+    26: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND _ZNSt8ios_base4InitC1Ev
+    27: 0000000000000000     0 NOTYPE  GLOBAL HIDDEN   UND __dso_handle
+    28: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND _ZNSt8ios_base4InitD1Ev
+    29: 0000000000000000     0 NOTYPE  GLOBAL DEFAULT  UND __cxa_atexit

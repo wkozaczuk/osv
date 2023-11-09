@@ -41,11 +41,11 @@ __FBSDID("$FreeBSD$");
 #include <sys/systm.h>
 
 #include <sys/bus.h>
-#include <sys/condvar.h>
+//#include <sys/condvar.h>
 #if __FreeBSD_version > 1200055
 #include <sys/domainset.h>
 #endif
-#include <sys/endian.h>
+//#include <sys/endian.h>
 #include <sys/kernel.h>
 #include <sys/kthread.h>
 #include <sys/malloc.h>
@@ -54,13 +54,13 @@ __FBSDID("$FreeBSD$");
 #include <sys/rman.h>
 #include <sys/proc.h>
 #include <sys/smp.h>
-#include <sys/socket.h>
-#include <sys/sockio.h>
+#include <bsd/sys/sys/socket.h>
+//#include <sys/sockio.h>
 #include <sys/sysctl.h>
 #include <sys/taskqueue.h>
 #include <sys/eventhandler.h>
 #include <sys/types.h>
-#include <sys/timetc.h>
+//#include <sys/timetc.h>
 #include <sys/cdefs.h>
 
 #include <machine/atomic.h>
@@ -70,29 +70,29 @@ __FBSDID("$FreeBSD$");
 #include <machine/resource.h>
 #include <machine/_inttypes.h>
 
-#include <net/bpf.h>
-#include <net/ethernet.h>
-#include <net/if.h>
-#include <net/if_var.h>
-#include <net/if_arp.h>
-#include <net/if_dl.h>
-#include <net/if_media.h>
+#include <bsd/sys/net/bpf.h>
+#include <bsd/sys/net/ethernet.h>
+#include <bsd/sys/net/if.h>
+#include <bsd/sys/net/if_var.h>
+#include <bsd/sys/net/if_arp.h>
+#include <bsd/sys/net/if_dl.h>
+#include <bsd/sys/net/if_media.h>
 
-#include <net/if_types.h>
-#include <net/if_vlan_var.h>
+#include <bsd/sys/net/if_types.h>
+#include <bsd/sys/net/if_vlan_var.h>
 
-#include <netinet/in_systm.h>
-#include <netinet/in.h>
-#include <netinet/if_ether.h>
-#include <netinet/ip.h>
-#include <netinet/ip6.h>
-#include <netinet/tcp.h>
-#include <netinet/tcp_lro.h>
-#include <netinet/udp.h>
+#include <bsd/sys/netinet/in_systm.h>
+#include <bsd/sys/netinet/in.h>
+#include <bsd/sys/netinet/if_ether.h>
+#include <bsd/sys/netinet/ip.h>
+//#include <bsd/sys/netinet/ip6.h>
+#include <bsd/sys/netinet/tcp.h>
+#include <bsd/sys/netinet/tcp_lro.h>
+#include <bsd/sys/netinet/udp.h>
 
-#include <dev/led/led.h>
-#include <dev/pci/pcivar.h>
-#include <dev/pci/pcireg.h>
+//#include <dev/led/led.h>
+//#include <dev/pci/pcivar.h>
+//#include <dev/pci/pcireg.h>
 
 #include "ena_fbsd_log.h"
 
@@ -107,9 +107,7 @@ extern struct ena_bus_space ebs;
 		(type *)((uintptr_t)__p - offsetof(type, member));	\
 	})
 
-#define ena_trace(ctx, level, fmt, args...)			\
-	ena_log((ctx)->dmadev, level, "%s() [TID:%d]: "		\
-	    fmt, __func__, curthread->td_tid, ##args)
+#define ena_trace(ctx, level, fmt, args...) {}
 
 #define ena_trc_dbg(ctx, format, arg...)	\
 	ena_trace(ctx, DBG, format, ##arg)
@@ -284,6 +282,12 @@ void	ena_dmamap_callback(void *arg, bus_dma_segment_t *segs, int nseg,
 int	ena_dma_alloc(device_t dmadev, bus_size_t size, ena_mem_handle_t *dma,
     int mapflags, bus_size_t alignment, int domain);
 
+//TODO: Replace it with something meaning-full like pci_bar_read_4(bus->reg_bar, offset)
+// what nanos does
+extern
+u_int32_t bus_space_read_4(bus_space_tag_t tag,
+			   bus_space_handle_t handle,
+			   bus_size_t offset);
 static inline uint32_t
 ena_reg_read32(struct ena_bus *bus, bus_size_t offset)
 {
@@ -376,6 +380,9 @@ ena_reg_read32(struct ena_bus *bus, bus_size_t offset)
 		ENA_REG_WRITE32_RELAXED(bus, value, offset);		\
 	} while (0)
 
+extern void bus_space_write_4(bus_space_tag_t tag,
+				       bus_space_handle_t bsh,
+				       bus_size_t offset, u_int32_t value);
 #define ENA_REG_WRITE32_RELAXED(bus, value, offset)			\
 	bus_space_write_4(						\
 			  ((struct ena_bus*)bus)->reg_bar_t,		\
