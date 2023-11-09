@@ -194,6 +194,7 @@ static inline long PTR_ERR(const void *ptr)
 
 /* Spinlock related methods */
 #define ena_spinlock_t 	struct mtx
+#define mtx_initialized(spinlock) (1)
 #define ENA_SPINLOCK_INIT(spinlock)				\
 	mtx_init(&(spinlock), "ena_spin", NULL, MTX_SPIN)
 #define ENA_SPINLOCK_DESTROY(spinlock)				\
@@ -214,10 +215,10 @@ static inline long PTR_ERR(const void *ptr)
 
 
 /* Wait queue related methods */
-#define ena_wait_event_t struct { struct cv wq; struct mtx mtx; }
+#define ena_wait_event_t struct { kcondvar_t wq; struct mtx mtx; }
 #define ENA_WAIT_EVENT_INIT(waitqueue)					\
 	do {								\
-		cv_init(&((waitqueue).wq), "cv");			\
+		cv_init(&((waitqueue).wq), "cv", 0, 0);			\
 		mtx_init(&((waitqueue).mtx), "wq", NULL, MTX_DEF);	\
 	} while (0)
 #define ENA_WAIT_EVENTS_DESTROY(admin_queue)				\
@@ -233,11 +234,11 @@ static inline long PTR_ERR(const void *ptr)
 		}							\
 	} while (0)
 #define ENA_WAIT_EVENT_CLEAR(waitqueue)					\
-	cv_init(&((waitqueue).wq), (waitqueue).wq.cv_description)
+	cv_init(&((waitqueue).wq), (waitqueue).wq.cv_description, 0, 0)
 #define ENA_WAIT_EVENT_WAIT(waitqueue, timeout_us)			\
 	do {								\
 		mtx_lock(&((waitqueue).mtx));				\
-		cv_timedwait(&((waitqueue).wq), &((waitqueue).mtx),	\
+		cv_timedwait(&((waitqueue).wq), &(&((waitqueue).mtx))->_mutex,	\
 		    timeout_us * hz / 1000 / 1000 );			\
 		mtx_unlock(&((waitqueue).mtx));				\
 	} while (0)
@@ -355,7 +356,7 @@ ena_reg_read32(struct ena_bus *bus, bus_size_t offset)
 	do {								\
 		ena_dma_alloc((dmadev), (size), &(dma), 0, (alignment),	\
 		    ENA_NODE_ANY);					\
-		(virt) = (void *)(dma).vaddr;				\
+		(virt) = reinterpret_cast<typeof(virt)>((dma).vaddr);	\
 		(phys) = (dma).paddr;					\
 	} while (0)
 
@@ -363,6 +364,8 @@ ena_reg_read32(struct ena_bus *bus, bus_size_t offset)
 	ENA_MEM_ALLOC_COHERENT_ALIGNED(dmadev, size, virt,		\
 	    phys, dma, DEFAULT_ALLOC_ALIGNMENT)
 
+//TODO
+#define bus_dmamem_free(a, b, c) do {} while (0)
 #define ENA_MEM_FREE_COHERENT(dmadev, size, virt, phys, dma)		\
 	do {								\
 		(void)size;						\
