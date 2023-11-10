@@ -171,13 +171,14 @@ enum ena_flags_t {
 	ENA_FLAGS_NUMBER = ENA_FLAG_RSS_ACTIVE
 };
 
-BITSET_DEFINE(_ena_state, ENA_FLAGS_NUMBER);
-typedef struct _ena_state ena_state_t;
+#include <bitset>
+
+typedef std::bitset<ENA_FLAGS_NUMBER> ena_state_t;
 
 #define ENA_FLAG_ZERO(adapter)		\
-	BIT_ZERO(ENA_FLAGS_NUMBER, &(adapter)->flags)
+	(adapter)->flags.reset()
 #define ENA_FLAG_ISSET(bit, adapter)	\
-	BIT_ISSET(ENA_FLAGS_NUMBER, (bit), &(adapter)->flags)
+	(adapter)->flags.test(bit)
 #define ENA_FLAG_SET_ATOMIC(bit, adapter)	\
 	BIT_SET_ATOMIC(ENA_FLAGS_NUMBER, (bit), &(adapter)->flags)
 #define ENA_FLAG_CLEAR_ATOMIC(bit, adapter)	\
@@ -256,7 +257,7 @@ struct ena_tx_buffer {
 	bus_dmamap_t dmamap;
 
 	/* Used to detect missing tx packets */
-	struct bintime timestamp;
+	u64 timestamp;
 	bool print_once;
 
 #ifdef DEV_NETMAP
@@ -274,6 +275,12 @@ struct ena_rx_buffer {
 	uint32_t netmap_buf_idx;
 #endif /* DEV_NETMAP */
 } __aligned(CACHE_LINE_SIZE);
+
+//TODO: See if we need atomics or possibly these get updated/read without a need
+//for locking
+typedef u64 counter_u64_t;
+#define counter_u64_add(cnt,inc) (cnt += inc)
+#define counter_u64_add_protected(cnt,inc) (cnt += inc)
 
 struct ena_stats_tx {
 	counter_u64_t cnt;
@@ -398,6 +405,8 @@ struct ena_hw_stats {
 	counter_u64_t tx_drops;
 };
 
+typedef struct ifnet* if_t;
+
 /* Board specific private data structure */
 struct ena_adapter {
 	struct ena_com_dev *ena_dev;
@@ -464,16 +473,16 @@ struct ena_adapter {
 	struct ena_irq irq_tbl[ENA_MAX_MSIX_VEC(ENA_MAX_NUM_IO_QUEUES)];
 
 	/* Timer service */
-	struct callout timer_service;
-	sbintime_t keep_alive_timestamp;
+	//TODO: struct callout timer_service;
+	u64 keep_alive_timestamp;
 	uint32_t next_monitored_tx_qid;
 	struct task reset_task;
 	struct taskqueue *reset_tq;
 	struct task metrics_task;
 	struct taskqueue *metrics_tq;
 	int wd_active;
-	sbintime_t keep_alive_timeout;
-	sbintime_t missing_tx_timeout;
+	u64 keep_alive_timeout;
+	u64 missing_tx_timeout;
 	uint32_t missing_tx_max_queues;
 	uint32_t missing_tx_threshold;
 	bool disable_meta_caching;
@@ -531,7 +540,7 @@ ena_mbuf_count(struct mbuf *mbuf)
 {
 	int count = 1;
 
-	while ((mbuf = mbuf->m_next) != NULL)
+	while ((mbuf = mbuf->m_hdr.mh_next) != NULL)
 		++count;
 
 	return count;
@@ -543,7 +552,7 @@ ena_trigger_reset(struct ena_adapter *adapter,
 {
 	if (likely(!ENA_FLAG_ISSET(ENA_FLAG_TRIGGER_RESET, adapter))) {
 		adapter->reset_reason = reset_reason;
-		ENA_FLAG_SET_ATOMIC(ENA_FLAG_TRIGGER_RESET, adapter);
+		//TODO ENA_FLAG_SET_ATOMIC(ENA_FLAG_TRIGGER_RESET, adapter);
 	}
 }
 

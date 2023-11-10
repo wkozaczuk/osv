@@ -39,7 +39,11 @@ __FBSDID("$FreeBSD$");
 #include <net/rss_config.h>
 #endif /* RSS */
 
-#include <netinet6/ip6_var.h>
+#include <osv/sched.hh>
+
+//#include <netinet6/ip6_var.h>
+//TODO
+int ena_log_level = 0;
 
 /*********************************************************************
  *  Static functions prototypes
@@ -49,8 +53,6 @@ static int ena_tx_cleanup(struct ena_ring *);
 static int ena_rx_cleanup(struct ena_ring *);
 static inline int ena_get_tx_req_id(struct ena_ring *tx_ring,
     struct ena_com_io_cq *io_cq, uint16_t *req_id);
-static void ena_rx_hash_mbuf(struct ena_ring *, struct ena_com_rx_ctx *,
-    struct mbuf *);
 static struct mbuf *ena_rx_mbuf(struct ena_ring *, struct ena_com_rx_buf_info *,
     struct ena_com_rx_ctx *, uint16_t *);
 static inline void ena_rx_checksum(struct ena_ring *, struct ena_com_rx_ctx *,
@@ -61,6 +63,16 @@ static int ena_check_and_collapse_mbuf(struct ena_ring *tx_ring,
 static int ena_xmit_mbuf(struct ena_ring *, struct mbuf **);
 static void ena_start_xmit(struct ena_ring *);
 
+//TODO Figure out how to fix the ring
+//Bring drbr_* from BSD sys/net/ifq.h and buf_ring_* from sys/sys/buf_ring.h?
+//or use something OSv already has?
+int drbr_enqueue(struct ifnet *ifp, struct buf_ring *br, struct mbuf *m) { return 0; }
+void drbr_putback(struct ifnet *ifp, struct buf_ring *br, struct mbuf *m_new) {}
+struct mbuf *drbr_peek(struct ifnet *ifp, struct buf_ring *br) { return nullptr; }
+void drbr_flush(struct ifnet *ifp, struct buf_ring *br) {}
+void drbr_advance(struct ifnet *ifp, struct buf_ring *br) {}
+int drbr_empty(struct ifnet *ifp, struct buf_ring *br) { return 0; }
+
 /*********************************************************************
  *  Global functions
  *********************************************************************/
@@ -68,7 +80,7 @@ static void ena_start_xmit(struct ena_ring *);
 void
 ena_cleanup(void *arg, int pending)
 {
-	struct ena_que *que = arg;
+	struct ena_que *que = static_cast<ena_que *>(arg);
 	struct ena_adapter *adapter = que->adapter;
 	if_t ifp = adapter->ifp;
 	struct ena_ring *tx_ring;
@@ -78,7 +90,7 @@ ena_cleanup(void *arg, int pending)
 	int qid, ena_qid;
 	int txc, rxc, i;
 
-	if (unlikely((if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0))
+	if (unlikely((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
 		return;
 
 	ena_log_io(adapter->pdev, DBG, "MSI-X TX/RX routine\n");
@@ -89,14 +101,15 @@ ena_cleanup(void *arg, int pending)
 	ena_qid = ENA_IO_TXQ_IDX(qid);
 	io_cq = &adapter->ena_dev->io_cq_queues[ena_qid];
 
-	atomic_store_8(&tx_ring->first_interrupt, 1);
-	atomic_store_8(&rx_ring->first_interrupt, 1);
+        //TODO
+	//atomic_store_8(&tx_ring->first_interrupt, 1);
+	//atomic_store_8(&rx_ring->first_interrupt, 1);
 
 	for (i = 0; i < ENA_CLEAN_BUDGET; ++i) {
 		rxc = ena_rx_cleanup(rx_ring);
 		txc = ena_tx_cleanup(tx_ring);
 
-		if (unlikely((if_getdrvflags(ifp) & IFF_DRV_RUNNING) == 0))
+		if (unlikely((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
 			return;
 
 		if ((txc != ENA_TX_BUDGET) && (rxc != ENA_RX_BUDGET))
@@ -117,7 +130,7 @@ ena_deferred_mq_start(void *arg, int pending)
 	if_t ifp = tx_ring->adapter->ifp;
 
 	while (!drbr_empty(ifp, tx_ring->br) && tx_ring->running &&
-	    (if_getdrvflags(ifp) & IFF_DRV_RUNNING) != 0) {
+	    (ifp->if_drv_flags & IFF_DRV_RUNNING) != 0) {
 		ENA_RING_MTX_LOCK(tx_ring);
 		ena_start_xmit(tx_ring);
 		ENA_RING_MTX_UNLOCK(tx_ring);
@@ -127,7 +140,7 @@ ena_deferred_mq_start(void *arg, int pending)
 int
 ena_mq_start(if_t ifp, struct mbuf *m)
 {
-	struct ena_adapter *adapter = if_getsoftc(ifp);
+	struct ena_adapter *adapter = static_cast<ena_adapter *>(ifp->if_softc);
 	struct ena_ring *tx_ring;
 	int ret, is_drbr_empty;
 	uint32_t i;
@@ -135,7 +148,7 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 	uint32_t bucket_id;
 #endif
 
-	if (unlikely((if_getdrvflags(adapter->ifp) & IFF_DRV_RUNNING) == 0))
+	if (unlikely((adapter->ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
 		return (ENODEV);
 
 	/* Which queue to use */
@@ -146,14 +159,14 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 	 */
 	if (M_HASHTYPE_GET(m) != M_HASHTYPE_NONE) {
 #ifdef RSS
-		if (rss_hash2bucket(m->m_pkthdr.flowid, M_HASHTYPE_GET(m),
+		if (rss_hash2bucket(m->M_dat.MH.MH_pkthdr.flowid, M_HASHTYPE_GET(m),
 		    &bucket_id) == 0)
 			i = bucket_id % adapter->num_io_queues;
 		else
 #endif
-			i = m->m_pkthdr.flowid % adapter->num_io_queues;
+			i = m->M_dat.MH.MH_pkthdr.flowid % adapter->num_io_queues;
 	} else {
-		i = curcpu % adapter->num_io_queues;
+		i = sched::cpu::current()->id % adapter->num_io_queues;
 	}
 	tx_ring = &adapter->tx_ring[i];
 
@@ -178,7 +191,7 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 void
 ena_qflush(if_t ifp)
 {
-	struct ena_adapter *adapter = if_getsoftc(ifp);
+	struct ena_adapter *adapter = static_cast<ena_adapter *>(ifp->if_softc);
 	struct ena_ring *tx_ring = adapter->tx_ring;
 	int i;
 
@@ -275,7 +288,7 @@ ena_tx_cleanup(struct ena_ring *tx_ring)
 		mbuf = tx_info->mbuf;
 
 		tx_info->mbuf = NULL;
-		bintime_clear(&tx_info->timestamp);
+		//TODO bintime_clear(&tx_info->timestamp);
 
 		bus_dmamap_sync(adapter->tx_buf_tag, tx_info->dmamap,
 		    BUS_DMASYNC_POSTWRITE);
@@ -338,74 +351,9 @@ ena_tx_cleanup(struct ena_ring *tx_ring)
 		ENA_RING_MTX_UNLOCK(tx_ring);
 	}
 
-	tx_ring->tx_last_cleanup_ticks = ticks;
+	tx_ring->tx_last_cleanup_ticks = bsd_ticks;
 
 	return (work_done);
-}
-
-static void
-ena_rx_hash_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_ctx *ena_rx_ctx,
-    struct mbuf *mbuf)
-{
-	struct ena_adapter *adapter = rx_ring->adapter;
-
-	if (likely(ENA_FLAG_ISSET(ENA_FLAG_RSS_ACTIVE, adapter))) {
-		mbuf->m_pkthdr.flowid = ena_rx_ctx->hash;
-
-#ifdef RSS
-		/*
-		 * Hardware and software RSS are in agreement only when both are
-		 * configured to Toeplitz algorithm.  This driver configures
-		 * that algorithm only when software RSS is enabled and uses it.
-		 */
-		if (adapter->ena_dev->rss.hash_func != ENA_ADMIN_TOEPLITZ &&
-		    ena_rx_ctx->l3_proto != ENA_ETH_IO_L3_PROTO_UNKNOWN) {
-			M_HASHTYPE_SET(mbuf, M_HASHTYPE_OPAQUE_HASH);
-			return;
-		}
-#endif
-
-		if (ena_rx_ctx->frag &&
-		    (ena_rx_ctx->l3_proto != ENA_ETH_IO_L3_PROTO_UNKNOWN)) {
-			M_HASHTYPE_SET(mbuf, M_HASHTYPE_OPAQUE_HASH);
-			return;
-		}
-
-		switch (ena_rx_ctx->l3_proto) {
-		case ENA_ETH_IO_L3_PROTO_IPV4:
-			switch (ena_rx_ctx->l4_proto) {
-			case ENA_ETH_IO_L4_PROTO_TCP:
-				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_TCP_IPV4);
-				break;
-			case ENA_ETH_IO_L4_PROTO_UDP:
-				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_UDP_IPV4);
-				break;
-			default:
-				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_IPV4);
-			}
-			break;
-		case ENA_ETH_IO_L3_PROTO_IPV6:
-			switch (ena_rx_ctx->l4_proto) {
-			case ENA_ETH_IO_L4_PROTO_TCP:
-				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_TCP_IPV6);
-				break;
-			case ENA_ETH_IO_L4_PROTO_UDP:
-				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_UDP_IPV6);
-				break;
-			default:
-				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_IPV6);
-			}
-			break;
-		case ENA_ETH_IO_L3_PROTO_UNKNOWN:
-			M_HASHTYPE_SET(mbuf, M_HASHTYPE_NONE);
-			break;
-		default:
-			M_HASHTYPE_SET(mbuf, M_HASHTYPE_OPAQUE_HASH);
-		}
-	} else {
-		mbuf->m_pkthdr.flowid = rx_ring->qid;
-		M_HASHTYPE_SET(mbuf, M_HASHTYPE_NONE);
-	}
 }
 
 /**
@@ -445,19 +393,16 @@ ena_rx_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_buf_info *ena_bufs,
 	bus_dmamap_sync(adapter->rx_buf_tag, rx_info->map,
 	    BUS_DMASYNC_POSTREAD);
 	mbuf = rx_info->mbuf;
-	mbuf->m_flags |= M_PKTHDR;
-	mbuf->m_pkthdr.len = len;
-	mbuf->m_len = len;
+	mbuf->m_hdr.mh_flags |= M_PKTHDR;
+	mbuf->M_dat.MH.MH_pkthdr.len = len;
+	mbuf->m_hdr.mh_len = len;
 	/* Only for the first segment the data starts at specific offset */
-	mbuf->m_data = mtodo(mbuf, ena_rx_ctx->pkt_offset);
+	mbuf->m_hdr.mh_data = static_cast<caddr_t>(mtodo(mbuf, ena_rx_ctx->pkt_offset));
 	ena_log_io(pdev, DBG, "Mbuf data offset=%u\n", ena_rx_ctx->pkt_offset);
-	mbuf->m_pkthdr.rcvif = rx_ring->que->adapter->ifp;
-
-	/* Fill mbuf with hash key and it's interpretation for optimization */
-	ena_rx_hash_mbuf(rx_ring, ena_rx_ctx, mbuf);
+	mbuf->M_dat.MH.MH_pkthdr.rcvif = rx_ring->que->adapter->ifp;
 
 	ena_log_io(pdev, DBG, "rx mbuf 0x%p, flags=0x%x, len: %d\n", mbuf,
-	    mbuf->m_flags, mbuf->m_pkthdr.len);
+	    mbuf->m_flags, mbuf->M_dat.MH.MH_pkthdr.len);
 
 	/* DMA address is not needed anymore, unmap it */
 	bus_dmamap_unload(rx_ring->adapter->rx_buf_tag, rx_info->map);
@@ -494,14 +439,14 @@ ena_rx_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_buf_info *ena_bufs,
 
 		bus_dmamap_sync(adapter->rx_buf_tag, rx_info->map,
 		    BUS_DMASYNC_POSTREAD);
-		if (unlikely(m_append(mbuf, len, rx_info->mbuf->m_data) == 0)) {
+		if (unlikely(m_append(mbuf, len, rx_info->mbuf->m_hdr.mh_data) == 0)) {
 			counter_u64_add(rx_ring->rx_stats.mbuf_alloc_fail, 1);
 			ena_log_io(pdev, WARN, "Failed to append Rx mbuf %p\n",
 			    mbuf);
 		}
 
 		ena_log_io(pdev, DBG, "rx mbuf updated. len %d\n",
-		    mbuf->m_pkthdr.len);
+		    mbuf->M_dat.MH.MH_pkthdr.len);
 
 		/* Free already appended mbuf, it won't be useful anymore */
 		bus_dmamap_unload(rx_ring->adapter->rx_buf_tag, rx_info->map);
@@ -530,7 +475,7 @@ ena_rx_checksum(struct ena_ring *rx_ring, struct ena_com_rx_ctx *ena_rx_ctx,
 	if (unlikely((ena_rx_ctx->l3_proto == ENA_ETH_IO_L3_PROTO_IPV4) &&
 	    ena_rx_ctx->l3_csum_err)) {
 		/* ipv4 checksum error */
-		mbuf->m_pkthdr.csum_flags = 0;
+		mbuf->M_dat.MH.MH_pkthdr.csum_flags = 0;
 		counter_u64_add(rx_ring->rx_stats.csum_bad, 1);
 		ena_log_io(pdev, DBG, "RX IPv4 header checksum error\n");
 		return;
@@ -541,12 +486,12 @@ ena_rx_checksum(struct ena_ring *rx_ring, struct ena_com_rx_ctx *ena_rx_ctx,
 	    (ena_rx_ctx->l4_proto == ENA_ETH_IO_L4_PROTO_UDP)) {
 		if (ena_rx_ctx->l4_csum_err) {
 			/* TCP/UDP checksum error */
-			mbuf->m_pkthdr.csum_flags = 0;
+			mbuf->M_dat.MH.MH_pkthdr.csum_flags = 0;
 			counter_u64_add(rx_ring->rx_stats.csum_bad, 1);
 			ena_log_io(pdev, DBG, "RX L4 checksum error\n");
 		} else {
-			mbuf->m_pkthdr.csum_flags = CSUM_IP_CHECKED;
-			mbuf->m_pkthdr.csum_flags |= CSUM_IP_VALID;
+			mbuf->M_dat.MH.MH_pkthdr.csum_flags= CSUM_IP_CHECKED;
+			mbuf->M_dat.MH.MH_pkthdr.csum_flags |= CSUM_IP_VALID;
 			counter_u64_add(rx_ring->rx_stats.csum_good, 1);
 		}
 	}
@@ -642,24 +587,24 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 			break;
 		}
 
-		if (((if_getcapenable(ifp) & IFCAP_RXCSUM) != 0) ||
-		    ((if_getcapenable(ifp) & IFCAP_RXCSUM_IPV6) != 0)) {
+		if (((ifp->if_capenable & IFCAP_RXCSUM) != 0) ||
+		    ((ifp->if_capenable & IFCAP_RXCSUM_IPV6) != 0)) {
 			ena_rx_checksum(rx_ring, &ena_rx_ctx, mbuf);
 		}
 
-		counter_enter();
+		//TODO counter_enter();
 		counter_u64_add_protected(rx_ring->rx_stats.bytes,
-		    mbuf->m_pkthdr.len);
+		    mbuf->M_dat.MH.MH_pkthdr.len);
 		counter_u64_add_protected(adapter->hw_stats.rx_bytes,
-		    mbuf->m_pkthdr.len);
-		counter_exit();
+		    mbuf->M_dat.MH.MH_pkthdr.len);
+		//TODO counter_exit();
 		/*
 		 * LRO is only for IP/TCP packets and TCP checksum of the packet
 		 * should be computed by hardware.
 		 */
 		do_if_input = 1;
-		if (((if_getcapenable(ifp) & IFCAP_LRO) != 0)  &&
-		    ((mbuf->m_pkthdr.csum_flags & CSUM_IP_VALID) != 0) &&
+		if (((ifp->if_capenable & IFCAP_LRO) != 0)  &&
+		    ((mbuf->M_dat.MH.MH_pkthdr.csum_flags & CSUM_IP_VALID) != 0) &&
 		    (ena_rx_ctx.l4_proto == ENA_ETH_IO_L4_PROTO_TCP)) {
 			/*
 			 * Send to the stack if:
@@ -674,13 +619,14 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 		if (do_if_input != 0) {
 			ena_log_io(pdev, DBG,
 			    "calling if_input() with mbuf %p\n", mbuf);
-			if_input(ifp, mbuf);
+                        //TODO: Apply here net channel
+			(*ifp->if_input)(ifp, mbuf);
 		}
 
-		counter_enter();
+		//TODO counter_enter();
 		counter_u64_add_protected(rx_ring->rx_stats.cnt, 1);
 		counter_u64_add_protected(adapter->hw_stats.rx_packets, 1);
-		counter_exit();
+		//TODO counter_exit();
 	} while (--budget);
 
 	rx_ring->next_to_clean = next_to_clean;
@@ -692,10 +638,12 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 
 	if (refill_required > refill_threshold) {
 		ena_com_update_dev_comp_head(rx_ring->ena_com_io_cq);
-		ena_refill_rx_bufs(rx_ring, refill_required);
+		//TODO - enable once ena.c compiles ena_refill_rx_bufs(rx_ring, refill_required);
 	}
 
-	tcp_lro_flush_all(&rx_ring->lro);
+        //Investigate https://github.com/freebsd/freebsd-src/commit/e936121d3140af047a498559493b9375a6ba6ba3
+        //to port it back
+	//tcp_lro_flush_all(&rx_ring->lro);
 
 	return (ENA_RX_BUDGET - budget);
 }
@@ -719,18 +667,18 @@ ena_tx_csum(struct ena_com_tx_ctx *ena_tx_ctx, struct mbuf *mbuf,
 
 	offload = false;
 	ena_meta = &ena_tx_ctx->ena_meta;
-	mss = mbuf->m_pkthdr.tso_segsz;
+	mss = mbuf->M_dat.MH.MH_pkthdr.tso_segsz;
 
 	if (mss != 0)
 		offload = true;
 
-	if ((mbuf->m_pkthdr.csum_flags & CSUM_TSO) != 0)
+	if ((mbuf->M_dat.MH.MH_pkthdr.csum_flags & CSUM_TSO) != 0)
 		offload = true;
 
-	if ((mbuf->m_pkthdr.csum_flags & CSUM_OFFLOAD) != 0)
+	if ((mbuf->M_dat.MH.MH_pkthdr.csum_flags & CSUM_OFFLOAD) != 0)
 		offload = true;
 
-	if ((mbuf->m_pkthdr.csum_flags & CSUM6_OFFLOAD) != 0)
+	if ((mbuf->M_dat.MH.MH_pkthdr.csum_flags & CSUM6_OFFLOAD) != 0)
 		offload = true;
 
 	if (!offload) {
@@ -764,12 +712,13 @@ ena_tx_csum(struct ena_com_tx_ctx *ena_tx_ctx, struct mbuf *mbuf,
 		if ((ip->ip_off & htons(IP_DF)) != 0)
 			ena_tx_ctx->df = 1;
 		break;
+/*TODO: Enable once IPV6 branch is merged in
 	case ETHERTYPE_IPV6:
 		ena_tx_ctx->l3_proto = ENA_ETH_IO_L3_PROTO_IPV6;
 		iphlen = ip6_lasthdr(mbuf, ehdrlen, IPPROTO_IPV6, &ipproto);
 		iphlen -= ehdrlen;
 		ena_tx_ctx->df = 1;
-		break;
+		break;*/
 	default:
 		iphlen = 0;
 		ipproto = 0;
@@ -779,28 +728,28 @@ ena_tx_csum(struct ena_com_tx_ctx *ena_tx_ctx, struct mbuf *mbuf,
 	mbuf_next = m_getptr(mbuf, iphlen + ehdrlen, &offset);
 	th = (struct tcphdr *)(mtodo(mbuf_next, offset));
 
-	if ((mbuf->m_pkthdr.csum_flags & CSUM_IP) != 0) {
+	if ((mbuf->M_dat.MH.MH_pkthdr.csum_flags & CSUM_IP) != 0) {
 		ena_tx_ctx->l3_csum_enable = 1;
 	}
-	if ((mbuf->m_pkthdr.csum_flags & CSUM_TSO) != 0) {
+	if ((mbuf->M_dat.MH.MH_pkthdr.csum_flags & CSUM_TSO) != 0) {
 		ena_tx_ctx->tso_enable = 1;
 		ena_meta->l4_hdr_len = (th->th_off);
 	}
 
 	if (ipproto == IPPROTO_TCP) {
 		ena_tx_ctx->l4_proto = ENA_ETH_IO_L4_PROTO_TCP;
-		if ((mbuf->m_pkthdr.csum_flags &
+		/*TODO if ((mbuf->M_dat.MH.MH_pkthdr.csum_flags &
 		    (CSUM_IP_TCP | CSUM_IP6_TCP)) != 0)
 			ena_tx_ctx->l4_csum_enable = 1;
 		else
-			ena_tx_ctx->l4_csum_enable = 0;
+			ena_tx_ctx->l4_csum_enable = 0;*/
 	} else if (ipproto == IPPROTO_UDP) {
 		ena_tx_ctx->l4_proto = ENA_ETH_IO_L4_PROTO_UDP;
-		if ((mbuf->m_pkthdr.csum_flags &
+		/*TODO if ((mbuf->M_dat.MH.MH_pkthdr.csum_flags &
 		    (CSUM_IP_UDP | CSUM_IP6_UDP)) != 0)
 			ena_tx_ctx->l4_csum_enable = 1;
 		else
-			ena_tx_ctx->l4_csum_enable = 0;
+			ena_tx_ctx->l4_csum_enable = 0;*/
 	} else {
 		ena_tx_ctx->l4_proto = ENA_ETH_IO_L4_PROTO_UNKNOWN;
 		ena_tx_ctx->l4_csum_enable = 0;
@@ -827,7 +776,7 @@ ena_check_and_collapse_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 		return (0);
 
 	if ((num_frags == adapter->max_tx_sgl_size) &&
-	    ((*mbuf)->m_pkthdr.len < tx_ring->tx_max_header_size))
+	    ((*mbuf)->M_dat.MH.MH_pkthdr.len < tx_ring->tx_max_header_size))
 		return (0);
 
 	counter_u64_add(tx_ring->tx_stats.collapse, 1);
@@ -857,7 +806,7 @@ ena_tx_map_mbuf(struct ena_ring *tx_ring, struct ena_tx_buffer *tx_info,
 	uint16_t offset;
 	int rc, nsegs;
 
-	mbuf_head_len = mbuf->m_len;
+	mbuf_head_len = mbuf->m_hdr.mh_len;
 	tx_info->mbuf = mbuf;
 	ena_buf = tx_info->bufs;
 
@@ -884,19 +833,19 @@ ena_tx_map_mbuf(struct ena_ring *tx_ring, struct ena_tx_buffer *tx_info,
 		 * First check if header fits in the mbuf. If not, copy it to
 		 * separate buffer that will be holding linearized data.
 		 */
-		*header_len = min_t(uint32_t, mbuf->m_pkthdr.len,
+		*header_len = min_t(uint32_t, mbuf->M_dat.MH.MH_pkthdr.len,
 		    tx_ring->tx_max_header_size);
 
 		/* If header is in linear space, just point into mbuf's data. */
 		if (likely(*header_len <= mbuf_head_len)) {
-			*push_hdr = mbuf->m_data;
+			*push_hdr = mbuf->m_hdr.mh_data;
 		/*
 		 * Otherwise, copy whole portion of header from multiple
 		 * mbufs to intermediate buffer.
 		 */
 		} else {
 			m_copydata(mbuf, 0, *header_len,
-			    tx_ring->push_buf_intermediate_buf);
+			    reinterpret_cast<caddr_t>(tx_ring->push_buf_intermediate_buf));
 			*push_hdr = tx_ring->push_buf_intermediate_buf;
 
 			counter_u64_add(tx_ring->tx_stats.llq_buffer_copy, 1);
@@ -907,7 +856,7 @@ ena_tx_map_mbuf(struct ena_ring *tx_ring, struct ena_tx_buffer *tx_info,
 		    mbuf, *push_hdr, *header_len);
 
 		/* If packet is fitted in LLQ header, no need for DMA segments. */
-		if (mbuf->m_pkthdr.len <= tx_ring->tx_max_header_size) {
+		if (mbuf->M_dat.MH.MH_pkthdr.len <= tx_ring->tx_max_header_size) {
 			return (0);
 		} else {
 			offset = tx_ring->tx_max_header_size;
@@ -990,7 +939,7 @@ ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 		return (rc);
 	}
 
-	ena_log_io(pdev, DBG, "Tx: %d bytes\n", (*mbuf)->m_pkthdr.len);
+	ena_log_io(pdev, DBG, "Tx: %d bytes\n", (*mbuf)->M_dat.MH.MH_pkthdr.len);
 
 	next_to_use = tx_ring->next_to_use;
 	req_id = tx_ring->free_tx_ids[next_to_use];
@@ -1038,18 +987,18 @@ ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 		goto dma_error;
 	}
 
-	counter_enter();
+	//TODO counter_enter();
 	counter_u64_add_protected(tx_ring->tx_stats.cnt, 1);
 	counter_u64_add_protected(tx_ring->tx_stats.bytes,
-	    (*mbuf)->m_pkthdr.len);
+	    (*mbuf)->M_dat.MH.MH_pkthdr.len);
 
 	counter_u64_add_protected(adapter->hw_stats.tx_packets, 1);
 	counter_u64_add_protected(adapter->hw_stats.tx_bytes,
-	    (*mbuf)->m_pkthdr.len);
-	counter_exit();
+	    (*mbuf)->M_dat.MH.MH_pkthdr.len);
+	//TODO counter_exit();
 
 	tx_info->tx_descs = nb_hw_desc;
-	getbinuptime(&tx_info->timestamp);
+	//TODO getbinuptime(&tx_info->timestamp);
 	tx_info->print_once = true;
 
 	tx_ring->next_to_use = ENA_TX_RING_IDX_NEXT(next_to_use,
@@ -1103,7 +1052,7 @@ ena_start_xmit(struct ena_ring *tx_ring)
 
 	ENA_RING_MTX_ASSERT(tx_ring);
 
-	if (unlikely((if_getdrvflags(adapter->ifp) & IFF_DRV_RUNNING) == 0))
+	if (unlikely((adapter->ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
 		return;
 
 	if (unlikely(!ENA_FLAG_ISSET(ENA_FLAG_LINK_UP, adapter)))
@@ -1112,7 +1061,7 @@ ena_start_xmit(struct ena_ring *tx_ring)
 	while ((mbuf = drbr_peek(adapter->ifp, tx_ring->br)) != NULL) {
 		ena_log_io(adapter->pdev, DBG,
 		    "\ndequeued mbuf %p with flags %#x and header csum flags %#jx\n",
-		    mbuf, mbuf->m_flags, (uint64_t)mbuf->m_pkthdr.csum_flags);
+		    mbuf, mbuf->m_flags, (uint64_t)mbuf->M_dat.MH.MH_pkthdr.csum_flags);
 
 		if (unlikely(!tx_ring->running)) {
 			drbr_putback(adapter->ifp, tx_ring->br, mbuf);
@@ -1134,7 +1083,7 @@ ena_start_xmit(struct ena_ring *tx_ring)
 
 		drbr_advance(adapter->ifp, tx_ring->br);
 
-		if (unlikely((if_getdrvflags(adapter->ifp) & IFF_DRV_RUNNING) == 0))
+		if (unlikely((adapter->ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
 			return;
 
 		tx_ring->acum_pkts++;
