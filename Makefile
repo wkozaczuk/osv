@@ -677,7 +677,7 @@ ifeq ($(conf_drivers_hyperv),1)
 bsd += bsd/sys/dev/hyperv/vmbus/hyperv.o
 endif
 ifeq ($(conf_drivers_ena),1)
-#bsd += bsd/sys/dev/ena/ena.o
+bsd += bsd/sys/dev/ena/ena.o
 bsd += bsd/sys/dev/ena/ena_datapath.o
 bsd += bsd/sys/contrib/ena_com/ena_com.o
 bsd += bsd/sys/contrib/ena_com/ena_eth_com.o

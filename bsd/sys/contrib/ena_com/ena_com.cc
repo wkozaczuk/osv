@@ -83,8 +83,6 @@ u_int32_t bus_space_read_4(bus_space_tag_t tag,
 void bus_space_write_4(bus_space_tag_t tag,
 		       bus_space_handle_t bsh,
 		       bus_size_t offset, u_int32_t value) {}
-int	ena_dma_alloc(device_t dmadev, bus_size_t size, ena_mem_handle_t *dma,
-    int mapflags, bus_size_t alignment, int domain) { return 0; }
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

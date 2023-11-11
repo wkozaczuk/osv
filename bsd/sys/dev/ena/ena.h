@@ -38,6 +38,8 @@
 #include "ena_com/ena_com.h"
 #include "ena_com/ena_eth_com.h"
 
+#include <bsd/porting/callout.h>
+
 #define ENA_DRV_MODULE_VER_MAJOR	2
 #define ENA_DRV_MODULE_VER_MINOR	6
 #define ENA_DRV_MODULE_VER_SUBMINOR	3
@@ -473,7 +475,7 @@ struct ena_adapter {
 	struct ena_irq irq_tbl[ENA_MAX_MSIX_VEC(ENA_MAX_NUM_IO_QUEUES)];
 
 	/* Timer service */
-	//TODO: struct callout timer_service;
+	struct callout timer_service;
 	u64 keep_alive_timestamp;
 	uint32_t next_monitored_tx_qid;
 	struct task reset_task;
