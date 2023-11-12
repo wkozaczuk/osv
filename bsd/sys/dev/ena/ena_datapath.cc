@@ -32,9 +32,6 @@ __FBSDID("$FreeBSD$");
 
 #include "ena.h"
 #include "ena_datapath.h"
-#ifdef DEV_NETMAP
-#include "ena_netmap.h"
-#endif /* DEV_NETMAP */
 #ifdef RSS
 #include <net/rss_config.h>
 #endif /* RSS */
@@ -269,11 +266,6 @@ ena_tx_cleanup(struct ena_ring *tx_ring)
 	ena_qid = ENA_IO_TXQ_IDX(tx_ring->que->id);
 	io_cq = &adapter->ena_dev->io_cq_queues[ena_qid];
 	next_to_clean = tx_ring->next_to_clean;
-
-#ifdef DEV_NETMAP
-	if (netmap_tx_irq(adapter->ifp, tx_ring->qid) != NM_IRQ_PASS)
-		return (0);
-#endif /* DEV_NETMAP */
 
 	do {
 		struct ena_tx_buffer *tx_info;
@@ -520,9 +512,6 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 	unsigned int qid;
 	int rc, i;
 	int budget = ENA_RX_BUDGET;
-#ifdef DEV_NETMAP
-	int done;
-#endif /* DEV_NETMAP */
 
 	adapter = rx_ring->que->adapter;
 	pdev = adapter->pdev;
@@ -532,11 +521,6 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 	io_cq = &adapter->ena_dev->io_cq_queues[ena_qid];
 	io_sq = &adapter->ena_dev->io_sq_queues[ena_qid];
 	next_to_clean = rx_ring->next_to_clean;
-
-#ifdef DEV_NETMAP
-	if (netmap_rx_irq(adapter->ifp, rx_ring->qid, &done) != NM_IRQ_PASS)
-		return (0);
-#endif /* DEV_NETMAP */
 
 	ena_log_io(pdev, DBG, "rx: qid %d\n", qid);
 

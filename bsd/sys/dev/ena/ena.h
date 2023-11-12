@@ -240,14 +240,6 @@ struct ena_calc_queue_size_ctx {
 	uint16_t max_rx_sgl_size;
 };
 
-#ifdef DEV_NETMAP
-struct ena_netmap_tx_info {
-	uint32_t socket_buf_idx[ENA_PKT_MAX_BUFS];
-	bus_dmamap_t map_seg[ENA_PKT_MAX_BUFS];
-	unsigned int sockets_used;
-};
-#endif
-
 struct ena_tx_buffer {
 	struct mbuf *mbuf;
 	/* # of ena desc for this specific mbuf
@@ -262,10 +254,6 @@ struct ena_tx_buffer {
 	u64 timestamp;
 	bool print_once;
 
-#ifdef DEV_NETMAP
-	struct ena_netmap_tx_info nm_info;
-#endif /* DEV_NETMAP */
-
 	struct ena_com_buf bufs[ENA_PKT_MAX_BUFS];
 } __aligned(CACHE_LINE_SIZE);
 
@@ -273,9 +261,6 @@ struct ena_rx_buffer {
 	struct mbuf *mbuf;
 	bus_dmamap_t map;
 	struct ena_com_buf ena_buf;
-#ifdef DEV_NETMAP
-	uint32_t netmap_buf_idx;
-#endif /* DEV_NETMAP */
 } __aligned(CACHE_LINE_SIZE);
 
 //TODO: See if we need atomics or possibly these get updated/read without a need
@@ -383,10 +368,6 @@ struct ena_ring {
 	uint8_t *push_buf_intermediate_buf;
 
 	int tx_last_cleanup_ticks;
-
-#ifdef DEV_NETMAP
-	bool initialized;
-#endif /* DEV_NETMAP */
 } __aligned(CACHE_LINE_SIZE);
 
 struct ena_stats_dev {
