@@ -32,9 +32,6 @@ __FBSDID("$FreeBSD$");
 
 #include "ena.h"
 #include "ena_datapath.h"
-#ifdef RSS
-#include <net/rss_config.h>
-#endif /* RSS */
 
 #include <osv/sched.hh>
 
@@ -141,9 +138,6 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 	struct ena_ring *tx_ring;
 	int ret, is_drbr_empty;
 	uint32_t i;
-#ifdef RSS
-	uint32_t bucket_id;
-#endif
 
 	if (unlikely((adapter->ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
 		return (ENODEV);
@@ -155,13 +149,7 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 	 * It should improve performance.
 	 */
 	if (M_HASHTYPE_GET(m) != M_HASHTYPE_NONE) {
-#ifdef RSS
-		if (rss_hash2bucket(m->M_dat.MH.MH_pkthdr.flowid, M_HASHTYPE_GET(m),
-		    &bucket_id) == 0)
-			i = bucket_id % adapter->num_io_queues;
-		else
-#endif
-			i = m->M_dat.MH.MH_pkthdr.flowid % adapter->num_io_queues;
+		i = m->M_dat.MH.MH_pkthdr.flowid % adapter->num_io_queues;
 	} else {
 		i = sched::cpu::current()->id % adapter->num_io_queues;
 	}

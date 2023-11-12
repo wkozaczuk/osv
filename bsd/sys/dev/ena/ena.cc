@@ -666,14 +666,8 @@ ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 
 	tx_ring->running = true;
 
-#ifdef RSS
-	cpu_mask = &que->cpu_mask;
-	snprintf(thread_name, sizeof(thread_name), "%s txeq %d",
-	    device_get_nameunit(adapter->pdev), que->cpu);
-#else
 	//TODO: snprintf(thread_name, sizeof(thread_name), "%s txeq %d",
 	//    device_get_nameunit(adapter->pdev), que->id);
-#endif
 	//TODO: taskqueue_start_threads_cpuset(&tx_ring->enqueue_tq, 1, PI_NET,
 	//    cpu_mask, "%s", thread_name);
 
@@ -1305,9 +1299,6 @@ ena_create_io_queues(struct ena_adapter *adapter)
 		//TODO: queue->cleanup_tq = taskqueue_create_fast("ena cleanup",
 		//TODO:     M_WAITOK, taskqueue_thread_enqueue, &queue->cleanup_tq);
 
-#ifdef RSS
-		cpu_mask = &queue->cpu_mask;
-#endif
 		//TODO: taskqueue_start_threads_cpuset(&queue->cleanup_tq, 1, PI_NET,
 		//    cpu_mask, "%s queue %d cleanup",
 		//    device_get_nameunit(adapter->pdev), i);
@@ -1448,24 +1439,10 @@ ena_setup_mgmnt_intr(struct ena_adapter *adapter)
 static int
 ena_setup_io_intr(struct ena_adapter *adapter)
 {
-#ifdef RSS
-	int num_buckets = rss_getnumbuckets();
-	static int last_bind = 0;
-	int cur_bind;
-	int idx;
-#endif
 	int irq_idx;
 
 	if (adapter->msix_entries == NULL)
 		return (EINVAL);
-
-#ifdef RSS
-	if (adapter->first_bind < 0) {
-		adapter->first_bind = last_bind;
-		last_bind = (last_bind + adapter->num_io_queues) % num_buckets;
-	}
-	cur_bind = adapter->first_bind;
-#endif
 
 	for (int i = 0; i < adapter->num_io_queues; i++) {
 		irq_idx = ENA_IO_IRQ_IDX(i);
@@ -1479,22 +1456,7 @@ ena_setup_io_intr(struct ena_adapter *adapter)
 		ena_log(adapter->pdev, DBG, "ena_setup_io_intr vector: %d\n",
 		    adapter->msix_entries[irq_idx].vector);
 
-#ifdef RSS
-		adapter->que[i].cpu = adapter->irq_tbl[irq_idx].cpu =
-		    rss_getcpu(cur_bind);
-		cur_bind = (cur_bind + 1) % num_buckets;
-		CPU_SETOF(adapter->que[i].cpu, &adapter->que[i].cpu_mask);
-
-		for (idx = 0; idx < MAXMEMDOM; ++idx) {
-			if (CPU_ISSET(adapter->que[i].cpu, &cpuset_domain[idx]))
-				break;
-		}
-#endif /* RSS */
-#if defined(RSS) && __FreeBSD_version > 1200055
-		adapter->que[i].domain = idx;
-#else
 		adapter->que[i].domain = -1;
-#endif /* defined(RSS) && __FreeBSD_version > 1200055 */
 	}
 
 	return (0);
@@ -1588,19 +1550,6 @@ ena_request_io_irq(struct ena_adapter *adapter)
 			goto err;
 		}
 		irq->requested = true;
-
-#ifdef RSS
-		rc = bus_bind_intr(adapter->pdev, irq->res, irq->cpu);
-		if (unlikely(rc != 0)) {
-			ena_log(pdev, ERR,
-			    "failed to bind interrupt handler for irq %ju to cpu %d: %d\n",
-			    rman_get_start(irq->res), irq->cpu, rc);
-			goto err;
-		}
-
-		ena_log(pdev, INFO, "queue %d - cpu %d\n",
-		    i - ENA_IO_IRQ_FIRST_IDX, irq->cpu);
-#endif
 	}
 
 	return (rc);
@@ -2301,10 +2250,6 @@ ena_calc_max_io_queue_num(device_t pdev, struct ena_com_dev *ena_dev,
 	/* 1 IRQ for mgmnt and 1 IRQ for each TX/RX pair */
 //TODO	max_num_io_queues = min_t(uint32_t, max_num_io_queues,
 //	    pci_msix_count(pdev) - 1);
-#ifdef RSS
-	max_num_io_queues = min_t(uint32_t, max_num_io_queues,
-	    rss_getnumbuckets());
-#endif
 
 	return (max_num_io_queues);
 }

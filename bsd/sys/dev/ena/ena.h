@@ -205,9 +205,6 @@ struct ena_irq {
 	void *cookie;
 	unsigned int vector;
 	bool requested;
-#ifdef RSS
-	int cpu;
-#endif
 	char name[ENA_IRQNAME_SIZE];
 };
 
@@ -220,10 +217,6 @@ struct ena_que {
 	struct taskqueue *cleanup_tq;
 
 	uint32_t id;
-#ifdef RSS
-	int cpu;
-	cpuset_t cpu_mask;
-#endif
 	int domain;
 	struct sysctl_oid *oid;
 };
