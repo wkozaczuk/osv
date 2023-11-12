@@ -147,10 +147,8 @@ static void ena_update_host_info(struct ena_admin_host_info *, if_t);
 static void ena_update_hwassist(struct ena_adapter *);
 static int ena_setup_ifnet(device_t, struct ena_adapter *,
     struct ena_com_dev_get_features_ctx *);
-static int ena_enable_wc(device_t, struct resource *);
 static int ena_set_queues_placement_policy(device_t, struct ena_com_dev *,
     struct ena_admin_feature_llq_desc *, struct ena_llq_configurations *);
-static int ena_map_llq_mem_bar(device_t, struct ena_com_dev *);
 static uint32_t ena_calc_max_io_queue_num(device_t, struct ena_com_dev *,
     struct ena_com_dev_get_features_ctx *);
 static int ena_calc_io_queue_size(struct ena_calc_queue_size_ctx *);
@@ -181,7 +179,6 @@ void ena_timer_service(void *); //TODO change back to static once ENA_TIMER_RESE
 int ena_mbuf_sz = 64;
 char *ena_version = "123";
 struct sx ena_global_lock;
-bool ena_force_large_llq_header = false;
 
 //TODO This function probably should not be used or maybe import from FreeBSD (most likely not becuase DMA related?)
 int bus_dmamap_load_mbuf_sg(bus_dma_tag_t dmat, bus_dmamap_t map,
@@ -2297,10 +2294,6 @@ ena_calc_max_io_queue_num(device_t pdev, struct ena_com_dev *ena_dev,
 		io_rx_num = min_t(int, io_tx_sq_num, io_tx_cq_num);
 	}
 
-	/* In case of LLQ use the llq fields for the tx SQ/CQ */
-	if (ena_dev->tx_mem_queue_type == ENA_ADMIN_PLACEMENT_POLICY_DEV)
-		io_tx_sq_num = get_feat_ctx->llq.max_llq_num;
-
 	max_num_io_queues = min_t(uint32_t, mp_ncpus, ENA_MAX_NUM_IO_QUEUES);
 	max_num_io_queues = min_t(uint32_t, max_num_io_queues, io_rx_num);
 	max_num_io_queues = min_t(uint32_t, max_num_io_queues, io_tx_sq_num);
@@ -2317,140 +2310,21 @@ ena_calc_max_io_queue_num(device_t pdev, struct ena_com_dev *ena_dev,
 }
 
 static int
-ena_enable_wc(device_t pdev, struct resource *res)
-{
-// TODO Is it necessary?
-//#if defined(__i386) || defined(__amd64) || defined(__aarch64__)
-//#if __FreeBSD_version > 1300039
-//	vm_offset_t va;
-//	vm_size_t len;
-//	int rc;
-//
-//	va = (vm_offset_t)rman_get_virtual(res);
-//	len = rman_get_size(res);
-//	/* Enable write combining */
-//	rc = pmap_change_attr(va, len, VM_MEMATTR_WRITE_COMBINING);
-//	if (unlikely(rc != 0)) {
-//		ena_log(pdev, ERR, "pmap_change_attr failed, %d\n", rc);
-//		return (rc);
-//	}
-//
-//	return (0);
-//#else /* __FreeBSD_version <= 1300039 */
-//	vm_offset_t va;
-//	vm_size_t len;
-//
-//	va = (vm_offset_t)rman_get_virtual(res);
-//	len = rman_get_size(res);
-//#if defined(__i386) || defined(__amd64)
-//	int rc;
-//	rc = pmap_change_attr(va, len, VM_MEMATTR_WRITE_COMBINING);
-//	if (unlikely(rc != 0))
-//		ena_log(pdev, ERR, "pmap_change_attr failed, %d\n", rc);
-//
-//	return (rc);
-//#else  /* defined(__aarch64__) */
-//	vm_paddr_t pa;
-//	pa = rman_get_start(res);
-//	pmap_kenter(va, len, pa, VM_MEMATTR_WRITE_COMBINING);
-//
-//	return (0);
-//#endif /* defined(__i386) || defined(__amd64) */
-//#endif /* __FreeBSD_version > 1300039 */
-//#endif
-	return (EOPNOTSUPP);
-}
-
-static int
 ena_set_queues_placement_policy(device_t pdev, struct ena_com_dev *ena_dev,
     struct ena_admin_feature_llq_desc *llq,
     struct ena_llq_configurations *llq_default_configurations)
 {
-	int rc;
-	uint32_t llq_feature_mask;
+	//We do NOT support LLQ
+	ena_dev->tx_mem_queue_type = ENA_ADMIN_PLACEMENT_POLICY_HOST;
 
-	llq_feature_mask = 1 << ENA_ADMIN_LLQ;
-	if (!(ena_dev->supported_features & llq_feature_mask)) {
-		ena_log(pdev, WARN,
-		    "LLQ is not supported. Fallback to host mode policy.\n");
-		ena_dev->tx_mem_queue_type = ENA_ADMIN_PLACEMENT_POLICY_HOST;
-		return (0);
-	}
-
-	if (ena_dev->mem_bar == NULL) {
-		ena_log(pdev, WARN,
-		    "LLQ is advertised as supported but device doesn't expose mem bar.\n");
-		ena_dev->tx_mem_queue_type = ENA_ADMIN_PLACEMENT_POLICY_HOST;
-		return (0);
-	}
-
-	rc = ena_com_config_dev_mode(ena_dev, llq, llq_default_configurations);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, WARN,
-		    "Failed to configure the device mode. "
-		    "Fallback to host mode policy.\n");
-		ena_dev->tx_mem_queue_type = ENA_ADMIN_PLACEMENT_POLICY_HOST;
-	}
-
+	ena_log(pdev, INFO,
+		"LLQ is not supported. Using the host mode policy.\n");
 	return (0);
-}
-
-static int
-ena_map_llq_mem_bar(device_t pdev, struct ena_com_dev *ena_dev)
-{
-	struct ena_adapter *adapter = nullptr;//TODO device_get_softc(pdev);
-	int rc;//, rid;
-
-	/* Try to allocate resources for LLQ bar */
-	//TODO rid = PCIR_BAR(ENA_MEM_BAR);
-	//adapter->memory = bus_alloc_resource_any(pdev, SYS_RES_MEMORY, &rid,
-	//    RF_ACTIVE);
-	if (unlikely(adapter->memory == NULL)) {
-		ena_log(pdev, WARN,
-		    "Unable to allocate LLQ bar resource. LLQ mode won't be used.\n");
-		return (0);
-	}
-
-	/* Enable write combining for better LLQ performance */
-	rc = ena_enable_wc(adapter->pdev, adapter->memory);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "failed to enable write combining.\n");
-		return (rc);
-	}
-
-	/*
-	 * Save virtual address of the device's memory region
-	 * for the ena_com layer.
-	 */
-	//TODO ena_dev->mem_bar = rman_get_virtual(adapter->memory);
-
-	return (0);
-}
-
-static inline void
-set_default_llq_configurations(struct ena_llq_configurations *llq_config,
-    struct ena_admin_feature_llq_desc *llq)
-{
-	llq_config->llq_header_location = ENA_ADMIN_INLINE_HEADER;
-	llq_config->llq_stride_ctrl = ENA_ADMIN_MULTIPLE_DESCS_PER_ENTRY;
-	llq_config->llq_num_decs_before_header =
-	    ENA_ADMIN_LLQ_NUM_DESCS_BEFORE_HEADER_2;
-	if ((llq->entry_size_ctrl_supported & ENA_ADMIN_LIST_ENTRY_SIZE_256B) !=
-	    0 && ena_force_large_llq_header) {
-		llq_config->llq_ring_entry_size =
-		    ENA_ADMIN_LIST_ENTRY_SIZE_256B;
-		llq_config->llq_ring_entry_size_value = 256;
-	} else {
-		llq_config->llq_ring_entry_size =
-		    ENA_ADMIN_LIST_ENTRY_SIZE_128B;
-		llq_config->llq_ring_entry_size_value = 128;
-	}
 }
 
 static int
 ena_calc_io_queue_size(struct ena_calc_queue_size_ctx *ctx)
 {
-	struct ena_admin_feature_llq_desc *llq = &ctx->get_feat_ctx->llq;
 	struct ena_com_dev *ena_dev = ctx->ena_dev;
 	uint32_t tx_queue_size = ENA_DEFAULT_RING_SIZE;
 	uint32_t rx_queue_size = ENA_DEFAULT_RING_SIZE;
@@ -2465,13 +2339,8 @@ ena_calc_io_queue_size(struct ena_calc_queue_size_ctx *ctx)
 		    max_queue_ext->max_rx_sq_depth);
 		max_tx_queue_size = max_queue_ext->max_tx_cq_depth;
 
-		if (ena_dev->tx_mem_queue_type ==
-		    ENA_ADMIN_PLACEMENT_POLICY_DEV)
-			max_tx_queue_size = min_t(uint32_t, max_tx_queue_size,
-			    llq->max_llq_depth);
-		else
-			max_tx_queue_size = min_t(uint32_t, max_tx_queue_size,
-			    max_queue_ext->max_tx_sq_depth);
+		max_tx_queue_size = min_t(uint32_t, max_tx_queue_size,
+		    max_queue_ext->max_tx_sq_depth);
 
 		ctx->max_tx_sgl_size = min_t(uint16_t, ENA_PKT_MAX_BUFS,
 		    max_queue_ext->max_per_packet_tx_descs);
@@ -2484,13 +2353,8 @@ ena_calc_io_queue_size(struct ena_calc_queue_size_ctx *ctx)
 		    max_queues->max_sq_depth);
 		max_tx_queue_size = max_queues->max_cq_depth;
 
-		if (ena_dev->tx_mem_queue_type ==
-		    ENA_ADMIN_PLACEMENT_POLICY_DEV)
-			max_tx_queue_size = min_t(uint32_t, max_tx_queue_size,
-			    llq->max_llq_depth);
-		else
-			max_tx_queue_size = min_t(uint32_t, max_tx_queue_size,
-			    max_queues->max_sq_depth);
+		max_tx_queue_size = min_t(uint32_t, max_tx_queue_size,
+		    max_queues->max_sq_depth);
 
 		ctx->max_tx_sgl_size = min_t(uint16_t, ENA_PKT_MAX_BUFS,
 		    max_queues->max_packet_tx_descs);
@@ -2501,26 +2365,6 @@ ena_calc_io_queue_size(struct ena_calc_queue_size_ctx *ctx)
 	/* round down to the nearest power of 2 */
 	//TODO max_tx_queue_size = 1 << (flsl(max_tx_queue_size) - 1);
 	//TODO max_rx_queue_size = 1 << (flsl(max_rx_queue_size) - 1);
-
-	/*
-	 * When forcing large headers, we multiply the entry size by 2,
-	 * and therefore divide the queue size by 2, leaving the amount
-	 * of memory used by the queues unchanged.
-	 */
-	if (ena_force_large_llq_header) {
-		if ((llq->entry_size_ctrl_supported &
-		    ENA_ADMIN_LIST_ENTRY_SIZE_256B) != 0 &&
-		    ena_dev->tx_mem_queue_type ==
-		    ENA_ADMIN_PLACEMENT_POLICY_DEV) {
-			max_tx_queue_size /= 2;
-			ena_log(ctx->pdev, INFO,
-			    "Forcing large headers and decreasing maximum Tx queue size to %d\n",
-			    max_tx_queue_size);
-		} else {
-			ena_log(ctx->pdev, WARN,
-			    "Forcing large headers failed: LLQ is disabled or device does not support large headers\n");
-		}
-	}
 
 	tx_queue_size = clamp_val(tx_queue_size, ENA_MIN_RING_SIZE,
 	    max_tx_queue_size);
@@ -2592,7 +2436,6 @@ static int
 ena_device_init(struct ena_adapter *adapter, device_t pdev,
     struct ena_com_dev_get_features_ctx *get_feat_ctx, int *wd_active)
 {
-	struct ena_llq_configurations llq_config;
 	struct ena_com_dev *ena_dev = adapter->ena_dev;
 	bool readless_supported;
 	uint32_t aenq_groups;
@@ -2672,10 +2515,7 @@ ena_device_init(struct ena_adapter *adapter, device_t pdev,
 
 	*wd_active = !!(aenq_groups & BIT(ENA_ADMIN_KEEP_ALIVE));
 
-	set_default_llq_configurations(&llq_config, &get_feat_ctx->llq);
-
-	rc = ena_set_queues_placement_policy(pdev, ena_dev, &get_feat_ctx->llq,
-	    &llq_config);
+	rc = ena_set_queues_placement_policy(pdev, ena_dev, &get_feat_ctx->llq, nullptr);
 	if (unlikely(rc != 0)) {
 		ena_log(pdev, ERR, "Failed to set placement policy\n");
 		goto err_admin_init;
@@ -3409,12 +3249,6 @@ ena_attach(device_t pdev)
 		goto err_bus_free;
 	}
 
-	rc = ena_map_llq_mem_bar(pdev, ena_dev);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "Failed to map ENA mem bar");
-		goto err_bus_free;
-	}
-
 	/* Initially clear all the flags */
 	//TODO ENA_FLAG_ZERO(adapter);
 
@@ -3425,11 +3259,6 @@ ena_attach(device_t pdev)
 		rc = ENXIO;
 		goto err_bus_free;
 	}
-
-	if (ena_dev->tx_mem_queue_type == ENA_ADMIN_PLACEMENT_POLICY_DEV)
-		adapter->disable_meta_caching = !!(
-		    get_feat_ctx.llq.accel_mode.u.get.supported_flags &
-		    BIT(ENA_ADMIN_DISABLE_META_CACHING));
 
 	//TODO adapter->keep_alive_timestamp = getsbinuptime();
 
