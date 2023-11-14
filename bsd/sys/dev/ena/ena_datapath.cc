@@ -36,8 +36,7 @@ __FBSDID("$FreeBSD$");
 #include <osv/sched.hh>
 
 //#include <netinet6/ip6_var.h>
-//TODO
-int ena_log_level = 0;
+int ena_log_level = 0; //Possibly move it somewhere else
 
 /*********************************************************************
  *  Static functions prototypes
@@ -95,9 +94,8 @@ ena_cleanup(void *arg, int pending)
 	ena_qid = ENA_IO_TXQ_IDX(qid);
 	io_cq = &adapter->ena_dev->io_cq_queues[ena_qid];
 
-        //TODO
-	//atomic_store_8(&tx_ring->first_interrupt, 1);
-	//atomic_store_8(&rx_ring->first_interrupt, 1);
+	tx_ring->first_interrupt.store(1);
+	rx_ring->first_interrupt.store(1);
 
 	for (i = 0; i < ENA_CLEAN_BUDGET; ++i) {
 		rxc = ena_rx_cleanup(rx_ring);
@@ -667,13 +665,14 @@ ena_tx_csum(struct ena_com_tx_ctx *ena_tx_ctx, struct mbuf *mbuf,
 		if ((ip->ip_off & htons(IP_DF)) != 0)
 			ena_tx_ctx->df = 1;
 		break;
-/*TODO: Enable once IPV6 branch is merged in
+#ifdef INET6
 	case ETHERTYPE_IPV6:
 		ena_tx_ctx->l3_proto = ENA_ETH_IO_L3_PROTO_IPV6;
 		iphlen = ip6_lasthdr(mbuf, ehdrlen, IPPROTO_IPV6, &ipproto);
 		iphlen -= ehdrlen;
 		ena_tx_ctx->df = 1;
-		break;*/
+		break;
+#endif
 	default:
 		iphlen = 0;
 		ipproto = 0;

@@ -79,7 +79,7 @@
 #include <osv/mmu.hh>
 #include <osv/mempool.hh>
 
-//TODO:
+//TODO: Convert to OSv PCI read/write
 u_int32_t bus_space_read_4(bus_space_tag_t tag,
 			   bus_space_handle_t handle,
 			   bus_size_t offset) { return 0; }
@@ -1138,7 +1138,7 @@ static void ena_com_hash_key_fill_default_key(struct ena_com_dev *ena_dev)
 		(ena_dev->rss).hash_key;
 
         //We should not need RSS support for now at least
-	//TODO: ENA_RSS_FILL_KEY(&hash_key->key, sizeof(hash_key->key));
+	//ENA_RSS_FILL_KEY(&hash_key->key, sizeof(hash_key->key));
 	/* The key buffer is stored in the device in an array of
 	 * uint32 elements.
 	 */

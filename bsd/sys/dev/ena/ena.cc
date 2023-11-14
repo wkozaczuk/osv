@@ -306,7 +306,7 @@ ena_init_io_rings_common(struct ena_adapter *adapter, struct ena_ring *ring,
 	ring->qid = qid;
 	ring->adapter = adapter;
 	ring->ena_dev = adapter->ena_dev;
-	//TODO atomic_store_8(&ring->first_interrupt, 0);
+        ring->first_interrupt.store(0);
 	ring->no_interrupt_event_cnt = 0;
 }
 
@@ -1043,11 +1043,7 @@ ena_create_io_queues(struct ena_adapter *adapter)
 	for (i = 0; i < adapter->num_io_queues; i++) {
 		queue = &adapter->que[i];
 
-#if __FreeBSD_version > 1300077
-		NET_TASK_INIT(&queue->cleanup_task, 0, ena_cleanup, queue);
-#else
 		TASK_INIT(&queue->cleanup_task, 0, ena_cleanup, queue);
-#endif
 		//TODO: queue->cleanup_tq = taskqueue_create_fast("ena cleanup",
 		//TODO:     M_WAITOK, taskqueue_thread_enqueue, &queue->cleanup_tq);
 
@@ -1452,18 +1448,7 @@ ena_unmask_all_io_irqs(struct ena_adapter *adapter)
 static int
 ena_up_complete(struct ena_adapter *adapter)
 {
-	int rc;
-
-	/* RSS - not applicable ? if (likely(ENA_FLAG_ISSET(ENA_FLAG_RSS_ACTIVE, adapter))) {
-		rc = ena_rss_configure(adapter);
-		if (rc != 0) {
-			ena_log(adapter->pdev, ERR,
-			    "Failed to configure RSS\n");
-			return (rc);
-		}
-	}*/
-
-	rc = ena_change_mtu(adapter->ifp, adapter->ifp->if_mtu);
+	int rc = ena_change_mtu(adapter->ifp, adapter->ifp->if_mtu);
 	if (unlikely(rc != 0))
 		return (rc);
 
@@ -1890,12 +1875,7 @@ ena_setup_ifnet(device_t pdev, struct ena_adapter *adapter,
 	//TODO if_setdev(ifp, pdev);
 	//TODO if_setsoftc(ifp, adapter);
 
-#if __FreeBSD_version > 1300081 && __FreeBSD_version <= 1400086
-	if_setflags(ifp,
-	    IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST | IFF_KNOWSEPOCH);
-#else
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST; //What about simplex?
-#endif
         /*TODO
 	if_setinitfn(ifp, ena_init);
 	if_settransmitfn(ifp, ena_mq_start);
@@ -2019,6 +1999,14 @@ ena_set_queues_placement_policy(device_t pdev, struct ena_com_dev *ena_dev,
 	return (0);
 }
 
+//Originates from FreeBSD
+static __inline __pure2 int
+flsl(long mask)
+{
+	return (mask == 0 ? 0 :
+	    8 * sizeof(mask) - __builtin_clzl((u_long)mask));
+}
+
 static int
 ena_calc_io_queue_size(struct ena_calc_queue_size_ctx *ctx)
 {
@@ -2060,16 +2048,16 @@ ena_calc_io_queue_size(struct ena_calc_queue_size_ctx *ctx)
 	}
 
 	/* round down to the nearest power of 2 */
-	//TODO max_tx_queue_size = 1 << (flsl(max_tx_queue_size) - 1);
-	//TODO max_rx_queue_size = 1 << (flsl(max_rx_queue_size) - 1);
+	max_tx_queue_size = 1 << (flsl(max_tx_queue_size) - 1);
+	max_rx_queue_size = 1 << (flsl(max_rx_queue_size) - 1);
 
 	tx_queue_size = clamp_val(tx_queue_size, ENA_MIN_RING_SIZE,
 	    max_tx_queue_size);
 	rx_queue_size = clamp_val(rx_queue_size, ENA_MIN_RING_SIZE,
 	    max_rx_queue_size);
 
-	//TODO tx_queue_size = 1 << (flsl(tx_queue_size) - 1);
-	//TODO rx_queue_size = 1 << (flsl(rx_queue_size) - 1);
+	tx_queue_size = 1 << (flsl(tx_queue_size) - 1);
+	rx_queue_size = 1 << (flsl(rx_queue_size) - 1);
 
 	ctx->max_tx_queue_size = max_tx_queue_size;
 	ctx->max_rx_queue_size = max_rx_queue_size;
@@ -2097,21 +2085,19 @@ ena_config_host_info(struct ena_com_dev *ena_dev, device_t dev)
 
 	//TODO if (pci_get_id(dev, PCI_ID_RID, &rid) == 0)
 	//TODO 	host_info->bdf = rid;
-	host_info->os_type = ENA_ADMIN_OS_FREEBSD;
-	//TODO host_info->kernel_ver = osreldate; Put OSv info
+	host_info->os_type = ENA_ADMIN_OS_LINUX;
+	host_info->kernel_ver = 0;
 
-	//TODO sprintf(host_info->kernel_ver_str, "%d", osreldate);
+        //Maybe down the road put some OSv specific info
+	sprintf(host_info->kernel_ver_str[0] = '\0';
 	host_info->os_dist = 0;
-	//TODO strncpy(host_info->os_dist_str, osrelease,
-	  //TODO   sizeof(host_info->os_dist_str) - 1);
+	host_info->os_dist_str[0] = '\0';
 
 	host_info->driver_version = (ENA_DRV_MODULE_VER_MAJOR) |
 	    (ENA_DRV_MODULE_VER_MINOR << ENA_ADMIN_HOST_INFO_MINOR_SHIFT) |
 	    (ENA_DRV_MODULE_VER_SUBMINOR << ENA_ADMIN_HOST_INFO_SUB_MINOR_SHIFT);
 	host_info->num_cpus = mp_ncpus;
-	host_info->driver_supported_features =
-	    ENA_ADMIN_HOST_INFO_RX_OFFSET_MASK |
-	    ENA_ADMIN_HOST_INFO_RSS_CONFIGURABLE_FUNCTION_KEY_MASK;
+	host_info->driver_supported_features = ENA_ADMIN_HOST_INFO_RX_OFFSET_MASK;
 
 	rc = ena_com_set_host_attributes(ena_dev);
 	if (unlikely(rc != 0)) {
@@ -2312,11 +2298,11 @@ static int
 check_for_rx_interrupt_queue(struct ena_adapter *adapter,
     struct ena_ring *rx_ring)
 {
-	//TODO if (likely(atomic_load_8(&rx_ring->first_interrupt)))
-	//	return (0);
+	if (rx_ring->first_interrupt.load())
+		return (0);
 
-	//TODO if (ena_com_cq_empty(rx_ring->ena_com_io_cq))
-	//	return (0);
+	if (ena_com_cq_empty(rx_ring->ena_com_io_cq))
+		return (0);
 
 	rx_ring->no_interrupt_event_cnt++;
 
@@ -2357,7 +2343,7 @@ check_missing_comp_in_tx_queue(struct ena_adapter *adapter,
 		//TODO bintime_sub(&time, &tx_buf->timestamp);
 		//TODO time_offset = bttosbt(time);
 
-		//TODO if (unlikely(!atomic_load_8(&tx_ring->first_interrupt) &&
+		if (unlikely(!tx_ring->first_interrupt.load())) { //&&
 		//    time_offset > 2 * adapter->missing_tx_timeout)) {
 			/*
 			 * If after graceful period interrupt is still not
@@ -2370,19 +2356,14 @@ check_missing_comp_in_tx_queue(struct ena_adapter *adapter,
 			ena_trigger_reset(adapter,
 			    ENA_REGS_RESET_MISS_INTERRUPT);
 			return (EIO);
-		//}
+		}
 
 		/* Check again if packet is still waiting */
 		//TODO if (unlikely(time_offset > adapter->missing_tx_timeout)) {
 
 			if (tx_buf->print_once) {
-#if __FreeBSD_version > 1200066
-				time_since_last_cleanup = TICKS_2_USEC(bsd_ticks -
-				    tx_ring->tx_last_cleanup_ticks);
-#else
 				time_since_last_cleanup = 1000000 * (bsd_ticks -
 				    tx_ring->tx_last_cleanup_ticks) / hz;
-#endif
 				missing_tx_comp_to = 0; //TODO sbttoms(
 				    //adapter->missing_tx_timeout);
 				ena_log(pdev, WARN,

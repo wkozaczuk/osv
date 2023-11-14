@@ -377,12 +377,11 @@ static void ena_com_rx_set_flags(struct ena_com_io_cq *io_cq,
 				 struct ena_com_rx_ctx *ena_rx_ctx,
 				 struct ena_eth_io_rx_cdesc_base *cdesc)
 {
-        /* TODO: Compiler conversion errors
-	ena_rx_ctx->l3_proto = cdesc->status &
-		ENA_ETH_IO_RX_CDESC_BASE_L3_PROTO_IDX_MASK;
-	ena_rx_ctx->l4_proto =
+	ena_rx_ctx->l3_proto = static_cast<ena_eth_io_l3_proto_index>(cdesc->status &
+		ENA_ETH_IO_RX_CDESC_BASE_L3_PROTO_IDX_MASK);
+	ena_rx_ctx->l4_proto = static_cast<ena_eth_io_l4_proto_index>(
 		(cdesc->status & ENA_ETH_IO_RX_CDESC_BASE_L4_PROTO_IDX_MASK) >>
-		ENA_ETH_IO_RX_CDESC_BASE_L4_PROTO_IDX_SHIFT; */
+		ENA_ETH_IO_RX_CDESC_BASE_L4_PROTO_IDX_SHIFT);
 	ena_rx_ctx->l3_csum_err =
 		!!((cdesc->status & ENA_ETH_IO_RX_CDESC_BASE_L3_CSUM_ERR_MASK) >>
 		ENA_ETH_IO_RX_CDESC_BASE_L3_CSUM_ERR_SHIFT);

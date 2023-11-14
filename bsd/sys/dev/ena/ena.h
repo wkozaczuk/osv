@@ -354,7 +354,7 @@ struct ena_ring {
 
 	};
 
-	uint8_t first_interrupt;
+	std::atomic<uint8_t> first_interrupt;
 	uint16_t no_interrupt_event_cnt;
 
 	struct ena_com_rx_buf_info ena_bufs[ENA_PKT_MAX_BUFS];
