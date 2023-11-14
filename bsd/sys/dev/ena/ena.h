@@ -488,8 +488,6 @@ struct ena_adapter {
 	uint32_t next_monitored_tx_qid;
 	struct task reset_task;
 	struct taskqueue *reset_tq;
-	struct task metrics_task;
-	struct taskqueue *metrics_tq;
 	int wd_active;
 	u64 keep_alive_timeout;
 	u64 missing_tx_timeout;
@@ -497,13 +495,9 @@ struct ena_adapter {
 	uint32_t missing_tx_threshold;
 	bool disable_meta_caching;
 
-	uint16_t eni_metrics_sample_interval;
-	uint16_t eni_metrics_sample_interval_cnt;
-
 	/* Statistics */
 	struct ena_stats_dev dev_stats;
 	struct ena_hw_stats hw_stats;
-	struct ena_admin_eni_stats eni_metrics;
 
 	enum ena_regs_reset_reason_types reset_reason;
 };

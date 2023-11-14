@@ -133,13 +133,9 @@ static void ena_free_irqs(struct ena_adapter *);
 static void ena_disable_msix(struct ena_adapter *);
 static void ena_unmask_all_io_irqs(struct ena_adapter *);
 static int ena_up_complete(struct ena_adapter *);
-//static uint64_t ena_get_counter(if_t, ift_counter);
-static int ena_media_change(if_t);
-static void ena_media_status(if_t, struct ifmediareq *);
 void ena_init(void *);
 int ena_ioctl(if_t, u_long, caddr_t);
 static int ena_get_dev_offloads(struct ena_com_dev_get_features_ctx *);
-static void ena_update_host_info(struct ena_admin_host_info *, if_t);
 static void ena_update_hwassist(struct ena_adapter *);
 static int ena_setup_ifnet(device_t, struct ena_adapter *,
     struct ena_com_dev_get_features_ctx *);
@@ -156,7 +152,6 @@ static int ena_device_init(struct ena_adapter *, device_t,
 static int ena_enable_msix_and_set_admin_interrupts(struct ena_adapter *);
 void ena_update_on_link_change(void *, struct ena_admin_aenq_entry *); //TODO
 void unimplemented_aenq_handler(void *, struct ena_admin_aenq_entry *); //TODO
-static int ena_copy_eni_metrics(struct ena_adapter *);
 void ena_timer_service(void *); //TODO change back to static once ENA_TIMER_RESET is fixed
 
 //static char ena_version[] = ENA_DEVICE_NAME ENA_DRV_MODULE_NAME
@@ -1633,63 +1628,6 @@ error:
 	return (rc);
 }
 
-/*static uint64_t
-ena_get_counter(if_t ifp, ift_counter cnt)
-{
-	struct ena_adapter *adapter;
-	struct ena_hw_stats *stats;
-
-	adapter = nullptr;//TODO if_getsoftc(ifp);
-	stats = &adapter->hw_stats;
-
-	switch (cnt) {
-	case IFCOUNTER_IPACKETS:
-		return (counter_u64_fetch(stats->rx_packets));
-	case IFCOUNTER_OPACKETS:
-		return (counter_u64_fetch(stats->tx_packets));
-	case IFCOUNTER_IBYTES:
-		return (counter_u64_fetch(stats->rx_bytes));
-	case IFCOUNTER_OBYTES:
-		return (counter_u64_fetch(stats->tx_bytes));
-	case IFCOUNTER_IQDROPS:
-		return (counter_u64_fetch(stats->rx_drops));
-	case IFCOUNTER_OQDROPS:
-		return (counter_u64_fetch(stats->tx_drops));
-	default:
-		return (if_get_counter_default(ifp, cnt));
-	}
-}*/
-
-static int
-ena_media_change(if_t ifp)
-{
-	/* Media Change is not supported by firmware */
-	return (0);
-}
-
-static void
-ena_media_status(if_t ifp, struct ifmediareq *ifmr)
-{
-	struct ena_adapter *adapter = nullptr;//TODO if_getsoftc(ifp);
-	ena_log(adapter->pdev, DBG, "Media status update\n");
-
-	ENA_LOCK_LOCK();
-
-	ifmr->ifm_status = IFM_AVALID;
-	ifmr->ifm_active = IFM_ETHER;
-
-	if (!ENA_FLAG_ISSET(ENA_FLAG_LINK_UP, adapter)) {
-		//TODO: ENA_LOCK_UNLOCK();
-		ena_log(adapter->pdev, INFO, "Link is down\n");
-		return;
-	}
-
-	ifmr->ifm_status |= IFM_ACTIVE;
-	ifmr->ifm_active |= IFM_UNKNOWN | IFM_FDX;
-
-	//TODO ENA_LOCK_UNLOCK();
-}
-
 void
 ena_init(void *arg)
 {
@@ -1705,49 +1643,17 @@ ena_init(void *arg)
 int
 ena_ioctl(if_t ifp, u_long command, caddr_t data)
 {
-	struct ena_adapter *adapter;
-	struct bsd_ifreq *ifr;
-	int rc;
+	//struct ena_dapater *adapter = nullptr;
+	int rc = 0;
 
-	adapter = nullptr;//TODO if_getsoftc(ifp);
-	ifr = (struct bsd_ifreq *)data;
-
-	/*
-	 * Acquiring lock to prevent from running up and down routines parallel.
-	 */
-	rc = 0;
 	switch (command) {
-	case SIOCSIFMTU:
-		if (ifp->if_mtu == ifr->ifr_mtu)
-			break;
-		ENA_LOCK_LOCK();
-		ena_down(adapter);
-
-		ena_change_mtu(ifp, ifr->ifr_mtu);
-
-		rc = ena_up(adapter);
-		//TODO: ENA_LOCK_UNLOCK();
-		break;
-
 	case SIOCSIFFLAGS:
-		if ((ifp->if_flags & IFF_UP) != 0) {
-			if ((ifp->if_drv_flags & IFF_DRV_RUNNING) != 0) {
-				if ((ifp->if_flags & (IFF_PROMISC |
-				    IFF_ALLMULTI)) != 0) {
-					ena_log(adapter->pdev, INFO,
-					    "ioctl promisc/allmulti\n");
-				}
-			} else {
-				ENA_LOCK_LOCK();
-				rc = ena_up(adapter);
-				//TODO: ENA_LOCK_UNLOCK();
-			}
+		if (ifp->if_flags & IFF_UP) {
+			ifp->if_drv_flags |= IFF_DRV_RUNNING;
+	                ena_log(adapter->pdev, INFO, "device is UP\n");
 		} else {
-			if ((ifp->if_drv_flags & IFF_DRV_RUNNING) != 0) {
-				ENA_LOCK_LOCK();
-				ena_down(adapter);
-				//TODO: ENA_LOCK_UNLOCK();
-			}
+			ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
+	                ena_log(adapter->pdev, INFO, "device is DOWN\n");
 		}
 		break;
 
@@ -1755,30 +1661,6 @@ ena_ioctl(if_t ifp, u_long command, caddr_t data)
 	case SIOCDELMULTI:
 		break;
 
-	case SIOCSIFMEDIA:
-	case SIOCGIFMEDIA:
-		rc = ifmedia_ioctl(ifp, ifr, &adapter->media, command);
-		break;
-
-	case SIOCSIFCAP:
-		{
-			int reinit = 0;
-
-			if (ifr->ifr_reqcap != ifp->if_capenable) {
-				ifp->if_capenable = ifr->ifr_reqcap;
-				reinit = 1;
-			}
-
-			if ((reinit != 0) &&
-			    ((ifp->if_drv_flags & IFF_DRV_RUNNING) != 0)) {
-				ENA_LOCK_LOCK();
-				ena_down(adapter);
-				rc = ena_up(adapter);
-				//TODO: ENA_LOCK_UNLOCK();
-			}
-		}
-
-		break;
 	default:
 		rc = ether_ioctl(ifp, command, data);
 		break;
@@ -1821,12 +1703,6 @@ ena_get_dev_offloads(struct ena_com_dev_get_features_ctx *feat)
 	caps |= IFCAP_LRO | IFCAP_JUMBO_MTU;
 
 	return (caps);
-}
-
-static void
-ena_update_host_info(struct ena_admin_host_info *host_info, if_t ifp)
-{
-	host_info->supported_network_features[0] = (uint32_t)ifp->if_capabilities;
 }
 
 static void
@@ -1881,7 +1757,6 @@ ena_setup_ifnet(device_t pdev, struct ena_adapter *adapter,
 	if_settransmitfn(ifp, ena_mq_start);
 	if_setqflushfn(ifp, ena_qflush);
 	if_setioctlfn(ifp, ena_ioctl);*/
-	//if_setgetcounterfn(ifp, ena_get_counter);
 
 	/*TODO if_setsendqlen(ifp, adapter->requested_tx_ring_size);
 	if_setsendqready(ifp);
@@ -1903,15 +1778,6 @@ ena_setup_ifnet(device_t pdev, struct ena_adapter *adapter,
 
 	//TODO if_setifheaderlen(ifp, sizeof(struct ether_vlan_header));
 	//TODO if_setcapenable(ifp, if_getcapabilities(ifp));
-
-	/*
-	 * Specify the media types supported by this adapter and register
-	 * callbacks to update media and link information
-	 */
-	ifmedia_init(&adapter->media, IFM_IMASK, ena_media_change,
-	    ena_media_status);
-	ifmedia_add(&adapter->media, IFM_ETHER | IFM_AUTO, 0, NULL);
-	ifmedia_set(&adapter->media, IFM_ETHER | IFM_AUTO);
 
 	ether_ifattach(ifp, adapter->mac_addr);
 
@@ -2089,7 +1955,7 @@ ena_config_host_info(struct ena_com_dev *ena_dev, device_t dev)
 	host_info->kernel_ver = 0;
 
         //Maybe down the road put some OSv specific info
-	sprintf(host_info->kernel_ver_str[0] = '\0';
+	host_info->kernel_ver_str[0] = '\0';
 	host_info->os_dist = 0;
 	host_info->os_dist_str[0] = '\0';
 
@@ -2526,50 +2392,10 @@ ena_update_hints(struct ena_adapter *adapter,
 	}
 }
 
-/**
- * ena_copy_eni_metrics - Get and copy ENI metrics from the HW.
- * @adapter: ENA device adapter
- *
- * Returns 0 on success, EOPNOTSUPP if current HW doesn't support those metrics
- * and other error codes on failure.
- *
- * This function can possibly cause a race with other calls to the admin queue.
- * Because of that, the caller should either lock this function or make sure
- * that there is no race in the current context.
- */
-static int
-ena_copy_eni_metrics(struct ena_adapter *adapter)
-{
-	static bool print_once = true;
-	int rc;
-
-	rc = ena_com_get_eni_stats(adapter->ena_dev, &adapter->eni_metrics);
-
-	if (rc != 0) {
-		if (rc == ENA_COM_UNSUPPORTED) {
-			if (print_once) {
-				ena_log(adapter->pdev, WARN,
-				    "Retrieving ENI metrics is not supported.\n");
-				print_once = false;
-			} else {
-				ena_log(adapter->pdev, DBG,
-				    "Retrieving ENI metrics is not supported.\n");
-			}
-		} else {
-			ena_log(adapter->pdev, ERR,
-			    "Failed to get ENI metrics: %d\n", rc);
-		}
-	}
-
-	return (rc);
-}
-
 void
 ena_timer_service(void *data)
 {
 	struct ena_adapter *adapter = (struct ena_adapter *)data;
-	struct ena_admin_host_info *host_info =
-	    adapter->ena_dev->host_attr.host_info;
 
 	check_for_missing_keep_alive(adapter);
 
@@ -2578,26 +2404,6 @@ ena_timer_service(void *data)
 	check_for_missing_completions(adapter);
 
 	check_for_empty_rx_ring(adapter);
-
-	/*
-	 * User controller update of the ENI metrics.
-	 * If the delay was set to 0, then the stats shouldn't be updated at
-	 * all.
-	 * Otherwise, wait 'eni_metrics_sample_interval' seconds, before
-	 * updating stats.
-	 * As timer service is executed every second, it's enough to increment
-	 * appropriate counter each time the timer service is executed.
-	 */
-	if ((adapter->eni_metrics_sample_interval != 0) &&
-	    (++adapter->eni_metrics_sample_interval_cnt >=
-	     adapter->eni_metrics_sample_interval)) {
-		taskqueue_enqueue(adapter->metrics_tq, &adapter->metrics_task);
-		adapter->eni_metrics_sample_interval_cnt = 0;
-	}
-
-
-	if (host_info != NULL)
-		ena_update_host_info(host_info, adapter->ifp);
 
 	if (unlikely(ENA_FLAG_ISSET(ENA_FLAG_TRIGGER_RESET, adapter))) {
 		/*
@@ -2793,16 +2599,6 @@ err:
 	ena_log(dev, ERR, "Reset attempt failed. Can not reset the device\n");
 
 	return (rc);
-}
-
-static void
-ena_metrics_task(void *arg, int pending)
-{
-	struct ena_adapter *adapter = (struct ena_adapter *)arg;
-
-	ENA_LOCK_LOCK();
-	(void)ena_copy_eni_metrics(adapter);
-	//TODO: ENA_LOCK_UNLOCK();
 }
 
 static void
@@ -3004,13 +2800,6 @@ ena_attach(device_t pdev)
 	taskqueue_start_threads(&adapter->reset_tq, 1, PI_NET, "%s rstq",
 	    "TODO");//device_get_nameunit(adapter->pdev));
 
-	/* Initialize metrics task queue */
-	TASK_INIT(&adapter->metrics_task, 0, ena_metrics_task, adapter);
-	adapter->metrics_tq = taskqueue_create("ena_metrics_enqueue",
-	    M_WAITOK | M_ZERO, taskqueue_thread_enqueue, &adapter->metrics_tq);
-	taskqueue_start_threads(&adapter->metrics_tq, 1, PI_NET, "%s metricsq",
-	    "TODO");//device_get_nameunit(adapter->pdev));
-
 	/* Tell the stack that the interface is not active */
         adapter->ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
 	adapter->ifp->if_drv_flags |= IFF_DRV_OACTIVE;
@@ -3061,11 +2850,6 @@ ena_detach(device_t pdev)
 	ENA_LOCK_LOCK();
 	ENA_TIMER_DRAIN(adapter);
 	//TODO: ENA_LOCK_UNLOCK();
-
-	/* Release metrics task */
-	while (taskqueue_cancel(adapter->metrics_tq, &adapter->metrics_task, NULL))
-		taskqueue_drain(adapter->metrics_tq, &adapter->metrics_task);
-	taskqueue_free(adapter->metrics_tq);
 
 	/* Release reset task */
 	while (taskqueue_cancel(adapter->reset_tq, &adapter->reset_task, NULL))
