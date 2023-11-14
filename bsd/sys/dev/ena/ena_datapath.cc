@@ -270,10 +270,6 @@ ena_tx_cleanup(struct ena_ring *tx_ring)
 		tx_info->mbuf = NULL;
 		//TODO bintime_clear(&tx_info->timestamp);
 
-		bus_dmamap_sync(adapter->tx_buf_tag, tx_info->dmamap,
-		    BUS_DMASYNC_POSTWRITE);
-		bus_dmamap_unload(adapter->tx_buf_tag, tx_info->dmamap);
-
 		ena_log_io(adapter->pdev, DBG, "tx: q %d mbuf %p completed\n",
 		    tx_ring->qid, mbuf);
 
@@ -370,8 +366,6 @@ ena_rx_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_buf_info *ena_bufs,
 	ena_log_io(pdev, DBG, "rx_info %p, mbuf %p, paddr %jx\n", rx_info,
 	    rx_info->mbuf, (uintmax_t)rx_info->ena_buf.paddr);
 
-	bus_dmamap_sync(adapter->rx_buf_tag, rx_info->map,
-	    BUS_DMASYNC_POSTREAD);
 	mbuf = rx_info->mbuf;
 	mbuf->m_hdr.mh_flags |= M_PKTHDR;
 	mbuf->M_dat.MH.MH_pkthdr.len = len;
@@ -383,9 +377,6 @@ ena_rx_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_buf_info *ena_bufs,
 
 	ena_log_io(pdev, DBG, "rx mbuf 0x%p, flags=0x%x, len: %d\n", mbuf,
 	    mbuf->m_flags, mbuf->M_dat.MH.MH_pkthdr.len);
-
-	/* DMA address is not needed anymore, unmap it */
-	bus_dmamap_unload(rx_ring->adapter->rx_buf_tag, rx_info->map);
 
 	rx_info->mbuf = NULL;
 	rx_ring->free_rx_ids[ntc] = req_id;
@@ -417,8 +408,6 @@ ena_rx_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_buf_info *ena_bufs,
 			return (NULL);
 		}
 
-		bus_dmamap_sync(adapter->rx_buf_tag, rx_info->map,
-		    BUS_DMASYNC_POSTREAD);
 		if (unlikely(m_append(mbuf, len, rx_info->mbuf->m_hdr.mh_data) == 0)) {
 			counter_u64_add(rx_ring->rx_stats.mbuf_alloc_fail, 1);
 			ena_log_io(pdev, WARN, "Failed to append Rx mbuf %p\n",
@@ -428,8 +417,6 @@ ena_rx_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_buf_info *ena_bufs,
 		ena_log_io(pdev, DBG, "rx mbuf updated. len %d\n",
 		    mbuf->M_dat.MH.MH_pkthdr.len);
 
-		/* Free already appended mbuf, it won't be useful anymore */
-		bus_dmamap_unload(rx_ring->adapter->rx_buf_tag, rx_info->map);
 		m_freem(rx_info->mbuf);
 		rx_info->mbuf = NULL;
 
@@ -518,8 +505,6 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 		ena_rx_ctx.descs = 0;
 		ena_rx_ctx.pkt_offset = 0;
 
-		bus_dmamap_sync(io_cq->cdesc_addr.mem_handle.tag,
-		    io_cq->cdesc_addr.mem_handle.map, BUS_DMASYNC_POSTREAD);
 		rc = ena_com_rx_pkt(io_cq, io_sq, &ena_rx_ctx);
 		if (unlikely(rc != 0)) {
 			if (rc == ENA_COM_NO_SPACE) {
@@ -546,8 +531,6 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 		/* Receive mbuf from the ring */
 		mbuf = ena_rx_mbuf(rx_ring, rx_ring->ena_bufs, &ena_rx_ctx,
 		    &next_to_clean);
-		bus_dmamap_sync(io_cq->cdesc_addr.mem_handle.tag,
-		    io_cq->cdesc_addr.mem_handle.map, BUS_DMASYNC_PREREAD);
 		/* Exit if we failed to retrieve a buffer */
 		if (unlikely(mbuf == NULL)) {
 			for (i = 0; i < ena_rx_ctx.descs; ++i) {
@@ -770,115 +753,32 @@ static int
 ena_tx_map_mbuf(struct ena_ring *tx_ring, struct ena_tx_buffer *tx_info,
     struct mbuf *mbuf, void **push_hdr, u16 *header_len)
 {
-	struct ena_adapter *adapter = tx_ring->adapter;
-	struct ena_com_buf *ena_buf;
-	bus_dma_segment_t segs[ENA_BUS_DMA_SEGS];
-	size_t iseg = 0;
-	uint32_t mbuf_head_len;
-	uint16_t offset;
-	int rc, nsegs;
+	int nsegs = 0;
 
-	mbuf_head_len = mbuf->m_hdr.mh_len;
-	tx_info->mbuf = mbuf;
-	ena_buf = tx_info->bufs;
+	for (struct mbuf *m = mbuf; m != NULL; m = m->m_hdr.mh_next) {
+		int frag_len = m->m_hdr.mh_len;
 
+		if (frag_len != 0) {
+			struct ena_com_buf *ena_buf = &tx_info->bufs[nsegs];
+			ena_buf->paddr = mmu::virt_to_phys(m->m_hdr.mh_data);
+			ena_buf->len = frag_len;
+			tx_info->num_of_bufs++;
+			if (++nsegs >= ENA_PKT_MAX_BUFS) //TODO: Do we loose data if this is true?
+				break;
+		}
+	}
+
+	*push_hdr = NULL;
 	/*
-	 * For easier maintaining of the DMA map, map the whole mbuf even if
-	 * the LLQ is used. The descriptors will be filled using the segments.
+	 * header_len is just a hint for the device. Because FreeBSD is
+	 * not giving us information about packet header length and it
+	 * is not guaranteed that all packet headers will be in the 1st
+	 * mbuf, setting header_len to 0 is making the device ignore
+	 * this value and resolve header on it's own.
 	 */
-	rc = bus_dmamap_load_mbuf_sg(adapter->tx_buf_tag,
-	    tx_info->dmamap, mbuf, segs, &nsegs, BUS_DMA_NOWAIT);
-	if (unlikely((rc != 0) || (nsegs == 0))) {
-		ena_log_io(adapter->pdev, WARN,
-		    "dmamap load failed! err: %d nsegs: %d\n", rc, nsegs);
-		goto dma_error;
-	}
-
-	if (tx_ring->tx_mem_queue_type == ENA_ADMIN_PLACEMENT_POLICY_DEV) {
-		/*
-		 * When the device is LLQ mode, the driver will copy
-		 * the header into the device memory space.
-		 * the ena_com layer assumes the header is in a linear
-		 * memory space.
-		 * This assumption might be wrong since part of the header
-		 * can be in the fragmented buffers.
-		 * First check if header fits in the mbuf. If not, copy it to
-		 * separate buffer that will be holding linearized data.
-		 */
-		*header_len = min_t(uint32_t, mbuf->M_dat.MH.MH_pkthdr.len,
-		    tx_ring->tx_max_header_size);
-
-		/* If header is in linear space, just point into mbuf's data. */
-		if (likely(*header_len <= mbuf_head_len)) {
-			*push_hdr = mbuf->m_hdr.mh_data;
-		/*
-		 * Otherwise, copy whole portion of header from multiple
-		 * mbufs to intermediate buffer.
-		 */
-		} else {
-			m_copydata(mbuf, 0, *header_len,
-			    reinterpret_cast<caddr_t>(tx_ring->push_buf_intermediate_buf));
-			*push_hdr = tx_ring->push_buf_intermediate_buf;
-
-			counter_u64_add(tx_ring->tx_stats.llq_buffer_copy, 1);
-		}
-
-		ena_log_io(adapter->pdev, DBG,
-		    "mbuf: %p header_buf->vaddr: %p push_len: %d\n",
-		    mbuf, *push_hdr, *header_len);
-
-		/* If packet is fitted in LLQ header, no need for DMA segments. */
-		if (mbuf->M_dat.MH.MH_pkthdr.len <= tx_ring->tx_max_header_size) {
-			return (0);
-		} else {
-			offset = tx_ring->tx_max_header_size;
-			/*
-			 * As Header part is mapped to LLQ header, we can skip
-			 * it and just map the residuum of the mbuf to DMA
-			 * Segments.
-			 */
-			while (offset > 0) {
-				if (offset >= segs[iseg].ds_len) {
-					offset -= segs[iseg].ds_len;
-				} else {
-					ena_buf->paddr = segs[iseg].ds_addr +
-					    offset;
-					ena_buf->len = segs[iseg].ds_len -
-					    offset;
-					ena_buf++;
-					tx_info->num_of_bufs++;
-					offset = 0;
-				}
-				iseg++;
-			}
-		}
-	} else {
-		*push_hdr = NULL;
-		/*
-		 * header_len is just a hint for the device. Because FreeBSD is
-		 * not giving us information about packet header length and it
-		 * is not guaranteed that all packet headers will be in the 1st
-		 * mbuf, setting header_len to 0 is making the device ignore
-		 * this value and resolve header on it's own.
-		 */
-		*header_len = 0;
-	}
-
-	/* Map rest of the mbuf */
-	while (iseg < nsegs) {
-		ena_buf->paddr = segs[iseg].ds_addr;
-		ena_buf->len = segs[iseg].ds_len;
-		ena_buf++;
-		iseg++;
-		tx_info->num_of_bufs++;
-	}
+	*header_len = 0;
 
 	return (0);
-
-dma_error:
-	counter_u64_add(tx_ring->tx_stats.dma_mapping_err, 1);
-	tx_info->mbuf = NULL;
-	return (rc);
 }
 
 static int
@@ -1003,14 +903,10 @@ ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 		}
 	}
 
-	bus_dmamap_sync(adapter->tx_buf_tag, tx_info->dmamap,
-	    BUS_DMASYNC_PREWRITE);
-
 	return (0);
 
 dma_error:
 	tx_info->mbuf = NULL;
-	bus_dmamap_unload(adapter->tx_buf_tag, tx_info->dmamap);
 
 	return (rc);
 }

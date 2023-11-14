@@ -79,8 +79,9 @@ __FBSDID("$FreeBSD$");
 
 #include "ena.h"
 #include "ena_datapath.h"
-//#include "ena_rss.h"
-//#include "ena_sysctl.h"
+
+#include <osv/mmu.hh>
+#include <osv/mempool.hh>
 
 /*********************************************************
  *  Function prototypes
@@ -99,11 +100,6 @@ static void ena_init_io_rings_advanced(struct ena_adapter *);
 static void ena_init_io_rings(struct ena_adapter *);
 static void ena_free_io_ring_resources(struct ena_adapter *, unsigned int);
 static void ena_free_all_io_rings_resources(struct ena_adapter *);
-static int ena_setup_tx_dma_tag(struct ena_adapter *);
-static int ena_free_tx_dma_tag(struct ena_adapter *);
-static int ena_setup_rx_dma_tag(struct ena_adapter *);
-static int ena_free_rx_dma_tag(struct ena_adapter *);
-static void ena_release_all_tx_dmamap(struct ena_ring *);
 static int ena_setup_tx_resources(struct ena_adapter *, int);
 static void ena_free_tx_resources(struct ena_adapter *, int);
 static int ena_setup_all_tx_resources(struct ena_adapter *);
@@ -190,88 +186,22 @@ int bus_dmamap_load_mbuf_sg(bus_dma_tag_t dmat, bus_dmamap_t map,
  */
 //static struct ena_aenq_handlers aenq_handlers;
 
-void
-ena_dmamap_callback(void *arg, bus_dma_segment_t *segs, int nseg, int error)
-{
-	if (error != 0)
-		return;
-	*(bus_addr_t *)arg = segs[0].ds_addr;
-}
-
-//TODO: Replace bus_dmamem_alloc() with malloc() - look at blkfront_alloc_commands() in blkfront.cc
 int
 ena_dma_alloc(device_t dmadev, bus_size_t size, ena_mem_handle_t *dma,
     int mapflags, bus_size_t alignment, int domain)
 {
-	struct ena_adapter *adapter = nullptr;//TODO device_get_softc(dmadev);
-	//device_t pdev = adapter->pdev;
-	uint32_t maxsize;
-	uint64_t dma_space_addr;
-	int error;
+        dma->vaddr = (caddr_t)memory::alloc_phys_contiguous_aligned(size, mmu::page_size);
+        if (!dma->vaddr) {
+		ena_log(pdev, ERR, "memory::alloc_phys_contiguous_aligned failed!\n", 1);
+		dma->vaddr = 0;
+		dma->paddr = 0;
+		return ENA_COM_NO_MEM;
+        }
 
-	maxsize = ((size - 1) / PAGE_SIZE + 1) * PAGE_SIZE;
-
-	dma_space_addr = ENA_DMA_BIT_MASK(adapter->dma_width);
-	if (unlikely(dma_space_addr == 0))
-		dma_space_addr = BUS_SPACE_MAXADDR;
-
-	error = bus_dma_tag_create(bus_get_dma_tag(dmadev), /* parent */
-	    alignment, 0,      /* alignment, bounds 		*/
-	    dma_space_addr,    /* lowaddr of exclusion window	*/
-	    BUS_SPACE_MAXADDR, /* highaddr of exclusion window	*/
-	    NULL, NULL,	       /* filter, filterarg 		*/
-	    maxsize,	       /* maxsize 			*/
-	    1,		       /* nsegments 			*/
-	    maxsize,	       /* maxsegsize 			*/
-	    BUS_DMA_ALLOCNOW,  /* flags 			*/
-	    NULL,	       /* lockfunc 			*/
-	    NULL,	       /* lockarg 			*/
-	    &dma->tag);
-	if (unlikely(error != 0)) {
-		ena_log(pdev, ERR, "bus_dma_tag_create failed: %d\n", error);
-		goto fail_tag;
-	}
-
-#if __FreeBSD_version > 1200055
-	error = bus_dma_tag_set_domain(dma->tag, domain);
-	if (unlikely(error != 0)) {
-		ena_log(pdev, ERR, "bus_dma_tag_set_domain failed: %d\n",
-		    error);
-		goto fail_map_create;
-	}
-#endif
-
-	error = bus_dmamem_alloc(dma->tag, (void **)&dma->vaddr,
-	    BUS_DMA_COHERENT | BUS_DMA_ZERO, &dma->map);
-	if (unlikely(error != 0)) {
-		ena_log(pdev, ERR, "bus_dmamem_alloc(%ju) failed: %d\n",
-		    (uintmax_t)size, error);
-		goto fail_map_create;
-	}
-
-	dma->paddr = 0;
-	error = bus_dmamap_load(dma->tag, dma->map, dma->vaddr, size,
-	    ena_dmamap_callback, &dma->paddr, mapflags);
-	if (unlikely((error != 0) || (dma->paddr == 0))) {
-		ena_log(pdev, ERR, "bus_dmamap_load failed: %d\n", error);
-		goto fail_map_load;
-	}
-
-	bus_dmamap_sync(dma->tag, dma->map,
-	    BUS_DMASYNC_PREREAD | BUS_DMASYNC_PREWRITE);
+	dma->paddr = mmu::virt_to_phys(dma->vaddr);
+	//TODO: dma->size = size; //Nanos saves it - why? Do we care?
 
 	return (0);
-
-fail_map_load:
-	bus_dmamem_free(dma->tag, dma->vaddr, dma->map);
-fail_map_create:
-	bus_dma_tag_destroy(dma->tag);
-fail_tag:
-	dma->tag = NULL;
-	dma->vaddr = NULL;
-	dma->paddr = 0;
-
-	return (error);
 }
 
 static void
@@ -496,99 +426,6 @@ ena_free_all_io_rings_resources(struct ena_adapter *adapter)
 		ena_free_io_ring_resources(adapter, i);
 }
 
-//TODO: Probably not needed if we remove this DMA crap
-static int
-ena_setup_tx_dma_tag(struct ena_adapter *adapter)
-{
-	int ret;
-
-	/* Create DMA tag for Tx buffers */
-	ret = bus_dma_tag_create(bus_get_dma_tag(adapter->pdev),
-	    1, 0,				  /* alignment, bounds 	     */
-	    ENA_DMA_BIT_MASK(adapter->dma_width), /* lowaddr of excl window  */
-	    BUS_SPACE_MAXADDR,			  /* highaddr of excl window */
-	    NULL, NULL,				  /* filter, filterarg 	     */
-	    ENA_TSO_MAXSIZE,			  /* maxsize 		     */
-	    adapter->max_tx_sgl_size - 1,	  /* nsegments 		     */
-	    ENA_TSO_MAXSIZE,			  /* maxsegsize 	     */
-	    0,					  /* flags 		     */
-	    NULL,				  /* lockfunc 		     */
-	    NULL,				  /* lockfuncarg 	     */
-	    &adapter->tx_buf_tag);
-
-	return (ret);
-}
-
-//TODO: Probably not needed if we remove this DMA crap
-static int
-ena_free_tx_dma_tag(struct ena_adapter *adapter)
-{
-	int ret;
-
-	ret = bus_dma_tag_destroy(adapter->tx_buf_tag);
-
-	if (likely(ret == 0))
-		adapter->tx_buf_tag = NULL;
-
-	return (ret);
-}
-
-//TODO: Probably not needed if we remove this DMA crap
-static int
-ena_setup_rx_dma_tag(struct ena_adapter *adapter)
-{
-	int ret;
-
-	/* Create DMA tag for Rx buffers*/
-	ret = bus_dma_tag_create(bus_get_dma_tag(adapter->pdev), /* parent   */
-	    1, 0,				  /* alignment, bounds 	     */
-	    ENA_DMA_BIT_MASK(adapter->dma_width), /* lowaddr of excl window  */
-	    BUS_SPACE_MAXADDR,			  /* highaddr of excl window */
-	    NULL, NULL,				  /* filter, filterarg 	     */
-	    ena_mbuf_sz,			  /* maxsize 		     */
-	    adapter->max_rx_sgl_size,		  /* nsegments 		     */
-	    ena_mbuf_sz,			  /* maxsegsize 	     */
-	    0,					  /* flags 		     */
-	    NULL,				  /* lockfunc 		     */
-	    NULL,				  /* lockarg 		     */
-	    &adapter->rx_buf_tag);
-
-	return (ret);
-}
-
-//TODO: Probably not needed if we remove this DMA crap
-static int
-ena_free_rx_dma_tag(struct ena_adapter *adapter)
-{
-	int ret;
-
-	ret = bus_dma_tag_destroy(adapter->rx_buf_tag);
-
-	if (likely(ret == 0))
-		adapter->rx_buf_tag = NULL;
-
-	return (ret);
-}
-
-//TODO: Probably not needed if we remove this DMA crap
-//But we may move the logic somewhere else
-static void
-ena_release_all_tx_dmamap(struct ena_ring *tx_ring)
-{
-	struct ena_adapter *adapter = tx_ring->adapter;
-	struct ena_tx_buffer *tx_info;
-	bus_dma_tag_t tx_tag = adapter->tx_buf_tag;
-	int i;
-
-	for (i = 0; i < tx_ring->ring_size; ++i) {
-		tx_info = &tx_ring->tx_buffer_info[i];
-		if (tx_info->dmamap != NULL) {
-			bus_dmamap_destroy(tx_tag, tx_info->dmamap);
-			tx_info->dmamap = NULL;
-		}
-	}
-}
-
 /**
  * ena_setup_tx_resources - allocate Tx resources (Descriptors)
  * @adapter: network interface device structure
@@ -604,7 +441,7 @@ ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 	struct ena_que *que = &adapter->que[qid];
 	struct ena_ring *tx_ring = que->tx_ring;
 	//TODO cpuset_t *cpu_mask = NULL;
-	int size, i, err;
+	int size, i;
 
 	size = sizeof(struct ena_tx_buffer) * tx_ring->ring_size;
 
@@ -641,18 +478,6 @@ ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 	//drbr_flush(adapter->ifp, tx_ring->br);
 	ENA_RING_MTX_UNLOCK(tx_ring);
 
-	/* ... and create the buffer DMA maps */
-	for (i = 0; i < tx_ring->ring_size; i++) {
-		err = bus_dmamap_create(adapter->tx_buf_tag, 0,
-		    &tx_ring->tx_buffer_info[i].dmamap);
-		if (unlikely(err != 0)) {
-			ena_log(pdev, ERR,
-			    "Unable to create Tx DMA map for buffer %d\n", i);
-			goto err_map_release;
-		}
-
-	}
-
 	/* Allocate taskqueues */
 	TASK_INIT(&tx_ring->enqueue_task, 0, ena_deferred_mq_start, tx_ring);
 	//TODO: tx_ring->enqueue_tq = taskqueue_create_fast("ena_tx_enque", M_NOWAIT,
@@ -661,7 +486,7 @@ ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 		ena_log(pdev, ERR,
 		    "Unable to create taskqueue for enqueue task\n");
 		i = tx_ring->ring_size;
-		goto err_map_release;
+		goto err_tx_ids_free;
 	}
 
 	tx_ring->running = true;
@@ -673,8 +498,6 @@ ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 
 	return (0);
 
-err_map_release:
-	ena_release_all_tx_dmamap(tx_ring);
 err_tx_ids_free:
 	free(tx_ring->free_tx_ids, M_DEVBUF);
 	tx_ring->free_tx_ids = NULL;
@@ -709,13 +532,6 @@ ena_free_tx_resources(struct ena_adapter *adapter, int qid)
 	/* Free buffer DMA maps, */
         //TODO: Probably change all this DMA stuff
 	for (int i = 0; i < tx_ring->ring_size; i++) {
-		bus_dmamap_sync(adapter->tx_buf_tag,
-		    tx_ring->tx_buffer_info[i].dmamap, BUS_DMASYNC_POSTWRITE);
-		bus_dmamap_unload(adapter->tx_buf_tag,
-		    tx_ring->tx_buffer_info[i].dmamap);
-		bus_dmamap_destroy(adapter->tx_buf_tag,
-		    tx_ring->tx_buffer_info[i].dmamap);
-
 		m_freem(tx_ring->tx_buffer_info[i].mbuf);
 		tx_ring->tx_buffer_info[i].mbuf = NULL;
 	}
@@ -789,7 +605,7 @@ ena_setup_rx_resources(struct ena_adapter *adapter, unsigned int qid)
 	//device_t pdev = adapter->pdev;
 	struct ena_que *que = &adapter->que[qid];
 	struct ena_ring *rx_ring = que->rx_ring;
-	int size, err, i;
+	int size, i;
 
 	size = sizeof(struct ena_rx_buffer) * rx_ring->ring_size;
 
@@ -814,17 +630,6 @@ ena_setup_rx_resources(struct ena_adapter *adapter, unsigned int qid)
 	rx_ring->next_to_clean = 0;
 	rx_ring->next_to_use = 0;
 
-	/* ... and create the buffer DMA maps */
-	for (i = 0; i < rx_ring->ring_size; i++) {
-		err = bus_dmamap_create(adapter->rx_buf_tag, 0,
-		    &(rx_ring->rx_buffer_info[i].map));
-		if (err != 0) {
-			ena_log(pdev, ERR,
-			    "Unable to create Rx DMA map for buffer %d\n", i);
-			goto err_buf_info_unmap;
-		}
-	}
-
 	/* Create LRO for the ring */
 	if (adapter->ifp->if_capenable & IFCAP_LRO != 0) {
 		int err = tcp_lro_init(&rx_ring->lro);
@@ -839,18 +644,6 @@ ena_setup_rx_resources(struct ena_adapter *adapter, unsigned int qid)
 	}
 
 	return (0);
-
-err_buf_info_unmap:
-	while (i--) {
-		bus_dmamap_destroy(adapter->rx_buf_tag,
-		    rx_ring->rx_buffer_info[i].map);
-	}
-
-	free(rx_ring->free_rx_ids, M_DEVBUF);
-	rx_ring->free_rx_ids = NULL;
-	free(rx_ring->rx_buffer_info, M_DEVBUF);
-	rx_ring->rx_buffer_info = NULL;
-	return (ENOMEM);
 }
 
 /**
@@ -867,14 +660,8 @@ ena_free_rx_resources(struct ena_adapter *adapter, unsigned int qid)
 
 	/* Free buffer DMA maps, */
 	for (int i = 0; i < rx_ring->ring_size; i++) {
-		bus_dmamap_sync(adapter->rx_buf_tag,
-		    rx_ring->rx_buffer_info[i].map, BUS_DMASYNC_POSTREAD);
 		m_freem(rx_ring->rx_buffer_info[i].mbuf);
 		rx_ring->rx_buffer_info[i].mbuf = NULL;
-		bus_dmamap_unload(adapter->rx_buf_tag,
-		    rx_ring->rx_buffer_info[i].map);
-		bus_dmamap_destroy(adapter->rx_buf_tag,
-		    rx_ring->rx_buffer_info[i].map);
 	}
 
 	/* free LRO resources, */
@@ -935,10 +722,7 @@ static inline int
 ena_alloc_rx_mbuf(struct ena_adapter *adapter, struct ena_ring *rx_ring,
     struct ena_rx_buffer *rx_info)
 {
-	//device_t pdev = adapter->pdev;
 	struct ena_com_buf *ena_buf;
-	bus_dma_segment_t segs[1];
-	int nsegs, error;
 	int mlen;
 
 	/* if previous allocated frag is not used */
@@ -963,23 +747,8 @@ ena_alloc_rx_mbuf(struct ena_adapter *adapter, struct ena_ring *rx_ring,
 	/* Set mbuf length*/
 	rx_info->mbuf->M_dat.MH.MH_pkthdr.len = rx_info->mbuf->m_hdr.mh_len = mlen;
 
-	/* Map packets for DMA */
-	ena_log(pdev, DBG,
-	    "Using tag %p for buffers' DMA mapping, mbuf %p len: %d\n",
-	    adapter->rx_buf_tag, rx_info->mbuf, rx_info->mbuf->m_hdr.mh_len);
-	error = bus_dmamap_load_mbuf_sg(adapter->rx_buf_tag, rx_info->map,
-	    rx_info->mbuf, segs, &nsegs, BUS_DMA_NOWAIT);
-	if (unlikely((error != 0) || (nsegs != 1))) {
-		ena_log(pdev, WARN,
-		    "failed to map mbuf, error: %d, nsegs: %d\n", error, nsegs);
-		counter_u64_add(rx_ring->rx_stats.dma_mapping_err, 1);
-		goto exit;
-	}
-
-	bus_dmamap_sync(adapter->rx_buf_tag, rx_info->map, BUS_DMASYNC_PREREAD);
-
 	ena_buf = &rx_info->ena_buf;
-	//TODO ena_buf->paddr = segs[0].ds_addr;
+	ena_buf->paddr = mmu::virt_to_phys(rx_info->mbuf->m_hdr.mh_data);
 	ena_buf->len = mlen;
 
 	ena_log(pdev, DBG,
@@ -987,11 +756,6 @@ ena_alloc_rx_mbuf(struct ena_adapter *adapter, struct ena_ring *rx_ring,
 	    rx_info->mbuf, rx_info, ena_buf->len, (uintmax_t)ena_buf->paddr);
 
 	return (0);
-
-exit:
-	m_freem(rx_info->mbuf);
-	rx_info->mbuf = NULL;
-	return (EFAULT);
 }
 
 static void
@@ -1004,9 +768,6 @@ ena_free_rx_mbuf(struct ena_adapter *adapter, struct ena_ring *rx_ring,
 		return;
 	}
 
-	bus_dmamap_sync(adapter->rx_buf_tag, rx_info->map,
-	    BUS_DMASYNC_POSTREAD);
-	bus_dmamap_unload(adapter->rx_buf_tag, rx_info->map);
 	m_freem(rx_info->mbuf);
 	rx_info->mbuf = NULL;
 }
@@ -1146,10 +907,6 @@ ena_free_tx_bufs(struct ena_adapter *adapter, unsigned int qid)
 			    "free uncompleted tx mbuf qid %d idx 0x%x\n", qid,
 			    i);
 		}
-
-		bus_dmamap_sync(adapter->tx_buf_tag, tx_info->dmamap,
-		    BUS_DMASYNC_POSTWRITE);
-		bus_dmamap_unload(adapter->tx_buf_tag, tx_info->dmamap);
 
 		m_free(tx_info->mbuf);
 		tx_info->mbuf = NULL;
@@ -2384,7 +2141,6 @@ ena_device_init(struct ena_adapter *adapter, device_t pdev,
 	struct ena_com_dev *ena_dev = adapter->ena_dev;
 	bool readless_supported;
 	uint32_t aenq_groups;
-	int dma_width;
 	int rc;
 
 	rc = ena_com_mmio_reg_read_request_init(ena_dev);
@@ -2411,14 +2167,6 @@ ena_device_init(struct ena_adapter *adapter, device_t pdev,
 		ena_log(pdev, ERR, "device version is too low\n");
 		goto err_mmio_read_less;
 	}
-
-	dma_width = ena_com_get_dma_width(ena_dev);
-	if (unlikely(dma_width < 0)) {
-		ena_log(pdev, ERR, "Invalid dma width value %d", dma_width);
-		rc = dma_width;
-		goto err_mmio_read_less;
-	}
-	adapter->dma_width = dma_width;
 
 	/* ENA admin level init */
 	//TODO rc = ena_com_admin_init(ena_dev, &aenq_handlers);
@@ -3240,19 +2988,6 @@ ena_attach(device_t pdev)
 
 	adapter->reset_reason = ENA_REGS_RESET_NORMAL;
 
-	/* set up dma tags for rx and tx buffers */
-	rc = ena_setup_tx_dma_tag(adapter);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "Failed to create TX DMA tag\n");
-		goto err_com_free;
-	}
-
-	rc = ena_setup_rx_dma_tag(adapter);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "Failed to create RX DMA tag\n");
-		goto err_tx_tag_free;
-	}
-
 	/*
 	 * The amount of requested MSIX vectors is equal to
 	 * adapter::max_num_io_queues (see `ena_enable_msix()`), plus a constant
@@ -3318,9 +3053,6 @@ err_msix_free:
 	ena_disable_msix(adapter);
 err_io_free:
 	ena_free_all_io_rings_resources(adapter);
-	ena_free_rx_dma_tag(adapter);
-err_tx_tag_free:
-	ena_free_tx_dma_tag(adapter);
 err_com_free:
 	ena_com_admin_destroy(ena_dev);
 	ena_com_delete_host_info(ena_dev);
@@ -3347,7 +3079,6 @@ ena_detach(device_t pdev)
 {
 	struct ena_adapter *adapter = nullptr;//TODO device_get_softc(pdev);
 	struct ena_com_dev *ena_dev = adapter->ena_dev;
-	int rc;
 
 	ether_ifdetach(adapter->ifp);
 
@@ -3372,16 +3103,6 @@ ena_detach(device_t pdev)
 	//TODO: ENA_LOCK_UNLOCK();
 
 	ena_free_stats(adapter);
-
-	rc = ena_free_rx_dma_tag(adapter);
-	if (unlikely(rc != 0))
-		ena_log(adapter->pdev, WARN,
-		    "Unmapped RX DMA tag associations\n");
-
-	rc = ena_free_tx_dma_tag(adapter);
-	if (unlikely(rc != 0))
-		ena_log(adapter->pdev, WARN,
-		    "Unmapped TX DMA tag associations\n");
 
 	ena_free_irqs(adapter);
 

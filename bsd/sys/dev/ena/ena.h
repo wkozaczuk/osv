@@ -241,8 +241,6 @@ struct ena_tx_buffer {
 	/* # of buffers used by this mbuf */
 	unsigned int num_of_bufs;
 
-	bus_dmamap_t dmamap;
-
 	/* Used to detect missing tx packets */
 	u64 timestamp;
 	bool print_once;
@@ -252,7 +250,6 @@ struct ena_tx_buffer {
 
 struct ena_rx_buffer {
 	struct mbuf *mbuf;
-	bus_dmamap_t map;
 	struct ena_com_buf ena_buf;
 } __aligned(CACHE_LINE_SIZE);
 
@@ -266,7 +263,6 @@ struct ena_stats_tx {
 	counter_u64_t cnt;
 	counter_u64_t bytes;
 	counter_u64_t prepare_ctx_err;
-	counter_u64_t dma_mapping_err;
 	counter_u64_t doorbells;
 	counter_u64_t missing_tx_comp;
 	counter_u64_t bad_req_id;
@@ -285,7 +281,6 @@ struct ena_stats_rx {
 	counter_u64_t csum_bad;
 	counter_u64_t mjum_alloc_fail;
 	counter_u64_t mbuf_alloc_fail;
-	counter_u64_t dma_mapping_err;
 	counter_u64_t bad_desc_num;
 	counter_u64_t bad_req_id;
 	counter_u64_t empty_rx_ring;
@@ -401,11 +396,6 @@ struct ena_adapter {
 	/* MSI-X */
 	struct msix_entry *msix_entries;
 	int msix_vecs;
-
-	/* DMA tags used throughout the driver adapter for Tx and Rx */
-	bus_dma_tag_t tx_buf_tag;
-	bus_dma_tag_t rx_buf_tag;
-	int dma_width;
 
 	uint32_t max_mtu;
 

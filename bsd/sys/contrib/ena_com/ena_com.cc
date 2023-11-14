@@ -76,6 +76,9 @@
 
 #define ENA_MAX_ADMIN_POLL_US 5000
 
+#include <osv/mmu.hh>
+#include <osv/mempool.hh>
+
 //TODO:
 u_int32_t bus_space_read_4(bus_space_tag_t tag,
 			   bus_space_handle_t handle,

@@ -42,9 +42,6 @@ __FBSDID("$FreeBSD$");
 
 #include <sys/bus.h>
 //#include <sys/condvar.h>
-#if __FreeBSD_version > 1200055
-#include <sys/domainset.h>
-#endif
 //#include <sys/endian.h>
 #include <sys/kernel.h>
 #include <sys/kthread.h>
@@ -258,9 +255,6 @@ static inline long PTR_ERR(const void *ptr)
 typedef struct {
 	bus_addr_t              paddr;
 	caddr_t                 vaddr;
-        bus_dma_tag_t           tag;
-	bus_dmamap_t            map;
-        bus_dma_segment_t       seg;
 	int                     nseg;
 } ena_mem_handle_t;
 
@@ -278,8 +272,6 @@ typedef uint32_t ena_atomic32_t;
 typedef uint64_t ena_time_t;
 typedef struct ifnet ena_netdev;
 
-void	ena_dmamap_callback(void *arg, bus_dma_segment_t *segs, int nseg,
-    int error);
 int	ena_dma_alloc(device_t dmadev, bus_size_t size, ena_mem_handle_t *dma,
     int mapflags, bus_size_t alignment, int domain);
 
@@ -310,41 +302,19 @@ ena_reg_read32(struct ena_bus *bus, bus_size_t offset)
 
 #define ENA_MEM_ALLOC(dmadev, size) malloc(size, M_DEVBUF, M_NOWAIT | M_ZERO)
 
-#if __FreeBSD_version > 1200055
-#define ENA_MEM_ALLOC_NODE(dmadev, size, virt, node, dev_node)		\
-	do {								\
-		(virt) = malloc_domainset((size), M_DEVBUF,		\
-		    (node) < 0 ? DOMAINSET_RR() : DOMAINSET_PREF(node),	\
-		    M_NOWAIT | M_ZERO);					\
-		(void)(dev_node);					\
-	} while (0)
-#else
 #define ENA_MEM_ALLOC_NODE(dmadev, size, virt, node, dev_node) (virt = NULL)
-#endif
 
 #define ENA_MEM_FREE(dmadev, ptr, size)					\
 	do { 								\
 		(void)(size);						\
 		free(ptr, M_DEVBUF);					\
 	} while (0)
-#if __FreeBSD_version > 1200055
-#define ENA_MEM_ALLOC_COHERENT_NODE_ALIGNED(dmadev, size, virt, phys,	\
-    dma, node, dev_node, alignment) 					\
-	do {								\
-		ena_dma_alloc((dmadev), (size), &(dma), 0, (alignment),	\
-		    (node));						\
-		(virt) = (void *)(dma).vaddr;				\
-		(phys) = (dma).paddr;					\
-		(void)(dev_node);					\
-	} while (0)
-#else
 #define ENA_MEM_ALLOC_COHERENT_NODE_ALIGNED(dmadev, size, virt, phys,	\
     dma, node, dev_node, alignment) 					\
 	do {								\
 		((virt) = NULL);					\
 		(void)(dev_node);					\
 	} while(0)
-#endif
 
 #define ENA_MEM_ALLOC_COHERENT_NODE(dmadev, size, virt, phys, handle,	\
     node, dev_node)							\
@@ -364,15 +334,10 @@ ena_reg_read32(struct ena_bus *bus, bus_size_t offset)
 	ENA_MEM_ALLOC_COHERENT_ALIGNED(dmadev, size, virt,		\
 	    phys, dma, DEFAULT_ALLOC_ALIGNMENT)
 
-//TODO
-#define bus_dmamem_free(a, b, c) do {} while (0)
 #define ENA_MEM_FREE_COHERENT(dmadev, size, virt, phys, dma)		\
 	do {								\
 		(void)size;						\
-		bus_dmamap_unload((dma).tag, (dma).map);		\
-		bus_dmamem_free((dma).tag, (virt), (dma).map);		\
-		bus_dma_tag_destroy((dma).tag);				\
-		(dma).tag = NULL;					\
+		memory::free_phys_contiguous_aligned(virt);		\
 		(virt) = NULL;						\
 	} while (0)
 
@@ -395,12 +360,9 @@ extern void bus_space_write_4(bus_space_tag_t tag,
 #define ENA_REG_READ32(bus, offset)					\
 	ena_reg_read32((struct ena_bus*)(bus), (bus_size_t)(offset))
 
-#define ENA_DB_SYNC_WRITE(mem_handle) bus_dmamap_sync(			\
-	(mem_handle)->tag, (mem_handle)->map, BUS_DMASYNC_PREWRITE)
-#define ENA_DB_SYNC_PREREAD(mem_handle) bus_dmamap_sync(		\
-	(mem_handle)->tag, (mem_handle)->map, BUS_DMASYNC_PREREAD)
-#define ENA_DB_SYNC_POSTREAD(mem_handle) bus_dmamap_sync(		\
-	(mem_handle)->tag, (mem_handle)->map, BUS_DMASYNC_POSTREAD)
+#define ENA_DB_SYNC_WRITE(mem_handle) wmb()
+#define ENA_DB_SYNC_PREREAD(mem_handle)
+#define ENA_DB_SYNC_POSTREAD(mem_handle)
 #define ENA_DB_SYNC(mem_handle) ENA_DB_SYNC_WRITE(mem_handle)
 
 #define time_after(a,b)	((long)((unsigned long)(b) - (unsigned long)(a)) < 0)
