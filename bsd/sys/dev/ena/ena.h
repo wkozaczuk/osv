@@ -158,6 +158,45 @@
 #define PCI_DEV_ID_ENA_VF		0xec20
 #define PCI_DEV_ID_ENA_VF_RSERV0	0xec21
 
+//These macros are taken verbatim from FreeBSD code and implement atomic bitset
+#define	_BITSET_BITS		(sizeof(long) * 8)
+
+#define	__howmany(x, y)	(((x) + ((y) - 1)) / (y))
+
+#define	__bitset_words(_s)	(__howmany(_s, _BITSET_BITS))
+
+#define	__constexpr_cond(expr)	(__builtin_constant_p((expr)) && (expr))
+
+#define	__bitset_mask(_s, n)						\
+	(1UL << (__constexpr_cond(__bitset_words((_s)) == 1) ?		\
+	    (size_t)(n) : ((n) % _BITSET_BITS)))
+
+#define	__bitset_word(_s, n)						\
+	(__constexpr_cond(__bitset_words((_s)) == 1) ?			\
+	 0 : ((n) / _BITSET_BITS))
+
+#define	BITSET_DEFINE(_t, _s)						\
+struct _t {								\
+	long    __bits[__bitset_words((_s))];				\
+}
+
+#define	BIT_ZERO(_s, p) do {						\
+	size_t __i;							\
+	for (__i = 0; __i < __bitset_words((_s)); __i++)		\
+		(p)->__bits[__i] = 0L;					\
+} while (0)
+
+#define	BIT_ISSET(_s, n, p)						\
+	((((p)->__bits[__bitset_word(_s, n)] & __bitset_mask((_s), (n))) != 0))
+
+#define	BIT_SET_ATOMIC(_s, n, p)					\
+	atomic_set_long((volatile u_long*)(&(p)->__bits[__bitset_word(_s, n)]),	\
+	    __bitset_mask((_s), n))
+
+#define	BIT_CLR_ATOMIC(_s, n, p)					\
+	atomic_clear_long((volatile u_long*)(&(p)->__bits[__bitset_word(_s, n)]),\
+	    __bitset_mask((_s), n))
+
 /*
  * Flags indicating current ENA driver state
  */
@@ -173,14 +212,13 @@ enum ena_flags_t {
 	ENA_FLAGS_NUMBER = ENA_FLAG_RSS_ACTIVE
 };
 
-#include <bitset>
+BITSET_DEFINE(_ena_state, ENA_FLAGS_NUMBER);
+typedef struct _ena_state ena_state_t;
 
-typedef std::bitset<ENA_FLAGS_NUMBER> ena_state_t;
-
-#define ENA_FLAG_ZERO(adapter)		\
-	(adapter)->flags.reset()
-#define ENA_FLAG_ISSET(bit, adapter)	\
-	(adapter)->flags.test(bit)
+#define ENA_FLAG_ZERO(adapter)          \
+	BIT_ZERO(ENA_FLAGS_NUMBER, &(adapter)->flags)
+#define ENA_FLAG_ISSET(bit, adapter)    \
+	BIT_ISSET(ENA_FLAGS_NUMBER, (bit), &(adapter)->flags)
 #define ENA_FLAG_SET_ATOMIC(bit, adapter)	\
 	BIT_SET_ATOMIC(ENA_FLAGS_NUMBER, (bit), &(adapter)->flags)
 #define ENA_FLAG_CLEAR_ATOMIC(bit, adapter)	\
@@ -518,7 +556,7 @@ ena_trigger_reset(struct ena_adapter *adapter,
 {
 	if (likely(!ENA_FLAG_ISSET(ENA_FLAG_TRIGGER_RESET, adapter))) {
 		adapter->reset_reason = reset_reason;
-		//TODO ENA_FLAG_SET_ATOMIC(ENA_FLAG_TRIGGER_RESET, adapter);
+		ENA_FLAG_SET_ATOMIC(ENA_FLAG_TRIGGER_RESET, adapter);
 	}
 }
 

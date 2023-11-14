@@ -1161,7 +1161,7 @@ ena_enable_msix(struct ena_adapter *adapter)
 	}
 
 	adapter->msix_vecs = msix_vecs;
-	//ENA_FLAG_SET_ATOMIC(ENA_FLAG_MSIX_ENABLED, adapter);
+	ENA_FLAG_SET_ATOMIC(ENA_FLAG_MSIX_ENABLED, adapter);
 
 	return (0);
 
@@ -1631,7 +1631,7 @@ ena_up(struct ena_adapter *adapter)
 
 	//TODO: if_setdrvflagbits(adapter->ifp, IFF_DRV_RUNNING, IFF_DRV_OACTIVE);
 
-	//TODO: ENA_FLAG_SET_ATOMIC(ENA_FLAG_DEV_UP, adapter);
+	ENA_FLAG_SET_ATOMIC(ENA_FLAG_DEV_UP, adapter);
 
 	ena_unmask_all_io_irqs(adapter);
 
@@ -1949,7 +1949,7 @@ ena_down(struct ena_adapter *adapter)
 
 	ena_log(adapter->pdev, INFO, "device is going DOWN\n");
 
-	//TODO ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEV_UP, adapter);
+	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEV_UP, adapter);
 	adapter->ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
         adapter->ifp->if_drv_flags |= IFF_DRV_OACTIVE;
 
@@ -2658,8 +2658,8 @@ ena_destroy_device(struct ena_adapter *adapter, bool graceful)
 	ENA_TIMER_DRAIN(adapter);
 
 	dev_up = ENA_FLAG_ISSET(ENA_FLAG_DEV_UP, adapter);
-	//TODO if (dev_up)
-	//TODO 	ENA_FLAG_SET_ATOMIC(ENA_FLAG_DEV_UP_BEFORE_RESET, adapter);
+	if (dev_up)
+	 	ENA_FLAG_SET_ATOMIC(ENA_FLAG_DEV_UP_BEFORE_RESET, adapter);
 
 	if (!graceful)
 		ena_com_set_admin_running_state(ena_dev, false);
@@ -2697,8 +2697,8 @@ ena_destroy_device(struct ena_adapter *adapter, bool graceful)
 
 	adapter->reset_reason = ENA_REGS_RESET_NORMAL;
 
-	//TODO ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_TRIGGER_RESET, adapter);
-	//TODO ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEVICE_RUNNING, adapter);
+	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_TRIGGER_RESET, adapter);
+	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEVICE_RUNNING, adapter);
 }
 
 static int
@@ -2730,7 +2730,7 @@ ena_restore_device(struct ena_adapter *adapter)
 	int wd_active;
 	int rc;
 
-	//TODO ENA_FLAG_SET_ATOMIC(ENA_FLAG_ONGOING_RESET, adapter);
+	ENA_FLAG_SET_ATOMIC(ENA_FLAG_ONGOING_RESET, adapter);
 
 	rc = ena_device_init(adapter, dev, &get_feat_ctx, &wd_active);
 	if (rc != 0) {
@@ -2750,7 +2750,7 @@ ena_restore_device(struct ena_adapter *adapter)
 		goto err_device_destroy;
 	}
 
-	//TODO ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_ONGOING_RESET, adapter);
+	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_ONGOING_RESET, adapter);
 	/* Make sure we don't have a race with AENQ Links state handler */
 	if (ENA_FLAG_ISSET(ENA_FLAG_LINK_UP, adapter))
 		if_link_state_change(ifp, LINK_STATE_UP);
@@ -2782,7 +2782,7 @@ ena_restore_device(struct ena_adapter *adapter)
 	}
 
 	/* Indicate that device is running again and ready to work */
-	//TODO ENA_FLAG_SET_ATOMIC(ENA_FLAG_DEVICE_RUNNING, adapter);
+	ENA_FLAG_SET_ATOMIC(ENA_FLAG_DEVICE_RUNNING, adapter);
 
 	/*
 	 * As the AENQ handlers weren't executed during reset because
@@ -2793,7 +2793,7 @@ ena_restore_device(struct ena_adapter *adapter)
 	//TODO adapter->keep_alive_timestamp = getsbinuptime();
 	//TODO ENA_TIMER_RESET(adapter);
 
-	//TODO ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEV_UP_BEFORE_RESET, adapter);
+	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEV_UP_BEFORE_RESET, adapter);
 
 	return (rc);
 
@@ -2807,8 +2807,8 @@ err_device_destroy:
 	ena_com_dev_reset(ena_dev, ENA_REGS_RESET_DRIVER_INVALID_STATE);
 	ena_com_mmio_reg_read_request_destroy(ena_dev);
 err:
-	//TODO ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEVICE_RUNNING, adapter);
-	//TODO ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_ONGOING_RESET, adapter);
+	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEVICE_RUNNING, adapter);
+	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_ONGOING_RESET, adapter);
 	ena_log(dev, ERR, "Reset attempt failed. Can not reset the device\n");
 
 	return (rc);
@@ -2937,7 +2937,7 @@ ena_attach(device_t pdev)
 	}
 
 	/* Initially clear all the flags */
-	//TODO ENA_FLAG_ZERO(adapter);
+	ENA_FLAG_ZERO(adapter);
 
 	/* Device initialization */
 	rc = ena_device_init(adapter, pdev, &get_feat_ctx, &adapter->wd_active);
@@ -3033,7 +3033,7 @@ ena_attach(device_t pdev)
 	/* Tell the stack that the interface is not active */
         adapter->ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
 	adapter->ifp->if_drv_flags |= IFF_DRV_OACTIVE;
-	//TODO ENA_FLAG_SET_ATOMIC(ENA_FLAG_DEVICE_RUNNING, adapter);
+	ENA_FLAG_SET_ATOMIC(ENA_FLAG_DEVICE_RUNNING, adapter);
 
 	/* Run the timer service */
 	//TODO ENA_TIMER_RESET(adapter);
@@ -3142,13 +3142,13 @@ ena_update_on_link_change(void *adapter_data,
 
 	if (status != 0) {
 		ena_log(adapter->pdev, INFO, "link is UP\n");
-		//TODO ENA_FLAG_SET_ATOMIC(ENA_FLAG_LINK_UP, adapter);
+		ENA_FLAG_SET_ATOMIC(ENA_FLAG_LINK_UP, adapter);
 		if (!ENA_FLAG_ISSET(ENA_FLAG_ONGOING_RESET, adapter))
 			if_link_state_change(ifp, LINK_STATE_UP);
 	} else {
 		ena_log(adapter->pdev, INFO, "link is DOWN\n");
 		if_link_state_change(ifp, LINK_STATE_DOWN);
-		//TODO ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_LINK_UP, adapter);
+		ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_LINK_UP, adapter);
 	}
 }
 
