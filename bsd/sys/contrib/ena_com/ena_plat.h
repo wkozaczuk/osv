@@ -104,7 +104,7 @@ extern struct ena_bus_space ebs;
 		(type *)((uintptr_t)__p - offsetof(type, member));	\
 	})
 
-#define ena_trace(ctx, level, fmt, args...) {}
+#define ena_trace(ctx, level, fmt, args...) do {} while (0)
 
 #define ena_trc_dbg(ctx, format, arg...)	\
 	ena_trace(ctx, DBG, format, ##arg)

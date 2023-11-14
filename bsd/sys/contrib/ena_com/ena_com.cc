@@ -1424,27 +1424,27 @@ int ena_com_execute_admin_command(struct ena_com_admin_queue *admin_queue,
 					    comp, comp_size);
 	if (IS_ERR(comp_ctx)) {
 		ret = PTR_ERR(comp_ctx);
-		/* TODO if (ret == ENA_COM_NO_DEVICE)
+		if (ret == ENA_COM_NO_DEVICE)
 			ena_trc_dbg(admin_queue->ena_dev,
 				    "Failed to submit command [%d]\n",
 				    ret);
 		else
 			ena_trc_err(admin_queue->ena_dev,
 				    "Failed to submit command [%d]\n",
-				    ret);*/
+				    ret);
 
 		return ret;
 	}
 
 	ret = ena_com_wait_and_process_admin_cq(comp_ctx, admin_queue);
-	/* TODO if (unlikely(ret)) {
+	if (unlikely(ret)) {
 		if (admin_queue->running_state)
 			ena_trc_err(admin_queue->ena_dev,
 				    "Failed to process command. ret = %d\n", ret);
 		else
 			ena_trc_dbg(admin_queue->ena_dev,
 				    "Failed to process command. ret = %d\n", ret);
-	}*/
+	}
 	return ret;
 }
 

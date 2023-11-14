@@ -593,7 +593,7 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 
 	if (refill_required > refill_threshold) {
 		ena_com_update_dev_comp_head(rx_ring->ena_com_io_cq);
-		//TODO - enable once ena.c compiles ena_refill_rx_bufs(rx_ring, refill_required);
+		ena_refill_rx_bufs(rx_ring, refill_required);
 	}
 
         //Investigate https://github.com/freebsd/freebsd-src/commit/e936121d3140af047a498559493b9375a6ba6ba3

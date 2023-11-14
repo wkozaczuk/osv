@@ -176,11 +176,6 @@ int ena_mbuf_sz = 64;
 char *ena_version = "123";
 struct sx ena_global_lock;
 
-//TODO This function probably should not be used or maybe import from FreeBSD (most likely not becuase DMA related?)
-int bus_dmamap_load_mbuf_sg(bus_dma_tag_t dmat, bus_dmamap_t map,
-			    struct mbuf *mbuf, bus_dma_segment_t *segs,
-			    int *nsegs, int flags) { return 0; }
-
 /*
  * Contains pointers to event handlers, e.g. link state chage.
  */
@@ -529,8 +524,7 @@ ena_free_tx_resources(struct ena_adapter *adapter, int qid)
 	/* Flush buffer ring, */
 	//TODO drbr_flush(adapter->ifp, tx_ring->br);
 
-	/* Free buffer DMA maps, */
-        //TODO: Probably change all this DMA stuff
+	/* Free mbufs */
 	for (int i = 0; i < tx_ring->ring_size; i++) {
 		m_freem(tx_ring->tx_buffer_info[i].mbuf);
 		tx_ring->tx_buffer_info[i].mbuf = NULL;
