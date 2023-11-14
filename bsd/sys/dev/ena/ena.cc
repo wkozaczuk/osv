@@ -271,6 +271,7 @@ ena_change_mtu(if_t ifp, int new_mtu)
 	return (rc);
 }
 
+//TODO Disable counters for now
 static inline void
 ena_alloc_counters(counter_u64_t *begin, int size)
 {
@@ -2265,10 +2266,10 @@ ena_keep_alive_wd(void *adapter_data, struct ena_admin_aenq_entry *aenq_e)
 
 	rx_drops = ((uint64_t)desc->rx_drops_high << 32) | desc->rx_drops_low;
 	tx_drops = ((uint64_t)desc->tx_drops_high << 32) | desc->tx_drops_low;
-	//counter_u64_zero(adapter->hw_stats.rx_drops);
-	//counter_u64_add(adapter->hw_stats.rx_drops, rx_drops);
-	//counter_u64_zero(adapter->hw_stats.tx_drops);
-	//counter_u64_add(adapter->hw_stats.tx_drops, tx_drops);
+	counter_u64_zero(adapter->hw_stats.rx_drops);
+	counter_u64_add(adapter->hw_stats.rx_drops, rx_drops);
+	counter_u64_zero(adapter->hw_stats.tx_drops);
+	counter_u64_add(adapter->hw_stats.tx_drops, tx_drops);
 
 	//stime = getsbinuptime();
 	//TODO: atomic_store_rel_64(&adapter->keep_alive_timestamp, stime);
@@ -2290,7 +2291,7 @@ check_for_missing_keep_alive(struct ena_adapter *adapter)
 	//TODO time = getsbinuptime() - timestamp;
 	//if (unlikely(time > adapter->keep_alive_timeout)) {
 		ena_log(adapter->pdev, ERR, "Keep alive watchdog timeout.\n");
-		//counter_u64_add(adapter->dev_stats.wd_expired, 1);
+		counter_u64_add(adapter->dev_stats.wd_expired, 1);
 		ena_trigger_reset(adapter, ENA_REGS_RESET_KEEP_ALIVE_TO);
 	//}
 }
@@ -2302,7 +2303,7 @@ check_for_admin_com_state(struct ena_adapter *adapter)
 	if (unlikely(ena_com_get_admin_running_state(adapter->ena_dev) == false)) {
 		ena_log(adapter->pdev, ERR,
 		    "ENA admin queue is not in running state!\n");
-		//counter_u64_add(adapter->dev_stats.admin_q_pause, 1);
+		counter_u64_add(adapter->dev_stats.admin_q_pause, 1);
 		ena_trigger_reset(adapter, ENA_REGS_RESET_ADMIN_TO);
 	}
 }
@@ -2405,7 +2406,7 @@ check_missing_comp_in_tx_queue(struct ena_adapter *adapter,
 		rc = EIO;
 	}
 
-	//counter_u64_add(tx_ring->tx_stats.missing_tx_comp, missed_tx);
+	counter_u64_add(tx_ring->tx_stats.missing_tx_comp, missed_tx);
 
 	return (rc);
 }
@@ -2492,8 +2493,7 @@ check_for_empty_rx_ring(struct ena_adapter *adapter)
 			rx_ring->empty_rx_queue++;
 
 			if (rx_ring->empty_rx_queue >= EMPTY_RX_REFILL) {
-				//counter_u64_add(rx_ring->rx_stats.empty_rx_ring,
-				 //   1);
+				counter_u64_add(rx_ring->rx_stats.empty_rx_ring, 1);
 
 				ena_log(adapter->pdev, WARN,
 				    "Rx ring %d is stalled. Triggering the refill function\n",

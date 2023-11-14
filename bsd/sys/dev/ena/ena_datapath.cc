@@ -547,12 +547,12 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 			ena_rx_checksum(rx_ring, &ena_rx_ctx, mbuf);
 		}
 
-		//TODO counter_enter();
+		counter_enter();
 		counter_u64_add_protected(rx_ring->rx_stats.bytes,
 		    mbuf->M_dat.MH.MH_pkthdr.len);
 		counter_u64_add_protected(adapter->hw_stats.rx_bytes,
 		    mbuf->M_dat.MH.MH_pkthdr.len);
-		//TODO counter_exit();
+		counter_exit();
 		/*
 		 * LRO is only for IP/TCP packets and TCP checksum of the packet
 		 * should be computed by hardware.
@@ -578,10 +578,10 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 			(*ifp->if_input)(ifp, mbuf);
 		}
 
-		//TODO counter_enter();
+		counter_enter();
 		counter_u64_add_protected(rx_ring->rx_stats.cnt, 1);
 		counter_u64_add_protected(adapter->hw_stats.rx_packets, 1);
-		//TODO counter_exit();
+		counter_exit();
 	} while (--budget);
 
 	rx_ring->next_to_clean = next_to_clean;
@@ -596,7 +596,7 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 		ena_refill_rx_bufs(rx_ring, refill_required);
 	}
 
-        //Investigate https://github.com/freebsd/freebsd-src/commit/e936121d3140af047a498559493b9375a6ba6ba3
+        //TODO: Investigate https://github.com/freebsd/freebsd-src/commit/e936121d3140af047a498559493b9375a6ba6ba3
         //to port it back
 	//tcp_lro_flush_all(&rx_ring->lro);
 
@@ -859,7 +859,7 @@ ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 		goto dma_error;
 	}
 
-	//TODO counter_enter();
+	counter_enter();
 	counter_u64_add_protected(tx_ring->tx_stats.cnt, 1);
 	counter_u64_add_protected(tx_ring->tx_stats.bytes,
 	    (*mbuf)->M_dat.MH.MH_pkthdr.len);
@@ -867,7 +867,7 @@ ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 	counter_u64_add_protected(adapter->hw_stats.tx_packets, 1);
 	counter_u64_add_protected(adapter->hw_stats.tx_bytes,
 	    (*mbuf)->M_dat.MH.MH_pkthdr.len);
-	//TODO counter_exit();
+	counter_exit();
 
 	tx_info->tx_descs = nb_hw_desc;
 	//TODO getbinuptime(&tx_info->timestamp);

@@ -293,9 +293,15 @@ struct ena_rx_buffer {
 
 //TODO: See if we need atomics or possibly these get updated/read without a need
 //for locking
+//In FreeBSD they seem to be atomics per CPU - see https://github.com/freebsd/freebsd-src/blob/main/sys/arm64/include/counter.h#L82
+//For now disable all the counter related code -> it seems to be used only to track
+//stats
 typedef u64 counter_u64_t;
-#define counter_u64_add(cnt,inc) (cnt += inc)
-#define counter_u64_add_protected(cnt,inc) (cnt += inc)
+#define counter_u64_zero(cnt) do {} while (0)
+#define counter_u64_add(cnt,inc) do {} while (0)
+#define counter_u64_add_protected(cnt,inc) do {} while (0)
+#define counter_enter() do {} while (0)
+#define counter_exit() do {} while (0)
 
 struct ena_stats_tx {
 	counter_u64_t cnt;
