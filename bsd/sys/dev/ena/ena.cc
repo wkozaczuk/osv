@@ -2109,9 +2109,8 @@ err_disable_msix:
 void
 ena_keep_alive_wd(void *adapter_data, struct ena_admin_aenq_entry *aenq_e)
 {
-	//struct ena_adapter *adapter = (struct ena_adapter *)adapter_data;
+	struct ena_adapter *adapter = (struct ena_adapter *)adapter_data;
 	struct ena_admin_aenq_keep_alive_desc *desc;
-	//sbintime_t stime;
 	uint64_t rx_drops;
 	uint64_t tx_drops;
 
@@ -2124,29 +2123,27 @@ ena_keep_alive_wd(void *adapter_data, struct ena_admin_aenq_entry *aenq_e)
 	counter_u64_zero(adapter->hw_stats.tx_drops);
 	counter_u64_add(adapter->hw_stats.tx_drops, tx_drops);
 
-	//stime = getsbinuptime();
-	//TODO: atomic_store_rel_64(&adapter->keep_alive_timestamp, stime);
+	u64 uptime = osv::clock::uptime::now().time_since_epoch().count();
+	adapter->keep_alive_timestamp.store(uptime, std::memory_order_release);
 }
 
 /* Check for keep alive expiration */
 static void
 check_for_missing_keep_alive(struct ena_adapter *adapter)
 {
-	//sbintime_t timestamp, time;
-
 	if (adapter->wd_active == 0)
 		return;
 
 	if (adapter->keep_alive_timeout == ENA_HW_HINTS_NO_TIMEOUT)
 		return;
 
-	//TODO timestamp = atomic_load_acq_64(&adapter->keep_alive_timestamp);
-	//TODO time = getsbinuptime() - timestamp;
-	//if (unlikely(time > adapter->keep_alive_timeout)) {
+	u64 timestamp = adapter->keep_alive_timestamp.load(std::memory_order_acquire);
+	u64 now = osv::clock::uptime::now().time_since_epoch().count() - timestamp;
+	if (unlikely(now > timestamp + adapter->keep_alive_timeout)) {
 		ena_log(adapter->pdev, ERR, "Keep alive watchdog timeout.\n");
 		counter_u64_add(adapter->dev_stats.wd_expired, 1);
 		ena_trigger_reset(adapter, ENA_REGS_RESET_KEEP_ALIVE_TO);
-	//}
+	}
 }
 
 /* Check if admin queue is enabled */
@@ -2578,7 +2575,7 @@ ena_restore_device(struct ena_adapter *adapter)
 	 * timestamp must be updated again That will prevent next reset
 	 * caused by missing keep alive.
 	 */
-	//TODO adapter->keep_alive_timestamp = getsbinuptime();
+	adapter->keep_alive_timestamp = osv::clock::uptime::now().time_since_epoch().count();
 	//TODO ENA_TIMER_RESET(adapter);
 
 	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEV_UP_BEFORE_RESET, adapter);
@@ -2725,7 +2722,7 @@ ena_attach(device_t pdev)
 		goto err_bus_free;
 	}
 
-	//TODO adapter->keep_alive_timestamp = getsbinuptime();
+	adapter->keep_alive_timestamp = osv::clock::uptime::now().time_since_epoch().count();
 
 	adapter->tx_offload_cap = get_feat_ctx.offload.tx;
 

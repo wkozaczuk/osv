@@ -484,7 +484,7 @@ struct ena_adapter {
 
 	/* Timer service */
 	struct callout timer_service;
-	u64 keep_alive_timestamp;
+	std::atomic<u64> keep_alive_timestamp;
 	uint32_t next_monitored_tx_qid;
 	struct task reset_task;
 	struct taskqueue *reset_tq;
