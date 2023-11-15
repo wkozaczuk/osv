@@ -594,7 +594,7 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 		ena_refill_rx_bufs(rx_ring, refill_required);
 	}
 
-        //TODO: Investigate https://github.com/freebsd/freebsd-src/commit/e936121d3140af047a498559493b9375a6ba6ba3
+        //TODO: Can wait? investigate https://github.com/freebsd/freebsd-src/commit/e936121d3140af047a498559493b9375a6ba6ba3
         //to port it back
 	//tcp_lro_flush_all(&rx_ring->lro);
 
@@ -692,18 +692,18 @@ ena_tx_csum(struct ena_com_tx_ctx *ena_tx_ctx, struct mbuf *mbuf,
 
 	if (ipproto == IPPROTO_TCP) {
 		ena_tx_ctx->l4_proto = ENA_ETH_IO_L4_PROTO_TCP;
-		/*TODO if ((mbuf->M_dat.MH.MH_pkthdr.csum_flags &
-		    (CSUM_IP_TCP | CSUM_IP6_TCP)) != 0)
+		if ((mbuf->M_dat.MH.MH_pkthdr.csum_flags &
+		    (CSUM_TCP | CSUM_TCP_IPV6)) != 0)
 			ena_tx_ctx->l4_csum_enable = 1;
 		else
-			ena_tx_ctx->l4_csum_enable = 0;*/
+			ena_tx_ctx->l4_csum_enable = 0;
 	} else if (ipproto == IPPROTO_UDP) {
 		ena_tx_ctx->l4_proto = ENA_ETH_IO_L4_PROTO_UDP;
-		/*TODO if ((mbuf->M_dat.MH.MH_pkthdr.csum_flags &
-		    (CSUM_IP_UDP | CSUM_IP6_UDP)) != 0)
+		if ((mbuf->M_dat.MH.MH_pkthdr.csum_flags &
+		    (CSUM_UDP | CSUM_UDP_IPV6)) != 0)
 			ena_tx_ctx->l4_csum_enable = 1;
 		else
-			ena_tx_ctx->l4_csum_enable = 0;*/
+			ena_tx_ctx->l4_csum_enable = 0;
 	} else {
 		ena_tx_ctx->l4_proto = ENA_ETH_IO_L4_PROTO_UNKNOWN;
 		ena_tx_ctx->l4_csum_enable = 0;
