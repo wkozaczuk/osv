@@ -1713,6 +1713,7 @@ ena_update_hwassist(struct ena_adapter *adapter)
 	int cap = ifp->if_capenable;
 	int flags = 0;
 
+        //TODO: Revisit if all this flag setting logic makes sense
 	if ((cap & IFCAP_TXCSUM) != 0) {
 		if ((feat &
 		    ENA_ADMIN_FEATURE_OFFLOAD_DESC_TX_L3_CSUM_IPV4_MASK) != 0)
@@ -1720,17 +1721,17 @@ ena_update_hwassist(struct ena_adapter *adapter)
 		if ((feat &
 		    (ENA_ADMIN_FEATURE_OFFLOAD_DESC_TX_L4_IPV4_CSUM_FULL_MASK |
 		    ENA_ADMIN_FEATURE_OFFLOAD_DESC_TX_L4_IPV4_CSUM_PART_MASK)) != 0)
-			flags |= 0;//TODO CSUM_IP_UDP | CSUM_IP_TCP;
+			flags |= CSUM_UDP | CSUM_TCP;
 	}
 
-	//if ((cap & IFCAP_TXCSUM_IPV6) != 0)
-	//	flags |= CSUM_IP6_UDP | CSUM_IP6_TCP;
+	if ((cap & IFCAP_TXCSUM_IPV6) != 0)
+		flags |= CSUM_UDP_IPV6 | CSUM_TCP_IPV6;
 
 	if ((cap & IFCAP_TSO4) != 0)
-		flags |= 0;//TODO CSUM_IP_TSO;
+		flags |= CSUM_TSO;
 
-	//if ((cap & IFCAP_TSO6) != 0)
-	//	flags |= CSUM_IP6_TSO;
+	if ((cap & IFCAP_TSO6) != 0)
+		flags |= CSUM_TSO;
 
 	adapter->ifp->if_hwassist = flags;
 }
