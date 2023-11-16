@@ -266,7 +266,7 @@ ena_tx_cleanup(struct ena_ring *tx_ring)
 		mbuf = tx_info->mbuf;
 
 		tx_info->mbuf = NULL;
-		//TODO bintime_clear(&tx_info->timestamp);
+		tx_info->timestamp = 0;
 
 		ena_log_io(adapter->pdev, DBG, "tx: q %d mbuf %p completed\n",
 		    tx_ring->qid, mbuf);
@@ -869,7 +869,7 @@ ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 	counter_exit();
 
 	tx_info->tx_descs = nb_hw_desc;
-	//TODO getbinuptime(&tx_info->timestamp);
+	tx_info->timestamp = osv::clock::uptime::now().time_since_epoch().count();
 	tx_info->print_once = true;
 
 	tx_ring->next_to_use = ENA_TX_RING_IDX_NEXT(next_to_use,

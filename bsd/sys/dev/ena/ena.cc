@@ -2186,29 +2186,22 @@ static int
 check_missing_comp_in_tx_queue(struct ena_adapter *adapter,
     struct ena_ring *tx_ring)
 {
-	//device_t pdev = adapter->pdev;
-	//TODO struct bintime curtime, time;
 	struct ena_tx_buffer *tx_buf;
-	int time_since_last_cleanup;
-	int missing_tx_comp_to;
-	//TODO sbintime_t time_offset;
 	uint32_t missed_tx = 0;
 	int i, rc = 0;
 
-	//TODO getbinuptime(&curtime);
+	u64 curtime = osv::clock::uptime::now().time_since_epoch().count();
 
 	for (i = 0; i < tx_ring->ring_size; i++) {
 		tx_buf = &tx_ring->tx_buffer_info[i];
 
-		//TODO if (bintime_isset(&tx_buf->timestamp) == 0)
-		//TODO 	continue;
+		if (tx_buf->timestamp == 0)
+			continue;
 
-		//TODO time = curtime;
-		//TODO bintime_sub(&time, &tx_buf->timestamp);
-		//TODO time_offset = bttosbt(time);
+		u64 time_offset = curtime - tx_buf->timestamp;
 
-		if (unlikely(!tx_ring->first_interrupt.load())) { //&&
-		//    time_offset > 2 * adapter->missing_tx_timeout)) {
+		if (unlikely(!tx_ring->first_interrupt.load() &&
+			time_offset > 2 * adapter->missing_tx_timeout)) {
 			/*
 			 * If after graceful period interrupt is still not
 			 * received, we schedule a reset.
@@ -2223,23 +2216,17 @@ check_missing_comp_in_tx_queue(struct ena_adapter *adapter,
 		}
 
 		/* Check again if packet is still waiting */
-		//TODO if (unlikely(time_offset > adapter->missing_tx_timeout)) {
+		if (unlikely(time_offset > adapter->missing_tx_timeout)) {
 
 			if (tx_buf->print_once) {
-				time_since_last_cleanup = 1000000 * (bsd_ticks -
-				    tx_ring->tx_last_cleanup_ticks) / hz;
-				missing_tx_comp_to = 0; //TODO sbttoms(
-				    //adapter->missing_tx_timeout);
 				ena_log(pdev, WARN,
-				    "Found a Tx that wasn't completed on time, qid %d, index %d. "
-				    "%d usecs have passed since last cleanup. Missing Tx timeout value %d msecs.\n",
-				    tx_ring->qid, i, time_since_last_cleanup,
-				    missing_tx_comp_to);
+				    "Found a Tx that wasn't completed on time, qid %d, index %d.",
+				    tx_ring->qid, i);
 			}
 
 			tx_buf->print_once = false;
 			missed_tx++;
-		//}
+		}
 	}
 
 	if (unlikely(missed_tx > adapter->missing_tx_threshold)) {
@@ -2377,16 +2364,16 @@ ena_update_hints(struct ena_adapter *adapter,
 		    ENA_HW_HINTS_NO_TIMEOUT)
 			adapter->missing_tx_timeout = ENA_HW_HINTS_NO_TIMEOUT;
 		else
-			adapter->missing_tx_timeout = //TODO SBT_1MS *
-			    hints->missing_tx_completion_timeout;
+			adapter->missing_tx_timeout = NANOSECONDS_IN_MSEC *
+			    hints->missing_tx_completion_timeout; //In ms
 	}
 
 	if (hints->driver_watchdog_timeout) {
 		if (hints->driver_watchdog_timeout == ENA_HW_HINTS_NO_TIMEOUT)
 			adapter->keep_alive_timeout = ENA_HW_HINTS_NO_TIMEOUT;
 		else
-			adapter->keep_alive_timeout = //TODO SBT_1MS *
-			    hints->driver_watchdog_timeout;
+			adapter->keep_alive_timeout = NANOSECONDS_IN_MSEC *
+			    hints->driver_watchdog_timeout; //In ms
 	}
 }
 
@@ -2656,8 +2643,8 @@ ena_attach(device_t pdev)
 	 * concurrency, as the callout won't be using any locking inside.
 	 */
 	ENA_TIMER_INIT(adapter);
-	//TODO adapter->keep_alive_timeout = ENA_DEFAULT_KEEP_ALIVE_TO;
-	//adapter->missing_tx_timeout = ENA_DEFAULT_TX_CMP_TO;
+	adapter->keep_alive_timeout = ENA_DEFAULT_KEEP_ALIVE_TO;
+	adapter->missing_tx_timeout = ENA_DEFAULT_TX_CMP_TO;
 	adapter->missing_tx_max_queues = ENA_DEFAULT_TX_MONITORED_QUEUES;
 	adapter->missing_tx_threshold = ENA_DEFAULT_TX_CMP_THRESHOLD;
 

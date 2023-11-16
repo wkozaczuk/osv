@@ -137,10 +137,12 @@
  * ENA device should send keep alive msg every 1 sec.
  * We wait for 6 sec just to be on the safe side.
  */
-#define ENA_DEFAULT_KEEP_ALIVE_TO	(SBT_1S * 6)
+#define NANOSECONDS_IN_SEC  1000000000l
+#define NANOSECONDS_IN_MSEC 1000000l
+#define ENA_DEFAULT_KEEP_ALIVE_TO	(6 * NANOSECONDS_IN_SEC)
 
 /* Time in jiffies before concluding the transmitter is hung. */
-#define ENA_DEFAULT_TX_CMP_TO		(SBT_1S * 5)
+#define ENA_DEFAULT_TX_CMP_TO		(5 * NANOSECONDS_IN_SEC)
 
 /* Number of queues to check for missing queues per timer tick */
 #define ENA_DEFAULT_TX_MONITORED_QUEUES	(4)
