@@ -246,7 +246,6 @@ static int
 ena_change_mtu(if_t ifp, int new_mtu)
 {
 	struct ena_adapter *adapter = nullptr;//TODO if_getsoftc(ifp);
-	//device_t pdev = adapter->pdev;
 	int rc;
 
 	if ((new_mtu > adapter->max_mtu) || (new_mtu < ENA_MIN_MTU)) {
@@ -266,7 +265,7 @@ ena_change_mtu(if_t ifp, int new_mtu)
 	return (rc);
 }
 
-//TODO Disable counters for now
+//Later todo - Disable counters for now
 static inline void
 ena_alloc_counters(counter_u64_t *begin, int size)
 {
@@ -2658,10 +2657,10 @@ ena_attach(device_t pdev)
 	adapter->ena_dev = ena_dev;
 	ena_dev->dmadev = pdev;
 
-	//TOOD rid = PCIR_BAR(ENA_REG_BAR);
+	//TODO rid = PCIR_BAR(ENA_REG_BAR);
 	adapter->memory = NULL;
-	//TOOD adapter->registers = bus_alloc_resource_any(pdev, SYS_RES_MEMORY, &rid,
-	//TOOD     RF_ACTIVE);
+	//TODO adapter->registers = bus_alloc_resource_any(pdev, SYS_RES_MEMORY, &rid,
+	//TODO     RF_ACTIVE);
 	if (unlikely(adapter->registers == NULL)) {
 		ena_log(pdev, ERR,
 		    "unable to allocate bus resource: registers!\n");
@@ -2670,10 +2669,10 @@ ena_attach(device_t pdev)
 	}
 
 	/* MSIx vector table may reside on BAR0 with registers or on BAR1. */
-	//TOOD msix_rid = pci_msix_table_bar(pdev);
+	//TODO msix_rid = pci_msix_table_bar(pdev);
 	if (msix_rid != rid) {
-		//TOOD adapter->msix = bus_alloc_resource_any(pdev, SYS_RES_MEMORY,
-		//TOOD     &msix_rid, RF_ACTIVE);
+		//TODO adapter->msix = bus_alloc_resource_any(pdev, SYS_RES_MEMORY,
+		//TODO     &msix_rid, RF_ACTIVE);
 		if (unlikely(adapter->msix == NULL)) {
 			ena_log(pdev, ERR,
 			    "unable to allocate bus resource: msix!\n");
