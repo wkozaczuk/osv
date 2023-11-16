@@ -83,10 +83,11 @@ __FBSDID("$FreeBSD$");
 #include <osv/mmu.hh>
 #include <osv/mempool.hh>
 
+#include "drivers/pci-device.hh"
+
 /*********************************************************
  *  Function prototypes
  *********************************************************/
-//static int ena_probe(device_t); //TODO
 void ena_intr_msix_mgmnt(void *); //TODO
 static void ena_free_pci_resources(struct ena_adapter *);
 static int ena_change_mtu(if_t, int);
@@ -157,14 +158,14 @@ static void ena_timer_service(void *);
 //static char ena_version[] = ENA_DEVICE_NAME ENA_DRV_MODULE_NAME
 //    " v" ENA_DRV_MODULE_VERSION;
 
-/*TODO static ena_vendor_info_t ena_vendor_info_array[] = {
+static ena_vendor_info_t ena_vendor_info_array[] = {
 	{ PCI_VENDOR_ID_AMAZON, PCI_DEV_ID_ENA_PF, 0 },
 	{ PCI_VENDOR_ID_AMAZON, PCI_DEV_ID_ENA_PF_RSERV0, 0 },
 	{ PCI_VENDOR_ID_AMAZON, PCI_DEV_ID_ENA_VF, 0 },
-	{ PCI_VENDOR_ID_AMAZON, PCI_DEV_ID_ENA_VF_RSERV0, 0 },*/
+	{ PCI_VENDOR_ID_AMAZON, PCI_DEV_ID_ENA_VF_RSERV0, 0 },
 	/* Last entry */
-	/*{ 0, 0, 0 }
-};*/
+	{ 0, 0, 0 }
+};
 
 //TODO: Where is it supposed to come from?
 int ena_mbuf_sz = 64;
@@ -215,32 +216,23 @@ ena_free_pci_resources(struct ena_adapter *adapter)
 	}*/
 }
 
-/*static int
-ena_probe(device_t dev)
+bool
+ena_probe(pci::device* dev)
 {
-	ena_vendor_info_t *ent;
-	uint16_t pci_vendor_id = 0;
-	uint16_t pci_device_id = 0;
-
-	pci_vendor_id = pci_get_vendor(dev);
-	pci_device_id = pci_get_device(dev);
-
-	ent = ena_vendor_info_array;
+	ena_vendor_info_t *ent = ena_vendor_info_array;
 	while (ent->vendor_id != 0) {
-		if ((pci_vendor_id == ent->vendor_id) &&
-		    (pci_device_id == ent->device_id)) {
-			ena_log_raw(DBG, "vendor=%x device=%x\n", pci_vendor_id,
-			    pci_device_id);
+		if (dev->get_id() == hw_device_id(ent->vendor_id, ent->device_id)) {
+			ena_log_raw(DBG, "vendor=%x device=%x\n", ent->vendor_id,
+			    ent->device_id);
 
-			device_set_desc(dev, ENA_DEVICE_DESC);
-			return (BUS_PROBE_DEFAULT);
+			return true;
 		}
 
 		ent++;
 	}
 
-	return (ENXIO);
-}*/
+	return false;
+}
 
 static int
 ena_change_mtu(if_t ifp, int new_mtu)

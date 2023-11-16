@@ -14,6 +14,8 @@
 #include "drivers/driver.hh"
 #include "drivers/pci-device.hh"
 
+bool ena_probe(pci::device *dev);
+
 namespace aws {
 
 class ena: public hw_driver {

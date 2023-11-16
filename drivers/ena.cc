@@ -14,6 +14,9 @@
 
 #include <bsd/sys/net/ethernet.h>
 
+extern bool opt_maxnic;
+extern int maxnic;
+
 namespace aws {
 
 #define ena_tag "ena"
@@ -111,14 +114,12 @@ hw_driver* ena::probe(hw_device* dev)
     try {
         if (auto pci_dev = dynamic_cast<pci::device*>(dev)) {
             pci_dev->dump_config();
-            if (pci_dev->get_id() ==
-                hw_device_id(1, 1)) {
-                //hw_device_id(pciconf::vendor_id, pciconf::device_id)) {
-                //if (opt_maxnic && maxnic-- <= 0) {
-                //    return nullptr;
-                //} else {
+            if (ena_probe(pci_dev)) {
+                if (opt_maxnic && maxnic-- <= 0) {
+                    return nullptr;
+                } else {
                     return aligned_new<ena>(*pci_dev);
-                //}
+                }
             }
         }
     } catch (std::exception& e) {
