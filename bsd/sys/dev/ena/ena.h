@@ -522,8 +522,8 @@ struct ena_adapter {
 #define ENA_TIMER_DRAIN(_adapter)					\
 	callout_drain(&(_adapter)->timer_service)
 #define ENA_TIMER_RESET(_adapter)					\
-	callout_reset_sbt(&(_adapter)->timer_service, SBT_1S, SBT_1S,	\
-			ena_timer_service, (void*)(_adapter), 0)
+	callout_reset(&(_adapter)->timer_service, ns2ticks(NANOSECONDS_IN_SEC),	\
+			ena_timer_service, (void*)(_adapter))
 
 #define clamp_t(type, _x, min, max)	min_t(type, max_t(type, _x, min), max)
 #define clamp_val(val, lo, hi)		clamp_t(__typeof(val), val, lo, hi)

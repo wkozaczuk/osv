@@ -152,7 +152,7 @@ static int ena_device_init(struct ena_adapter *, device_t,
 static int ena_enable_msix_and_set_admin_interrupts(struct ena_adapter *);
 void ena_update_on_link_change(void *, struct ena_admin_aenq_entry *); //TODO
 void unimplemented_aenq_handler(void *, struct ena_admin_aenq_entry *); //TODO
-void ena_timer_service(void *); //TODO change back to static once ENA_TIMER_RESET is fixed
+static void ena_timer_service(void *);
 
 //static char ena_version[] = ENA_DEVICE_NAME ENA_DRV_MODULE_NAME
 //    " v" ENA_DRV_MODULE_VERSION;
@@ -2377,7 +2377,7 @@ ena_update_hints(struct ena_adapter *adapter,
 	}
 }
 
-void
+static void
 ena_timer_service(void *data)
 {
 	struct ena_adapter *adapter = (struct ena_adapter *)data;
@@ -2400,7 +2400,7 @@ ena_timer_service(void *data)
 		    ENA_COM_TIMER_EXPIRED) {
 			ena_log(adapter->pdev, WARN,
 			    "FW unresponsive, skipping reset\n");
-			//TODO ENA_TIMER_RESET(adapter);
+			ENA_TIMER_RESET(adapter);
 			return;
 		}
 		ena_log(adapter->pdev, WARN, "Trigger reset is on\n");
@@ -2411,7 +2411,7 @@ ena_timer_service(void *data)
 	/*
 	 * Schedule another timeout one second from now.
 	 */
-	//TODO ENA_TIMER_RESET(adapter);
+	ENA_TIMER_RESET(adapter);
 }
 
 void
@@ -2563,7 +2563,7 @@ ena_restore_device(struct ena_adapter *adapter)
 	 * caused by missing keep alive.
 	 */
 	adapter->keep_alive_timestamp = osv::clock::uptime::now().time_since_epoch().count();
-	//TODO ENA_TIMER_RESET(adapter);
+	ENA_TIMER_RESET(adapter);
 
 	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEV_UP_BEFORE_RESET, adapter);
 
@@ -2791,7 +2791,7 @@ ena_attach(device_t pdev)
 	ENA_FLAG_SET_ATOMIC(ENA_FLAG_DEVICE_RUNNING, adapter);
 
 	/* Run the timer service */
-	//TODO ENA_TIMER_RESET(adapter);
+	ENA_TIMER_RESET(adapter);
 
 	return (0);
 
