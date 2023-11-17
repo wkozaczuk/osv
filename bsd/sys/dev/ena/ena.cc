@@ -145,7 +145,6 @@ static uint32_t ena_calc_max_io_queue_num(pci::device *, struct ena_com_dev *,
     struct ena_com_dev_get_features_ctx *);
 static int ena_calc_io_queue_size(struct ena_calc_queue_size_ctx *);
 static void ena_config_host_info(struct ena_com_dev *, pci::device*);
-int ena_detach(device_t);
 static int ena_device_init(struct ena_adapter *, pci::device *,
     struct ena_com_dev_get_features_ctx *, int *);
 static int ena_enable_msix_and_set_admin_interrupts(struct ena_adapter *);
@@ -2570,17 +2569,16 @@ ena_free_stats(struct ena_adapter *adapter)
  * and a hardware reset occur.
  **/
 int
-ena_attach(pci::device* pdev)
+ena_attach(pci::device* pdev, ena_adapter **_adapter)
 {
 	struct ena_com_dev_get_features_ctx get_feat_ctx;
 	struct ena_calc_queue_size_ctx calc_queue_ctx = { 0 };
 	static int version_printed;
-	struct ena_adapter *adapter;
 	struct ena_com_dev *ena_dev = NULL;
 	uint32_t max_num_io_queues;
 	int rc;
 
-	adapter = aligned_new<ena_adapter>();
+	struct ena_adapter *adapter = aligned_new<ena_adapter>();
 	adapter->pdev = pdev;
 	adapter->first_bind = -1;
 
@@ -2719,6 +2717,7 @@ ena_attach(pci::device* pdev)
 	/* Run the timer service */
 	ENA_TIMER_RESET(adapter);
 
+	*_adapter = adapter;
 	return (0);
 
 err_msix_free:
@@ -2738,6 +2737,7 @@ err_bus_free:
 err_dev_free:
 	free(ena_dev, M_DEVBUF);
 
+        delete adapter;
 	return (rc);
 }
 
@@ -2749,9 +2749,8 @@ err_dev_free:
  * that it should release a PCI device.
  **/
 int
-ena_detach(device_t pdev)
+ena_detach(ena_adapter *adapter)
 {
-	struct ena_adapter *adapter = nullptr;//TODO device_get_softc(pdev);
 	struct ena_com_dev *ena_dev = adapter->ena_dev;
 
 	ether_ifdetach(adapter->ifp);
@@ -2791,7 +2790,8 @@ ena_detach(device_t pdev)
 
 	free(ena_dev, M_DEVBUF);
 
-	return 0;//TODO (bus_generic_detach(pdev));
+	delete adapter;
+	return 0;
 }
 
 /******************************************************************************

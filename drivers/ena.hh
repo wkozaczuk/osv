@@ -14,20 +14,22 @@
 #include "drivers/driver.hh"
 #include "drivers/pci-device.hh"
 
+struct ena_adapter;
+
 bool ena_probe(pci::device *dev);
-int ena_attach(pci::device *dev);
+int ena_attach(pci::device *dev,  ena_adapter **_adapter);
+int ena_detach(ena_adapter *adapter);
 
 namespace aws {
 
 class ena: public hw_driver {
 public:
     explicit ena(pci::device& dev);
-    virtual ~ena() {};
+    virtual ~ena();
 
     virtual std::string get_name() const { return "ena"; }
 
     virtual void dump_config(void);
-    int transmit(struct mbuf* m_head);
 
     static hw_driver* probe(hw_device* dev);
 
@@ -39,10 +41,8 @@ public:
     void fill_stats(struct if_data* out_data) const;
 
 private:
-    int _id;
-    struct ifnet* _ifn;
-
     pci::device& _dev;
+    ena_adapter *_adapter;
 };
 
 }

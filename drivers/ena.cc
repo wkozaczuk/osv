@@ -25,24 +25,7 @@ namespace aws {
 #define ena_w(...)   tprintf_w(ena_tag, __VA_ARGS__)
 #define ena_e(...)   tprintf_e(ena_tag, __VA_ARGS__)
 
-static int if_ioctl(struct ifnet* ifp, u_long command, caddr_t data)
-{
-    return 0;
-}
-
-static void if_qflush(struct ifnet* ifp)
-{
-}
-
-static int if_transmit(struct ifnet* ifp, struct mbuf* m_head)
-{
-    return 0;
-}
-
-static void if_init(void* xsc)
-{
-}
-
+/* TODO - figure out how and if needed to integrate it - ENA code has it own logic to track statistics
 static void if_getinfo(struct ifnet* ifp, struct if_data* out_data)
 {
     ena* _ena = (ena*)ifp->if_softc;
@@ -52,7 +35,7 @@ static void if_getinfo(struct ifnet* ifp, struct if_data* out_data)
 
     // then fill the internal statistics we've gathered
     _ena->fill_stats(out_data);
-}
+}*/
 
 void ena::fill_stats(struct if_data* out_data) const
 {
@@ -72,27 +55,19 @@ void ena::fill_stats(struct if_data* out_data) const
 ena::ena(pci::device &dev)
     : _dev(dev)
 {
-    if (ena_attach(&_dev) != 0) {
+    _adapter = nullptr;
+    auto ret = ena_attach(&_dev, &_adapter);
+    if (ret || !_adapter) {
        throw std::runtime_error("Failed to attach ena device");
     }
 
-    if_initname(_ifn, "eth", _id);
-    _ifn->if_mtu = ETHERMTU;
-    _ifn->if_softc = static_cast<void*>(this);
-    _ifn->if_flags = IFF_BROADCAST | IFF_MULTICAST;
-    _ifn->if_ioctl = if_ioctl;
-    _ifn->if_transmit = if_transmit;
-    _ifn->if_qflush = if_qflush;
-    _ifn->if_init = if_init;
-    _ifn->if_getinfo = if_getinfo;
-    //IFQ_SET_MAXLEN(&_ifn->if_snd, VMXNET3_MAX_TX_NDESC);
+    //TODO _ifn->if_getinfo = if_getinfo;
+}
 
-
-    _ifn->if_capabilities = IFCAP_RXCSUM | IFCAP_TXCSUM;
-    _ifn->if_capabilities |= IFCAP_TSO4;
-    _ifn->if_capabilities |= IFCAP_LRO;
-    _ifn->if_hwassist = CSUM_TCP | CSUM_UDP | CSUM_TSO;
-    _ifn->if_capenable = _ifn->if_capabilities | IFCAP_HWSTATS;
+ena::~ena()
+{
+    ena_detach(_adapter);
+    _adapter = nullptr;
 }
 
 void ena::dump_config(void)
@@ -105,12 +80,6 @@ void ena::dump_config(void)
         (u16)B, (u16)D, (u16)F,
         _dev.get_vendor_id(),
         _dev.get_device_id());
-}
-
-int ena::transmit(struct mbuf *m_head)
-{
-    //return _txq[0].transmit(m_head);
-    return 0;
 }
 
 hw_driver* ena::probe(hw_device* dev)
