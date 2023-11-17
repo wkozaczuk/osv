@@ -133,8 +133,8 @@ static void ena_free_irqs(struct ena_adapter *);
 static void ena_disable_msix(struct ena_adapter *);
 static void ena_unmask_all_io_irqs(struct ena_adapter *);
 static int ena_up_complete(struct ena_adapter *);
-void ena_init(void *);
-int ena_ioctl(if_t, u_long, caddr_t);
+static void ena_init(void *);
+static int ena_ioctl(if_t, u_long, caddr_t);
 static int ena_get_dev_offloads(struct ena_com_dev_get_features_ctx *);
 static void ena_update_hwassist(struct ena_adapter *);
 static int ena_setup_ifnet(pci::device *, struct ena_adapter *,
@@ -222,7 +222,7 @@ ena_probe(pci::device* pdev)
 static int
 ena_change_mtu(if_t ifp, int new_mtu)
 {
-	struct ena_adapter *adapter = nullptr;//TODO if_getsoftc(ifp);
+	struct ena_adapter *adapter = (ena_adapter*)ifp->if_softc;
 	int rc;
 
 	if ((new_mtu > adapter->max_mtu) || (new_mtu < ENA_MIN_MTU)) {
@@ -1556,7 +1556,8 @@ ena_up(struct ena_adapter *adapter)
 
 	ena_update_hwassist(adapter);
 
-	//TODO: if_setdrvflagbits(adapter->ifp, IFF_DRV_RUNNING, IFF_DRV_OACTIVE);
+	adapter->ifp->if_drv_flags &= ~IFF_DRV_OACTIVE;
+	adapter->ifp->if_drv_flags |= IFF_DRV_RUNNING;
 
 	ENA_FLAG_SET_ATOMIC(ENA_FLAG_DEV_UP, adapter);
 
@@ -1574,7 +1575,7 @@ error:
 	return (rc);
 }
 
-void
+static void
 ena_init(void *arg)
 {
 	struct ena_adapter *adapter = (struct ena_adapter *)arg;
@@ -1586,7 +1587,7 @@ ena_init(void *arg)
 	}
 }
 
-int
+static int
 ena_ioctl(if_t ifp, u_long command, caddr_t data)
 {
 	//struct ena_dapater *adapter = nullptr;
@@ -1686,45 +1687,43 @@ static int
 ena_setup_ifnet(pci::device *pdev, struct ena_adapter *adapter,
     struct ena_com_dev_get_features_ctx *feat)
 {
-	if_t ifp;
 	int caps = 0;
 
-	ifp = adapter->ifp = nullptr; //TODO if_gethandle(IFT_ETHER);
+	if_t ifp = adapter->ifp = if_alloc(IFT_ETHER);
 	if (unlikely(ifp == NULL)) {
 		ena_log(pdev, ERR, "can not allocate ifnet structure\n");
 		return (ENXIO);
 	}
-	//TODO if_initname(ifp, device_get_name(pdev), device_get_unit(pdev));
-	//TODO if_setdev(ifp, pdev);
-	//TODO if_setsoftc(ifp, adapter);
+	if_initname(ifp, "eth", 0); //Eventually increment some instance ID
 
+        ifp->if_softc = adapter;
 	ifp->if_flags = IFF_BROADCAST | IFF_SIMPLEX | IFF_MULTICAST; //What about simplex?
-        /*TODO
-	if_setinitfn(ifp, ena_init);
-	if_settransmitfn(ifp, ena_mq_start);
-	if_setqflushfn(ifp, ena_qflush);
-	if_setioctlfn(ifp, ena_ioctl);*/
+	ifp->if_init = ena_init;
+	ifp->if_transmit = ena_mq_start;
+	ifp->if_qflush = ena_qflush;
+	ifp->if_ioctl = ena_ioctl;
 
-	/*TODO if_setsendqlen(ifp, adapter->requested_tx_ring_size);
-	if_setsendqready(ifp);
-	if_setmtu(ifp, ETHERMTU);
-	if_setbaudrate(ifp, 0);*/
+	IFQ_SET_MAXLEN(&ifp->if_snd, adapter->requested_tx_ring_size);
+        //OSv FreeBSD version does not seem to implement ALTQ ("ALTernate Queueing") so ignore below
+        //See https://www.usenix.org/legacy/publications/library/proceedings/lisa97/failsafe/usenix98/full_papers/cho/cho_html/cho.html
+	//if_setsendqready(ifp); //This actually make this interface ALTQ-ready
+	ifp->if_mtu = ETHERMTU;
+	ifp->if_baudrate = 0;
 	/* Zeroize capabilities... */
-	//TODO if_setcapabilities(ifp, 0);
-	//TODO if_setcapenable(ifp, 0);
+	ifp->if_capabilities = 0;
+	ifp->if_capenable = 0;
 	/* check hardware support */
 	caps = ena_get_dev_offloads(feat);
 	/* ... and set them */
-	//TODO if_setcapabilitiesbit(ifp, caps, 0);
+        ifp->if_capabilities = caps;
 
-	/* TSO parameters */
-	//TODO if_sethwtsomax(ifp, ENA_TSO_MAXSIZE -
-	//TODO     (ETHER_HDR_LEN + ETHER_VLAN_ENCAP_LEN));
-	//TODO if_sethwtsomaxsegcount(ifp, adapter->max_tx_sgl_size - 1);
-	//TODO if_sethwtsomaxsegsize(ifp, ENA_TSO_MAXSIZE);
+	/* TSO parameters - NOT supported by this version of FreeBSD */
+	//if_sethwtsomax(ifp, ENA_TSO_MAXSIZE - (ETHER_HDR_LEN + ETHER_VLAN_ENCAP_LEN));
+	//if_sethwtsomaxsegcount(ifp, adapter->max_tx_sgl_size - 1);
+	//if_sethwtsomaxsegsize(ifp, ENA_TSO_MAXSIZE);
 
-	//TODO if_setifheaderlen(ifp, sizeof(struct ether_vlan_header));
-	//TODO if_setcapenable(ifp, if_getcapabilities(ifp));
+	ifp->if_hdrlen = sizeof(struct ether_vlan_header); //Other OSv drivers do not set it, is it OK?
+        ifp->if_capenable = ifp->if_capabilities; // | IFCAP_HWSTATS; //This to collect statistics - shall we set it like other drivers do?
 
 	ether_ifattach(ifp, adapter->mac_addr);
 
@@ -2641,8 +2640,7 @@ ena_attach(pci::device* pdev)
 
 	adapter->tx_offload_cap = get_feat_ctx.offload.tx;
 
-	//TODO memcpy(adapter->mac_addr, get_feat_ctx.dev_attr.mac_addr,
-	//   ETHER_ADDR_LEN);
+	memcpy(adapter->mac_addr, get_feat_ctx.dev_attr.mac_addr, ETHER_ADDR_LEN);
 
 	calc_queue_ctx.pdev = pdev;
 	calc_queue_ctx.ena_dev = ena_dev;
