@@ -82,8 +82,7 @@ __FBSDID("$FreeBSD$");
 
 #include <osv/mmu.hh>
 #include <osv/mempool.hh>
-
-#include "drivers/pci-device.hh"
+#include <osv/aligned_new.hh>
 
 /*********************************************************
  *  Function prototypes
@@ -138,17 +137,16 @@ void ena_init(void *);
 int ena_ioctl(if_t, u_long, caddr_t);
 static int ena_get_dev_offloads(struct ena_com_dev_get_features_ctx *);
 static void ena_update_hwassist(struct ena_adapter *);
-static int ena_setup_ifnet(device_t, struct ena_adapter *,
+static int ena_setup_ifnet(pci::device *, struct ena_adapter *,
     struct ena_com_dev_get_features_ctx *);
-static int ena_set_queues_placement_policy(device_t, struct ena_com_dev *,
+static int ena_set_queues_placement_policy(pci::device *, struct ena_com_dev *,
     struct ena_admin_feature_llq_desc *, struct ena_llq_configurations *);
-static uint32_t ena_calc_max_io_queue_num(device_t, struct ena_com_dev *,
+static uint32_t ena_calc_max_io_queue_num(pci::device *, struct ena_com_dev *,
     struct ena_com_dev_get_features_ctx *);
 static int ena_calc_io_queue_size(struct ena_calc_queue_size_ctx *);
-static void ena_config_host_info(struct ena_com_dev *, device_t);
-int ena_attach(device_t);
+static void ena_config_host_info(struct ena_com_dev *, pci::device*);
 int ena_detach(device_t);
-static int ena_device_init(struct ena_adapter *, device_t,
+static int ena_device_init(struct ena_adapter *, pci::device *,
     struct ena_com_dev_get_features_ctx *, int *);
 static int ena_enable_msix_and_set_admin_interrupts(struct ena_adapter *);
 void ena_update_on_link_change(void *, struct ena_admin_aenq_entry *); //TODO
@@ -198,30 +196,17 @@ ena_dma_alloc(device_t dmadev, bus_size_t size, ena_mem_handle_t *dma,
 static void
 ena_free_pci_resources(struct ena_adapter *adapter)
 {
-/*	device_t pdev = adapter->pdev;
-
-	if (adapter->memory != NULL) {
-		bus_release_resource(pdev, SYS_RES_MEMORY,
-		    PCIR_BAR(ENA_MEM_BAR), adapter->memory);
-	}
-
 	if (adapter->registers != NULL) {
-		bus_release_resource(pdev, SYS_RES_MEMORY,
-		    PCIR_BAR(ENA_REG_BAR), adapter->registers);
+		adapter->registers->unmap();
 	}
-
-	if (adapter->msix != NULL) {
-		bus_release_resource(pdev, SYS_RES_MEMORY, adapter->msix_rid,
-		    adapter->msix);
-	}*/
 }
 
 bool
-ena_probe(pci::device* dev)
+ena_probe(pci::device* pdev)
 {
 	ena_vendor_info_t *ent = ena_vendor_info_array;
 	while (ent->vendor_id != 0) {
-		if (dev->get_id() == hw_device_id(ent->vendor_id, ent->device_id)) {
+		if (pdev->get_id() == hw_device_id(ent->vendor_id, ent->device_id)) {
 			ena_log_raw(DBG, "vendor=%x device=%x\n", ent->vendor_id,
 			    ent->device_id);
 
@@ -763,7 +748,7 @@ int
 ena_refill_rx_bufs(struct ena_ring *rx_ring, uint32_t num)
 {
 	struct ena_adapter *adapter = rx_ring->adapter;
-	device_t pdev = adapter->pdev;
+	pci::device *pdev = adapter->pdev;
 	uint16_t next_to_use, req_id;
 	uint32_t i;
 	int rc;
@@ -1091,13 +1076,10 @@ ena_handle_msix(void *arg)
 	return 0;//TODO(FILTER_HANDLED);
 }
 
-//TODO: Very likely rework/make part of drivers/ena.cc
 static int
 ena_enable_msix(struct ena_adapter *adapter)
 {
-	//device_t dev = adapter->pdev;
-	int msix_vecs, msix_req;
-	int i, rc = 0;
+	pci::device *dev = adapter->pdev;
 
 	if (ENA_FLAG_ISSET(ENA_FLAG_MSIX_ENABLED, adapter)) {
 		ena_log(dev, ERR, "Error, MSI-X is already enabled\n");
@@ -1105,54 +1087,32 @@ ena_enable_msix(struct ena_adapter *adapter)
 	}
 
 	/* Reserved the max msix vectors we might need */
-	msix_vecs = ENA_MAX_MSIX_VEC(adapter->max_num_io_queues);
-
-	adapter->msix_entries = static_cast<msix_entry*>(malloc(msix_vecs * sizeof(struct msix_entry),
-	    M_DEVBUF, M_WAITOK | M_ZERO));
+	int msix_vecs = ENA_MAX_MSIX_VEC(adapter->max_num_io_queues);
 
 	ena_log(dev, DBG, "trying to enable MSI-X, vectors: %d\n", msix_vecs);
 
-	for (i = 0; i < msix_vecs; i++) {
-		adapter->msix_entries[i].entry = i;
-		/* Vectors must start from 1 */
-		adapter->msix_entries[i].vector = i + 1;
-	}
+	dev->set_bus_master(true);
+        dev->msix_enable();
+        assert(dev->is_msix());
 
-	msix_req = msix_vecs;
-	//TODO: rc = pci_alloc_msix(dev, &msix_vecs);
-	if (unlikely(rc != 0)) {
-		ena_log(dev, ERR, "Failed to enable MSIX, vectors %d rc %d\n",
-		    msix_vecs, rc);
-
-		rc = ENOSPC;
-		goto err_msix_free;
-	}
-
-	if (msix_vecs != msix_req) {
+	if (msix_vecs != dev->msix_get_num_entries()) {
 		if (msix_vecs == ENA_ADMIN_MSIX_VEC) {
 			ena_log(dev, ERR,
 			    "Not enough number of MSI-x allocated: %d\n",
 			    msix_vecs);
-			//TODO pci_release_msi(dev);
-			rc = ENOSPC;
-			goto err_msix_free;
+			dev->msix_disable();
+			return ENOSPC;
 		}
 		ena_log(dev, ERR,
 		    "Enable only %d MSI-x (out of %d), reduce "
 		    "the number of queues\n",
-		    msix_vecs, msix_req);
+		    msix_vecs, dev->msix_get_num_entries());
 	}
 
 	adapter->msix_vecs = msix_vecs;
 	ENA_FLAG_SET_ATOMIC(ENA_FLAG_MSIX_ENABLED, adapter);
 
 	return (0);
-
-err_msix_free:
-	free(adapter->msix_entries, M_DEVBUF);
-	adapter->msix_entries = NULL;
-
-	return (rc);
 }
 
 static void
@@ -1166,17 +1126,14 @@ ena_setup_mgmnt_intr(struct ena_adapter *adapter)
 	 */
 	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].handler = NULL;
 	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].data = adapter;
-	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].vector =
-	    adapter->msix_entries[ENA_MGMNT_IRQ_IDX].vector;
+	//TODO adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].vector =
+	//     adapter->msix_entries[ENA_MGMNT_IRQ_IDX].vector;
 }
 
 static int
 ena_setup_io_intr(struct ena_adapter *adapter)
 {
 	int irq_idx;
-
-	if (adapter->msix_entries == NULL)
-		return (EINVAL);
 
 	for (int i = 0; i < adapter->num_io_queues; i++) {
 		irq_idx = ENA_IO_IRQ_IDX(i);
@@ -1185,10 +1142,10 @@ ena_setup_io_intr(struct ena_adapter *adapter)
 		//    "%s-TxRx-%d", device_get_nameunit(adapter->pdev), i);
 		//TODO: adapter->irq_tbl[irq_idx].handler = ena_handle_msix;
 		adapter->irq_tbl[irq_idx].data = &adapter->que[i];
-		adapter->irq_tbl[irq_idx].vector =
-		    adapter->msix_entries[irq_idx].vector;
-		ena_log(adapter->pdev, DBG, "ena_setup_io_intr vector: %d\n",
-		    adapter->msix_entries[irq_idx].vector);
+		adapter->irq_tbl[irq_idx].vector = 0;
+		//TODO    adapter->msix_entries[irq_idx].vector;
+		//ena_log(adapter->pdev, DBG, "ena_setup_io_intr vector: %d\n",
+		//    adapter->msix_entries[irq_idx].vector);
 
 		adapter->que[i].domain = -1;
 	}
@@ -1401,34 +1358,32 @@ ena_free_irqs(struct ena_adapter *adapter)
 static void
 ena_disable_msix(struct ena_adapter *adapter)
 {
-	/*if (ENA_FLAG_ISSET(ENA_FLAG_MSIX_ENABLED, adapter)) {
-		ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_MSIX_ENABLED, adapter);
-		pci_release_msi(adapter->pdev);
+	if (ENA_FLAG_ISSET(ENA_FLAG_MSIX_ENABLED, adapter)) {
+		//TODO ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_MSIX_ENABLED, adapter);
+		adapter->pdev->msix_disable();
 	}
 
 	adapter->msix_vecs = 0;
-	free(adapter->msix_entries, M_DEVBUF);
-	adapter->msix_entries = NULL;*/
 }
 
 static void
 ena_unmask_all_io_irqs(struct ena_adapter *adapter)
 {
-	/*struct ena_com_io_cq *io_cq;
+	struct ena_com_io_cq *io_cq;
 	struct ena_eth_io_intr_reg intr_reg;
 	struct ena_ring *tx_ring;
 	uint16_t ena_qid;
-	int i;*/
+	int i;
 
 	/* Unmask interrupts for all queues */
-	/*for (i = 0; i < adapter->num_io_queues; i++) {
+	for (i = 0; i < adapter->num_io_queues; i++) {
 		ena_qid = ENA_IO_TXQ_IDX(i);
 		io_cq = &adapter->ena_dev->io_cq_queues[ena_qid];
 		ena_com_update_intr_reg(&intr_reg, 0, 0, true);
 		tx_ring = &adapter->tx_ring[i];
 		counter_u64_add(tx_ring->tx_stats.unmask_interrupt_num, 1);
 		ena_com_unmask_intr(io_cq, &intr_reg);
-	}*/
+	}
 }
 
 static int
@@ -1728,7 +1683,7 @@ ena_update_hwassist(struct ena_adapter *adapter)
 }
 
 static int
-ena_setup_ifnet(device_t pdev, struct ena_adapter *adapter,
+ena_setup_ifnet(pci::device *pdev, struct ena_adapter *adapter,
     struct ena_com_dev_get_features_ctx *feat)
 {
 	if_t ifp;
@@ -1811,7 +1766,7 @@ ena_down(struct ena_adapter *adapter)
 }
 
 static uint32_t
-ena_calc_max_io_queue_num(device_t pdev, struct ena_com_dev *ena_dev,
+ena_calc_max_io_queue_num(pci::device *pdev, struct ena_com_dev *ena_dev,
     struct ena_com_dev_get_features_ctx *get_feat_ctx)
 {
 	uint32_t io_tx_sq_num, io_tx_cq_num, io_rx_num, max_num_io_queues;
@@ -1845,7 +1800,7 @@ ena_calc_max_io_queue_num(device_t pdev, struct ena_com_dev *ena_dev,
 }
 
 static int
-ena_set_queues_placement_policy(device_t pdev, struct ena_com_dev *ena_dev,
+ena_set_queues_placement_policy(pci::device *pdev, struct ena_com_dev *ena_dev,
     struct ena_admin_feature_llq_desc *llq,
     struct ena_llq_configurations *llq_default_configurations)
 {
@@ -1926,7 +1881,7 @@ ena_calc_io_queue_size(struct ena_calc_queue_size_ctx *ctx)
 }
 
 static void
-ena_config_host_info(struct ena_com_dev *ena_dev, device_t dev)
+ena_config_host_info(struct ena_com_dev *ena_dev, pci::device* dev)
 {
 	struct ena_admin_host_info *host_info;
 	//uintptr_t rid;
@@ -1941,8 +1896,10 @@ ena_config_host_info(struct ena_com_dev *ena_dev, device_t dev)
 
 	host_info = ena_dev->host_attr.host_info;
 
-	//TODO if (pci_get_id(dev, PCI_ID_RID, &rid) == 0)
-	//TODO 	host_info->bdf = rid;
+	u8 bus, slot, func;
+	dev->get_bdf(bus, slot, func);
+	host_info->bdf = (bus << 8) | (slot << 3) | func;
+
 	host_info->os_type = ENA_ADMIN_OS_LINUX;
 	host_info->kernel_ver = 0;
 
@@ -1974,7 +1931,7 @@ err:
 }
 
 static int
-ena_device_init(struct ena_adapter *adapter, device_t pdev,
+ena_device_init(struct ena_adapter *adapter, pci::device *pdev,
     struct ena_com_dev_get_features_ctx *get_feat_ctx, int *wd_active)
 {
 	struct ena_com_dev *ena_dev = adapter->ena_dev;
@@ -1992,7 +1949,7 @@ ena_device_init(struct ena_adapter *adapter, device_t pdev,
 	 * The PCIe configuration space revision id indicate if mmio reg
 	 * read is disabled
 	 */
-	readless_supported = 0; //TODO !(pci_get_revid(pdev) & ENA_MMIO_DISABLE_REG_READ);
+	readless_supported = !(pdev->get_revision_id() & ENA_MMIO_DISABLE_REG_READ);
 	ena_com_set_mmio_read_mode(ena_dev, readless_supported);
 
 	rc = ena_com_dev_reset(ena_dev, ENA_REGS_RESET_NORMAL);
@@ -2489,7 +2446,7 @@ ena_restore_device(struct ena_adapter *adapter)
 	struct ena_com_dev_get_features_ctx get_feat_ctx;
 	struct ena_com_dev *ena_dev = adapter->ena_dev;
 	if_t ifp = adapter->ifp;
-	device_t dev = adapter->pdev;
+	pci::device *dev = adapter->pdev;
 	int wd_active;
 	int rc;
 
@@ -2614,7 +2571,7 @@ ena_free_stats(struct ena_adapter *adapter)
  * and a hardware reset occur.
  **/
 int
-ena_attach(device_t pdev)
+ena_attach(pci::device* pdev)
 {
 	struct ena_com_dev_get_features_ctx get_feat_ctx;
 	struct ena_calc_queue_size_ctx calc_queue_ctx = { 0 };
@@ -2622,10 +2579,9 @@ ena_attach(device_t pdev)
 	struct ena_adapter *adapter;
 	struct ena_com_dev *ena_dev = NULL;
 	uint32_t max_num_io_queues;
-	int msix_rid;
-	int rid, rc;
+	int rc;
 
-	adapter = nullptr;//TODO device_get_softc(pdev);
+	adapter = aligned_new<ena_adapter>();
 	adapter->pdev = pdev;
 	adapter->first_bind = -1;
 
@@ -2649,41 +2605,22 @@ ena_attach(device_t pdev)
 	adapter->ena_dev = ena_dev;
 	ena_dev->dmadev = pdev;
 
-	//TODO rid = PCIR_BAR(ENA_REG_BAR);
-	adapter->memory = NULL;
-	//TODO adapter->registers = bus_alloc_resource_any(pdev, SYS_RES_MEMORY, &rid,
-	//TODO     RF_ACTIVE);
+        adapter->registers = pdev->get_bar(ENA_REG_BAR + 1);
 	if (unlikely(adapter->registers == NULL)) {
 		ena_log(pdev, ERR,
 		    "unable to allocate bus resource: registers!\n");
 		rc = ENOMEM;
 		goto err_dev_free;
 	}
-
-	/* MSIx vector table may reside on BAR0 with registers or on BAR1. */
-	//TODO msix_rid = pci_msix_table_bar(pdev);
-	if (msix_rid != rid) {
-		//TODO adapter->msix = bus_alloc_resource_any(pdev, SYS_RES_MEMORY,
-		//TODO     &msix_rid, RF_ACTIVE);
-		if (unlikely(adapter->msix == NULL)) {
-			ena_log(pdev, ERR,
-			    "unable to allocate bus resource: msix!\n");
-			rc = ENOMEM;
-			goto err_pci_free;
-		}
-		adapter->msix_rid = msix_rid;
-	}
+	adapter->registers->map();
 
 	ena_dev->bus = malloc(sizeof(struct ena_bus), M_DEVBUF,
 	    M_WAITOK | M_ZERO);
 
 	/* Store register resources */
-	//TODO ((struct ena_bus *)(ena_dev->bus))->reg_bar_t = rman_get_bustag(
-	//TODO     adapter->registers);
-	//TODO ((struct ena_bus *)(ena_dev->bus))->reg_bar_h = rman_get_bushandle(
-	//TODO     adapter->registers);
+	((struct ena_bus *)(ena_dev->bus))->reg_bar = adapter->registers;
 
-	if (unlikely(((struct ena_bus *)(ena_dev->bus))->reg_bar_h == 0)) {
+	if (unlikely(((struct ena_bus *)(ena_dev->bus))->reg_bar == 0)) {
 		ena_log(pdev, ERR, "failed to pmap registers bar\n");
 		rc = ENXIO;
 		goto err_bus_free;
@@ -2799,7 +2736,6 @@ err_com_free:
 	ena_com_mmio_reg_read_request_destroy(ena_dev);
 err_bus_free:
 	free(ena_dev->bus, M_DEVBUF);
-err_pci_free:
 	ena_free_pci_resources(adapter);
 err_dev_free:
 	free(ena_dev, M_DEVBUF);

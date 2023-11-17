@@ -79,13 +79,6 @@
 #include <osv/mmu.hh>
 #include <osv/mempool.hh>
 
-//TODO: Convert to OSv PCI read/write
-u_int32_t bus_space_read_4(bus_space_tag_t tag,
-			   bus_space_handle_t handle,
-			   bus_size_t offset) { return 0; }
-void bus_space_write_4(bus_space_tag_t tag,
-		       bus_space_handle_t bsh,
-		       bus_size_t offset, u_int32_t value) {}
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/

@@ -39,6 +39,7 @@
 #include "ena_com/ena_eth_com.h"
 
 #include <bsd/porting/callout.h>
+#include "drivers/pci-device.hh"
 
 #define ENA_DRV_MODULE_VER_MAJOR	2
 #define ENA_DRV_MODULE_VER_MINOR	6
@@ -264,7 +265,7 @@ struct ena_que {
 struct ena_calc_queue_size_ctx {
 	struct ena_com_dev_get_features_ctx *get_feat_ctx;
 	struct ena_com_dev *ena_dev;
-	device_t pdev;
+	pci::device *pdev;
 	uint32_t tx_queue_size;
 	uint32_t rx_queue_size;
 	uint32_t max_tx_queue_size;
@@ -430,17 +431,13 @@ struct ena_adapter {
 
 	/* OS defined structs */
 	if_t ifp;
-	device_t pdev;
+	pci::device *pdev;
 	struct ifmedia	media;
 
 	/* OS resources */
-	struct resource *memory;
-	struct resource *registers;
-	struct resource *msix;
-	int msix_rid;
+	pci::bar *registers;
 
 	/* MSI-X */
-	struct msix_entry *msix_entries;
 	int msix_vecs;
 
 	uint32_t max_mtu;

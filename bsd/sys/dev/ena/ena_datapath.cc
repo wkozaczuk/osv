@@ -345,23 +345,21 @@ ena_rx_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_buf_info *ena_bufs,
 	struct mbuf *mbuf;
 	struct ena_rx_buffer *rx_info;
 	struct ena_adapter *adapter;
-	device_t pdev;
 	unsigned int descs = ena_rx_ctx->descs;
 	uint16_t ntc, len, req_id, buf = 0;
 
 	ntc = *next_to_clean;
 	adapter = rx_ring->adapter;
-	pdev = adapter->pdev;
 
 	len = ena_bufs[buf].len;
 	req_id = ena_bufs[buf].req_id;
 	rx_info = &rx_ring->rx_buffer_info[req_id];
 	if (unlikely(rx_info->mbuf == NULL)) {
-		ena_log(pdev, ERR, "NULL mbuf in rx_info");
+		ena_log(adapter->pdev, ERR, "NULL mbuf in rx_info");
 		return (NULL);
 	}
 
-	ena_log_io(pdev, DBG, "rx_info %p, mbuf %p, paddr %jx\n", rx_info,
+	ena_log_io(adapter->pdev, DBG, "rx_info %p, mbuf %p, paddr %jx\n", rx_info,
 	    rx_info->mbuf, (uintmax_t)rx_info->ena_buf.paddr);
 
 	mbuf = rx_info->mbuf;
@@ -370,10 +368,10 @@ ena_rx_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_buf_info *ena_bufs,
 	mbuf->m_hdr.mh_len = len;
 	/* Only for the first segment the data starts at specific offset */
 	mbuf->m_hdr.mh_data = static_cast<caddr_t>(mtodo(mbuf, ena_rx_ctx->pkt_offset));
-	ena_log_io(pdev, DBG, "Mbuf data offset=%u\n", ena_rx_ctx->pkt_offset);
+	ena_log_io(adapter->pdev, DBG, "Mbuf data offset=%u\n", ena_rx_ctx->pkt_offset);
 	mbuf->M_dat.MH.MH_pkthdr.rcvif = rx_ring->que->adapter->ifp;
 
-	ena_log_io(pdev, DBG, "rx mbuf 0x%p, flags=0x%x, len: %d\n", mbuf,
+	ena_log_io(adapter->pdev, DBG, "rx mbuf 0x%p, flags=0x%x, len: %d\n", mbuf,
 	    mbuf->m_flags, mbuf->M_dat.MH.MH_pkthdr.len);
 
 	rx_info->mbuf = NULL;
@@ -391,7 +389,7 @@ ena_rx_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_buf_info *ena_bufs,
 		rx_info = &rx_ring->rx_buffer_info[req_id];
 
 		if (unlikely(rx_info->mbuf == NULL)) {
-			ena_log(pdev, ERR, "NULL mbuf in rx_info");
+			ena_log(adapter->pdev, ERR, "NULL mbuf in rx_info");
 			/*
 			 * If one of the required mbufs was not allocated yet,
 			 * we can break there.
@@ -408,11 +406,11 @@ ena_rx_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_buf_info *ena_bufs,
 
 		if (unlikely(m_append(mbuf, len, rx_info->mbuf->m_hdr.mh_data) == 0)) {
 			counter_u64_add(rx_ring->rx_stats.mbuf_alloc_fail, 1);
-			ena_log_io(pdev, WARN, "Failed to append Rx mbuf %p\n",
+			ena_log_io(adapter->pdev, WARN, "Failed to append Rx mbuf %p\n",
 			    mbuf);
 		}
 
-		ena_log_io(pdev, DBG, "rx mbuf updated. len %d\n",
+		ena_log_io(adapter->pdev, DBG, "rx mbuf updated. len %d\n",
 		    mbuf->M_dat.MH.MH_pkthdr.len);
 
 		m_freem(rx_info->mbuf);
@@ -434,7 +432,7 @@ static inline void
 ena_rx_checksum(struct ena_ring *rx_ring, struct ena_com_rx_ctx *ena_rx_ctx,
     struct mbuf *mbuf)
 {
-	device_t pdev = rx_ring->adapter->pdev;
+	pci::device *pdev = rx_ring->adapter->pdev;
 
 	/* if IP and error */
 	if (unlikely((ena_rx_ctx->l3_proto == ENA_ETH_IO_L3_PROTO_IPV4) &&
@@ -470,7 +468,6 @@ static int
 ena_rx_cleanup(struct ena_ring *rx_ring)
 {
 	struct ena_adapter *adapter;
-	device_t pdev;
 	struct mbuf *mbuf;
 	struct ena_com_rx_ctx ena_rx_ctx;
 	struct ena_com_io_cq *io_cq;
@@ -487,7 +484,6 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 	int budget = ENA_RX_BUDGET;
 
 	adapter = rx_ring->que->adapter;
-	pdev = adapter->pdev;
 	ifp = adapter->ifp;
 	qid = rx_ring->que->id;
 	ena_qid = ENA_IO_RXQ_IDX(qid);
@@ -495,7 +491,7 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 	io_sq = &adapter->ena_dev->io_sq_queues[ena_qid];
 	next_to_clean = rx_ring->next_to_clean;
 
-	ena_log_io(pdev, DBG, "rx: qid %d\n", qid);
+	ena_log_io(adapter->pdev, DBG, "rx: qid %d\n", qid);
 
 	do {
 		ena_rx_ctx.ena_bufs = rx_ring->ena_bufs;
@@ -521,7 +517,7 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 		if (unlikely(ena_rx_ctx.descs == 0))
 			break;
 
-		ena_log_io(pdev, DBG,
+		ena_log_io(adapter->pdev, DBG,
 		    "rx: q %d got packet from ena. descs #: %d l3 proto %d l4 proto %d hash: %x\n",
 		    rx_ring->qid, ena_rx_ctx.descs, ena_rx_ctx.l3_proto,
 		    ena_rx_ctx.l4_proto, ena_rx_ctx.hash);
@@ -570,7 +566,7 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 				do_if_input = 0;
 		}
 		if (do_if_input != 0) {
-			ena_log_io(pdev, DBG,
+			ena_log_io(adapter->pdev, DBG,
 			    "calling if_input() with mbuf %p\n", mbuf);
                         //TODO: Apply here net channel
 			(*ifp->if_input)(ifp, mbuf);
@@ -784,7 +780,6 @@ static int
 ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 {
 	struct ena_adapter *adapter;
-	device_t pdev;
 	struct ena_tx_buffer *tx_info;
 	struct ena_com_tx_ctx ena_tx_ctx;
 	struct ena_com_dev *ena_dev;
@@ -799,18 +794,17 @@ ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 
 	ena_qid = ENA_IO_TXQ_IDX(tx_ring->que->id);
 	adapter = tx_ring->que->adapter;
-	pdev = adapter->pdev;
 	ena_dev = adapter->ena_dev;
 	io_sq = &ena_dev->io_sq_queues[ena_qid];
 
 	rc = ena_check_and_collapse_mbuf(tx_ring, mbuf);
 	if (unlikely(rc != 0)) {
-		ena_log_io(pdev, WARN, "Failed to collapse mbuf! err: %d\n",
+		ena_log_io(adapter->pdev, WARN, "Failed to collapse mbuf! err: %d\n",
 		    rc);
 		return (rc);
 	}
 
-	ena_log_io(pdev, DBG, "Tx: %d bytes\n", (*mbuf)->M_dat.MH.MH_pkthdr.len);
+	ena_log_io(adapter->pdev, DBG, "Tx: %d bytes\n", (*mbuf)->M_dat.MH.MH_pkthdr.len);
 
 	next_to_use = tx_ring->next_to_use;
 	req_id = tx_ring->free_tx_ids[next_to_use];
@@ -822,7 +816,7 @@ ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 
 	rc = ena_tx_map_mbuf(tx_ring, tx_info, *mbuf, &push_hdr, &header_len);
 	if (unlikely(rc != 0)) {
-		ena_log_io(pdev, WARN, "Failed to map TX mbuf\n");
+		ena_log_io(adapter->pdev, WARN, "Failed to map TX mbuf\n");
 		return (rc);
 	}
 	memset(&ena_tx_ctx, 0x0, sizeof(struct ena_com_tx_ctx));
@@ -837,7 +831,7 @@ ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 
 	if (tx_ring->acum_pkts == ENA_DB_THRESHOLD ||
 	    ena_com_is_doorbell_needed(tx_ring->ena_com_io_sq, &ena_tx_ctx)) {
-		ena_log_io(pdev, DBG,
+		ena_log_io(adapter->pdev, DBG,
 		    "llq tx max burst size of queue %d achieved, writing doorbell to send burst\n",
 		    tx_ring->que->id);
 		ena_ring_tx_doorbell(tx_ring);
@@ -847,10 +841,10 @@ ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 	rc = ena_com_prepare_tx(io_sq, &ena_tx_ctx, &nb_hw_desc);
 	if (unlikely(rc != 0)) {
 		if (likely(rc == ENA_COM_NO_MEM)) {
-			ena_log_io(pdev, DBG, "tx ring[%d] is out of space\n",
+			ena_log_io(adapter->pdev, DBG, "tx ring[%d] is out of space\n",
 			    tx_ring->que->id);
 		} else {
-			ena_log(pdev, ERR, "failed to prepare tx bufs\n");
+			ena_log(adapter->pdev, ERR, "failed to prepare tx bufs\n");
 			ena_trigger_reset(adapter,
 			    ENA_REGS_RESET_DRIVER_INVALID_STATE);
 		}
@@ -881,7 +875,7 @@ ena_xmit_mbuf(struct ena_ring *tx_ring, struct mbuf **mbuf)
 	 */
 	if (unlikely(!ena_com_sq_have_enough_space(tx_ring->ena_com_io_sq,
 	    adapter->max_tx_sgl_size + 2))) {
-		ena_log_io(pdev, DBG, "Stop queue %d\n", tx_ring->que->id);
+		ena_log_io(adapter->pdev, DBG, "Stop queue %d\n", tx_ring->que->id);
 
 		tx_ring->running = false;
 		counter_u64_add(tx_ring->tx_stats.queue_stop, 1);

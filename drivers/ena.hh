@@ -15,6 +15,7 @@
 #include "drivers/pci-device.hh"
 
 bool ena_probe(pci::device *dev);
+int ena_attach(pci::device *dev);
 
 namespace aws {
 

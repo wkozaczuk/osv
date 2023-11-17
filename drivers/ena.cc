@@ -72,6 +72,10 @@ void ena::fill_stats(struct if_data* out_data) const
 ena::ena(pci::device &dev)
     : _dev(dev)
 {
+    if (ena_attach(&_dev) != 0) {
+       throw std::runtime_error("Failed to attach ena device");
+    }
+
     if_initname(_ifn, "eth", _id);
     _ifn->if_mtu = ETHERMTU;
     _ifn->if_softc = static_cast<void*>(this);

@@ -189,6 +189,7 @@ static inline long PTR_ERR(const void *ptr)
 #define ENA_MAX16(x,y) 	MAX(x, y)
 #define ENA_MAX8(x,y) 	MAX(x, y)
 
+//TODO Investigate changing this to use include/osv/spinlock.h
 /* Spinlock related methods */
 #define ena_spinlock_t 	struct mtx
 #define mtx_initialized(spinlock) (1)
@@ -258,11 +259,9 @@ typedef struct {
 	int                     nseg;
 } ena_mem_handle_t;
 
+#include "drivers/pci-device.hh"
 struct ena_bus {
-	bus_space_handle_t 	reg_bar_h;
-	bus_space_tag_t 	reg_bar_t;
-	bus_space_handle_t	mem_bar_h;
-	bus_space_tag_t 	mem_bar_t;
+	pci::bar*		reg_bar;
 };
 
 typedef uint32_t ena_atomic32_t;
@@ -275,16 +274,10 @@ typedef struct ifnet ena_netdev;
 int	ena_dma_alloc(device_t dmadev, bus_size_t size, ena_mem_handle_t *dma,
     int mapflags, bus_size_t alignment, int domain);
 
-//TODO: Replace it with something meaning-full like pci_bar_read_4(bus->reg_bar, offset)
-// what nanos does
-extern
-u_int32_t bus_space_read_4(bus_space_tag_t tag,
-			   bus_space_handle_t handle,
-			   bus_size_t offset);
 static inline uint32_t
 ena_reg_read32(struct ena_bus *bus, bus_size_t offset)
 {
-	uint32_t v = bus_space_read_4(bus->reg_bar_t, bus->reg_bar_h, offset);
+	uint32_t v = bus->reg_bar->readl(offset);
 	rmb();
 	return v;
 }
@@ -348,14 +341,8 @@ ena_reg_read32(struct ena_bus *bus, bus_size_t offset)
 		ENA_REG_WRITE32_RELAXED(bus, value, offset);		\
 	} while (0)
 
-extern void bus_space_write_4(bus_space_tag_t tag,
-				       bus_space_handle_t bsh,
-				       bus_size_t offset, u_int32_t value);
 #define ENA_REG_WRITE32_RELAXED(bus, value, offset)			\
-	bus_space_write_4(						\
-			  ((struct ena_bus*)bus)->reg_bar_t,		\
-			  ((struct ena_bus*)bus)->reg_bar_h,		\
-			  (bus_size_t)(offset), (value))
+	((struct ena_bus*)bus)->reg_bar->writel((bus_size_t)(offset), (value))
 
 #define ENA_REG_READ32(bus, offset)					\
 	ena_reg_read32((struct ena_bus*)(bus), (bus_size_t)(offset))
