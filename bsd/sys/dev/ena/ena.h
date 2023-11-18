@@ -47,6 +47,9 @@
 
 #define ENA_DRV_MODULE_NAME		"ena"
 
+#define	__STRING(x)	#x		/* stringify without expanding x */
+#define	__XSTRING(x)	__STRING(x)	/* expand x, then stringify */
+
 #ifndef ENA_DRV_MODULE_VERSION
 #define ENA_DRV_MODULE_VERSION				\
 	__XSTRING(ENA_DRV_MODULE_VER_MAJOR) "."		\

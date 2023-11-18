@@ -148,12 +148,12 @@ static void ena_config_host_info(struct ena_com_dev *, pci::device*);
 static int ena_device_init(struct ena_adapter *, pci::device *,
     struct ena_com_dev_get_features_ctx *, int *);
 static int ena_enable_msix_and_set_admin_interrupts(struct ena_adapter *);
-void ena_update_on_link_change(void *, struct ena_admin_aenq_entry *); //TODO
-void unimplemented_aenq_handler(void *, struct ena_admin_aenq_entry *); //TODO
+static void ena_update_on_link_change(void *, struct ena_admin_aenq_entry *);
+static void unimplemented_aenq_handler(void *, struct ena_admin_aenq_entry *);
 static void ena_timer_service(void *);
 
-//static char ena_version[] = ENA_DEVICE_NAME ENA_DRV_MODULE_NAME
-//    " v" ENA_DRV_MODULE_VERSION;
+static char ena_version[] = ENA_DEVICE_NAME ENA_DRV_MODULE_NAME
+    " v" ENA_DRV_MODULE_VERSION;
 
 static ena_vendor_info_t ena_vendor_info_array[] = {
 	{ PCI_VENDOR_ID_AMAZON, PCI_DEV_ID_ENA_PF, 0 },
@@ -166,13 +166,7 @@ static ena_vendor_info_t ena_vendor_info_array[] = {
 
 //TODO: Where is it supposed to come from?
 int ena_mbuf_sz = 64;
-char *ena_version = "123";
 struct sx ena_global_lock;
-
-/*
- * Contains pointers to event handlers, e.g. link state chage.
- */
-//static struct ena_aenq_handlers aenq_handlers;
 
 int
 ena_dma_alloc(device_t dmadev, bus_size_t size, ena_mem_handle_t *dma,
@@ -187,7 +181,6 @@ ena_dma_alloc(device_t dmadev, bus_size_t size, ena_mem_handle_t *dma,
         }
 
 	dma->paddr = mmu::virt_to_phys(dma->vaddr);
-	//TODO: dma->size = size; //Nanos saves it - why? Do we care?
 
 	return (0);
 }
@@ -342,11 +335,8 @@ ena_init_io_rings_advanced(struct ena_adapter *adapter)
 		    sizeof(rxr->rx_stats));
 
 		/* Initialize locks */
-                //TODO: Those prints not needed now
-		//snprintf(txr->mtx_name, nitems(txr->mtx_name), "%s:tx(%d)",
-		//    device_get_nameunit(adapter->pdev), i);
-		//snprintf(rxr->mtx_name, nitems(rxr->mtx_name), "%s:rx(%d)",
-		//    device_get_nameunit(adapter->pdev), i);
+		snprintf(txr->mtx_name, nitems(txr->mtx_name), "ena:tx(%d)", i);
+		snprintf(rxr->mtx_name, nitems(rxr->mtx_name), "ena:rx(%d)", i);
 
 		mtx_init(&txr->ring_mtx, txr->mtx_name, NULL, MTX_DEF);
 	}
@@ -402,8 +392,7 @@ ena_free_all_io_rings_resources(struct ena_adapter *adapter)
 static int
 ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 {
-	//device_t pdev = adapter->pdev;
-	//char thread_name[MAXCOMLEN + 1];
+	char thread_name[MAXCOMLEN + 1];
 	struct ena_que *que = &adapter->que[qid];
 	struct ena_ring *tx_ring = que->tx_ring;
 	//TODO cpuset_t *cpu_mask = NULL;
@@ -457,8 +446,7 @@ ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 
 	tx_ring->running = true;
 
-	//TODO: snprintf(thread_name, sizeof(thread_name), "%s txeq %d",
-	//    device_get_nameunit(adapter->pdev), que->id);
+	snprintf(thread_name, sizeof(thread_name), "ena txeq %d", que->id);
 	//TODO: taskqueue_start_threads_cpuset(&tx_ring->enqueue_tq, 1, PI_NET,
 	//    cpu_mask, "%s", thread_name);
 
@@ -1015,9 +1003,9 @@ ena_create_io_queues(struct ena_adapter *adapter)
 
 		TASK_INIT(&queue->cleanup_task, 0, ena_cleanup, queue);
 		//TODO: queue->cleanup_tq = taskqueue_create_fast("ena cleanup",
-		//TODO:     M_WAITOK, taskqueue_thread_enqueue, &queue->cleanup_tq);
+		//     M_WAITOK, taskqueue_thread_enqueue, &queue->cleanup_tq);
 
-		//TODO: taskqueue_start_threads_cpuset(&queue->cleanup_tq, 1, PI_NET,
+		//taskqueue_start_threads_cpuset(&queue->cleanup_tq, 1, PI_NET,
 		//    cpu_mask, "%s queue %d cleanup",
 		//    device_get_nameunit(adapter->pdev), i);
 	}
@@ -1072,7 +1060,7 @@ ena_handle_msix(void *arg)
 
 	taskqueue_enqueue(queue->cleanup_tq, &queue->cleanup_task);
 
-	return 0;//TODO(FILTER_HANDLED);
+	return 0;//(FILTER_HANDLED);
 }
 
 static int
@@ -1117,8 +1105,8 @@ ena_enable_msix(struct ena_adapter *adapter)
 static void
 ena_setup_mgmnt_intr(struct ena_adapter *adapter)
 {
-	//TODO: snprintf(adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].name, ENA_IRQNAME_SIZE,
-	//    "ena-mgmnt@pci:%s", device_get_nameunit(adapter->pdev));
+	snprintf(adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].name, ENA_IRQNAME_SIZE,
+		"ena-mgmnt@pci:%s", "ena");
 	/*
 	 * Handler is NULL on purpose, it will be set
 	 * when mgmnt interrupt is acquired
@@ -1137,8 +1125,8 @@ ena_setup_io_intr(struct ena_adapter *adapter)
 	for (int i = 0; i < adapter->num_io_queues; i++) {
 		irq_idx = ENA_IO_IRQ_IDX(i);
 
-		//TODO: snprintf(adapter->irq_tbl[irq_idx].name, ENA_IRQNAME_SIZE,
-		//    "%s-TxRx-%d", device_get_nameunit(adapter->pdev), i);
+		snprintf(adapter->irq_tbl[irq_idx].name, ENA_IRQNAME_SIZE,
+			"ena-TxRx-%d", i);
 		//TODO: adapter->irq_tbl[irq_idx].handler = ena_handle_msix;
 		adapter->irq_tbl[irq_idx].data = &adapter->que[i];
 		adapter->irq_tbl[irq_idx].vector = 0;
@@ -1506,11 +1494,6 @@ ena_up(struct ena_adapter *adapter)
 	int rc = 0;
 
 	ENA_LOCK_ASSERT();
-
-	/* TODO: if (unlikely(device_is_attached(adapter->pdev) == 0)) {
-		ena_log(adapter->pdev, ERR, "device is not attached!\n");
-		return (ENXIO);
-	}*/
 
 	if (ENA_FLAG_ISSET(ENA_FLAG_DEV_UP, adapter))
 		return (0);
@@ -1929,97 +1912,6 @@ err:
 }
 
 static int
-ena_device_init(struct ena_adapter *adapter, pci::device *pdev,
-    struct ena_com_dev_get_features_ctx *get_feat_ctx, int *wd_active)
-{
-	struct ena_com_dev *ena_dev = adapter->ena_dev;
-	bool readless_supported;
-	uint32_t aenq_groups;
-	int rc;
-
-	rc = ena_com_mmio_reg_read_request_init(ena_dev);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "failed to init mmio read less\n");
-		return (rc);
-	}
-
-	/*
-	 * The PCIe configuration space revision id indicate if mmio reg
-	 * read is disabled
-	 */
-	readless_supported = !(pdev->get_revision_id() & ENA_MMIO_DISABLE_REG_READ);
-	ena_com_set_mmio_read_mode(ena_dev, readless_supported);
-
-	rc = ena_com_dev_reset(ena_dev, ENA_REGS_RESET_NORMAL);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "Can not reset device\n");
-		goto err_mmio_read_less;
-	}
-
-	rc = ena_com_validate_version(ena_dev);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "device version is too low\n");
-		goto err_mmio_read_less;
-	}
-
-	/* ENA admin level init */
-	//TODO rc = ena_com_admin_init(ena_dev, &aenq_handlers);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR,
-		    "Can not initialize ena admin queue with device\n");
-		goto err_mmio_read_less;
-	}
-
-	/*
-	 * To enable the msix interrupts the driver needs to know the number
-	 * of queues. So the driver uses polling mode to retrieve this
-	 * information
-	 */
-	ena_com_set_admin_polling_mode(ena_dev, true);
-
-	ena_config_host_info(ena_dev, pdev);
-
-	/* Get Device Attributes */
-	rc = ena_com_get_dev_attr_feat(ena_dev, get_feat_ctx);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR,
-		    "Cannot get attribute for ena device rc: %d\n", rc);
-		goto err_admin_init;
-	}
-
-	aenq_groups = BIT(ENA_ADMIN_LINK_CHANGE) |
-	    BIT(ENA_ADMIN_FATAL_ERROR) |
-	    BIT(ENA_ADMIN_WARNING) |
-	    BIT(ENA_ADMIN_NOTIFICATION) |
-	    BIT(ENA_ADMIN_KEEP_ALIVE);
-
-	aenq_groups &= get_feat_ctx->aenq.supported_groups;
-	rc = ena_com_set_aenq_config(ena_dev, aenq_groups);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "Cannot configure aenq groups rc: %d\n", rc);
-		goto err_admin_init;
-	}
-
-	*wd_active = !!(aenq_groups & BIT(ENA_ADMIN_KEEP_ALIVE));
-
-	rc = ena_set_queues_placement_policy(pdev, ena_dev, &get_feat_ctx->llq, nullptr);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "Failed to set placement policy\n");
-		goto err_admin_init;
-	}
-
-	return (0);
-
-err_admin_init:
-	ena_com_delete_host_info(ena_dev);
-	ena_com_admin_destroy(ena_dev);
-err_mmio_read_less:
-	ena_com_mmio_reg_read_request_destroy(ena_dev);
-
-	return (rc);
-}
-
-static int
 ena_enable_msix_and_set_admin_interrupts(struct ena_adapter *adapter)
 {
 	struct ena_com_dev *ena_dev = adapter->ena_dev;
@@ -2052,7 +1944,7 @@ err_disable_msix:
 }
 
 /* Function called on ENA_ADMIN_KEEP_ALIVE event */
-void
+static void
 ena_keep_alive_wd(void *adapter_data, struct ena_admin_aenq_entry *aenq_e)
 {
 	struct ena_adapter *adapter = (struct ena_adapter *)adapter_data;
@@ -2801,7 +2693,7 @@ ena_detach(ena_adapter *adapter)
  * ena_update_on_link_change:
  * Notify the network interface about the change in link status
  **/
-void
+static void
 ena_update_on_link_change(void *adapter_data,
     struct ena_admin_aenq_entry *aenq_e)
 {
@@ -2827,7 +2719,7 @@ ena_update_on_link_change(void *adapter_data,
 	}
 }
 
-void
+static void
 ena_notification(void *adapter_data, struct ena_admin_aenq_entry *aenq_e)
 {
 	struct ena_adapter *adapter = (struct ena_adapter *)adapter_data;
@@ -2868,7 +2760,7 @@ SYSUNINIT(ena_lock_uninit, SI_SUB_LOCK, SI_ORDER_FIRST, ena_lock_uninit, NULL);
 /**
  * This handler will called for unknown event group or unimplemented handlers
  **/
-void
+static void
 unimplemented_aenq_handler(void *adapter_data,
     struct ena_admin_aenq_entry *aenq_e)
 {
@@ -2877,12 +2769,109 @@ unimplemented_aenq_handler(void *adapter_data,
 	ena_log(adapter->pdev, ERR,
 	    "Unknown event was received or event with unimplemented handler\n");
 }
+
 /*
-aenq_handlers
-    .handlers = {
+ * Contains pointers to event handlers, e.g. link state chage.
+ */
+static struct ena_aenq_handlers aenq_handlers = {
+    handlers : {
 	    [ENA_ADMIN_LINK_CHANGE] = ena_update_on_link_change,
+	    [ENA_ADMIN_FATAL_ERROR] = nullptr,
+	    [ENA_ADMIN_WARNING] = nullptr,
 	    [ENA_ADMIN_NOTIFICATION] = ena_notification,
 	    [ENA_ADMIN_KEEP_ALIVE] = ena_keep_alive_wd,
-    };
-aenq_handlers
-    .unimplemented_handler = unimplemented_aenq_handler*/
+    },
+    unimplemented_handler : unimplemented_aenq_handler
+};
+
+static int
+ena_device_init(struct ena_adapter *adapter, pci::device *pdev,
+    struct ena_com_dev_get_features_ctx *get_feat_ctx, int *wd_active)
+{
+	struct ena_com_dev *ena_dev = adapter->ena_dev;
+	bool readless_supported;
+	uint32_t aenq_groups;
+	int rc;
+
+	rc = ena_com_mmio_reg_read_request_init(ena_dev);
+	if (unlikely(rc != 0)) {
+		ena_log(pdev, ERR, "failed to init mmio read less\n");
+		return (rc);
+	}
+
+	/*
+	 * The PCIe configuration space revision id indicate if mmio reg
+	 * read is disabled
+	 */
+	readless_supported = !(pdev->get_revision_id() & ENA_MMIO_DISABLE_REG_READ);
+	ena_com_set_mmio_read_mode(ena_dev, readless_supported);
+
+	rc = ena_com_dev_reset(ena_dev, ENA_REGS_RESET_NORMAL);
+	if (unlikely(rc != 0)) {
+		ena_log(pdev, ERR, "Can not reset device\n");
+		goto err_mmio_read_less;
+	}
+
+	rc = ena_com_validate_version(ena_dev);
+	if (unlikely(rc != 0)) {
+		ena_log(pdev, ERR, "device version is too low\n");
+		goto err_mmio_read_less;
+	}
+
+	/* ENA admin level init */
+	rc = ena_com_admin_init(ena_dev, &aenq_handlers);
+	if (unlikely(rc != 0)) {
+		ena_log(pdev, ERR,
+		    "Can not initialize ena admin queue with device\n");
+		goto err_mmio_read_less;
+	}
+
+	/*
+	 * To enable the msix interrupts the driver needs to know the number
+	 * of queues. So the driver uses polling mode to retrieve this
+	 * information
+	 */
+	ena_com_set_admin_polling_mode(ena_dev, true);
+
+	ena_config_host_info(ena_dev, pdev);
+
+	/* Get Device Attributes */
+	rc = ena_com_get_dev_attr_feat(ena_dev, get_feat_ctx);
+	if (unlikely(rc != 0)) {
+		ena_log(pdev, ERR,
+		    "Cannot get attribute for ena device rc: %d\n", rc);
+		goto err_admin_init;
+	}
+
+	aenq_groups = BIT(ENA_ADMIN_LINK_CHANGE) |
+	    BIT(ENA_ADMIN_FATAL_ERROR) |
+	    BIT(ENA_ADMIN_WARNING) |
+	    BIT(ENA_ADMIN_NOTIFICATION) |
+	    BIT(ENA_ADMIN_KEEP_ALIVE);
+
+	aenq_groups &= get_feat_ctx->aenq.supported_groups;
+	rc = ena_com_set_aenq_config(ena_dev, aenq_groups);
+	if (unlikely(rc != 0)) {
+		ena_log(pdev, ERR, "Cannot configure aenq groups rc: %d\n", rc);
+		goto err_admin_init;
+	}
+
+	*wd_active = !!(aenq_groups & BIT(ENA_ADMIN_KEEP_ALIVE));
+
+	rc = ena_set_queues_placement_policy(pdev, ena_dev, &get_feat_ctx->llq, nullptr);
+	if (unlikely(rc != 0)) {
+		ena_log(pdev, ERR, "Failed to set placement policy\n");
+		goto err_admin_init;
+	}
+
+	return (0);
+
+err_admin_init:
+	ena_com_delete_host_info(ena_dev);
+	ena_com_admin_destroy(ena_dev);
+err_mmio_read_less:
+	ena_com_mmio_reg_read_request_destroy(ena_dev);
+
+	return (rc);
+}
+
