@@ -39,6 +39,7 @@
 #include "ena_com/ena_eth_com.h"
 
 #include <bsd/porting/callout.h>
+#include <osv/msi.hh>
 #include "drivers/pci-device.hh"
 
 #define ENA_DRV_MODULE_VER_MAJOR	2
@@ -243,13 +244,9 @@ typedef struct _ena_vendor_info_t {
 
 struct ena_irq {
 	/* Interrupt resources */
-	struct resource *res;
-	driver_filter_t *handler;
 	void *data;
-	void *cookie;
 	unsigned int vector;
-	bool requested;
-	char name[ENA_IRQNAME_SIZE];
+	msix_vector *mvector;
 };
 
 struct ena_que {

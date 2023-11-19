@@ -83,11 +83,12 @@ __FBSDID("$FreeBSD$");
 #include <osv/mmu.hh>
 #include <osv/mempool.hh>
 #include <osv/aligned_new.hh>
+#include <osv/msi.hh>
 
 /*********************************************************
  *  Function prototypes
  *********************************************************/
-void ena_intr_msix_mgmnt(void *); //TODO
+static void ena_intr_msix_mgmnt(void *);
 static void ena_free_pci_resources(struct ena_adapter *);
 static int ena_change_mtu(if_t, int);
 static inline void ena_alloc_counters(counter_u64_t *, int);
@@ -121,7 +122,7 @@ static void ena_destroy_all_tx_queues(struct ena_adapter *);
 static void ena_destroy_all_rx_queues(struct ena_adapter *);
 static void ena_destroy_all_io_queues(struct ena_adapter *);
 static int ena_create_io_queues(struct ena_adapter *);
-int ena_handle_msix(void *); //TODO
+static int ena_handle_msix(void *);
 static int ena_enable_msix(struct ena_adapter *);
 static void ena_setup_mgmnt_intr(struct ena_adapter *);
 static int ena_setup_io_intr(struct ena_adapter *);
@@ -1031,9 +1032,11 @@ err_tx:
  * ena_handle_msix - MSIX Interrupt Handler for admin/async queue
  * @arg: interrupt number
  **/
-void
+static void
 ena_intr_msix_mgmnt(void *arg)
 {
+	//TODO This should probably be executed in a separate thread
+	//unless it does not use mutexes
 	struct ena_adapter *adapter = (struct ena_adapter *)arg;
 
 	ena_com_admin_q_comp_intr_handler(adapter->ena_dev);
@@ -1045,16 +1048,15 @@ ena_intr_msix_mgmnt(void *arg)
  * ena_handle_msix - MSIX Interrupt Handler for Tx/Rx
  * @arg: queue
  **/
-//TODO: Very likely rework/make part of drivers/ena.cc
-int
+static int
 ena_handle_msix(void *arg)
 {
 	struct ena_que *queue = static_cast<ena_que*>(arg);
-	//struct ena_adapter *adapter = queue->adapter;
-	//if_t ifp = adapter->ifp;
+	struct ena_adapter *adapter = queue->adapter;
+	if_t ifp = adapter->ifp;
 
-	//TODO: if (unlikely((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
-	//	return (FILTER_STRAY);
+	if (unlikely((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
+		return 0; //TODO return (FILTER_STRAY);
 
 	taskqueue_enqueue(queue->cleanup_tq, &queue->cleanup_task);
 
@@ -1103,34 +1105,20 @@ ena_enable_msix(struct ena_adapter *adapter)
 static void
 ena_setup_mgmnt_intr(struct ena_adapter *adapter)
 {
-	snprintf(adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].name, ENA_IRQNAME_SIZE,
-		"ena-mgmnt@pci:%s", "ena");
-	/*
-	 * Handler is NULL on purpose, it will be set
-	 * when mgmnt interrupt is acquired
-	 */
-	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].handler = NULL;
 	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].data = adapter;
-	//TODO adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].vector =
-	//     adapter->msix_entries[ENA_MGMNT_IRQ_IDX].vector;
+	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].vector = ENA_MGMNT_IRQ_IDX;
+	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].mvector = nullptr;
 }
 
 static int
 ena_setup_io_intr(struct ena_adapter *adapter)
 {
-	int irq_idx;
-
 	for (int i = 0; i < adapter->num_io_queues; i++) {
-		irq_idx = ENA_IO_IRQ_IDX(i);
+		int irq_idx = ENA_IO_IRQ_IDX(i);
 
-		snprintf(adapter->irq_tbl[irq_idx].name, ENA_IRQNAME_SIZE,
-			"ena-TxRx-%d", i);
-		//TODO: adapter->irq_tbl[irq_idx].handler = ena_handle_msix;
 		adapter->irq_tbl[irq_idx].data = &adapter->que[i];
-		adapter->irq_tbl[irq_idx].vector = 0;
-		//TODO    adapter->msix_entries[irq_idx].vector;
-		//ena_log(adapter->pdev, DBG, "ena_setup_io_intr vector: %d\n",
-		//    adapter->msix_entries[irq_idx].vector);
+		adapter->irq_tbl[irq_idx].vector = irq_idx;
+		adapter->irq_tbl[irq_idx].mvector = nullptr;
 
 		adapter->que[i].domain = -1;
 	}
@@ -1141,195 +1129,103 @@ ena_setup_io_intr(struct ena_adapter *adapter)
 static int
 ena_request_mgmnt_irq(struct ena_adapter *adapter)
 {
-	//device_t pdev = adapter->pdev;
-	/*TODO: struct ena_irq *irq;
-	unsigned long flags;
-	int rc, rcc;
+	interrupt_manager _msi(adapter->pdev);
 
-	flags = RF_ACTIVE | RF_SHAREABLE;
-
-	irq = &adapter->irq_tbl[ENA_MGMNT_IRQ_IDX];
-	irq->res = bus_alloc_resource_any(adapter->pdev, SYS_RES_IRQ,
-	     &irq->vector, flags);
-
-	if (unlikely(irq->res == NULL)) {
-		ena_log(pdev, ERR, "could not allocate irq vector: %d\n",
-		    irq->vector);
+	std::vector<msix_vector*> assigned = _msi.request_vectors(1);
+	if (assigned.size() != 1) {
+		_msi.free_vectors(assigned);
+		ena_log(pdev, ERR, "could not request MGMNT irq vector: %d\n", ENA_MGMNT_IRQ_IDX);
 		return (ENXIO);
 	}
 
-	rc = bus_setup_intr(adapter->pdev, irq->res,
-	    INTR_TYPE_NET | INTR_MPSAFE, NULL, ena_intr_msix_mgmnt, irq->data,
-	    &irq->cookie);
-	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR,
-		    "failed to register interrupt handler for irq %ju: %d\n",
-		    rman_get_start(irq->res), rc);
-		goto err_res_free;
+	auto vec = assigned[0];
+	if (!_msi.assign_isr(vec, [=]() { ena_intr_msix_mgmnt(adapter); })) {
+		_msi.free_vectors(assigned);
+		ena_log(pdev, ERR, "could not assign MGMNT irq vector isr: %d\n", ENA_MGMNT_IRQ_IDX);
+		return (ENXIO);
 	}
-	irq->requested = true;
 
-	return (rc);
+	if (!_msi.setup_entry(ENA_MGMNT_IRQ_IDX, vec)) {
+		_msi.free_vectors(assigned);
+		ena_log(pdev, ERR, "could not setup MGMNT irq vector entry: %d\n", ENA_MGMNT_IRQ_IDX);
+		return (ENXIO);
+	}
 
-err_res_free:
-	ena_log(pdev, INFO, "releasing resource for irq %d\n", irq->vector);
-	rcc = bus_release_resource(adapter->pdev, SYS_RES_IRQ, irq->vector,
-	    irq->res);
-	if (unlikely(rcc != 0))
-		ena_log(pdev, ERR,
-		    "dev has no parent while releasing res for irq: %d\n",
-		    irq->vector);
-	irq->res = NULL;
+	//Save assigned msix vector
+	adapter->irq_tbl[ENA_MGMNT_IRQ_IDX].mvector = assigned[0];
+	_msi.unmask_interrupts(assigned);
 
-	return (rc);*/
-        return 0;
+	return 0;
 }
 
 static int
 ena_request_io_irq(struct ena_adapter *adapter)
 {
-	//device_t pdev = adapter->pdev;
-	/*TODO: struct ena_irq *irq;
-	unsigned long flags = 0;
-	int rc = 0, i, rcc;
-
 	if (unlikely(!ENA_FLAG_ISSET(ENA_FLAG_MSIX_ENABLED, adapter))) {
 		ena_log(pdev, ERR,
 		    "failed to request I/O IRQ: MSI-X is not enabled\n");
 		return (EINVAL);
-	} else {
-		flags = RF_ACTIVE | RF_SHAREABLE;
 	}
 
-	for (i = ENA_IO_IRQ_FIRST_IDX; i < adapter->msix_vecs; i++) {
-		irq = &adapter->irq_tbl[i];
+	interrupt_manager _msi(adapter->pdev);
 
-		if (unlikely(irq->requested))
-			continue;
-
-		irq->res = bus_alloc_resource_any(adapter->pdev, SYS_RES_IRQ,
-		    &irq->vector, flags);
-		if (unlikely(irq->res == NULL)) {
-			rc = ENOMEM;
-			ena_log(pdev, ERR,
-			    "could not allocate irq vector: %d\n", irq->vector);
-			goto err;
-		}
-
-		rc = bus_setup_intr(adapter->pdev, irq->res,
-		    INTR_TYPE_NET | INTR_MPSAFE, irq->handler, NULL, irq->data,
-		    &irq->cookie);
-		if (unlikely(rc != 0)) {
-			ena_log(pdev, ERR,
-			    "failed to register interrupt handler for irq %ju: %d\n",
-			    rman_get_start(irq->res), rc);
-			goto err;
-		}
-		irq->requested = true;
+	auto vec_num = adapter->msix_vecs - 1;
+	std::vector<msix_vector*> assigned = _msi.request_vectors(vec_num);
+	if (assigned.size() != vec_num) {
+		_msi.free_vectors(assigned);
+		ena_log(pdev, ERR, "could not request %d I/O irq vectors\n", vec_num);
+		return (ENXIO);
 	}
 
-	return (rc);
-
-err:
-
-	for (; i >= ENA_IO_IRQ_FIRST_IDX; i--) {
-		irq = &adapter->irq_tbl[i];
-		rcc = 0;
-*/
-		/* Once we entered err: section and irq->requested is true we
-		   free both intr and resources */
-/*		if (irq->requested)
-			rcc = bus_teardown_intr(adapter->pdev, irq->res,
-			    irq->cookie);
-		if (unlikely(rcc != 0))
-			ena_log(pdev, ERR,
-			    "could not release irq: %d, error: %d\n",
-			    irq->vector, rcc);*/
-
-		/* If we entered err: section without irq->requested set we know
-		   it was bus_alloc_resource_any() that needs cleanup, provided
-		   res is not NULL. In case res is NULL no work in needed in
-		   this iteration */
-		/*rcc = 0;
-		if (irq->res != NULL) {
-			rcc = bus_release_resource(adapter->pdev, SYS_RES_IRQ,
-			    irq->vector, irq->res);
+	for (int entry = ENA_IO_IRQ_FIRST_IDX; entry < adapter->msix_vecs; entry++) {
+		ena_irq *irq = &adapter->irq_tbl[entry];
+		auto idx = entry - 1;
+		auto vec = assigned[idx];
+		//TODO Check if lambda correct
+		if (!_msi.assign_isr(vec, [=]() { ena_handle_msix(&irq->data); })) {
+			_msi.free_vectors(assigned);
+			ena_log(pdev, ERR, "could not assign I/O irq vector isr: %d\n", entry);
+			return (ENXIO);
 		}
-		if (unlikely(rcc != 0))
-			ena_log(pdev, ERR,
-			    "dev has no parent while releasing res for irq: %d\n",
-			    irq->vector);
-		irq->requested = false;
-		irq->res = NULL;
+
+		if (!_msi.setup_entry(entry, vec)) {
+			_msi.free_vectors(assigned);
+			ena_log(pdev, ERR, "could not setup I/O irq vector entry: %d\n", entry);
+			return (ENXIO);
+		}
+	}
+	//
+	//Save assigned msix vectors
+	for (int entry = ENA_IO_IRQ_FIRST_IDX; entry < adapter->msix_vecs; entry++) {
+		ena_irq *irq = &adapter->irq_tbl[entry];
+		irq->mvector = assigned[entry - 1];
 	}
 
-	return (rc);*/
-        return 0;
+	_msi.unmask_interrupts(assigned);
+
+	return 0;
 }
 
 static void
 ena_free_mgmnt_irq(struct ena_adapter *adapter)
 {
-	//device_t pdev = adapter->pdev;
-	/*struct ena_irq *irq;
-	int rc;
-
-	irq = &adapter->irq_tbl[ENA_MGMNT_IRQ_IDX];
-	if (irq->requested) {
-		ena_log(pdev, DBG, "tear down irq: %d\n", irq->vector);
-		rc = bus_teardown_intr(adapter->pdev, irq->res, irq->cookie);
-		if (unlikely(rc != 0))
-			ena_log(pdev, ERR, "failed to tear down irq: %d\n",
-			    irq->vector);
-		irq->requested = 0;
+	ena_irq *irq = &adapter->irq_tbl[ENA_MGMNT_IRQ_IDX];
+	if (irq->mvector) {
+		delete irq->mvector;
+		irq->mvector = nullptr;
 	}
-
-	if (irq->res != NULL) {
-		ena_log(pdev, DBG, "release resource irq: %d\n", irq->vector);
-		rc = bus_release_resource(adapter->pdev, SYS_RES_IRQ,
-		    irq->vector, irq->res);
-		irq->res = NULL;
-		if (unlikely(rc != 0))
-			ena_log(pdev, ERR,
-			    "dev has no parent while releasing res for irq: %d\n",
-			    irq->vector);
-	}*/
 }
 
 static void
 ena_free_io_irq(struct ena_adapter *adapter)
 {
-	//device_t pdev = adapter->pdev;
-	/*struct ena_irq *irq;
-	int rc;
-
 	for (int i = ENA_IO_IRQ_FIRST_IDX; i < adapter->msix_vecs; i++) {
-		irq = &adapter->irq_tbl[i];
-		if (irq->requested) {
-			ena_log(pdev, DBG, "tear down irq: %d\n", irq->vector);
-			rc = bus_teardown_intr(adapter->pdev, irq->res,
-			    irq->cookie);
-			if (unlikely(rc != 0)) {
-				ena_log(pdev, ERR,
-				    "failed to tear down irq: %d\n",
-				    irq->vector);
-			}
-			irq->requested = 0;
+		ena_irq *irq = &adapter->irq_tbl[i];
+		if (irq->mvector) {
+			delete irq->mvector;
+			irq->mvector = nullptr;
 		}
-
-		if (irq->res != NULL) {
-			ena_log(pdev, DBG, "release resource irq: %d\n",
-			    irq->vector);
-			rc = bus_release_resource(adapter->pdev, SYS_RES_IRQ,
-			    irq->vector, irq->res);
-			irq->res = NULL;
-			if (unlikely(rc != 0)) {
-				ena_log(pdev, ERR,
-				    "dev has no parent while releasing res for irq: %d\n",
-				    irq->vector);
-			}
-		}
-	}*/
+	}
 }
 
 static void
@@ -1772,8 +1668,7 @@ ena_calc_max_io_queue_num(pci::device *pdev, struct ena_com_dev *ena_dev,
 	max_num_io_queues = min_t(uint32_t, max_num_io_queues, io_tx_sq_num);
 	max_num_io_queues = min_t(uint32_t, max_num_io_queues, io_tx_cq_num);
 	/* 1 IRQ for mgmnt and 1 IRQ for each TX/RX pair */
-//TODO	max_num_io_queues = min_t(uint32_t, max_num_io_queues,
-//	    pci_msix_count(pdev) - 1);
+	max_num_io_queues = min_t(uint32_t, max_num_io_queues, pdev->msix_get_num_entries() - 1);
 
 	return (max_num_io_queues);
 }
