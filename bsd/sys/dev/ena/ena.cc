@@ -1240,7 +1240,7 @@ static void
 ena_disable_msix(struct ena_adapter *adapter)
 {
 	if (ENA_FLAG_ISSET(ENA_FLAG_MSIX_ENABLED, adapter)) {
-		//TODO ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_MSIX_ENABLED, adapter);
+		ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_MSIX_ENABLED, adapter);
 		adapter->pdev->msix_disable();
 	}
 
@@ -2635,21 +2635,6 @@ ena_notification(void *adapter_data, struct ena_admin_aenq_entry *aenq_e)
 	}
 }
 
-/* TODO Is it necessary?
-static void
-ena_lock_init(void *arg)
-{
-	ENA_LOCK_INIT();
-}
-SYSINIT(ena_lock_init, SI_SUB_LOCK, SI_ORDER_FIRST, ena_lock_init, NULL);
-
-static void
-ena_lock_uninit(void *arg)
-{
-	ENA_LOCK_DESTROY();
-}
-SYSUNINIT(ena_lock_uninit, SI_SUB_LOCK, SI_ORDER_FIRST, ena_lock_uninit, NULL);
-*/
 /**
  * This handler will called for unknown event group or unimplemented handlers
  **/
