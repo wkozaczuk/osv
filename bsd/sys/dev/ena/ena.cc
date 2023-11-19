@@ -164,8 +164,6 @@ static ena_vendor_info_t ena_vendor_info_array[] = {
 	{ 0, 0, 0 }
 };
 
-//TODO: Where is it supposed to come from?
-int ena_mbuf_sz = 64;
 struct sx ena_global_lock;
 
 int
@@ -305,7 +303,7 @@ ena_init_io_rings_basic(struct ena_adapter *adapter)
 		rxr->que = que;
 
 		rxr->empty_rx_queue = 0;
-		rxr->rx_mbuf_sz = ena_mbuf_sz;
+		rxr->rx_mbuf_sz = MJUMPAGESIZE;
 	}
 }
 
@@ -1565,7 +1563,7 @@ ena_init(void *arg)
 	if (!ENA_FLAG_ISSET(ENA_FLAG_DEV_UP, adapter)) {
 		ENA_LOCK_LOCK();
 		ena_up(adapter);
-		//TODO: ENA_LOCK_UNLOCK();
+		ENA_LOCK_UNLOCK();
 	}
 }
 
@@ -2438,7 +2436,7 @@ ena_reset_task(void *arg, int pending)
 		    "Device reset completed successfully, Driver info: %s\n",
 		    ena_version);
 	}
-	//TODO: ENA_LOCK_UNLOCK();
+	ENA_LOCK_UNLOCK();
 }
 
 static void
@@ -2650,7 +2648,7 @@ ena_detach(ena_adapter *adapter)
 	/* Stop timer service */
 	ENA_LOCK_LOCK();
 	ENA_TIMER_DRAIN(adapter);
-	//TODO: ENA_LOCK_UNLOCK();
+	ENA_LOCK_UNLOCK();
 
 	/* Release reset task */
 	while (taskqueue_cancel(adapter->reset_tq, &adapter->reset_task, NULL))
@@ -2660,7 +2658,7 @@ ena_detach(ena_adapter *adapter)
 	ENA_LOCK_LOCK();
 	ena_down(adapter);
 	ena_destroy_device(adapter, true);
-	//TODO: ENA_LOCK_UNLOCK();
+	ENA_LOCK_UNLOCK();
 
 	ena_free_stats(adapter);
 

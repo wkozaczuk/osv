@@ -514,7 +514,7 @@ struct ena_adapter {
 	sx_init(&ena_global_lock,	"ENA global lock")
 #define ENA_LOCK_DESTROY()		sx_destroy(&ena_global_lock)
 #define ENA_LOCK_LOCK()			sx_xlock(&ena_global_lock)
-#define ENA_LOCK_UNLOCK()		sx_unlock(&ena_global_lock)
+#define ENA_LOCK_UNLOCK()		sx_xunlock(&ena_global_lock)
 #define ENA_LOCK_ASSERT()		sx_assert(&ena_global_lock, SA_XLOCKED)
 
 #define ENA_TIMER_INIT(_adapter)					\
