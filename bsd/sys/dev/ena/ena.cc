@@ -84,6 +84,19 @@ __FBSDID("$FreeBSD$");
 #include <osv/mempool.hh>
 #include <osv/aligned_new.hh>
 #include <osv/msi.hh>
+#include <osv/sched.hh>
+
+static inline void critical_enter()  { sched::preempt_disable(); }
+static inline void critical_exit() { sched::preempt_enable(); }
+
+#include <sys/buf_ring.h>
+
+extern "C" {
+struct buf_ring *buf_ring_alloc(int count, int type, int flags,
+    struct mtx *);
+void buf_ring_free(struct buf_ring *br, int type);
+}
+
 
 /*********************************************************
  *  Function prototypes
@@ -320,9 +333,8 @@ ena_init_io_rings_advanced(struct ena_adapter *adapter)
 
 		/* Allocate a buf ring */
 		txr->buf_ring_size = adapter->buf_ring_size;
-                //TODO: Probably needs to import this function from FreeBSD
-		//txr->br = buf_ring_alloc(txr->buf_ring_size, M_DEVBUF, M_WAITOK,
-		//    &txr->ring_mtx);
+		txr->br = buf_ring_alloc(txr->buf_ring_size, M_DEVBUF, M_WAITOK,
+			&txr->ring_mtx);
 
 		/* Allocate Tx statistics. */
 		ena_alloc_counters((counter_u64_t *)&txr->tx_stats,
@@ -366,7 +378,10 @@ ena_free_io_ring_resources(struct ena_adapter *adapter, unsigned int qid)
 	    sizeof(rxr->rx_stats));
 
 	ENA_RING_MTX_LOCK(txr);
-	//TODO: From FreeBSD? drbr_free(txr->br, M_DEVBUF);
+	struct mbuf *m;
+	while ((m = (struct mbuf *)buf_ring_dequeue_sc(txr->br)) != NULL)
+		m_freem(m);
+	buf_ring_free(txr->br, M_DEVBUF);
 	ENA_RING_MTX_UNLOCK(txr);
 
 	mtx_destroy(&txr->ring_mtx);
@@ -428,8 +443,9 @@ ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 
 	/* Make sure that drbr is empty */
 	ENA_RING_MTX_LOCK(tx_ring);
-	//TODO: Check what the FreeBSD does. Nanos calls ena_txring_flush()
-	//drbr_flush(adapter->ifp, tx_ring->br);
+	struct mbuf *m;
+	while ((m = (struct mbuf *)buf_ring_dequeue_sc(tx_ring->br)) != NULL)
+		m_freem(m);
 	ENA_RING_MTX_UNLOCK(tx_ring);
 
 	/* Allocate taskqueues */
@@ -480,7 +496,9 @@ ena_free_tx_resources(struct ena_adapter *adapter, int qid)
 
 	ENA_RING_MTX_LOCK(tx_ring);
 	/* Flush buffer ring, */
-	//TODO drbr_flush(adapter->ifp, tx_ring->br);
+	struct mbuf *m;
+	while ((m = (struct mbuf *)buf_ring_dequeue_sc(tx_ring->br)) != NULL)
+		m_freem(m);
 
 	/* Free mbufs */
 	for (int i = 0; i < tx_ring->ring_size; i++) {

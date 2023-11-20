@@ -35,6 +35,11 @@ __FBSDID("$FreeBSD$");
 
 #include <osv/sched.hh>
 
+static inline void critical_enter()  { sched::preempt_disable(); }
+static inline void critical_exit() { sched::preempt_enable(); }
+
+#include <sys/buf_ring.h>
+
 //#include <netinet6/ip6_var.h>
 int ena_log_level = 0; //Possibly move it somewhere else
 
@@ -55,16 +60,6 @@ static int ena_check_and_collapse_mbuf(struct ena_ring *tx_ring,
     struct mbuf **mbuf);
 static int ena_xmit_mbuf(struct ena_ring *, struct mbuf **);
 static void ena_start_xmit(struct ena_ring *);
-
-//TODO Figure out how to fix the ring
-//Bring drbr_* from BSD sys/net/ifq.h and buf_ring_* from sys/sys/buf_ring.h?
-//or use something OSv already has?
-int drbr_enqueue(struct ifnet *ifp, struct buf_ring *br, struct mbuf *m) { return 0; }
-void drbr_putback(struct ifnet *ifp, struct buf_ring *br, struct mbuf *m_new) {}
-struct mbuf *drbr_peek(struct ifnet *ifp, struct buf_ring *br) { return nullptr; }
-void drbr_flush(struct ifnet *ifp, struct buf_ring *br) {}
-void drbr_advance(struct ifnet *ifp, struct buf_ring *br) {}
-int drbr_empty(struct ifnet *ifp, struct buf_ring *br) { return 0; }
 
 /*********************************************************************
  *  Global functions
@@ -121,7 +116,7 @@ ena_deferred_mq_start(void *arg, int pending)
 	struct ena_ring *tx_ring = (struct ena_ring *)arg;
 	if_t ifp = tx_ring->adapter->ifp;
 
-	while (!drbr_empty(ifp, tx_ring->br) && tx_ring->running &&
+	while (!buf_ring_empty(tx_ring->br) && tx_ring->running &&
 	    (ifp->if_drv_flags & IFF_DRV_RUNNING) != 0) {
 		ENA_RING_MTX_LOCK(tx_ring);
 		ena_start_xmit(tx_ring);
@@ -134,7 +129,7 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 {
 	struct ena_adapter *adapter = static_cast<ena_adapter *>(ifp->if_softc);
 	struct ena_ring *tx_ring;
-	int ret, is_drbr_empty;
+	int ret, is_br_empty;
 	uint32_t i;
 
 	if (unlikely((adapter->ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
@@ -153,15 +148,16 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 	}
 	tx_ring = &adapter->tx_ring[i];
 
-	/* Check if drbr is empty before putting packet */
-	is_drbr_empty = drbr_empty(ifp, tx_ring->br);
-	ret = drbr_enqueue(ifp, tx_ring->br, m);
+	/* Check if br is empty before putting packet */
+	is_br_empty = buf_ring_empty(tx_ring->br);
+	ret = buf_ring_enqueue(tx_ring->br, m);
 	if (unlikely(ret != 0)) {
+		m_freem(m);
 		taskqueue_enqueue(tx_ring->enqueue_tq, &tx_ring->enqueue_task);
 		return (ret);
 	}
 
-	if (is_drbr_empty && (ENA_RING_MTX_TRYLOCK(tx_ring) != 0)) {
+	if (is_br_empty && (ENA_RING_MTX_TRYLOCK(tx_ring) != 0)) {
 		ena_start_xmit(tx_ring);
 		ENA_RING_MTX_UNLOCK(tx_ring);
 	} else {
@@ -179,9 +175,11 @@ ena_qflush(if_t ifp)
 	int i;
 
 	for (i = 0; i < adapter->num_io_queues; ++i, ++tx_ring)
-		if (!drbr_empty(ifp, tx_ring->br)) {
+		if (!buf_ring_empty(tx_ring->br)) {
 			ENA_RING_MTX_LOCK(tx_ring);
-			drbr_flush(ifp, tx_ring->br);
+			struct mbuf *m;
+			while ((m = (struct mbuf *)buf_ring_dequeue_sc(tx_ring->br)) != NULL)
+				m_freem(m);
 			ENA_RING_MTX_UNLOCK(tx_ring);
 		}
 
@@ -919,30 +917,30 @@ ena_start_xmit(struct ena_ring *tx_ring)
 	if (unlikely(!ENA_FLAG_ISSET(ENA_FLAG_LINK_UP, adapter)))
 		return;
 
-	while ((mbuf = drbr_peek(adapter->ifp, tx_ring->br)) != NULL) {
+	while ((mbuf = static_cast<struct mbuf *>(buf_ring_peek_clear_sc(tx_ring->br))) != NULL) {
 		ena_log_io(adapter->pdev, DBG,
 		    "\ndequeued mbuf %p with flags %#x and header csum flags %#jx\n",
 		    mbuf, mbuf->m_flags, (uint64_t)mbuf->M_dat.MH.MH_pkthdr.csum_flags);
 
 		if (unlikely(!tx_ring->running)) {
-			drbr_putback(adapter->ifp, tx_ring->br, mbuf);
+			buf_ring_putback_sc(tx_ring->br, mbuf);
 			break;
 		}
 
 		if (unlikely((ret = ena_xmit_mbuf(tx_ring, &mbuf)) != 0)) {
 			if (ret == ENA_COM_NO_MEM) {
-				drbr_putback(adapter->ifp, tx_ring->br, mbuf);
+				buf_ring_putback_sc(tx_ring->br, mbuf);
 			} else if (ret == ENA_COM_NO_SPACE) {
-				drbr_putback(adapter->ifp, tx_ring->br, mbuf);
+				buf_ring_putback_sc(tx_ring->br, mbuf);
 			} else {
 				m_freem(mbuf);
-				drbr_advance(adapter->ifp, tx_ring->br);
+				buf_ring_advance_sc(tx_ring->br);
 			}
 
 			break;
 		}
 
-		drbr_advance(adapter->ifp, tx_ring->br);
+		buf_ring_advance_sc(tx_ring->br);
 
 		if (unlikely((adapter->ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
 			return;
