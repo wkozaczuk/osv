@@ -189,26 +189,24 @@ static inline long PTR_ERR(const void *ptr)
 #define ENA_MAX16(x,y) 	MAX(x, y)
 #define ENA_MAX8(x,y) 	MAX(x, y)
 
-//TODO Investigate changing this to use include/osv/spinlock.h
+#include <osv/spinlock.h>
 /* Spinlock related methods */
-#define ena_spinlock_t 	struct mtx
+#define ena_spinlock_t 	irq_spinlock_t
 #define mtx_initialized(spinlock) (1)
 #define ENA_SPINLOCK_INIT(spinlock)				\
-	mtx_init(&(spinlock), "ena_spin", NULL, MTX_SPIN)
+	irq_spinlock_init(&(spinlock))
 #define ENA_SPINLOCK_DESTROY(spinlock)				\
 	do {							\
-		if (mtx_initialized(&(spinlock)))		\
-		    mtx_destroy(&(spinlock));			\
 	} while (0)
 #define ENA_SPINLOCK_LOCK(spinlock, flags)			\
 	do {							\
 		(void)(flags);					\
-		mtx_lock_spin(&(spinlock));			\
+		irq_spin_lock(&(spinlock));			\
 	} while (0)
 #define ENA_SPINLOCK_UNLOCK(spinlock, flags)			\
 	do {							\
 		(void)(flags);					\
-		mtx_unlock_spin(&(spinlock));			\
+		irq_spin_unlock(&(spinlock));			\
 	} while (0)
 
 
