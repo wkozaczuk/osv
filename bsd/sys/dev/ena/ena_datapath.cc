@@ -563,8 +563,10 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
 		if (do_if_input != 0) {
 			ena_log_io(adapter->pdev, DBG,
 			    "calling if_input() with mbuf %p\n", mbuf);
-                        //TODO: Apply here net channel
-			(*ifp->if_input)(ifp, mbuf);
+			bool fast_path = ifp->if_classifier.post_packet(mbuf);
+			if (!fast_path) {
+				(*ifp->if_input)(ifp, mbuf);
+			}
 		}
 
 		counter_enter();
