@@ -79,6 +79,19 @@
 #include <osv/mmu.hh>
 #include <osv/mempool.hh>
 
+static inline void busy_sleep(u64 nanoseconds)
+{
+	auto end = osv::clock::uptime::now().time_since_epoch().count() + nanoseconds;
+	while (osv::clock::uptime::now().time_since_epoch().count() < end) {
+#ifdef __x86_64__
+		__asm __volatile("pause");
+#endif
+#ifdef __aarch64__
+		__asm __volatile("isb sy");
+#endif
+	}
+}
+
 /*****************************************************************************/
 /*****************************************************************************/
 /*****************************************************************************/
@@ -91,7 +104,6 @@ enum ena_cmd_status {
 };
 
 struct ena_comp_ctx {
-	ena_wait_event_t wait_event;
 	struct ena_admin_acq_entry *user_cqe;
 	u32 comp_size;
 	enum ena_cmd_status status;
@@ -286,8 +298,6 @@ static struct ena_comp_ctx *__ena_com_submit_admin_cmd(struct ena_com_admin_queu
 	comp_ctx->user_cqe = comp;
 	comp_ctx->cmd_opcode = cmd->aq_common_descriptor.opcode;
 
-	ENA_WAIT_EVENT_CLEAR(comp_ctx->wait_event);
-
 	memcpy(&admin_queue->sq.entries[tail_masked], cmd, cmd_size_in_bytes);
 
 	admin_queue->curr_cmd_id = (admin_queue->curr_cmd_id + 1) &
@@ -310,19 +320,11 @@ static int ena_com_init_comp_ctxt(struct ena_com_admin_queue *admin_queue)
 {
 	//struct ena_com_dev *ena_dev = admin_queue->ena_dev;
 	size_t size = admin_queue->q_depth * sizeof(struct ena_comp_ctx);
-	struct ena_comp_ctx *comp_ctx;
-	u16 i;
 
 	admin_queue->comp_ctx = static_cast<ena_comp_ctx *>(ENA_MEM_ALLOC(admin_queue->q_dmadev, size));
 	if (unlikely(!admin_queue->comp_ctx)) {
 		ena_trc_err(ena_dev, "Memory allocation failed\n");
 		return ENA_COM_NO_MEM;
-	}
-
-	for (i = 0; i < admin_queue->q_depth; i++) {
-		comp_ctx = get_comp_ctxt(admin_queue, i, false);
-		if (comp_ctx)
-			ENA_WAIT_EVENT_INIT(comp_ctx->wait_event);
 	}
 
 	return 0;
@@ -510,9 +512,6 @@ static void ena_com_handle_single_admin_completion(struct ena_com_admin_queue *a
 
 	if (comp_ctx->user_cqe)
 		memcpy(comp_ctx->user_cqe, (void *)cqe, comp_ctx->comp_size);
-
-	if (!admin_queue->polling)
-		ENA_WAIT_EVENT_SIGNAL(comp_ctx->wait_event);
 }
 
 static void ena_com_handle_admin_completion(struct ena_com_admin_queue *admin_queue)
@@ -580,9 +579,9 @@ static int ena_com_comp_status_to_errno(struct ena_com_admin_queue *admin_queue,
 
 static void ena_delay_exponential_backoff_us(u32 exp, u32 delay_us)
 {
-	//delay_us = ENA_MAX32(ENA_MIN_ADMIN_POLL_US, delay_us);
-	//delay_us = ENA_MIN32(delay_us * (1U << exp), ENA_MAX_ADMIN_POLL_US);
-	//TODO;ENA_USLEEP(delay_us);
+	delay_us = ENA_MAX32(ENA_MIN_ADMIN_POLL_US, delay_us);
+	delay_us = ENA_MIN32(delay_us * (1U << exp), ENA_MAX_ADMIN_POLL_US);
+	ENA_USLEEP(delay_us);
 }
 
 static int ena_com_wait_and_process_admin_cq_polling(struct ena_comp_ctx *comp_ctx,
@@ -593,7 +592,7 @@ static int ena_com_wait_and_process_admin_cq_polling(struct ena_comp_ctx *comp_c
 	int ret;
 	u32 exp = 0;
 
-	timeout = 1;//TODO: ENA_GET_SYSTEM_TIMEOUT(admin_queue->completion_timeout);
+	timeout = ENA_GET_SYSTEM_TIMEOUT(admin_queue->completion_timeout);
 
 	while (1) {
 		ENA_SPINLOCK_LOCK(admin_queue->q_lock, flags);
@@ -603,8 +602,7 @@ static int ena_com_wait_and_process_admin_cq_polling(struct ena_comp_ctx *comp_c
 		if (comp_ctx->status != ENA_CMD_SUBMITTED)
 			break;
 
-		//TODOif (ENA_TIME_EXPIRE(timeout)) {
-		if (timeout) {
+		if (ENA_TIME_EXPIRE(timeout)) {
 			ena_trc_err(admin_queue->ena_dev,
 				    "Wait for completion (polling) timeout\n");
 			/* ENA didn't have any completion */
@@ -809,55 +807,6 @@ static int ena_com_config_llq_info(struct ena_com_dev *ena_dev,
 	return rc;
 }
 
-static int ena_com_wait_and_process_admin_cq_interrupts(struct ena_comp_ctx *comp_ctx,
-							struct ena_com_admin_queue *admin_queue)
-{
-	unsigned long flags = 0;
-	int ret;
-
-	ENA_WAIT_EVENT_WAIT(comp_ctx->wait_event,
-			    admin_queue->completion_timeout);
-
-	/* In case the command wasn't completed find out the root cause.
-	 * There might be 2 kinds of errors
-	 * 1) No completion (timeout reached)
-	 * 2) There is completion but the device didn't get any msi-x interrupt.
-	 */
-	if (unlikely(comp_ctx->status == ENA_CMD_SUBMITTED)) {
-		ENA_SPINLOCK_LOCK(admin_queue->q_lock, flags);
-		ena_com_handle_admin_completion(admin_queue);
-		admin_queue->stats.no_completion++;
-		ENA_SPINLOCK_UNLOCK(admin_queue->q_lock, flags);
-
-		if (comp_ctx->status == ENA_CMD_COMPLETED) {
-			ena_trc_err(admin_queue->ena_dev,
-				    "The ena device sent a completion but the driver didn't receive a MSI-X interrupt (cmd %d), autopolling mode is %s\n",
-				    comp_ctx->cmd_opcode, admin_queue->auto_polling ? "ON" : "OFF");
-			/* Check if fallback to polling is enabled */
-			if (admin_queue->auto_polling)
-				admin_queue->polling = true;
-		} else {
-			ena_trc_err(admin_queue->ena_dev,
-				    "The ena device didn't send a completion for the admin cmd %d status %d\n",
-				    comp_ctx->cmd_opcode, comp_ctx->status);
-		}
-		/* Check if shifted to polling mode.
-		 * This will happen if there is a completion without an interrupt
-		 * and autopolling mode is enabled. Continuing normal execution in such case
-		 */
-		if (!admin_queue->polling) {
-			admin_queue->running_state = false;
-			ret = ENA_COM_TIMER_EXPIRED;
-			goto err;
-		}
-	}
-
-	ret = ena_com_comp_status_to_errno(admin_queue, comp_ctx->comp_status);
-err:
-	comp_ctxt_release(admin_queue, comp_ctx);
-	return ret;
-}
-
 /* This method read the hardware device register through posting writes
  * and waiting for response
  * On timeout the function will return ENA_MMIO_READ_TIMEOUT
@@ -896,7 +845,7 @@ static u32 ena_com_reg_bar_read32(struct ena_com_dev *ena_dev, u16 offset)
 		if (READ_ONCE16(read_resp->req_id) == mmio_read->seq_num)
 			break;
 
-		//TODO: ENA_UDELAY(1);
+		ENA_UDELAY(1);
 	}
 
 	if (unlikely(i == timeout)) {
@@ -931,12 +880,8 @@ err:
 static int ena_com_wait_and_process_admin_cq(struct ena_comp_ctx *comp_ctx,
 					     struct ena_com_admin_queue *admin_queue)
 {
-	if (admin_queue->polling)
-		return ena_com_wait_and_process_admin_cq_polling(comp_ctx,
-								 admin_queue);
-
-	return ena_com_wait_and_process_admin_cq_interrupts(comp_ctx,
-							    admin_queue);
+	return ena_com_wait_and_process_admin_cq_polling(comp_ctx,
+							 admin_queue);
 }
 
 static int ena_com_destroy_io_sq(struct ena_com_dev *ena_dev,
@@ -1019,7 +964,7 @@ static int wait_for_reset_state(struct ena_com_dev *ena_dev, u32 timeout,
 	ena_time_t timeout_stamp;
 
 	/* Convert timeout from resolution of 100ms to us resolution. */
-	timeout_stamp = 1; //TODO: ENA_GET_SYSTEM_TIMEOUT(100 * 1000 * timeout);
+	timeout_stamp = ENA_GET_SYSTEM_TIMEOUT(100 * 1000 * timeout);
 
 	while (1) {
 		val = ena_com_reg_bar_read32(ena_dev, ENA_REGS_DEV_STS_OFF);
@@ -1033,8 +978,8 @@ static int wait_for_reset_state(struct ena_com_dev *ena_dev, u32 timeout,
 			exp_state)
 			return 0;
 
-		//TODO: if (ENA_TIME_EXPIRE(timeout_stamp))
-	//		return ENA_COM_TIMER_EXPIRED;
+		if (ENA_TIME_EXPIRE(timeout_stamp))
+			return ENA_COM_TIMER_EXPIRED;
 
 		ena_delay_exponential_backoff_us(exp++, ena_dev->ena_min_poll_delay_us);
 	}
@@ -1530,8 +1475,6 @@ void ena_com_abort_admin_commands(struct ena_com_dev *ena_dev)
 			break;
 
 		comp_ctx->status = ENA_CMD_ABORTED;
-
-		ENA_WAIT_EVENT_SIGNAL(comp_ctx->wait_event);
 	}
 }
 
@@ -1723,7 +1666,6 @@ ena_com_free_ena_admin_queue_comp_ctx(struct ena_com_dev *ena_dev,
 	if (!admin_queue->comp_ctx)
 		return;
 
-	ENA_WAIT_EVENTS_DESTROY(admin_queue);
 	ENA_MEM_FREE(ena_dev->dmadev,
 		     admin_queue->comp_ctx,
 		     (admin_queue->q_depth * sizeof(struct ena_comp_ctx)));

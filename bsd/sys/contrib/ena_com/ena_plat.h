@@ -170,12 +170,12 @@ static inline long PTR_ERR(const void *ptr)
 
 #define ENA_NODE_ANY		(-1)
 
-#define ENA_MSLEEP(x) 		pause_sbt("ena", SBT_1MS * (x), SBT_1MS, 0)
-#define ENA_USLEEP(x) 		pause_sbt("ena", SBT_1US * (x), SBT_1US, 0)
-#define ENA_UDELAY(x) 		DELAY(x)
+#define ENA_MSLEEP(x) 		busy_sleep(1000000 * x)
+#define ENA_USLEEP(x) 		busy_sleep(1000 * x)
+#define ENA_UDELAY(x) 		busy_sleep(1000 * x)
 #define ENA_GET_SYSTEM_TIMEOUT(timeout_us) \
-    ((long)cputick2usec(cpu_ticks()) + (timeout_us))
-#define ENA_TIME_EXPIRE(timeout)  ((timeout) < cputick2usec(cpu_ticks()))
+    ((osv::clock::uptime::now().time_since_epoch().count() / 1000) + (timeout_us))
+#define ENA_TIME_EXPIRE(timeout)  ((timeout) < (osv::clock::uptime::now().time_since_epoch().count() / 1000))
 #define ENA_MIGHT_SLEEP()
 
 #define min_t(type, _x, _y) ((type)(_x) < (type)(_y) ? (type)(_x) : (type)(_y))
@@ -207,42 +207,6 @@ static inline long PTR_ERR(const void *ptr)
 	do {							\
 		(void)(flags);					\
 		irq_spin_unlock(&(spinlock));			\
-	} while (0)
-
-
-/* Wait queue related methods */
-#define ena_wait_event_t struct { kcondvar_t wq; struct mtx mtx; }
-#define ENA_WAIT_EVENT_INIT(waitqueue)					\
-	do {								\
-		cv_init(&((waitqueue).wq), "cv", 0, 0);			\
-		mtx_init(&((waitqueue).mtx), "wq", NULL, MTX_DEF);	\
-	} while (0)
-#define ENA_WAIT_EVENTS_DESTROY(admin_queue)				\
-	do {								\
-		struct ena_comp_ctx *comp_ctx;				\
-		int i;							\
-		for (i = 0; i < admin_queue->q_depth; i++) {		\
-			comp_ctx = get_comp_ctxt(admin_queue, i, false); \
-			if (comp_ctx != NULL) {				\
-				cv_destroy(&((comp_ctx->wait_event).wq)); \
-				mtx_destroy(&((comp_ctx->wait_event).mtx)); \
-			}						\
-		}							\
-	} while (0)
-#define ENA_WAIT_EVENT_CLEAR(waitqueue)					\
-	cv_init(&((waitqueue).wq), (waitqueue).wq.cv_description, 0, 0)
-#define ENA_WAIT_EVENT_WAIT(waitqueue, timeout_us)			\
-	do {								\
-		mtx_lock(&((waitqueue).mtx));				\
-		cv_timedwait(&((waitqueue).wq), &(&((waitqueue).mtx))->_mutex,	\
-		    timeout_us * hz / 1000 / 1000 );			\
-		mtx_unlock(&((waitqueue).mtx));				\
-	} while (0)
-#define ENA_WAIT_EVENT_SIGNAL(waitqueue)		\
-	do {						\
-		mtx_lock(&((waitqueue).mtx));		\
-		cv_broadcast(&((waitqueue).wq));	\
-		mtx_unlock(&((waitqueue).mtx));		\
 	} while (0)
 
 #define dma_addr_t 	bus_addr_t

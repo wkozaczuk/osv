@@ -1066,14 +1066,12 @@ err_tx:
  **********************************************************************/
 
 /**
- * ena_handle_msix - MSIX Interrupt Handler for admin/async queue
+ * ena_intr_msix_mgmnt - MSIX Interrupt Handler for admin/async queue
  * @arg: interrupt number
  **/
 static void
 ena_intr_msix_mgmnt(void *arg)
 {
-	//TODO This should probably be executed in a separate thread
-	//unless it does not use mutexes
 	struct ena_adapter *adapter = (struct ena_adapter *)arg;
 
 	ena_com_admin_q_comp_intr_handler(adapter->ena_dev);
