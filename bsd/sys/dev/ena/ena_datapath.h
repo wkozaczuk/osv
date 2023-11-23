@@ -36,10 +36,10 @@
 
 typedef struct ifnet* if_t;
 
-void ena_cleanup(void *arg, int pending);
+void ena_cleanup(struct ena_que *que);
 void ena_qflush(if_t ifp);
 int ena_mq_start(if_t ifp, struct mbuf *m);
-void ena_deferred_mq_start(void *arg, int pending);
+void ena_deferred_mq_start(ena_ring *ring);
 
 #define CSUM_OFFLOAD (CSUM_IP | CSUM_TCP | CSUM_UDP)
 #define CSUM6_OFFLOAD (CSUM_UDP_IPV6 | CSUM_TCP_IPV6)

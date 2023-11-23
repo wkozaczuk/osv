@@ -396,6 +396,19 @@ ena_free_all_io_rings_resources(struct ena_adapter *adapter)
 		ena_free_io_ring_resources(adapter, i);
 }
 
+static void
+enqueue_work(ena_ring *ring)
+{
+	do {
+		sched::thread::wait_for([ring] { return ring->enqueue_pending > 0 || ring->enqueue_stop; });
+		ring->enqueue_pending = 0;
+
+		if (!ring->enqueue_stop) {
+			ena_deferred_mq_start(ring);
+		}
+	} while (!ring->enqueue_stop);
+}
+
 /**
  * ena_setup_tx_resources - allocate Tx resources (Descriptors)
  * @adapter: network interface device structure
@@ -406,10 +419,8 @@ ena_free_all_io_rings_resources(struct ena_adapter *adapter)
 static int
 ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 {
-	char thread_name[MAXCOMLEN + 1];
 	struct ena_que *que = &adapter->que[qid];
 	struct ena_ring *tx_ring = que->tx_ring;
-	//TODO cpuset_t *cpu_mask = NULL;
 	int size, i;
 
 	size = sizeof(struct ena_tx_buffer) * tx_ring->ring_size;
@@ -449,21 +460,13 @@ ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 	ENA_RING_MTX_UNLOCK(tx_ring);
 
 	/* Allocate taskqueues */
-	TASK_INIT(&tx_ring->enqueue_task, 0, ena_deferred_mq_start, tx_ring);
-	//TODO: tx_ring->enqueue_tq = taskqueue_create_fast("ena_tx_enque", M_NOWAIT,
-	//    taskqueue_thread_enqueue, &tx_ring->enqueue_tq);
-	if (unlikely(tx_ring->enqueue_tq == NULL)) {
-		ena_log(pdev, ERR,
-		    "Unable to create taskqueue for enqueue task\n");
-		i = tx_ring->ring_size;
-		goto err_tx_ids_free;
-	}
+	tx_ring->enqueue_thread = sched::thread::make([tx_ring] { enqueue_work(tx_ring); },
+		sched::thread::attr().name("ena_tx_enque_" + std::to_string(que->id)));
+	tx_ring->enqueue_stop = false;
+	tx_ring->enqueue_pending = 0;
 
 	tx_ring->running = true;
-
-	snprintf(thread_name, sizeof(thread_name), "ena txeq %d", que->id);
-	//TODO: taskqueue_start_threads_cpuset(&tx_ring->enqueue_tq, 1, PI_NET,
-	//    cpu_mask, "%s", thread_name);
+	tx_ring->enqueue_thread->start();
 
 	return (0);
 
@@ -489,10 +492,11 @@ ena_free_tx_resources(struct ena_adapter *adapter, int qid)
 {
 	struct ena_ring *tx_ring = &adapter->tx_ring[qid];
 
-	while (taskqueue_cancel(tx_ring->enqueue_tq, &tx_ring->enqueue_task, NULL))
-		taskqueue_drain(tx_ring->enqueue_tq, &tx_ring->enqueue_task);
+	tx_ring->enqueue_thread->wake_with([tx_ring] { tx_ring->enqueue_stop = true; });
+	tx_ring->enqueue_thread->join();
 
-	taskqueue_free(tx_ring->enqueue_tq);
+	delete tx_ring->enqueue_thread;
+	tx_ring->enqueue_thread = nullptr;
 
 	ENA_RING_MTX_LOCK(tx_ring);
 	/* Flush buffer ring, */
@@ -919,17 +923,35 @@ static void
 ena_destroy_all_io_queues(struct ena_adapter *adapter)
 {
 	struct ena_que *queue;
-	int i;
 
-	for (i = 0; i < adapter->num_io_queues; i++) {
+	for (int i = 0; i < adapter->num_io_queues; i++) {
 		queue = &adapter->que[i];
-		while (taskqueue_cancel(queue->cleanup_tq, &queue->cleanup_task, NULL))
-			taskqueue_drain(queue->cleanup_tq, &queue->cleanup_task);
-		taskqueue_free(queue->cleanup_tq);
+		queue->cleanup_thread->wake_with([queue] { queue->cleanup_stop = true; });
+	}
+
+	for (int i = 0; i < adapter->num_io_queues; i++) {
+		queue = &adapter->que[i];
+		queue->cleanup_thread->join();
+
+		delete queue->cleanup_thread;
+		queue->cleanup_thread = nullptr;
 	}
 
 	ena_destroy_all_tx_queues(adapter);
 	ena_destroy_all_rx_queues(adapter);
+}
+
+static void
+cleanup_work(ena_que *queue)
+{
+	do {
+		sched::thread::wait_for([queue] { return queue->cleanup_pending > 0 || queue->cleanup_stop; });
+		queue->cleanup_pending = 0;
+
+		if (!queue->cleanup_stop) {
+			ena_cleanup(queue);
+		}
+	} while (!queue->cleanup_stop);
 }
 
 static int
@@ -941,7 +963,6 @@ ena_create_io_queues(struct ena_adapter *adapter)
 	struct ena_que *queue;
 	uint16_t ena_qid;
 	uint32_t msix_vector;
-	//cpuset_t *cpu_mask = NULL;
 	int rc, i;
 
 	/* Create TX queues */
@@ -1018,13 +1039,11 @@ ena_create_io_queues(struct ena_adapter *adapter)
 	for (i = 0; i < adapter->num_io_queues; i++) {
 		queue = &adapter->que[i];
 
-		TASK_INIT(&queue->cleanup_task, 0, ena_cleanup, queue);
-		//TODO: queue->cleanup_tq = taskqueue_create_fast("ena cleanup",
-		//     M_WAITOK, taskqueue_thread_enqueue, &queue->cleanup_tq);
-
-		//taskqueue_start_threads_cpuset(&queue->cleanup_tq, 1, PI_NET,
-		//    cpu_mask, "%s queue %d cleanup",
-		//    device_get_nameunit(adapter->pdev), i);
+		queue->cleanup_thread = sched::thread::make([queue] { cleanup_work(queue); },
+			sched::thread::attr().name("ena_cleanup_queue_" + std::to_string(i)));
+		queue->cleanup_stop = false;
+		queue->cleanup_pending = 0;
+		queue->cleanup_thread->start();
 	}
 
 	return (0);
@@ -1074,11 +1093,11 @@ ena_handle_msix(void *arg)
 	if_t ifp = adapter->ifp;
 
 	if (unlikely((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
-		return 0; //TODO return (FILTER_STRAY);
+		return 0;
 
-	taskqueue_enqueue(queue->cleanup_tq, &queue->cleanup_task);
+	queue->cleanup_thread->wake_with_irq_or_preemption_disabled([queue] { queue->cleanup_pending++; });
 
-	return 0;//(FILTER_HANDLED);
+	return 0;
 }
 
 static int
@@ -2080,8 +2099,8 @@ check_for_empty_rx_ring(struct ena_adapter *adapter)
 				    "Rx ring %d is stalled. Triggering the refill function\n",
 				    i);
 
-				taskqueue_enqueue(rx_ring->que->cleanup_tq,
-				    &rx_ring->que->cleanup_task);
+				auto queue = rx_ring->que;
+				rx_ring->que->cleanup_thread->wake_with([queue] { queue->cleanup_pending++; });
 				rx_ring->empty_rx_queue = 0;
 			}
 		} else {

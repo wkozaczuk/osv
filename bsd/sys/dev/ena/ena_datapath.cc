@@ -66,9 +66,8 @@ static void ena_start_xmit(struct ena_ring *);
  *********************************************************************/
 
 void
-ena_cleanup(void *arg, int pending)
+ena_cleanup(struct ena_que *que)
 {
-	struct ena_que *que = static_cast<ena_que *>(arg);
 	struct ena_adapter *adapter = que->adapter;
 	if_t ifp = adapter->ifp;
 	struct ena_ring *tx_ring;
@@ -111,9 +110,8 @@ ena_cleanup(void *arg, int pending)
 }
 
 void
-ena_deferred_mq_start(void *arg, int pending)
+ena_deferred_mq_start(struct ena_ring *tx_ring )
 {
-	struct ena_ring *tx_ring = (struct ena_ring *)arg;
 	if_t ifp = tx_ring->adapter->ifp;
 
 	while (!buf_ring_empty(tx_ring->br) && tx_ring->running &&
@@ -153,7 +151,7 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 	ret = buf_ring_enqueue(tx_ring->br, m);
 	if (unlikely(ret != 0)) {
 		m_freem(m);
-		taskqueue_enqueue(tx_ring->enqueue_tq, &tx_ring->enqueue_task);
+		tx_ring->enqueue_thread->wake_with([tx_ring] { tx_ring->enqueue_pending++; });
 		return (ret);
 	}
 
@@ -161,7 +159,7 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 		ena_start_xmit(tx_ring);
 		ENA_RING_MTX_UNLOCK(tx_ring);
 	} else {
-		taskqueue_enqueue(tx_ring->enqueue_tq, &tx_ring->enqueue_task);
+		tx_ring->enqueue_thread->wake_with([tx_ring] { tx_ring->enqueue_pending++; });
 	}
 
 	return (0);
@@ -317,8 +315,7 @@ ena_tx_cleanup(struct ena_ring *tx_ring)
 		if (!tx_ring->running && above_thresh) {
 			tx_ring->running = true;
 			counter_u64_add(tx_ring->tx_stats.queue_wakeup, 1);
-			taskqueue_enqueue(tx_ring->enqueue_tq,
-			    &tx_ring->enqueue_task);
+			tx_ring->enqueue_thread->wake_with([tx_ring] { tx_ring->enqueue_pending++; });
 		}
 		ENA_RING_MTX_UNLOCK(tx_ring);
 	}
@@ -956,6 +953,5 @@ ena_start_xmit(struct ena_ring *tx_ring)
 	}
 
 	if (unlikely(!tx_ring->running))
-		taskqueue_enqueue(tx_ring->que->cleanup_tq,
-		    &tx_ring->que->cleanup_task);
+		tx_ring->que->cleanup_thread->wake_with([tx_ring] { tx_ring->que->cleanup_pending++; });
 }

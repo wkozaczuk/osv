@@ -254,12 +254,14 @@ struct ena_que {
 	struct ena_ring *tx_ring;
 	struct ena_ring *rx_ring;
 
-	struct task cleanup_task;
-	struct taskqueue *cleanup_tq;
+	sched::thread* cleanup_thread;
+	std::atomic<uint16_t> cleanup_pending = {0};
+	std::atomic<bool> cleanup_stop = {false};
 
 	uint32_t id;
 	int domain;
 	struct sysctl_oid *oid;
+
 };
 
 struct ena_calc_queue_size_ctx {
@@ -380,10 +382,12 @@ struct ena_ring {
 	struct mtx ring_mtx;
 	char mtx_name[16];
 
-	struct {
-		struct task enqueue_task;
-		struct taskqueue *enqueue_tq;
-	};
+	sched::thread* enqueue_thread;
+	uint16_t enqueue_pending;
+	bool enqueue_stop;
+	//TODO: Check why we get 'void operator delete(void*)’ called on pointer returned from a mismatched allocation function' error
+	//std::atomic<uint16_t> enqueue_pending = {0};
+	//std::atomic<bool> enqueue_stop = {false};
 
 	union {
 		struct ena_stats_tx tx_stats;
