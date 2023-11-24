@@ -425,9 +425,10 @@ ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 
 	size = sizeof(struct ena_tx_buffer) * tx_ring->ring_size;
 
-	tx_ring->tx_buffer_info = static_cast<ena_tx_buffer*>(malloc(size, M_DEVBUF, M_NOWAIT | M_ZERO));
+	tx_ring->tx_buffer_info = static_cast<ena_tx_buffer*>(aligned_alloc(alignof(ena_tx_buffer), size));
 	if (unlikely(tx_ring->tx_buffer_info == NULL))
 		return (ENOMEM);
+	bzero(tx_ring->tx_buffer_info, size);
 
 	size = sizeof(uint16_t) * tx_ring->ring_size;
 	tx_ring->free_tx_ids = static_cast<uint16_t*>(malloc(size, M_DEVBUF, M_NOWAIT | M_ZERO));
@@ -589,7 +590,8 @@ ena_setup_rx_resources(struct ena_adapter *adapter, unsigned int qid)
 	 */
 	size += sizeof(struct ena_rx_buffer);
 
-	rx_ring->rx_buffer_info = static_cast<ena_rx_buffer*>(malloc(size, M_DEVBUF, M_WAITOK | M_ZERO));
+	rx_ring->rx_buffer_info = static_cast<ena_rx_buffer*>(aligned_alloc(alignof(ena_rx_buffer), size));
+	bzero(rx_ring->rx_buffer_info, size);
 
 	size = sizeof(uint16_t) * rx_ring->ring_size;
 	rx_ring->free_rx_ids = static_cast<uint16_t*>(malloc(size, M_DEVBUF, M_WAITOK));
@@ -1174,7 +1176,7 @@ ena_request_mgmnt_irq(struct ena_adapter *adapter)
 	}
 
 	auto vec = assigned[0];
-	if (!_msi.assign_isr(vec, [=]() { ena_intr_msix_mgmnt(adapter); })) {
+	if (!_msi.assign_isr(vec, [adapter]() { ena_intr_msix_mgmnt(adapter); })) {
 		_msi.free_vectors(assigned);
 		ena_log(pdev, ERR, "could not assign MGMNT irq vector isr: %d\n", ENA_MGMNT_IRQ_IDX);
 		return (ENXIO);
@@ -1216,8 +1218,7 @@ ena_request_io_irq(struct ena_adapter *adapter)
 		ena_irq *irq = &adapter->irq_tbl[entry];
 		auto idx = entry - 1;
 		auto vec = assigned[idx];
-		//TODO Check if lambda correct
-		if (!_msi.assign_isr(vec, [=]() { ena_handle_msix(&irq->data); })) {
+		if (!_msi.assign_isr(vec, [irq]() { ena_handle_msix(&irq->data); })) {
 			_msi.free_vectors(assigned);
 			ena_log(pdev, ERR, "could not assign I/O irq vector isr: %d\n", entry);
 			return (ENXIO);
@@ -2378,6 +2379,16 @@ ena_free_stats(struct ena_adapter *adapter)
 	    sizeof(struct ena_stats_dev));
 
 }
+
+static void
+free_adapter(ena_adapter *adapter)
+{
+	if (adapter) {
+		adapter->~ena_adapter();
+		free(adapter);
+	}
+}
+
 /**
  * ena_attach - Device Initialization Routine
  * @pdev: device information struct
@@ -2391,6 +2402,7 @@ ena_free_stats(struct ena_adapter *adapter)
 int
 ena_attach(pci::device* pdev, ena_adapter **_adapter)
 {
+	struct ena_adapter *adapter;
 	struct ena_com_dev_get_features_ctx get_feat_ctx;
 	struct ena_calc_queue_size_ctx calc_queue_ctx = { 0 };
 	static int version_printed;
@@ -2398,7 +2410,7 @@ ena_attach(pci::device* pdev, ena_adapter **_adapter)
 	uint32_t max_num_io_queues;
 	int rc;
 
-	struct ena_adapter *adapter = aligned_new<ena_adapter>();
+	adapter = aligned_new<ena_adapter>();
 	adapter->pdev = pdev;
 	adapter->first_bind = -1;
 
@@ -2526,8 +2538,7 @@ ena_attach(pci::device* pdev, ena_adapter **_adapter)
 	TASK_INIT(&adapter->reset_task, 0, ena_reset_task, adapter);
 	adapter->reset_tq = taskqueue_create("ena_reset_enqueue",
 	    M_WAITOK | M_ZERO, taskqueue_thread_enqueue, &adapter->reset_tq);
-	taskqueue_start_threads(&adapter->reset_tq, 1, PI_NET, "%s rstq",
-	    "TODO");//device_get_nameunit(adapter->pdev));
+	taskqueue_start_threads(&adapter->reset_tq, 1, PI_NET, "ena rstq" );
 
 	/* Tell the stack that the interface is not active */
         adapter->ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
@@ -2557,7 +2568,7 @@ err_bus_free:
 err_dev_free:
 	free(ena_dev, M_DEVBUF);
 
-        delete adapter;
+	free_adapter(adapter);
 	return (rc);
 }
 
@@ -2610,7 +2621,7 @@ ena_detach(ena_adapter *adapter)
 
 	free(ena_dev, M_DEVBUF);
 
-	delete adapter;
+	free_adapter(adapter);
 	return 0;
 }
 

@@ -383,11 +383,8 @@ struct ena_ring {
 	char mtx_name[16];
 
 	sched::thread* enqueue_thread;
-	uint16_t enqueue_pending;
-	bool enqueue_stop;
-	//TODO: Check why we get 'void operator delete(void*)’ called on pointer returned from a mismatched allocation function' error
-	//std::atomic<uint16_t> enqueue_pending = {0};
-	//std::atomic<bool> enqueue_stop = {false};
+	std::atomic<uint16_t> enqueue_pending = {0};
+	std::atomic<bool> enqueue_stop = {false};
 
 	union {
 		struct ena_stats_tx tx_stats;
