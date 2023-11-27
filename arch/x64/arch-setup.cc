@@ -27,6 +27,7 @@
 #if CONF_drivers_acpi
 #include "drivers/acpi.hh"
 #endif
+#include "drivers/ena.hh"
 
 osv_multiboot_info_type* osv_multiboot_info;
 
@@ -365,6 +366,7 @@ void arch_init_drivers()
 #if CONF_drivers_ide
     drvman->register_driver(ide::ide_drive::probe);
 #endif
+    drvman->register_driver(aws::ena::probe);
     boot_time.event("drivers probe");
     drvman->load_all();
     drvman->list_drivers();

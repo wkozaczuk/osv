@@ -33,7 +33,6 @@ __FBSDID("$FreeBSD$");
 #include <sys/param.h>
 #include <sys/systm.h>
 #include <sys/bus.h>
-//#include <sys/endian.h>
 #include <sys/eventhandler.h>
 #include <sys/kernel.h>
 #include <sys/kthread.h>
@@ -43,7 +42,6 @@ __FBSDID("$FreeBSD$");
 #include <sys/rman.h>
 #include <sys/smp.h>
 #include <bsd/sys/sys/socket.h>
-//#include <sys/sockio.h>
 #include <sys/sysctl.h>
 #include <sys/taskqueue.h>
 #include <sys/time.h>
@@ -56,9 +54,6 @@ __FBSDID("$FreeBSD$");
 #include <machine/bus.h>
 #include <machine/in_cksum.h>
 #include <machine/resource.h>
-
-//#include <dev/pci/pcireg.h>
-//#include <dev/pci/pcivar.h>
 
 #include <bsd/sys/net/bpf.h>
 #include <bsd/sys/net/ethernet.h>
@@ -77,6 +72,9 @@ __FBSDID("$FreeBSD$");
 #include <bsd/sys/netinet/tcp.h>
 #include <bsd/sys/netinet/udp.h>
 
+#define ENA_LOG_ENABLE 1
+#define ENA_LOG_IO_ENABLE 1
+
 #include "ena.h"
 #include "ena_datapath.h"
 
@@ -85,6 +83,8 @@ __FBSDID("$FreeBSD$");
 #include <osv/aligned_new.hh>
 #include <osv/msi.hh>
 #include <osv/sched.hh>
+
+int ena_log_level = ENA_INFO;
 
 static inline void critical_enter()  { sched::preempt_disable(); }
 static inline void critical_exit() { sched::preempt_enable(); }
@@ -166,8 +166,10 @@ static void ena_update_on_link_change(void *, struct ena_admin_aenq_entry *);
 static void unimplemented_aenq_handler(void *, struct ena_admin_aenq_entry *);
 static void ena_timer_service(void *);
 
+#ifdef ENA_LOG_ENABLE
 static char ena_version[] = ENA_DEVICE_NAME ENA_DRV_MODULE_NAME
     " v" ENA_DRV_MODULE_VERSION;
+#endif
 
 static ena_vendor_info_t ena_vendor_info_array[] = {
 	{ PCI_VENDOR_ID_AMAZON, PCI_DEV_ID_ENA_PF, 0 },
@@ -186,7 +188,7 @@ ena_dma_alloc(device_t dmadev, bus_size_t size, ena_mem_handle_t *dma,
 {
         dma->vaddr = (caddr_t)memory::alloc_phys_contiguous_aligned(size, mmu::page_size);
         if (!dma->vaddr) {
-		ena_log(pdev, ERR, "memory::alloc_phys_contiguous_aligned failed!\n", 1);
+		ena_log(pdev, ERR, "memory::alloc_phys_contiguous_aligned failed!", 1);
 		dma->vaddr = 0;
 		dma->paddr = 0;
 		return ENA_COM_NO_MEM;
@@ -211,7 +213,7 @@ ena_probe(pci::device* pdev)
 	ena_vendor_info_t *ent = ena_vendor_info_array;
 	while (ent->vendor_id != 0) {
 		if (pdev->get_id() == hw_device_id(ent->vendor_id, ent->device_id)) {
-			ena_log_raw(DBG, "vendor=%x device=%x\n", ent->vendor_id,
+			ena_log_raw(DBG, "vendor=%x device=%x", ent->vendor_id,
 			    ent->device_id);
 
 			return true;
@@ -230,17 +232,17 @@ ena_change_mtu(if_t ifp, int new_mtu)
 	int rc;
 
 	if ((new_mtu > adapter->max_mtu) || (new_mtu < ENA_MIN_MTU)) {
-		ena_log(pdev, ERR, "Invalid MTU setting. new_mtu: %d max mtu: %d min mtu: %d\n",
+		ena_log(pdev, ERR, "Invalid MTU setting. new_mtu: %d max mtu: %d min mtu: %d",
 		    new_mtu, adapter->max_mtu, ENA_MIN_MTU);
 		return (EINVAL);
 	}
 
 	rc = ena_com_set_dev_mtu(adapter->ena_dev, new_mtu);
 	if (likely(rc == 0)) {
-		ena_log(pdev, DBG, "set MTU to %d\n", new_mtu);
+		ena_log(pdev, DBG, "set MTU to %d", new_mtu);
 		ifp->if_mtu = new_mtu;
 	} else {
-		ena_log(pdev, ERR, "Failed to set MTU to %d\n", new_mtu);
+		ena_log(pdev, ERR, "Failed to set MTU to %d", new_mtu);
 	}
 
 	return (rc);
@@ -538,7 +540,7 @@ ena_setup_all_tx_resources(struct ena_adapter *adapter)
 		rc = ena_setup_tx_resources(adapter, i);
 		if (rc != 0) {
 			ena_log(adapter->pdev, ERR,
-			    "Allocation for Tx Queue %u failed\n", i);
+			    "Allocation for Tx Queue %u failed", i);
 			goto err_setup_tx;
 		}
 	}
@@ -610,10 +612,10 @@ ena_setup_rx_resources(struct ena_adapter *adapter, unsigned int qid)
 	if (adapter->ifp->if_capenable & IFCAP_LRO != 0) {
 		int err = tcp_lro_init(&rx_ring->lro);
 		if (err != 0) {
-			ena_log(pdev, ERR, "LRO[%d] Initialization failed!\n",
+			ena_log(pdev, ERR, "LRO[%d] Initialization failed!",
 			    qid);
 		} else {
-			ena_log(pdev, DBG, "RX Soft LRO[%d] Initialized\n",
+			ena_log(pdev, DBG, "RX Soft LRO[%d] Initialized",
 			    qid);
 			rx_ring->lro.ifp = adapter->ifp;
 		}
@@ -666,7 +668,7 @@ ena_setup_all_rx_resources(struct ena_adapter *adapter)
 		rc = ena_setup_rx_resources(adapter, i);
 		if (rc != 0) {
 			ena_log(adapter->pdev, ERR,
-			    "Allocation for Rx Queue %u failed\n", i);
+			    "Allocation for Rx Queue %u failed", i);
 			goto err_setup_rx;
 		}
 	}
@@ -727,10 +729,6 @@ ena_alloc_rx_mbuf(struct ena_adapter *adapter, struct ena_ring *rx_ring,
 	ena_buf->paddr = mmu::virt_to_phys(rx_info->mbuf->m_hdr.mh_data);
 	ena_buf->len = mlen;
 
-	ena_log(pdev, DBG,
-	    "ALLOC RX BUF: mbuf %p, rx_info %p, len %d, paddr %#jx\n",
-	    rx_info->mbuf, rx_info, ena_buf->len, (uintmax_t)ena_buf->paddr);
-
 	return (0);
 }
 
@@ -740,7 +738,7 @@ ena_free_rx_mbuf(struct ena_adapter *adapter, struct ena_ring *rx_ring,
 {
 	if (rx_info->mbuf == NULL) {
 		ena_log(adapter->pdev, WARN,
-		    "Trying to free unallocated buffer\n");
+		    "Trying to free unallocated buffer");
 		return;
 	}
 
@@ -758,20 +756,20 @@ int
 ena_refill_rx_bufs(struct ena_ring *rx_ring, uint32_t num)
 {
 	struct ena_adapter *adapter = rx_ring->adapter;
-	pci::device *pdev = adapter->pdev;
+	//pci::device *pdev = adapter->pdev;
 	uint16_t next_to_use, req_id;
 	uint32_t i;
 	int rc;
 
-	ena_log_io(adapter->pdev, DBG, "refill qid: %d\n", rx_ring->qid);
+	ena_log_io(adapter->pdev, INFO, "refill qid: %d", rx_ring->qid);
 
 	next_to_use = rx_ring->next_to_use;
 
 	for (i = 0; i < num; i++) {
 		struct ena_rx_buffer *rx_info;
 
-		ena_log_io(pdev, DBG, "RX buffer - next to use: %d\n",
-		    next_to_use);
+		ena_log_io(pdev, DBG, "RX buffer - next to use: %d",
+			next_to_use);
 
 		req_id = rx_ring->free_rx_ids[next_to_use];
 		rx_info = &rx_ring->rx_buffer_info[req_id];
@@ -779,7 +777,7 @@ ena_refill_rx_bufs(struct ena_ring *rx_ring, uint32_t num)
 		rc = ena_alloc_rx_mbuf(adapter, rx_ring, rx_info);
 		if (unlikely(rc != 0)) {
 			ena_log_io(pdev, WARN,
-			    "failed to alloc buffer for rx queue %d\n",
+			    "failed to alloc buffer for rx queue %d",
 			    rx_ring->qid);
 			break;
 		}
@@ -787,18 +785,20 @@ ena_refill_rx_bufs(struct ena_ring *rx_ring, uint32_t num)
 		    &rx_info->ena_buf, req_id);
 		if (unlikely(rc != 0)) {
 			ena_log_io(pdev, WARN,
-			    "failed to add buffer for rx queue %d\n",
+			    "failed to add buffer for rx queue %d",
 			    rx_ring->qid);
 			break;
 		}
 		next_to_use = ENA_RX_RING_IDX_NEXT(next_to_use,
 		    rx_ring->ring_size);
 	}
+	ena_log_io(pdev, INFO,
+	    "allocated %d RX BUFs", num);
 
 	if (unlikely(i < num)) {
 		counter_u64_add(rx_ring->rx_stats.refil_partial, 1);
 		ena_log_io(pdev, WARN,
-		    "refilled rx qid %d with only %d mbufs (from %d)\n",
+		    "refilled rx qid %d with only %d mbufs (from %d)",
 		    rx_ring->qid, i, num);
 	}
 
@@ -841,7 +841,7 @@ ena_refill_all_rx_bufs(struct ena_adapter *adapter)
 		if (unlikely(rc != bufs_num))
 			ena_log_io(adapter->pdev, WARN,
 			    "refilling Queue %d failed. "
-			    "Allocated %d buffers from: %d\n",
+			    "Allocated %d buffers from: %d",
 			    i, rc, bufs_num);
 	}
 }
@@ -875,12 +875,12 @@ ena_free_tx_bufs(struct ena_adapter *adapter, unsigned int qid)
 
 		if (print_once) {
 			ena_log(adapter->pdev, WARN,
-			    "free uncompleted tx mbuf qid %d idx 0x%x\n", qid,
+			    "free uncompleted tx mbuf qid %d idx 0x%x", qid,
 			    i);
 			print_once = false;
 		} else {
 			ena_log(adapter->pdev, DBG,
-			    "free uncompleted tx mbuf qid %d idx 0x%x\n", qid,
+			    "free uncompleted tx mbuf qid %d idx 0x%x", qid,
 			    i);
 		}
 
@@ -950,7 +950,9 @@ cleanup_work(ena_que *queue)
 		sched::thread::wait_for([queue] { return queue->cleanup_pending > 0 || queue->cleanup_stop; });
 		queue->cleanup_pending = 0;
 
+		ena_log(dev, DBG, "cleanup_work: received signal to cleanup queue %d", queue->id);
 		if (!queue->cleanup_stop) {
+			ena_log(dev, INFO, "cleanup_work: cleaning up queue %d", queue->id);
 			ena_cleanup(queue);
 		}
 	} while (!queue->cleanup_stop);
@@ -981,7 +983,7 @@ ena_create_io_queues(struct ena_adapter *adapter)
 		rc = ena_com_create_io_queue(ena_dev, &ctx);
 		if (rc != 0) {
 			ena_log(adapter->pdev, ERR,
-			    "Failed to create io TX queue #%d rc: %d\n", i, rc);
+			    "Failed to create io TX queue #%d rc: %d", i, rc);
 			goto err_tx;
 		}
 		ring = &adapter->tx_ring[i];
@@ -990,7 +992,7 @@ ena_create_io_queues(struct ena_adapter *adapter)
 		if (rc != 0) {
 			ena_log(adapter->pdev, ERR,
 			    "Failed to get TX queue handlers. TX queue num"
-			    " %d rc: %d\n",
+			    " %d rc: %d",
 			    i, rc);
 			ena_com_destroy_io_queue(ena_dev, ena_qid);
 			goto err_tx;
@@ -1016,7 +1018,7 @@ ena_create_io_queues(struct ena_adapter *adapter)
 		rc = ena_com_create_io_queue(ena_dev, &ctx);
 		if (unlikely(rc != 0)) {
 			ena_log(adapter->pdev, ERR,
-			    "Failed to create io RX queue[%d] rc: %d\n", i, rc);
+			    "Failed to create io RX queue[%d] rc: %d", i, rc);
 			goto err_rx;
 		}
 
@@ -1026,7 +1028,7 @@ ena_create_io_queues(struct ena_adapter *adapter)
 		if (unlikely(rc != 0)) {
 			ena_log(adapter->pdev, ERR,
 			    "Failed to get RX queue handlers. RX queue num"
-			    " %d rc: %d\n",
+			    " %d rc: %d",
 			    i, rc);
 			ena_com_destroy_io_queue(ena_dev, ena_qid);
 			goto err_rx;
@@ -1067,6 +1069,9 @@ err_tx:
  *
  **********************************************************************/
 
+static std::atomic<u64> mgmt_intr_count = {0};
+static std::atomic<u64> io_intr_count = {0};
+
 /**
  * ena_intr_msix_mgmnt - MSIX Interrupt Handler for admin/async queue
  * @arg: interrupt number
@@ -1074,6 +1079,7 @@ err_tx:
 static void
 ena_intr_msix_mgmnt(void *arg)
 {
+	mgmt_intr_count++;
 	struct ena_adapter *adapter = (struct ena_adapter *)arg;
 
 	ena_com_admin_q_comp_intr_handler(adapter->ena_dev);
@@ -1092,6 +1098,7 @@ ena_handle_msix(void *arg)
 	struct ena_adapter *adapter = queue->adapter;
 	if_t ifp = adapter->ifp;
 
+	io_intr_count++;
 	if (unlikely((ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
 		return 0;
 
@@ -1106,14 +1113,14 @@ ena_enable_msix(struct ena_adapter *adapter)
 	pci::device *dev = adapter->pdev;
 
 	if (ENA_FLAG_ISSET(ENA_FLAG_MSIX_ENABLED, adapter)) {
-		ena_log(dev, ERR, "Error, MSI-X is already enabled\n");
+		ena_log(dev, ERR, "Error, MSI-X is already enabled");
 		return (EINVAL);
 	}
 
 	/* Reserved the max msix vectors we might need */
 	int msix_vecs = ENA_MAX_MSIX_VEC(adapter->max_num_io_queues);
 
-	ena_log(dev, DBG, "trying to enable MSI-X, vectors: %d\n", msix_vecs);
+	ena_log(dev, DBG, "trying to enable MSI-X, vectors: %d", msix_vecs);
 
 	dev->set_bus_master(true);
         dev->msix_enable();
@@ -1122,14 +1129,14 @@ ena_enable_msix(struct ena_adapter *adapter)
 	if (msix_vecs != dev->msix_get_num_entries()) {
 		if (msix_vecs == ENA_ADMIN_MSIX_VEC) {
 			ena_log(dev, ERR,
-			    "Not enough number of MSI-x allocated: %d\n",
+			    "Not enough number of MSI-x allocated: %d",
 			    msix_vecs);
 			dev->msix_disable();
 			return ENOSPC;
 		}
 		ena_log(dev, ERR,
 		    "Enable only %d MSI-x (out of %d), reduce "
-		    "the number of queues\n",
+		    "the number of queues",
 		    msix_vecs, dev->msix_get_num_entries());
 	}
 
@@ -1171,20 +1178,20 @@ ena_request_mgmnt_irq(struct ena_adapter *adapter)
 	std::vector<msix_vector*> assigned = _msi.request_vectors(1);
 	if (assigned.size() != 1) {
 		_msi.free_vectors(assigned);
-		ena_log(pdev, ERR, "could not request MGMNT irq vector: %d\n", ENA_MGMNT_IRQ_IDX);
+		ena_log(pdev, ERR, "could not request MGMNT irq vector: %d", ENA_MGMNT_IRQ_IDX);
 		return (ENXIO);
 	}
 
 	auto vec = assigned[0];
 	if (!_msi.assign_isr(vec, [adapter]() { ena_intr_msix_mgmnt(adapter); })) {
 		_msi.free_vectors(assigned);
-		ena_log(pdev, ERR, "could not assign MGMNT irq vector isr: %d\n", ENA_MGMNT_IRQ_IDX);
+		ena_log(pdev, ERR, "could not assign MGMNT irq vector isr: %d", ENA_MGMNT_IRQ_IDX);
 		return (ENXIO);
 	}
 
 	if (!_msi.setup_entry(ENA_MGMNT_IRQ_IDX, vec)) {
 		_msi.free_vectors(assigned);
-		ena_log(pdev, ERR, "could not setup MGMNT irq vector entry: %d\n", ENA_MGMNT_IRQ_IDX);
+		ena_log(pdev, ERR, "could not setup MGMNT irq vector entry: %d", ENA_MGMNT_IRQ_IDX);
 		return (ENXIO);
 	}
 
@@ -1200,7 +1207,7 @@ ena_request_io_irq(struct ena_adapter *adapter)
 {
 	if (unlikely(!ENA_FLAG_ISSET(ENA_FLAG_MSIX_ENABLED, adapter))) {
 		ena_log(pdev, ERR,
-		    "failed to request I/O IRQ: MSI-X is not enabled\n");
+		    "failed to request I/O IRQ: MSI-X is not enabled");
 		return (EINVAL);
 	}
 
@@ -1210,23 +1217,23 @@ ena_request_io_irq(struct ena_adapter *adapter)
 	std::vector<msix_vector*> assigned = _msi.request_vectors(vec_num);
 	if (assigned.size() != vec_num) {
 		_msi.free_vectors(assigned);
-		ena_log(pdev, ERR, "could not request %d I/O irq vectors\n", vec_num);
+		ena_log(pdev, ERR, "could not request %d I/O irq vectors", vec_num);
 		return (ENXIO);
 	}
 
 	for (int entry = ENA_IO_IRQ_FIRST_IDX; entry < adapter->msix_vecs; entry++) {
-		ena_irq *irq = &adapter->irq_tbl[entry];
 		auto idx = entry - 1;
 		auto vec = assigned[idx];
-		if (!_msi.assign_isr(vec, [irq]() { ena_handle_msix(&irq->data); })) {
+		auto queue = &adapter->que[idx];
+		if (!_msi.assign_isr(vec, [queue]() { ena_handle_msix(queue); })) {
 			_msi.free_vectors(assigned);
-			ena_log(pdev, ERR, "could not assign I/O irq vector isr: %d\n", entry);
+			ena_log(pdev, ERR, "could not assign I/O irq vector isr: %d", entry);
 			return (ENXIO);
 		}
 
 		if (!_msi.setup_entry(entry, vec)) {
 			_msi.free_vectors(assigned);
-			ena_log(pdev, ERR, "could not setup I/O irq vector entry: %d\n", entry);
+			ena_log(pdev, ERR, "could not setup I/O irq vector entry: %d", entry);
 			return (ENXIO);
 		}
 	}
@@ -1347,21 +1354,21 @@ create_queues_with_size_backoff(struct ena_adapter *adapter)
 		/* Allocate transmit descriptors */
 		rc = ena_setup_all_tx_resources(adapter);
 		if (unlikely(rc != 0)) {
-			ena_log(pdev, ERR, "err_setup_tx\n");
+			ena_log(pdev, ERR, "err_setup_tx");
 			goto err_setup_tx;
 		}
 
 		/* Allocate receive descriptors */
 		rc = ena_setup_all_rx_resources(adapter);
 		if (unlikely(rc != 0)) {
-			ena_log(pdev, ERR, "err_setup_rx\n");
+			ena_log(pdev, ERR, "err_setup_rx");
 			goto err_setup_rx;
 		}
 
 		/* Create IO queues for Rx & Tx */
 		rc = ena_create_io_queues(adapter);
 		if (unlikely(rc != 0)) {
-			ena_log(pdev, ERR, "create IO queues failed\n");
+			ena_log(pdev, ERR, "create IO queues failed");
 			goto err_io_que;
 		}
 
@@ -1378,7 +1385,7 @@ err_setup_tx:
 		 */
 		if (unlikely(rc != ENOMEM)) {
 			ena_log(pdev, ERR,
-			    "Queue creation failed with error code: %d\n", rc);
+			    "Queue creation failed with error code: %d", rc);
 			return (rc);
 		}
 
@@ -1386,7 +1393,7 @@ err_setup_tx:
 		cur_rx_ring_size = adapter->rx_ring[0].ring_size;
 
 		ena_log(pdev, ERR,
-		    "Not enough memory to create queues with sizes TX=%d, RX=%d\n",
+		    "Not enough memory to create queues with sizes TX=%d, RX=%d",
 		    cur_tx_ring_size, cur_rx_ring_size);
 
 		new_tx_ring_size = cur_tx_ring_size;
@@ -1405,13 +1412,13 @@ err_setup_tx:
 		    new_rx_ring_size < ENA_MIN_RING_SIZE) {
 			ena_log(pdev, ERR,
 			    "Queue creation failed with the smallest possible queue size"
-			    "of %d for both queues. Not retrying with smaller queues\n",
+			    "of %d for both queues. Not retrying with smaller queues",
 			    ENA_MIN_RING_SIZE);
 			return (rc);
 		}
 
 		ena_log(pdev, INFO,
-		    "Retrying queue creation with sizes TX=%d, RX=%d\n",
+		    "Retrying queue creation with sizes TX=%d, RX=%d",
 		    new_tx_ring_size, new_rx_ring_size);
 
 		set_io_rings_size(adapter, new_tx_ring_size, new_rx_ring_size);
@@ -1428,22 +1435,22 @@ ena_up(struct ena_adapter *adapter)
 	if (ENA_FLAG_ISSET(ENA_FLAG_DEV_UP, adapter))
 		return (0);
 
-	ena_log(adapter->pdev, INFO, "device is going UP\n");
+	ena_log(adapter->pdev, INFO, "device is going UP");
 
 	/* setup interrupts for IO queues */
 	rc = ena_setup_io_intr(adapter);
 	if (unlikely(rc != 0)) {
-		ena_log(adapter->pdev, ERR, "error setting up IO interrupt\n");
+		ena_log(adapter->pdev, ERR, "error setting up IO interrupt");
 		goto error;
 	}
 	rc = ena_request_io_irq(adapter);
 	if (unlikely(rc != 0)) {
-		ena_log(adapter->pdev, ERR, "err_req_irq\n");
+		ena_log(adapter->pdev, ERR, "err_req_irq");
 		goto error;
 	}
 
 	ena_log(adapter->pdev, INFO,
-	    "Creating %u IO queues. Rx queue size: %d, Tx queue size: %d, LLQ is %s\n",
+	    "Creating %u IO queues. Rx queue size: %d, Tx queue size: %d, LLQ is %s",
 	    adapter->num_io_queues,
 	    adapter->requested_rx_ring_size,
 	    adapter->requested_tx_ring_size,
@@ -1453,7 +1460,7 @@ ena_up(struct ena_adapter *adapter)
 	rc = create_queues_with_size_backoff(adapter);
 	if (unlikely(rc != 0)) {
 		ena_log(adapter->pdev, ERR,
-		    "error creating queues with size backoff\n");
+		    "error creating queues with size backoff");
 		goto err_create_queues_with_backoff;
 	}
 
@@ -1509,10 +1516,10 @@ ena_ioctl(if_t ifp, u_long command, caddr_t data)
 	case SIOCSIFFLAGS:
 		if (ifp->if_flags & IFF_UP) {
 			ifp->if_drv_flags |= IFF_DRV_RUNNING;
-	                ena_log(adapter->pdev, INFO, "device is UP\n");
+	                ena_log(adapter->pdev, INFO, "device is UP");
 		} else {
 			ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
-	                ena_log(adapter->pdev, INFO, "device is DOWN\n");
+	                ena_log(adapter->pdev, INFO, "device is DOWN");
 		}
 		break;
 
@@ -1603,7 +1610,7 @@ ena_setup_ifnet(pci::device *pdev, struct ena_adapter *adapter,
 
 	if_t ifp = adapter->ifp = if_alloc(IFT_ETHER);
 	if (unlikely(ifp == NULL)) {
-		ena_log(pdev, ERR, "can not allocate ifnet structure\n");
+		ena_log(pdev, ERR, "can not allocate ifnet structure");
 		return (ENXIO);
 	}
 	if_initname(ifp, "eth", 0); //Eventually increment some instance ID
@@ -1652,7 +1659,7 @@ ena_down(struct ena_adapter *adapter)
 	if (!ENA_FLAG_ISSET(ENA_FLAG_DEV_UP, adapter))
 		return;
 
-	ena_log(adapter->pdev, INFO, "device is going DOWN\n");
+	ena_log(adapter->pdev, INFO, "device is going DOWN");
 
 	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEV_UP, adapter);
 	adapter->ifp->if_drv_flags &= ~IFF_DRV_RUNNING;
@@ -1663,7 +1670,7 @@ ena_down(struct ena_adapter *adapter)
 	if (ENA_FLAG_ISSET(ENA_FLAG_TRIGGER_RESET, adapter)) {
 		rc = ena_com_dev_reset(adapter->ena_dev, adapter->reset_reason);
 		if (unlikely(rc != 0))
-			ena_log(adapter->pdev, ERR, "Device reset failed\n");
+			ena_log(adapter->pdev, ERR, "Device reset failed");
 	}
 
 	ena_destroy_all_io_queues(adapter);
@@ -1718,7 +1725,7 @@ ena_set_queues_placement_policy(pci::device *pdev, struct ena_com_dev *ena_dev,
 	ena_dev->tx_mem_queue_type = ENA_ADMIN_PLACEMENT_POLICY_HOST;
 
 	ena_log(pdev, INFO,
-		"LLQ is not supported. Using the host mode policy.\n");
+		"LLQ is not supported. Using the host mode policy.");
 	return (0);
 }
 
@@ -1800,7 +1807,7 @@ ena_config_host_info(struct ena_com_dev *ena_dev, pci::device* dev)
 	/* Allocate only the host info */
 	rc = ena_com_allocate_host_info(ena_dev);
 	if (unlikely(rc != 0)) {
-		ena_log(dev, ERR, "Cannot allocate host info\n");
+		ena_log(dev, ERR, "Cannot allocate host info");
 		return;
 	}
 
@@ -1827,9 +1834,9 @@ ena_config_host_info(struct ena_com_dev *ena_dev, pci::device* dev)
 	rc = ena_com_set_host_attributes(ena_dev);
 	if (unlikely(rc != 0)) {
 		if (rc == EOPNOTSUPP)
-			ena_log(dev, WARN, "Cannot set host attributes\n");
+			ena_log(dev, WARN, "Cannot set host attributes");
 		else
-			ena_log(dev, ERR, "Cannot set host attributes\n");
+			ena_log(dev, ERR, "Cannot set host attributes");
 
 		goto err;
 	}
@@ -1848,7 +1855,7 @@ ena_enable_msix_and_set_admin_interrupts(struct ena_adapter *adapter)
 
 	rc = ena_enable_msix(adapter);
 	if (unlikely(rc != 0)) {
-		ena_log(adapter->pdev, ERR, "Error with MSI-X enablement\n");
+		ena_log(adapter->pdev, ERR, "Error with MSI-X enablement");
 		return (rc);
 	}
 
@@ -1856,7 +1863,7 @@ ena_enable_msix_and_set_admin_interrupts(struct ena_adapter *adapter)
 
 	rc = ena_request_mgmnt_irq(adapter);
 	if (unlikely(rc != 0)) {
-		ena_log(adapter->pdev, ERR, "Cannot setup mgmnt queue intr\n");
+		ena_log(adapter->pdev, ERR, "Cannot setup mgmnt queue intr");
 		goto err_disable_msix;
 	}
 
@@ -1907,7 +1914,7 @@ check_for_missing_keep_alive(struct ena_adapter *adapter)
 	u64 timestamp = adapter->keep_alive_timestamp.load(std::memory_order_acquire);
 	u64 now = osv::clock::uptime::now().time_since_epoch().count() - timestamp;
 	if (unlikely(now > timestamp + adapter->keep_alive_timeout)) {
-		ena_log(adapter->pdev, ERR, "Keep alive watchdog timeout.\n");
+		ena_log(adapter->pdev, ERR, "Keep alive watchdog timeout.");
 		counter_u64_add(adapter->dev_stats.wd_expired, 1);
 		ena_trigger_reset(adapter, ENA_REGS_RESET_KEEP_ALIVE_TO);
 	}
@@ -1919,7 +1926,7 @@ check_for_admin_com_state(struct ena_adapter *adapter)
 {
 	if (unlikely(ena_com_get_admin_running_state(adapter->ena_dev) == false)) {
 		ena_log(adapter->pdev, ERR,
-		    "ENA admin queue is not in running state!\n");
+		    "ENA admin queue is not in running state!");
 		counter_u64_add(adapter->dev_stats.admin_q_pause, 1);
 		ena_trigger_reset(adapter, ENA_REGS_RESET_ADMIN_TO);
 	}
@@ -1940,8 +1947,8 @@ check_for_rx_interrupt_queue(struct ena_adapter *adapter,
 	if (rx_ring->no_interrupt_event_cnt ==
 	    ENA_MAX_NO_INTERRUPT_ITERATIONS) {
 		ena_log(adapter->pdev, ERR,
-		    "Potential MSIX issue on Rx side Queue = %d. Reset the device\n",
-		    rx_ring->qid);
+		    "Potential MSIX issue on Rx side Queue = %d, mgmt_intr_count=%lu, io_intr_count=%lu. Reset the device",
+		    rx_ring->qid, mgmt_intr_count.load(), io_intr_count.load());
 		ena_trigger_reset(adapter, ENA_REGS_RESET_MISS_INTERRUPT);
 		return (EIO);
 	}
@@ -1975,7 +1982,7 @@ check_missing_comp_in_tx_queue(struct ena_adapter *adapter,
 			 */
 			ena_log(pdev, ERR,
 			    "Potential MSIX issue on Tx side Queue = %d. "
-			    "Reset the device\n",
+			    "Reset the device",
 			    tx_ring->qid);
 			ena_trigger_reset(adapter,
 			    ENA_REGS_RESET_MISS_INTERRUPT);
@@ -1999,7 +2006,7 @@ check_missing_comp_in_tx_queue(struct ena_adapter *adapter,
 	if (unlikely(missed_tx > adapter->missing_tx_threshold)) {
 		ena_log(pdev, ERR,
 		    "The number of lost tx completion is above the threshold "
-		    "(%d > %d). Reset the device\n",
+		    "(%d > %d). Reset the device",
 		    missed_tx, adapter->missing_tx_threshold);
 		ena_trigger_reset(adapter, ENA_REGS_RESET_MISS_TX_CMPL);
 		rc = EIO;
@@ -2095,7 +2102,7 @@ check_for_empty_rx_ring(struct ena_adapter *adapter)
 				counter_u64_add(rx_ring->rx_stats.empty_rx_ring, 1);
 
 				ena_log(adapter->pdev, WARN,
-				    "Rx ring %d is stalled. Triggering the refill function\n",
+				    "Rx ring %d is stalled. Triggering the refill function",
 				    i);
 
 				auto queue = rx_ring->que;
@@ -2166,11 +2173,11 @@ ena_timer_service(void *data)
 		if (ena_com_validate_version(adapter->ena_dev) ==
 		    ENA_COM_TIMER_EXPIRED) {
 			ena_log(adapter->pdev, WARN,
-			    "FW unresponsive, skipping reset\n");
+			    "FW unresponsive, skipping reset");
 			ENA_TIMER_RESET(adapter);
 			return;
 		}
-		ena_log(adapter->pdev, WARN, "Trigger reset is on\n");
+		ena_log(adapter->pdev, WARN, "Trigger reset is on");
 		taskqueue_enqueue(adapter->reset_tq, &adapter->reset_task);
 		return;
 	}
@@ -2246,13 +2253,13 @@ ena_device_validate_params(struct ena_adapter *adapter,
 {
 	if (memcmp(get_feat_ctx->dev_attr.mac_addr, adapter->mac_addr,
 	    ETHER_ADDR_LEN) != 0) {
-		ena_log(adapter->pdev, ERR, "Error, mac addresses differ\n");
+		ena_log(adapter->pdev, ERR, "Error, mac addresses differ");
 		return (EINVAL);
 	}
 
 	if (get_feat_ctx->dev_attr.max_mtu < adapter->ifp->if_mtu) {
 		ena_log(adapter->pdev, ERR,
-		    "Error, device max mtu is smaller than ifp MTU\n");
+		    "Error, device max mtu is smaller than ifp MTU");
 		return (EINVAL);
 	}
 
@@ -2273,7 +2280,7 @@ ena_restore_device(struct ena_adapter *adapter)
 
 	rc = ena_device_init(adapter, dev, &get_feat_ctx, &wd_active);
 	if (rc != 0) {
-		ena_log(dev, ERR, "Cannot initialize device\n");
+		ena_log(dev, ERR, "Cannot initialize device");
 		goto err;
 	}
 	/*
@@ -2285,7 +2292,7 @@ ena_restore_device(struct ena_adapter *adapter)
 
 	rc = ena_device_validate_params(adapter, &get_feat_ctx);
 	if (rc != 0) {
-		ena_log(dev, ERR, "Validation of device parameters failed\n");
+		ena_log(dev, ERR, "Validation of device parameters failed");
 		goto err_device_destroy;
 	}
 
@@ -2296,7 +2303,7 @@ ena_restore_device(struct ena_adapter *adapter)
 
 	rc = ena_enable_msix_and_set_admin_interrupts(adapter);
 	if (rc != 0) {
-		ena_log(dev, ERR, "Enable MSI-X failed\n");
+		ena_log(dev, ERR, "Enable MSI-X failed");
 		goto err_device_destroy;
 	}
 
@@ -2315,7 +2322,7 @@ ena_restore_device(struct ena_adapter *adapter)
 	if (ENA_FLAG_ISSET(ENA_FLAG_DEV_UP_BEFORE_RESET, adapter)) {
 		rc = ena_up(adapter);
 		if (rc != 0) {
-			ena_log(dev, ERR, "Failed to create I/O queues\n");
+			ena_log(dev, ERR, "Failed to create I/O queues");
 			goto err_disable_msix;
 		}
 	}
@@ -2348,7 +2355,7 @@ err_device_destroy:
 err:
 	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_DEVICE_RUNNING, adapter);
 	ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_ONGOING_RESET, adapter);
-	ena_log(dev, ERR, "Reset attempt failed. Can not reset the device\n");
+	ena_log(dev, ERR, "Reset attempt failed. Can not reset the device");
 
 	return (rc);
 }
@@ -2364,7 +2371,7 @@ ena_reset_task(void *arg, int pending)
 		ena_restore_device(adapter);
 
 		ena_log(adapter->pdev, INFO,
-		    "Device reset completed successfully, Driver info: %s\n",
+		    "Device reset completed successfully, Driver info: %s",
 		    ena_version);
 	}
 	ENA_LOCK_UNLOCK();
@@ -2425,7 +2432,7 @@ ena_attach(pci::device* pdev, ena_adapter **_adapter)
 	adapter->missing_tx_threshold = ENA_DEFAULT_TX_CMP_THRESHOLD;
 
 	if (version_printed++ == 0)
-		ena_log(pdev, INFO, "%s\n", ena_version);
+		ena_log(pdev, INFO, "%s", ena_version);
 
 	/* Allocate memory for ena_dev structure */
 	ena_dev = static_cast<ena_com_dev*>(malloc(sizeof(struct ena_com_dev), M_DEVBUF,
@@ -2437,7 +2444,7 @@ ena_attach(pci::device* pdev, ena_adapter **_adapter)
         adapter->registers = pdev->get_bar(ENA_REG_BAR + 1);
 	if (unlikely(adapter->registers == NULL)) {
 		ena_log(pdev, ERR,
-		    "unable to allocate bus resource: registers!\n");
+		    "unable to allocate bus resource: registers!");
 		rc = ENOMEM;
 		goto err_dev_free;
 	}
@@ -2450,7 +2457,7 @@ ena_attach(pci::device* pdev, ena_adapter **_adapter)
 	((struct ena_bus *)(ena_dev->bus))->reg_bar = adapter->registers;
 
 	if (unlikely(((struct ena_bus *)(ena_dev->bus))->reg_bar == 0)) {
-		ena_log(pdev, ERR, "failed to pmap registers bar\n");
+		ena_log(pdev, ERR, "failed to pmap registers bar");
 		rc = ENXIO;
 		goto err_bus_free;
 	}
@@ -2461,7 +2468,7 @@ ena_attach(pci::device* pdev, ena_adapter **_adapter)
 	/* Device initialization */
 	rc = ena_device_init(adapter, pdev, &get_feat_ctx, &adapter->wd_active);
 	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "ENA device init failed! (err: %d)\n", rc);
+		ena_log(pdev, ERR, "ENA device init failed! (err: %d)", rc);
 		rc = ENXIO;
 		goto err_bus_free;
 	}
@@ -2493,6 +2500,7 @@ ena_attach(pci::device* pdev, ena_adapter **_adapter)
 	adapter->max_rx_sgl_size = calc_queue_ctx.max_rx_sgl_size;
 
 	adapter->max_num_io_queues = max_num_io_queues;
+	ena_log(pdev, INFO, "ena_attach: set max_num_io_queues to %d", max_num_io_queues);
 
 	adapter->buf_ring_size = ENA_DEFAULT_BUF_RING_SIZE;
 
@@ -2512,7 +2520,7 @@ ena_attach(pci::device* pdev, ena_adapter **_adapter)
 	rc = ena_enable_msix_and_set_admin_interrupts(adapter);
 	if (unlikely(rc != 0)) {
 		ena_log(pdev, ERR,
-		    "Failed to enable and set the admin interrupts\n");
+		    "Failed to enable and set the admin interrupts");
 		goto err_io_free;
 	}
 	/* By default all of allocated MSIX vectors are actively used */
@@ -2530,7 +2538,7 @@ ena_attach(pci::device* pdev, ena_adapter **_adapter)
 	/* setup network interface */
 	rc = ena_setup_ifnet(pdev, adapter, &get_feat_ctx);
 	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "Error with network interface setup\n");
+		ena_log(pdev, ERR, "Error with network interface setup");
 		goto err_msix_free;
 	}
 
@@ -2647,12 +2655,12 @@ ena_update_on_link_change(void *adapter_data,
 	    ENA_ADMIN_AENQ_LINK_CHANGE_DESC_LINK_STATUS_MASK;
 
 	if (status != 0) {
-		ena_log(adapter->pdev, INFO, "link is UP\n");
+		ena_log(adapter->pdev, INFO, "link is UP");
 		ENA_FLAG_SET_ATOMIC(ENA_FLAG_LINK_UP, adapter);
 		if (!ENA_FLAG_ISSET(ENA_FLAG_ONGOING_RESET, adapter))
 			if_link_state_change(ifp, LINK_STATE_UP);
 	} else {
-		ena_log(adapter->pdev, INFO, "link is DOWN\n");
+		ena_log(adapter->pdev, INFO, "link is DOWN");
 		if_link_state_change(ifp, LINK_STATE_DOWN);
 		ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_LINK_UP, adapter);
 	}
@@ -2665,7 +2673,7 @@ ena_notification(void *adapter_data, struct ena_admin_aenq_entry *aenq_e)
 	struct ena_admin_ena_hw_hints *hints;
 
 	ENA_WARN(aenq_e->aenq_common_desc.group != ENA_ADMIN_NOTIFICATION,
-	    adapter->ena_dev, "Invalid group(%x) expected %x\n",
+	    adapter->ena_dev, "Invalid group(%x) expected %x",
 	    aenq_e->aenq_common_desc.group, ENA_ADMIN_NOTIFICATION);
 
 	switch (aenq_e->aenq_common_desc.syndrome) {
@@ -2676,7 +2684,7 @@ ena_notification(void *adapter_data, struct ena_admin_aenq_entry *aenq_e)
 		break;
 	default:
 		ena_log(adapter->pdev, ERR,
-		    "Invalid aenq notification link state %d\n",
+		    "Invalid aenq notification link state %d",
 		    aenq_e->aenq_common_desc.syndrome);
 	}
 }
@@ -2691,7 +2699,7 @@ unimplemented_aenq_handler(void *adapter_data,
 	//struct ena_adapter *adapter = (struct ena_adapter *)adapter_data;
 
 	ena_log(adapter->pdev, ERR,
-	    "Unknown event was received or event with unimplemented handler\n");
+	    "Unknown event was received or event with unimplemented handler");
 }
 
 /*
@@ -2719,7 +2727,7 @@ ena_device_init(struct ena_adapter *adapter, pci::device *pdev,
 
 	rc = ena_com_mmio_reg_read_request_init(ena_dev);
 	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "failed to init mmio read less\n");
+		ena_log(pdev, ERR, "failed to init mmio read less");
 		return (rc);
 	}
 
@@ -2732,13 +2740,13 @@ ena_device_init(struct ena_adapter *adapter, pci::device *pdev,
 
 	rc = ena_com_dev_reset(ena_dev, ENA_REGS_RESET_NORMAL);
 	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "Can not reset device\n");
+		ena_log(pdev, ERR, "Can not reset device");
 		goto err_mmio_read_less;
 	}
 
 	rc = ena_com_validate_version(ena_dev);
 	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "device version is too low\n");
+		ena_log(pdev, ERR, "device version is too low");
 		goto err_mmio_read_less;
 	}
 
@@ -2746,7 +2754,7 @@ ena_device_init(struct ena_adapter *adapter, pci::device *pdev,
 	rc = ena_com_admin_init(ena_dev, &aenq_handlers);
 	if (unlikely(rc != 0)) {
 		ena_log(pdev, ERR,
-		    "Can not initialize ena admin queue with device\n");
+		    "Can not initialize ena admin queue with device");
 		goto err_mmio_read_less;
 	}
 
@@ -2763,7 +2771,7 @@ ena_device_init(struct ena_adapter *adapter, pci::device *pdev,
 	rc = ena_com_get_dev_attr_feat(ena_dev, get_feat_ctx);
 	if (unlikely(rc != 0)) {
 		ena_log(pdev, ERR,
-		    "Cannot get attribute for ena device rc: %d\n", rc);
+		    "Cannot get attribute for ena device rc: %d", rc);
 		goto err_admin_init;
 	}
 
@@ -2776,7 +2784,7 @@ ena_device_init(struct ena_adapter *adapter, pci::device *pdev,
 	aenq_groups &= get_feat_ctx->aenq.supported_groups;
 	rc = ena_com_set_aenq_config(ena_dev, aenq_groups);
 	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "Cannot configure aenq groups rc: %d\n", rc);
+		ena_log(pdev, ERR, "Cannot configure aenq groups rc: %d", rc);
 		goto err_admin_init;
 	}
 
@@ -2784,7 +2792,7 @@ ena_device_init(struct ena_adapter *adapter, pci::device *pdev,
 
 	rc = ena_set_queues_placement_policy(pdev, ena_dev, &get_feat_ctx->llq, nullptr);
 	if (unlikely(rc != 0)) {
-		ena_log(pdev, ERR, "Failed to set placement policy\n");
+		ena_log(pdev, ERR, "Failed to set placement policy");
 		goto err_admin_init;
 	}
 
