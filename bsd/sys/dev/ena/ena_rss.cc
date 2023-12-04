@@ -34,7 +34,120 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
+#include <bsd/sys/sys/libkern.h>
+
+#define RSS 1
 #include "ena_rss.h"
+
+/*
+ * Maximum key size used throughout.  It's OK for hardware to use only the
+ * first 16 bytes, which is all that's required for IPv4.
+ */
+#define RSS_KEYSIZE     40
+
+/*
+ * Supported RSS hash functions.
+ */
+#define RSS_HASH_NAIVE          0x00000001      /* Poor but fast hash. */
+#define RSS_HASH_TOEPLITZ       0x00000002      /* Required by RSS. */
+
+static uint8_t rss_key[RSS_KEYSIZE] = {
+        0x6d, 0x5a, 0x56, 0xda, 0x25, 0x5b, 0x0e, 0xc2,
+        0x41, 0x67, 0x25, 0x3d, 0x43, 0xa3, 0x8f, 0xb0,
+        0xd0, 0xca, 0x2b, 0xcb, 0xae, 0x7b, 0x30, 0xb4,
+        0x77, 0xcb, 0x2d, 0xa3, 0x80, 0x30, 0xf2, 0x0c,
+        0x6a, 0x42, 0xb7, 0x3b, 0xbe, 0xac, 0x01, 0xfa,
+};
+
+/*
+ * Toeplitz is the only required hash function in the RSS spec, so use it by
+ * default.
+ */
+static u_int    rss_hashalgo = RSS_HASH_TOEPLITZ;
+
+static u_int    rss_mask;
+/*
+ * Variable exists just for reporting rss_bits in a user-friendly way.
+ */
+static u_int    rss_buckets;
+
+void
+rss_getkey(uint8_t *key)
+{
+
+        bcopy(rss_key, key, sizeof(rss_key));
+}
+
+/*
+ * Query the RSS hash algorithm.
+ */
+u_int
+rss_gethashalgo(void)
+{
+        return (rss_hashalgo);
+}
+
+/*
+ * Query the RSS layer bucket associated with the given
+ * entry in the RSS hash space.
+ *
+ * The RSS indirection table is 0 .. rss_buckets-1,
+ * covering the low 'rss_bits' of the total 128 slot
+ * RSS indirection table.  So just mask off rss_bits and
+ * return that.
+ *
+ * NIC drivers can then iterate over the 128 slot RSS
+ * indirection table and fetch which RSS bucket to
+ * map it to.  This will typically be a CPU queue
+ */
+u_int
+rss_get_indirection_to_bucket(u_int index)
+{
+        return (index & rss_mask);
+}
+
+/*
+ * Query the RSS bucket associated with an RSS hash.
+ */
+u_int
+rss_getbucket(u_int hash)
+{
+
+        return (hash & rss_mask);
+}
+
+/*
+ * Query the RSS bucket associated with the given hash value and
+ * type.
+ */
+int
+rss_hash2bucket(uint32_t hash_val, uint32_t hash_type, uint32_t *bucket_id)
+{
+        switch (hash_type) {
+        case M_HASHTYPE_RSS_IPV4:
+        case M_HASHTYPE_RSS_TCP_IPV4:
+        case M_HASHTYPE_RSS_UDP_IPV4:
+        case M_HASHTYPE_RSS_IPV6:
+        case M_HASHTYPE_RSS_TCP_IPV6:
+        case M_HASHTYPE_RSS_UDP_IPV6:
+                *bucket_id = rss_getbucket(hash_val);
+                return (0);
+        default:
+                return (-1);
+        }
+}
+
+/*
+ * Query the number of buckets; this may be used by both network device
+ * drivers, which will need to populate hardware shadows of the software
+ * indirection table, and the network stack itself (such as when deciding how
+ * many connection groups to allocate).
+ */
+u_int
+rss_getnumbuckets(void)
+{
+        return (rss_buckets);
+}
 
 /*
  * This function should generate unique key for the whole driver.
@@ -51,11 +164,7 @@ ena_rss_key_fill(void *key, size_t size)
 	    ("Requested more bytes than ENA RSS key can hold"));
 
 	if (!key_generated) {
-#if __FreeBSD_version > 1200028
-		arc4random_buf(default_key, ENA_HASH_KEY_SIZE);
-#else
 		arc4rand(default_key, ENA_HASH_KEY_SIZE, 0);
-#endif
 		key_generated = true;
 	}
 
@@ -106,9 +215,10 @@ ena_rss_get_hash_key(struct ena_com_dev *ena_dev, u8 *key)
 static int
 ena_rss_init_default(struct ena_adapter *adapter)
 {
+	//TODO: Initialize rss_mask, rss_buckets and others done by rss_init()
 	struct ena_com_dev *ena_dev = adapter->ena_dev;
-	device_t dev = adapter->pdev;
 	int qid, rc, i;
+	uint8_t rss_algo;
 
 	rc = ena_com_rss_init(ena_dev, ENA_RX_RSS_TABLE_LOG_SIZE);
 	if (unlikely(rc != 0)) {
@@ -132,7 +242,7 @@ ena_rss_init_default(struct ena_adapter *adapter)
 
 
 #ifdef RSS
-	uint8_t rss_algo = rss_gethashalgo();
+	rss_algo = rss_gethashalgo();
 	if (rss_algo == RSS_HASH_TOEPLITZ) {
 		uint8_t hash_key[RSS_KEYSIZE];
 
@@ -199,39 +309,6 @@ ena_rss_configure(struct ena_adapter *adapter)
 	return (0);
 }
 
-static void
-ena_rss_init_default_deferred(void *arg)
-{
-	struct ena_adapter *adapter;
-	devclass_t dc;
-	int max;
-	int rc;
-
-	dc = devclass_find("ena");
-	if (unlikely(dc == NULL)) {
-		ena_log_raw(ERR, "SYSINIT: %s: No devclass ena\n", __func__);
-		return;
-	}
-
-	max = devclass_get_maxunit(dc);
-	while (max-- >= 0) {
-		adapter = devclass_get_softc(dc, max);
-		if (adapter != NULL) {
-			rc = ena_rss_init_default(adapter);
-			ENA_FLAG_SET_ATOMIC(ENA_FLAG_RSS_ACTIVE, adapter);
-			if (unlikely(rc != 0)) {
-				ena_log(adapter->pdev, WARN,
-				    "WARNING: RSS was not properly initialized,"
-				    " it will affect bandwidth\n");
-				ENA_FLAG_CLEAR_ATOMIC(ENA_FLAG_RSS_ACTIVE,
-				    adapter);
-			}
-		}
-	}
-}
-SYSINIT(ena_rss_init, SI_SUB_KICK_SCHEDULER, SI_ORDER_SECOND,
-    ena_rss_init_default_deferred, NULL);
-
 int
 ena_rss_indir_get(struct ena_adapter *adapter, uint32_t *table)
 {
@@ -286,7 +363,7 @@ ena_rss_indir_init(struct ena_adapter *adapter)
 	int rc;
 
 	if (indir == NULL) {
-		adapter->rss_indir = indir = malloc(sizeof(struct ena_indir),
+		adapter->rss_indir = indir = (ena_indir*)malloc(sizeof(struct ena_indir),
 		    M_DEVBUF, M_WAITOK | M_ZERO);
 		if (indir == NULL)
 			return (ENOMEM);

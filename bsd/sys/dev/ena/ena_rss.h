@@ -37,7 +37,7 @@
 #include <sys/types.h>
 
 #ifdef RSS
-#include <net/rss_config.h>
+//#include <net/rss_config.h>
 #endif
 
 #include "ena.h"

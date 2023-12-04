@@ -2493,6 +2493,67 @@ int ena_com_get_hash_key(struct ena_com_dev *ena_dev, u8 *key)
 	return 0;
 }
 
+int ena_com_set_default_hash_ctrl(struct ena_com_dev *ena_dev)
+{
+        struct ena_rss *rss = &ena_dev->rss;
+        struct ena_admin_feature_rss_hash_control *hash_ctrl =
+                rss->hash_ctrl;
+        u16 available_fields = 0;
+        int rc, i;
+
+        /* Get the supported hash input */
+        rc = ena_com_get_hash_ctrl(ena_dev, (ena_admin_flow_hash_proto)0, NULL);
+        if (unlikely(rc))
+                return rc;
+
+        hash_ctrl->selected_fields[ENA_ADMIN_RSS_TCP4].fields =
+                ENA_ADMIN_RSS_L3_SA | ENA_ADMIN_RSS_L3_DA |
+                ENA_ADMIN_RSS_L4_DP | ENA_ADMIN_RSS_L4_SP;
+
+        hash_ctrl->selected_fields[ENA_ADMIN_RSS_UDP4].fields =
+                ENA_ADMIN_RSS_L3_SA | ENA_ADMIN_RSS_L3_DA |
+                ENA_ADMIN_RSS_L4_DP | ENA_ADMIN_RSS_L4_SP;
+
+        hash_ctrl->selected_fields[ENA_ADMIN_RSS_TCP6].fields =
+                ENA_ADMIN_RSS_L3_SA | ENA_ADMIN_RSS_L3_DA |
+                ENA_ADMIN_RSS_L4_DP | ENA_ADMIN_RSS_L4_SP;
+
+        hash_ctrl->selected_fields[ENA_ADMIN_RSS_UDP6].fields =
+                ENA_ADMIN_RSS_L3_SA | ENA_ADMIN_RSS_L3_DA |
+                ENA_ADMIN_RSS_L4_DP | ENA_ADMIN_RSS_L4_SP;
+
+        hash_ctrl->selected_fields[ENA_ADMIN_RSS_IP4].fields =
+                ENA_ADMIN_RSS_L3_SA | ENA_ADMIN_RSS_L3_DA;
+
+        hash_ctrl->selected_fields[ENA_ADMIN_RSS_IP6].fields =
+                ENA_ADMIN_RSS_L3_SA | ENA_ADMIN_RSS_L3_DA;
+
+        hash_ctrl->selected_fields[ENA_ADMIN_RSS_IP4_FRAG].fields =
+                ENA_ADMIN_RSS_L3_SA | ENA_ADMIN_RSS_L3_DA;
+
+        hash_ctrl->selected_fields[ENA_ADMIN_RSS_NOT_IP].fields =
+                ENA_ADMIN_RSS_L2_DA | ENA_ADMIN_RSS_L2_SA;
+
+        for (i = 0; i < ENA_ADMIN_RSS_PROTO_NUM; i++) {
+                available_fields = hash_ctrl->selected_fields[i].fields &
+                                hash_ctrl->supported_fields[i].fields;
+                if (available_fields != hash_ctrl->selected_fields[i].fields) {
+                        ena_trc_err(ena_dev, "Hash control doesn't support all the desire configuration. proto %x supported %x selected %x\n",
+                                    i, hash_ctrl->supported_fields[i].fields,
+                                    hash_ctrl->selected_fields[i].fields);
+                        return ENA_COM_UNSUPPORTED;
+                }
+        }
+
+        rc = ena_com_set_hash_ctrl(ena_dev);
+
+        /* In case of failure, restore the old hash ctrl */
+        if (unlikely(rc))
+                ena_com_get_hash_ctrl(ena_dev, (ena_admin_flow_hash_proto)0, NULL);
+
+        return rc;
+}
+
 int ena_com_get_hash_ctrl(struct ena_com_dev *ena_dev,
 			  enum ena_admin_flow_hash_proto proto,
 			  u16 *fields)

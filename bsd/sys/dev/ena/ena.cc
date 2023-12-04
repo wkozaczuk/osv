@@ -75,8 +75,10 @@ __FBSDID("$FreeBSD$");
 //#define ENA_LOG_ENABLE 1
 //#define ENA_LOG_IO_ENABLE 1
 
+//#define RSS 1
 #include "ena.h"
 #include "ena_datapath.h"
+#include "ena_rss.h"
 
 #include <osv/mmu.hh>
 #include <osv/mempool.hh>
@@ -95,6 +97,7 @@ extern "C" {
 struct buf_ring *buf_ring_alloc(int count, int type, int flags,
     struct mtx *);
 void buf_ring_free(struct buf_ring *br, int type);
+u_int rss_getnumbuckets(void);
 }
 
 
@@ -463,6 +466,9 @@ ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 	ENA_RING_MTX_UNLOCK(tx_ring);
 
 	/* Allocate taskqueues */
+#ifdef RSS
+//Pin cpu of the thread to what is in que->cpu_mask
+#endif
 	tx_ring->enqueue_thread = sched::thread::make([tx_ring] { enqueue_work(tx_ring); },
 		sched::thread::attr().name("ena_tx_enque_" + std::to_string(que->id)));
 	tx_ring->enqueue_stop = false;
@@ -1041,6 +1047,9 @@ ena_create_io_queues(struct ena_adapter *adapter)
 	for (i = 0; i < adapter->num_io_queues; i++) {
 		queue = &adapter->que[i];
 
+#ifdef RSS
+		cpu_mask = &queue->cpu_mask; //Pin
+#endif
 		queue->cleanup_thread = sched::thread::make([queue] { cleanup_work(queue); },
 			sched::thread::attr().name("ena_cleanup_queue_" + std::to_string(i)));
 		queue->cleanup_stop = false;
@@ -1155,12 +1164,37 @@ ena_setup_mgmnt_intr(struct ena_adapter *adapter)
 static int
 ena_setup_io_intr(struct ena_adapter *adapter)
 {
+#ifdef RSS
+	int num_buckets = rss_getnumbuckets();
+	static int last_bind = 0;
+	int cur_bind;
+	int idx;
+
+	if (adapter->first_bind < 0) {
+		adapter->first_bind = last_bind;
+		last_bind = (last_bind + adapter->num_io_queues) % num_buckets;
+	}
+	cur_bind = adapter->first_bind;
+#endif
+
 	for (int i = 0; i < adapter->num_io_queues; i++) {
 		int irq_idx = ENA_IO_IRQ_IDX(i);
 
 		adapter->irq_tbl[irq_idx].data = &adapter->que[i];
 		adapter->irq_tbl[irq_idx].vector = irq_idx;
 		adapter->irq_tbl[irq_idx].mvector = nullptr;
+
+#ifdef RSS
+		adapter->que[i].cpu = adapter->irq_tbl[irq_idx].cpu =
+		    rss_getcpu(cur_bind);
+		cur_bind = (cur_bind + 1) % num_buckets;
+		CPU_SETOF(adapter->que[i].cpu, &adapter->que[i].cpu_mask);
+
+		for (idx = 0; idx < MAXMEMDOM; ++idx) {
+			if (CPU_ISSET(adapter->que[i].cpu, &cpuset_domain[idx]))
+				break;
+		}
+#endif /* RSS */
 
 		adapter->que[i].domain = -1;
 	}
@@ -1234,6 +1268,18 @@ ena_request_io_irq(struct ena_adapter *adapter)
 			ena_log(pdev, ERR, "could not setup I/O irq vector entry: %d", entry);
 			return (ENXIO);
 		}
+#ifdef RSS
+		rc = bus_bind_intr(adapter->pdev, irq->res, irq->cpu);
+		if (unlikely(rc != 0)) {
+			ena_log(pdev, ERR,
+			    "failed to bind interrupt handler for irq %ju to cpu %d: %d\n",
+			    rman_get_start(irq->res), irq->cpu, rc);
+			goto err;
+		}
+
+		ena_log(pdev, INFO, "queue %d - cpu %d\n",
+		    i - ENA_IO_IRQ_FIRST_IDX, irq->cpu);
+#endif
 	}
 	//
 	//Save assigned msix vectors
@@ -1311,7 +1357,17 @@ ena_unmask_all_io_irqs(struct ena_adapter *adapter)
 static int
 ena_up_complete(struct ena_adapter *adapter)
 {
-	int rc = ena_change_mtu(adapter->ifp, adapter->ifp->if_mtu);
+	int rc;
+	if (likely(ENA_FLAG_ISSET(ENA_FLAG_RSS_ACTIVE, adapter))) {
+		rc = ena_rss_configure(adapter);
+		if (rc != 0) {
+			ena_log(adapter->pdev, ERR,
+			    "Failed to configure RSS\n");
+			return (rc);
+		}
+	}
+
+	rc = ena_change_mtu(adapter->ifp, adapter->ifp->if_mtu);
 	if (unlikely(rc != 0))
 		return (rc);
 
@@ -1708,6 +1764,11 @@ ena_calc_max_io_queue_num(pci::device *pdev, struct ena_com_dev *ena_dev,
 	max_num_io_queues = min_t(uint32_t, max_num_io_queues, io_tx_cq_num);
 	/* 1 IRQ for mgmnt and 1 IRQ for each TX/RX pair */
 	max_num_io_queues = min_t(uint32_t, max_num_io_queues, pdev->msix_get_num_entries() - 1);
+
+#ifdef RSS
+	max_num_io_queues = min_t(uint32_t, max_num_io_queues,
+	    rss_getnumbuckets());
+#endif
 
 	return (max_num_io_queues);
 }

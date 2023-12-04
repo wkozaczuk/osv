@@ -35,6 +35,10 @@ __FBSDID("$FreeBSD$");
 
 #include "ena.h"
 #include "ena_datapath.h"
+#ifdef RSS
+#include <net/rss_config.h>
+#endif /* RSS */
+#define RSS 1
 
 #include <osv/sched.hh>
 
@@ -42,6 +46,9 @@ static inline void critical_enter()  { sched::preempt_disable(); }
 static inline void critical_exit() { sched::preempt_enable(); }
 
 #include <sys/buf_ring.h>
+
+extern int
+rss_hash2bucket(uint32_t hash_val, uint32_t hash_type, uint32_t *bucket_id);
 
 //#include <netinet6/ip6_var.h>
 
@@ -131,6 +138,9 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 	struct ena_ring *tx_ring;
 	int ret, is_br_empty;
 	uint32_t i;
+#ifdef RSS
+	uint32_t bucket_id;
+#endif
 
 	if (unlikely((adapter->ifp->if_drv_flags & IFF_DRV_RUNNING) == 0))
 		return (ENODEV);
@@ -142,6 +152,12 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 	 * It should improve performance.
 	 */
 	if (M_HASHTYPE_GET(m) != M_HASHTYPE_NONE) {
+#ifdef RSS
+		if (rss_hash2bucket(m->M_dat.MH.MH_pkthdr.flowid, M_HASHTYPE_GET(m),
+		    &bucket_id) == 0)
+			i = bucket_id % adapter->num_io_queues;
+		else
+#endif
 		i = m->M_dat.MH.MH_pkthdr.flowid % adapter->num_io_queues;
 	} else {
 		i = sched::cpu::current()->id % adapter->num_io_queues;
@@ -327,6 +343,71 @@ ena_tx_cleanup(struct ena_ring *tx_ring)
 	return (work_done);
 }
 
+static void
+ena_rx_hash_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_ctx *ena_rx_ctx,
+    struct mbuf *mbuf)
+{
+	struct ena_adapter *adapter = rx_ring->adapter;
+
+	if (likely(ENA_FLAG_ISSET(ENA_FLAG_RSS_ACTIVE, adapter))) {
+		mbuf->M_dat.MH.MH_pkthdr.flowid = ena_rx_ctx->hash;
+
+#ifdef RSS
+		/*
+		 * Hardware and software RSS are in agreement only when both are
+		 * configured to Toeplitz algorithm.  This driver configures
+		 * that algorithm only when software RSS is enabled and uses it.
+		 */
+		if (adapter->ena_dev->rss.hash_func != ENA_ADMIN_TOEPLITZ &&
+		    ena_rx_ctx->l3_proto != ENA_ETH_IO_L3_PROTO_UNKNOWN) {
+			M_HASHTYPE_SET(mbuf, M_HASHTYPE_OPAQUE_HASH);
+			return;
+		}
+#endif
+
+		if (ena_rx_ctx->frag &&
+		    (ena_rx_ctx->l3_proto != ENA_ETH_IO_L3_PROTO_UNKNOWN)) {
+			M_HASHTYPE_SET(mbuf, M_HASHTYPE_OPAQUE_HASH);
+			return;
+		}
+
+		switch (ena_rx_ctx->l3_proto) {
+		case ENA_ETH_IO_L3_PROTO_IPV4:
+			switch (ena_rx_ctx->l4_proto) {
+			case ENA_ETH_IO_L4_PROTO_TCP:
+				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_TCP_IPV4);
+				break;
+			case ENA_ETH_IO_L4_PROTO_UDP:
+				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_UDP_IPV4);
+				break;
+			default:
+				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_IPV4);
+			}
+			break;
+		case ENA_ETH_IO_L3_PROTO_IPV6:
+			switch (ena_rx_ctx->l4_proto) {
+			case ENA_ETH_IO_L4_PROTO_TCP:
+				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_TCP_IPV6);
+				break;
+			case ENA_ETH_IO_L4_PROTO_UDP:
+				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_UDP_IPV6);
+				break;
+			default:
+				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_IPV6);
+			}
+			break;
+		case ENA_ETH_IO_L3_PROTO_UNKNOWN:
+			M_HASHTYPE_SET(mbuf, M_HASHTYPE_NONE);
+			break;
+		default:
+			M_HASHTYPE_SET(mbuf, M_HASHTYPE_OPAQUE_HASH);
+		}
+	} else {
+		mbuf->M_dat.MH.MH_pkthdr.flowid = rx_ring->qid;
+		M_HASHTYPE_SET(mbuf, M_HASHTYPE_NONE);
+	}
+}
+
 /**
  * ena_rx_mbuf - assemble mbuf from descriptors
  * @rx_ring: ring for which we want to clean packets
@@ -367,6 +448,9 @@ ena_rx_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_buf_info *ena_bufs,
 	mbuf->m_hdr.mh_data = static_cast<caddr_t>(mtodo(mbuf, ena_rx_ctx->pkt_offset));
 	ena_log_io(adapter->pdev, DBG, "Mbuf data offset=%u", ena_rx_ctx->pkt_offset);
 	mbuf->M_dat.MH.MH_pkthdr.rcvif = rx_ring->que->adapter->ifp;
+
+	/* Fill mbuf with hash key and it's interpretation for optimization */
+	ena_rx_hash_mbuf(rx_ring, ena_rx_ctx, mbuf);
 
 	ena_log_io(adapter->pdev, DBG, "rx mbuf 0x%p, flags=0x%x, len: %d", mbuf,
 	    mbuf->m_hdr.mh_flags, mbuf->M_dat.MH.MH_pkthdr.len);

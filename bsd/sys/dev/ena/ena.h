@@ -247,6 +247,9 @@ struct ena_irq {
 	void *data;
 	unsigned int vector;
 	msix_vector *mvector;
+#ifdef RSS
+	int cpu;
+#endif
 };
 
 struct ena_que {
@@ -259,9 +262,12 @@ struct ena_que {
 	std::atomic<bool> cleanup_stop = {false};
 
 	uint32_t id;
+#ifdef RSS
+	int cpu;
+	//TODO: cpuset_t cpu_mask;
+#endif
 	int domain;
 	struct sysctl_oid *oid;
-
 };
 
 struct ena_calc_queue_size_ctx {
