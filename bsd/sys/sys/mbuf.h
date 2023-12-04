@@ -233,6 +233,12 @@ struct mbuf {
 #define	M_HASHTYPE_RSS_TCP_IPV6		0x4	/* TCPv6 4-tuple */
 #define	M_HASHTYPE_RSS_IPV6_EX		0x5	/* IPv6 2-tuple + ext hdrs */
 #define	M_HASHTYPE_RSS_TCP_IPV6_EX	0x6	/* TCPv6 4-tiple + ext hdrs */
+#define	M_HASHTYPE_RSS_UDP_IPV4		0x7	/* IPv4 UDP 4-tuple*/
+#define	M_HASHTYPE_RSS_UDP_IPV6		0x9	/* IPv6 UDP 4-tuple*/
+#define	M_HASHTYPE_RSS_UDP_IPV6_EX	0xa	/* IPv6 UDP 4-tuple +
+							    * ext hdrs */
+
+#define	M_HASHTYPE_OPAQUE_HASH		0xe	/* ordering+hash, not affinity */
 #define	M_HASHTYPE_OPAQUE		0xf	/* ordering, not affinity */
 
 #define	M_HASHTYPE_CLEAR(m)	(m)->m_hdr.mh_flags &= ~(M_HASHTYPEBITS)
