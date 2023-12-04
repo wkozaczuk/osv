@@ -75,7 +75,7 @@ __FBSDID("$FreeBSD$");
 //#define ENA_LOG_ENABLE 1
 //#define ENA_LOG_IO_ENABLE 1
 
-//#define RSS 1
+#define RSS 1
 #include "ena.h"
 #include "ena_datapath.h"
 #include "ena_rss.h"
@@ -86,7 +86,7 @@ __FBSDID("$FreeBSD$");
 #include <osv/msi.hh>
 #include <osv/sched.hh>
 
-int ena_log_level = ENA_INFO;
+int ena_log_level = ENA_DBG;
 
 static inline void critical_enter()  { sched::preempt_disable(); }
 static inline void critical_exit() { sched::preempt_enable(); }
@@ -97,8 +97,10 @@ extern "C" {
 struct buf_ring *buf_ring_alloc(int count, int type, int flags,
     struct mtx *);
 void buf_ring_free(struct buf_ring *br, int type);
-u_int rss_getnumbuckets(void);
 }
+
+extern u_int rss_getnumbuckets(void);
+extern u_int rss_getcpu(u_int bucket);
 
 
 /*********************************************************
@@ -466,11 +468,17 @@ ena_setup_tx_resources(struct ena_adapter *adapter, int qid)
 	ENA_RING_MTX_UNLOCK(tx_ring);
 
 	/* Allocate taskqueues */
-#ifdef RSS
-//Pin cpu of the thread to what is in que->cpu_mask
-#endif
 	tx_ring->enqueue_thread = sched::thread::make([tx_ring] { enqueue_work(tx_ring); },
-		sched::thread::attr().name("ena_tx_enque_" + std::to_string(que->id)));
+		sched::thread::attr().name("ena_tx_enque_" + std::to_string(que->id))
+#ifdef RSS
+//Pin cpu of the thread to what is in que->cpu
+				.pin(sched::cpus[que->cpu])
+#endif
+		);
+#ifdef RSS
+	ena_log(pdev, INFO, "pinned ena_tx_enque worker on queue %d - cpu %d\n",
+		que->id, que->cpu);
+#endif
 	tx_ring->enqueue_stop = false;
 	tx_ring->enqueue_pending = 0;
 
@@ -1047,11 +1055,17 @@ ena_create_io_queues(struct ena_adapter *adapter)
 	for (i = 0; i < adapter->num_io_queues; i++) {
 		queue = &adapter->que[i];
 
-#ifdef RSS
-		cpu_mask = &queue->cpu_mask; //Pin
-#endif
 		queue->cleanup_thread = sched::thread::make([queue] { cleanup_work(queue); },
-			sched::thread::attr().name("ena_cleanup_queue_" + std::to_string(i)));
+			sched::thread::attr().name("ena_clean_que_" + std::to_string(i))
+#ifdef RSS
+//Pin cpu of the thread to what is in que->cpu
+				.pin(sched::cpus[queue->cpu])
+#endif
+			);
+#ifdef RSS
+	ena_log(pdev, INFO, "pinned ena_cleanup_que worker on queue %d - cpu %d\n",
+		queue->id, queue->cpu);
+#endif
 		queue->cleanup_stop = false;
 		queue->cleanup_pending = 0;
 		queue->cleanup_thread->start();
@@ -1168,7 +1182,6 @@ ena_setup_io_intr(struct ena_adapter *adapter)
 	int num_buckets = rss_getnumbuckets();
 	static int last_bind = 0;
 	int cur_bind;
-	int idx;
 
 	if (adapter->first_bind < 0) {
 		adapter->first_bind = last_bind;
@@ -1188,12 +1201,6 @@ ena_setup_io_intr(struct ena_adapter *adapter)
 		adapter->que[i].cpu = adapter->irq_tbl[irq_idx].cpu =
 		    rss_getcpu(cur_bind);
 		cur_bind = (cur_bind + 1) % num_buckets;
-		CPU_SETOF(adapter->que[i].cpu, &adapter->que[i].cpu_mask);
-
-		for (idx = 0; idx < MAXMEMDOM; ++idx) {
-			if (CPU_ISSET(adapter->que[i].cpu, &cpuset_domain[idx]))
-				break;
-		}
 #endif /* RSS */
 
 		adapter->que[i].domain = -1;
@@ -1268,24 +1275,25 @@ ena_request_io_irq(struct ena_adapter *adapter)
 			ena_log(pdev, ERR, "could not setup I/O irq vector entry: %d", entry);
 			return (ENXIO);
 		}
-#ifdef RSS
-		rc = bus_bind_intr(adapter->pdev, irq->res, irq->cpu);
-		if (unlikely(rc != 0)) {
-			ena_log(pdev, ERR,
-			    "failed to bind interrupt handler for irq %ju to cpu %d: %d\n",
-			    rman_get_start(irq->res), irq->cpu, rc);
-			goto err;
-		}
-
-		ena_log(pdev, INFO, "queue %d - cpu %d\n",
-		    i - ENA_IO_IRQ_FIRST_IDX, irq->cpu);
-#endif
 	}
 	//
 	//Save assigned msix vectors
 	for (int entry = ENA_IO_IRQ_FIRST_IDX; entry < adapter->msix_vecs; entry++) {
 		ena_irq *irq = &adapter->irq_tbl[entry];
-		irq->mvector = assigned[entry - 1];
+		auto vec = irq->mvector = assigned[entry - 1];
+#ifdef RSS
+		//TODO: Is it enough to set MSIX vector affinity once here
+		//or do something similar to what set_affinity_and_wake() in msi.cc does -
+		//check if the cpu interrupt is executed on is the same as of the worker thread
+		//In our case the worker threads are all pinned so we probably do not need
+		//to re-pin the interrupt vector
+		std::atomic_thread_fence(std::memory_order_seq_cst);
+		vec->set_affinity(sched::cpus[irq->cpu]->arch.apic_id);
+		std::atomic_thread_fence(std::memory_order_seq_cst);
+
+		ena_log(pdev, INFO, "pinned MSIX vector on queue %d - cpu %d\n",
+		    entry - ENA_IO_IRQ_FIRST_IDX, irq->cpu);
+#endif
 	}
 
 	_msi.unmask_interrupts(assigned);
@@ -2462,6 +2470,7 @@ free_adapter(ena_adapter *adapter)
  * The OS initialization, configuring of the adapter private structure,
  * and a hardware reset occur.
  **/
+extern void rss_init();
 int
 ena_attach(pci::device* pdev, ena_adapter **_adapter)
 {
@@ -2472,6 +2481,8 @@ ena_attach(pci::device* pdev, ena_adapter **_adapter)
 	struct ena_com_dev *ena_dev = NULL;
 	uint32_t max_num_io_queues;
 	int rc;
+
+	rss_init();
 
 	adapter = aligned_new<ena_adapter>();
 	adapter->pdev = pdev;

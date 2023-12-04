@@ -51,6 +51,13 @@ __FBSDID("$FreeBSD$");
 #define RSS_HASH_NAIVE          0x00000001      /* Poor but fast hash. */
 #define RSS_HASH_TOEPLITZ       0x00000002      /* Required by RSS. */
 
+/*
+ * Compile-time limits on the size of the indirection table.
+ */
+#define	RSS_MAXBITS	7
+#define	RSS_TABLE_MAXLEN	(1 << RSS_MAXBITS)
+#define	RSS_MAXCPUS	(1 << (RSS_MAXBITS - 1))
+
 static uint8_t rss_key[RSS_KEYSIZE] = {
         0x6d, 0x5a, 0x56, 0xda, 0x25, 0x5b, 0x0e, 0xc2,
         0x41, 0x67, 0x25, 0x3d, 0x43, 0xa3, 0x8f, 0xb0,
@@ -65,16 +72,82 @@ static uint8_t rss_key[RSS_KEYSIZE] = {
  */
 static u_int    rss_hashalgo = RSS_HASH_TOEPLITZ;
 
-static u_int    rss_mask;
+static u_int    rss_mask = 0;
 /*
  * Variable exists just for reporting rss_bits in a user-friendly way.
  */
-static u_int    rss_buckets;
+static u_int    rss_buckets = 0;
+
+static u_int	rss_bits = 0;
+
+/*
+ * RSS hash->CPU table, which maps hashed packet headers to particular CPUs.
+ * Drivers may supplement this table with a separate CPU<->queue table when
+ * programming devices.
+ */
+struct rss_table_entry {
+	uint8_t		rte_cpu;	/* CPU affinity of bucket. */
+};
+static struct rss_table_entry	rss_table[RSS_TABLE_MAXLEN];
+
+static u_int	rss_ncpus;
+void rss_init()
+{
+	/*
+	 * Count available CPUs.
+	 */
+	rss_ncpus = sched::cpus.size();
+	if (rss_ncpus > RSS_MAXCPUS)
+		rss_ncpus = RSS_MAXCPUS;
+
+	/*
+	 * Tune RSS table entries to be no less than 2x the number of CPUs
+	 * -- unless we're running uniprocessor, in which case there's not
+	 * much point in having buckets to rearrange for load-balancing!
+	 */
+	if (rss_ncpus > 1) {
+		if (rss_bits == 0)
+			rss_bits = fls(rss_ncpus - 1) + 1;
+
+		/*
+		 * Microsoft limits RSS table entries to 128, so apply that
+		 * limit to both auto-detected CPU counts and user-configured
+		 * ones.
+		 */
+		if (rss_bits == 0 || rss_bits > RSS_MAXBITS) {
+			ena_log(nullptr, WARN, "RSS bits %u not valid, coercing to %u\n",
+			    rss_bits, RSS_MAXBITS);
+			rss_bits = RSS_MAXBITS;
+		}
+
+		/*
+		 * Figure out how many buckets to use; warn if less than the
+		 * number of configured CPUs, although this is not a fatal
+		 * problem.
+		 */
+		rss_buckets = (1 << rss_bits);
+		if (rss_buckets < rss_ncpus)
+			ena_log(nullptr, WARN, "WARNING: rss_buckets (%u) less than "
+			    "rss_ncpus (%u)\n", rss_buckets, rss_ncpus);
+		rss_mask = rss_buckets - 1;
+	} else {
+		rss_bits = 0;
+		rss_buckets = 1;
+		rss_mask = 0;
+	}
+	ena_log(nullptr, INFO, "set rss_buckets to: (%u) with rss_cpus: (%u)\n", rss_buckets, rss_ncpus);
+
+	/*
+	 * Set up initial CPU assignments: round-robin by default.
+	 */
+	for (u_int i = 0; i < rss_buckets; i++) {
+		rss_table[i].rte_cpu = i % sched::cpus.size();
+	}
+}
 
 void
 rss_getkey(uint8_t *key)
 {
-
         bcopy(rss_key, key, sizeof(rss_key));
 }
 
@@ -112,7 +185,6 @@ rss_get_indirection_to_bucket(u_int index)
 u_int
 rss_getbucket(u_int hash)
 {
-
         return (hash & rss_mask);
 }
 
@@ -147,6 +219,15 @@ u_int
 rss_getnumbuckets(void)
 {
         return (rss_buckets);
+}
+
+/*
+ * Query the RSS CPU associated with an RSS bucket.
+ */
+u_int
+rss_getcpu(u_int bucket)
+{
+	return (rss_table[bucket].rte_cpu);
 }
 
 /*
@@ -215,7 +296,6 @@ ena_rss_get_hash_key(struct ena_com_dev *ena_dev, u8 *key)
 static int
 ena_rss_init_default(struct ena_adapter *adapter)
 {
-	//TODO: Initialize rss_mask, rss_buckets and others done by rss_init()
 	struct ena_com_dev *ena_dev = adapter->ena_dev;
 	int qid, rc, i;
 	uint8_t rss_algo;

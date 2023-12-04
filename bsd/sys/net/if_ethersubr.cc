@@ -926,8 +926,8 @@ ether_ifattach(struct ifnet *ifp, const u_int8_t *lla)
 		if (lla[i] != 0)
 			break; 
 	if (i != ifp->if_addrlen)
-		debugf("%s: ethernet address: %02x:%02x:%02x:%02x:%02x:%02x\n",
-		    ifp->if_xname, lla[0], lla[1], lla[2], lla[3], lla[4], lla[5]);
+		debugf("%s: ethernet address: %02x:%02x:%02x:%02x:%02x:%02x mtu:%d\n",
+		    ifp->if_xname, lla[0], lla[1], lla[2], lla[3], lla[4], lla[5], ifp->if_mtu);
 }
 
 /*

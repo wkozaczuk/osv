@@ -17,6 +17,7 @@
 
 #include <osv/debug.hh>
 #include <osv/net_trace.hh>
+#include <osv/trace.hh>
 
 std::ostream& operator<<(std::ostream& os, in_addr ia)
 {
@@ -129,6 +130,7 @@ void classifier::remove(ipv4_tcp_conn_id id)
     }
 }
 
+TRACEPOINT(trace_net_channel, "");
 bool classifier::post_packet(mbuf* m)
 {
 #if CONF_lazy_stack_invariant
@@ -142,6 +144,7 @@ bool classifier::post_packet(mbuf* m)
             }
             // FIXME: find a way to batch wakes
             nc->wake();
+            trace_net_channel();
             return true;
         }
     }

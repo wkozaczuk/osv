@@ -674,6 +674,12 @@ ena_rx_cleanup(struct ena_ring *rx_ring)
         //TODO: Can wait? investigate https://github.com/freebsd/freebsd-src/commit/e936121d3140af047a498559493b9375a6ba6ba3
         //to port it back
 	//tcp_lro_flush_all(&rx_ring->lro);
+	struct lro_entry *queued;
+	while (!SLIST_EMPTY(&rx_ring->lro.lro_active)) {
+               queued = SLIST_FIRST(&rx_ring->lro.lro_active);
+               SLIST_REMOVE_HEAD(&rx_ring->lro.lro_active, next);
+               tcp_lro_flush(&rx_ring->lro, queued);
+        }
 
 	return (ENA_RX_BUDGET - budget);
 }

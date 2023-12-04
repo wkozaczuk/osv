@@ -264,7 +264,6 @@ struct ena_que {
 	uint32_t id;
 #ifdef RSS
 	int cpu;
-	//TODO: cpuset_t cpu_mask;
 #endif
 	int domain;
 	struct sysctl_oid *oid;
