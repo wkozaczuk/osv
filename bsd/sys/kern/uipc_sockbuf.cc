@@ -591,7 +591,7 @@ void
 sbappendstream_locked(socket* so, struct sockbuf *sb, struct mbuf *m)
 {
 	SOCK_LOCK_ASSERT(so);
-
+	//debug("sbappendstream_locked: hash:%d\n", m->M_dat.MH.MH_pkthdr.flowid); 
 	KASSERT(m->m_hdr.mh_nextpkt == NULL,("sbappendstream 0"));
 	KASSERT(sb->sb_mb == sb->sb_lastrecord,("sbappendstream 1"));
 
@@ -703,8 +703,11 @@ sbappendaddr_locked(socket* so, struct sockbuf *sb, const struct bsd_sockaddr *a
 
 	if (m0 && (m0->m_hdr.mh_flags & M_PKTHDR) == 0)
 		panic("sbappendaddr_locked");
-	if (m0)
+	if (m0) {
 		space += m0->M_dat.MH.MH_pkthdr.len;
+		//m0->M_dat.MH.MH_pkthdr.flowid = 0; - investigate
+		//M_HASHTYPE_SET(m0, M_HASHTYPE_NONE);
+	}
 	space += m_length(control, &n);
 
 	if (space > sbspace(sb))
@@ -867,6 +870,10 @@ sbcompress(socket* so, struct sockbuf *sb, struct mbuf *m, struct mbuf *n)
 		KASSERT(n != NULL, ("sbcompress: eor && n == NULL"));
 		n->m_hdr.mh_flags |= eor;
 	}
+        /*if (m)
+	debug("sbcompress: m, hash:%d\n", m->M_dat.MH.MH_pkthdr.flowid); 
+        if (n)
+	debug("sbcompress: n, hash:%d\n", n->M_dat.MH.MH_pkthdr.flowid);*/
 	SBLASTMBUFCHK(sb);
 }
 

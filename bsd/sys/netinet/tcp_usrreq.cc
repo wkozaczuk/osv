@@ -759,6 +759,7 @@ tcp_usr_send(struct socket *so, int flags, struct mbuf *m,
 	int isipv6;
 #endif
 	TCPDEBUG0;
+        //debug("tcp_usr_send: hash:%d\n", m->M_dat.MH.MH_pkthdr.flowid);
 
 	/*
 	 * We require the pcbinfo lock if we will close the socket as part of

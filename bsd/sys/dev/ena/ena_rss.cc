@@ -386,6 +386,8 @@ ena_rss_configure(struct ena_adapter *adapter)
 	if (unlikely((rc != 0) && (rc != EOPNOTSUPP)))
 		return (rc);
 
+	ENA_FLAG_SET_ATOMIC(ENA_FLAG_RSS_ACTIVE, adapter);
+
 	return (0);
 }
 

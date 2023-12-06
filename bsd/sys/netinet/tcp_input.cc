@@ -609,7 +609,7 @@ findpcb:
 	}
 	INP_LOCK_ASSERT(inp);
 	if (!(inp->inp_flags & INP_HW_FLOWID)
-	    && (m->m_hdr.mh_flags & M_FLOWID)
+	    && (M_HASHTYPE_GET(m) != M_HASHTYPE_NONE)
 	    && ((inp->inp_socket == NULL)
 		|| !(inp->inp_socket->so_options & SO_ACCEPTCONN))) {
 		inp->inp_flags |= INP_HW_FLOWID;
@@ -1525,7 +1525,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 				thflags &= ~TH_SYN;
 			} else {
 				tp->set_state(TCPS_ESTABLISHED);
-				tcp_setup_net_channel(tp, m->M_dat.MH.MH_pkthdr.rcvif);
+				tcp_setup_net_channel(tp, m);
 				cc_conn_init(tp);
 				tcp_timer_activate(tp, TT_KEEP,
 				    TP_KEEPIDLE(tp));
@@ -1933,7 +1933,7 @@ tcp_do_segment(struct mbuf *m, struct tcphdr *th, struct socket *so,
 			tp->t_flags &= ~TF_NEEDFIN;
 		} else {
 			tp->set_state(TCPS_ESTABLISHED);
-			tcp_setup_net_channel(tp, m->M_dat.MH.MH_pkthdr.rcvif);
+			tcp_setup_net_channel(tp, m);
 			cc_conn_init(tp);
 			tcp_timer_activate(tp, TT_KEEP, TP_KEEPIDLE(tp));
 		}
@@ -3226,9 +3226,13 @@ static ipv4_tcp_conn_id tcp_connection_id(tcpcb* tp)
 }
 
 void
-tcp_setup_net_channel(tcpcb* tp, struct ifnet* intf)
+tcp_setup_net_channel(tcpcb* tp, mbuf* m0)
 {
-	auto nc = aligned_new<net_channel>([=] (mbuf *m) { tcp_net_channel_packet(tp, m); });
+	auto intf = m0->M_dat.MH.MH_pkthdr.rcvif;
+	auto hash_type = M_HASHTYPE_GET(m0);
+        auto hash = m0->M_dat.MH.MH_pkthdr.flowid;
+        //debug("tcp_setup_net_channel: hash_type:%d, hash:%d\n", hash_type, hash);
+	auto nc = aligned_new<net_channel>([=] (mbuf *m) { tcp_net_channel_packet(tp, m); }, hash_type, hash);
 	tp->nc = nc;
 	tp->nc_intf = intf;
 	intf->add_net_channel(nc, tcp_connection_id(tp));

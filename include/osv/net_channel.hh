@@ -18,6 +18,7 @@
 #include <bsd/porting/netport.h>
 #include <bsd/sys/netinet/in.h>
 #include <bsd/sys/netinet/ip.h>
+#include <bsd/sys/sys/mbuf.h>
 #include <osv/file.h>
 
 struct mbuf;
@@ -39,11 +40,20 @@ private:
     osv::rcu_ptr<std::vector<pollreq*>> _pollers;
     osv::rcu_hashtable<epoll_ptr> _epollers;
     mutex _pollers_mutex;
+    u8 _hash_type;
+    uint32_t _hash;
 public:
-    explicit net_channel(std::function<void (mbuf*)> process_packet)
-        : _process_packet(std::move(process_packet)) {}
+    explicit net_channel(std::function<void (mbuf*)> process_packet, u8 hash_type, uint32_t hash)
+        : _process_packet(std::move(process_packet)), _hash_type(hash_type), _hash(hash) {}
     // producer: try to push a packet
     bool push(mbuf* m) { return _queue.push(m); }
+    inline void set_hash(mbuf* m) {
+        //TODO: Possibly skip mbufs with set flowid and hash_type
+        M_HASHTYPE_SET(m, _hash_type);
+        m->M_dat.MH.MH_pkthdr.flowid = _hash;
+        //int t = _hash_type;
+        //debug("set_hash: sets hash_type:%d, hash:%d\n", t, m->M_dat.MH.MH_pkthdr.flowid);
+    }
     // consumer: wake the consumer (best used after multiple push()s)
     void wake() {
 #if CONF_lazy_stack_invariant

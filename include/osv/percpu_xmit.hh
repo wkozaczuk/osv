@@ -24,6 +24,8 @@
 #include <boost/iterator/function_output_iterator.hpp>
 #endif
 
+extern void print_backtrace(void);
+
 namespace osv {
 
 /**
@@ -265,6 +267,10 @@ public:
      * @return 0 in case of success, EINVAL if a packet is not well-formed.
      */
     int xmit(mbuf* buff) {
+        /*debug("xmit: hashtype:%d, hash:%d\n", M_HASHTYPE_GET(buff), buff->M_dat.MH.MH_pkthdr.flowid);
+        if (buff->M_dat.MH.MH_pkthdr.flowid == 0) {
+            print_backtrace();
+        }*/
 
         void* cooky = nullptr;
         int rc = _txq->xmit_prep(buff, cooky);

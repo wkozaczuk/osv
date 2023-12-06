@@ -120,12 +120,14 @@ ip_output(struct mbuf *m, struct mbuf *opt, struct route *ro, int flags,
 #endif
 	M_ASSERTPKTHDR(m);
 
+	//debug("ip_output: hash:%d\n", m->M_dat.MH.MH_pkthdr.flowid); 
 	if (inp != NULL) {
 		INP_LOCK_ASSERT(inp);
 		M_SETFIB(m, inp->inp_inc.inc_fibnum);
 		if (inp->inp_flags & (INP_HW_FLOWID|INP_SW_FLOWID)) {
 			m->M_dat.MH.MH_pkthdr.flowid = inp->inp_flowid;
-			m->m_hdr.mh_flags |= M_FLOWID;
+			m->m_hdr.mh_flags |= M_FLOWID; //Not needed
+			//M_HASHTYPE_SET(m, M_HASHTYPE_RSS_IPV4);//inp->inp_flowtype);
 		}
 	}
 

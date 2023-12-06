@@ -105,7 +105,7 @@ static void syncache_drop(struct syncache *, struct syncache_head *);
 static void syncache_free(struct syncache *);
 static void syncache_insert(struct syncache *, struct syncache_head *);
 struct syncache *syncache_lookup(struct in_conninfo *, struct syncache_head **);
-static int syncache_respond(struct syncache *);
+static int syncache_respond(struct syncache *, const struct mbuf *);
 static struct socket *syncache_socket(struct syncache *, struct socket *,
 	struct mbuf *m);
 static void syncache_timeout(struct syncache *sc, struct syncache_head *sch,
@@ -397,7 +397,7 @@ static void syncache_timer(struct syncache_head *sch, serial_timer_task& timer)
 			free(s);
 		}
 
-		(void)syncache_respond(sc);
+		(void)syncache_respond(sc, nullptr);
 		TCPSTAT_INC(tcps_sc_retransmitted);
 		syncache_timeout(sc, sch, 0);
 	}
@@ -633,6 +633,14 @@ syncache_socket(struct syncache *sc, struct socket *lso, struct mbuf *m)
 #ifdef INET6
 }
 #endif
+	/*
+	 * If there's an mbuf and it has a flowid, then let's initialise the
+	 * inp with that particular flowid.
+	*/
+	if (m != NULL && M_HASHTYPE_GET(m) != M_HASHTYPE_NONE) {
+		inp->inp_flowid = m->M_dat.MH.MH_pkthdr.flowid;
+		//inp->inp_flowtype = M_HASHTYPE_GET(m);
+	}
 
 	/*
 	 * Install in the reservation hash table for now, but don't yet
@@ -1079,7 +1087,7 @@ static void _syncache_add(struct in_conninfo *inc, struct tcpopt *to,
 			"resetting timer and retransmitting SYN|ACK\n", s, __func__);
 			free(s);
 		}
-		if (!TOEPCB_ISSET(sc) && syncache_respond(sc) == 0) {
+		if (!TOEPCB_ISSET(sc) && syncache_respond(sc, m) == 0) {
 			sc->sc_rxmits = 0;
 			syncache_timeout(sc, sch, 1);
 			TCPSTAT_INC(tcps_sndacks);
@@ -1224,7 +1232,7 @@ static void _syncache_add(struct in_conninfo *inc, struct tcpopt *to,
 	/*
 	 * Do a standard 3-way handshake.
 	 */
-	if (TOEPCB_ISSET(sc) || syncache_respond(sc) == 0) {
+	if (TOEPCB_ISSET(sc) || syncache_respond(sc, m) == 0) {
 		if (V_tcp_syncookies && V_tcp_syncookiesonly && sc != &scs)
 			syncache_free(sc);
 		else if (sc != &scs)
@@ -1249,7 +1257,7 @@ static void _syncache_add(struct in_conninfo *inc, struct tcpopt *to,
 	}
 }
 
-static int syncache_respond(struct syncache *sc)
+static int syncache_respond(struct syncache *sc, const struct mbuf *m0)
 {
 	struct ip *ip = NULL;
 	struct mbuf *m;
@@ -1396,6 +1404,16 @@ static int syncache_respond(struct syncache *sc)
 
 	M_SETFIB(m, sc->sc_inc.inc_fibnum);
 	m->M_dat.MH.MH_pkthdr.csum_data = offsetof(struct tcphdr, th_sum);
+         /*
+          * If we have peer's SYN and it has a flowid, then let's assign it to
+          * our SYN|ACK.  ip6_output() and ip_output() will not assign flowid
+          * to SYN|ACK due to lack of inp here.
+          */
+         if (m0 != NULL && M_HASHTYPE_GET(m0) != M_HASHTYPE_NONE) {
+                 m->M_dat.MH.MH_pkthdr.flowid = m0->M_dat.MH.MH_pkthdr.flowid;
+                 M_HASHTYPE_SET(m, M_HASHTYPE_GET(m0));
+         }
+
 #ifdef INET6
 	if (sc->sc_inc.inc_flags & INC_ISIPV6) {
 		m->M_dat.MH.MH_pkthdr.csum_flags = CSUM_TCP_IPV6;

@@ -965,6 +965,9 @@ send:
 		 * to the offset in the socket buffer chain.
 		 */
 		mb = sbsndptr(&so->so_snd, off, len, &moff);
+		//debug("tcp_output: mb, hash:%d\n", mb->M_dat.MH.MH_pkthdr.flowid);
+                m->M_dat.MH.MH_pkthdr.flowid = mb->M_dat.MH.MH_pkthdr.flowid;
+		M_HASHTYPE_SET(m, M_HASHTYPE_GET(mb));
 
 		trace_tcp_output(len, off, sendwin, so->so_snd.sb_cc,
 						 tp->snd_nxt.raw() + len);

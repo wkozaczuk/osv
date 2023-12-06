@@ -77,7 +77,7 @@
 
 void *__dso_handle;
 
-static void print_backtrace(void)
+void print_backtrace(void)
 {
     void *addrs[128];
     int len;

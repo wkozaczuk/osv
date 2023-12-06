@@ -1366,14 +1366,14 @@ static int
 ena_up_complete(struct ena_adapter *adapter)
 {
 	int rc;
-	if (likely(ENA_FLAG_ISSET(ENA_FLAG_RSS_ACTIVE, adapter))) {
+	//if (likely(ENA_FLAG_ISSET(ENA_FLAG_RSS_ACTIVE, adapter))) {
 		rc = ena_rss_configure(adapter);
 		if (rc != 0) {
 			ena_log(adapter->pdev, ERR,
 			    "Failed to configure RSS\n");
 			return (rc);
 		}
-	}
+	//}
 
 	rc = ena_change_mtu(adapter->ifp, adapter->ifp->if_mtu);
 	if (unlikely(rc != 0))

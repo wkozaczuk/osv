@@ -593,6 +593,16 @@ static void flush_net_channel(struct socket *so)
 	}
 }
 
+static void set_hash(struct socket *so, mbuf* m)
+{
+	if (so->so_nc) {
+		so->so_nc->set_hash(m);
+                //debug("Set hash from NC\n");
+	}/* else {
+            debug("No NC\n");
+        }*/
+}
+
 /*
  * Close a socket on last file table reference removal.  Initiate disconnect
  * if connected.  Free socket when disconnect complete.
@@ -1054,6 +1064,7 @@ restart:
 					error = EFAULT; /* only possible error */
 					goto release;
 				}
+				set_hash(so, top);
 				space -= resid - uio->uio_resid;
 				resid = uio->uio_resid;
 			}

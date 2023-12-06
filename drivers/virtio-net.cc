@@ -286,6 +286,7 @@ net::net(virtio_device& dev)
         if (_host_tso4) {
             _ifn->if_capabilities |= IFCAP_TSO4;
             _ifn->if_hwassist = CSUM_TCP | CSUM_UDP | CSUM_TSO;
+            debug("Enabled CSUM_TCP | CSUM_UDP | CSUM_TSO\n");
         }
     }
 
@@ -539,6 +540,8 @@ void net::receiver()
             rx_packets++;
             rx_bytes += m_head->M_dat.MH.MH_pkthdr.len;
 
+            M_HASHTYPE_SET(m_head, M_HASHTYPE_RSS_TCP_IPV4);
+            m_head->M_dat.MH.MH_pkthdr.flowid = 111;
             bool fast_path = _ifn->if_classifier.post_packet(m_head);
             if (!fast_path) {
                 (*_ifn->if_input)(_ifn, m_head);

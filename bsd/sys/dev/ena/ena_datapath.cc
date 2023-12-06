@@ -52,6 +52,7 @@ rss_hash2bucket(uint32_t hash_val, uint32_t hash_type, uint32_t *bucket_id);
 
 //#include <netinet6/ip6_var.h>
 
+#include <osv/trace.hh>
 /*********************************************************************
  *  Static functions prototypes
  *********************************************************************/
@@ -131,6 +132,7 @@ ena_deferred_mq_start(struct ena_ring *tx_ring )
 	}
 }
 
+TRACEPOINT(trace_ena_tx_rss, "");
 int
 ena_mq_start(if_t ifp, struct mbuf *m)
 {
@@ -153,12 +155,13 @@ ena_mq_start(if_t ifp, struct mbuf *m)
 	 */
 	if (M_HASHTYPE_GET(m) != M_HASHTYPE_NONE) {
 #ifdef RSS
+		trace_ena_tx_rss();
 		if (rss_hash2bucket(m->M_dat.MH.MH_pkthdr.flowid, M_HASHTYPE_GET(m),
 		    &bucket_id) == 0)
 			i = bucket_id % adapter->num_io_queues;
 		else
 #endif
-		i = m->M_dat.MH.MH_pkthdr.flowid % adapter->num_io_queues;
+			i = m->M_dat.MH.MH_pkthdr.flowid % adapter->num_io_queues;
 	} else {
 		i = sched::cpu::current()->id % adapter->num_io_queues;
 	}
@@ -343,6 +346,7 @@ ena_tx_cleanup(struct ena_ring *tx_ring)
 	return (work_done);
 }
 
+TRACEPOINT(trace_ena_rx_rss, "");
 static void
 ena_rx_hash_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_ctx *ena_rx_ctx,
     struct mbuf *mbuf)
@@ -361,6 +365,7 @@ ena_rx_hash_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_ctx *ena_rx_ctx,
 		if (adapter->ena_dev->rss.hash_func != ENA_ADMIN_TOEPLITZ &&
 		    ena_rx_ctx->l3_proto != ENA_ETH_IO_L3_PROTO_UNKNOWN) {
 			M_HASHTYPE_SET(mbuf, M_HASHTYPE_OPAQUE_HASH);
+			trace_ena_rx_rss();
 			return;
 		}
 #endif
@@ -368,11 +373,13 @@ ena_rx_hash_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_ctx *ena_rx_ctx,
 		if (ena_rx_ctx->frag &&
 		    (ena_rx_ctx->l3_proto != ENA_ETH_IO_L3_PROTO_UNKNOWN)) {
 			M_HASHTYPE_SET(mbuf, M_HASHTYPE_OPAQUE_HASH);
+			trace_ena_rx_rss();
 			return;
 		}
 
 		switch (ena_rx_ctx->l3_proto) {
 		case ENA_ETH_IO_L3_PROTO_IPV4:
+			trace_ena_rx_rss();
 			switch (ena_rx_ctx->l4_proto) {
 			case ENA_ETH_IO_L4_PROTO_TCP:
 				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_TCP_IPV4);
@@ -385,6 +392,7 @@ ena_rx_hash_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_ctx *ena_rx_ctx,
 			}
 			break;
 		case ENA_ETH_IO_L3_PROTO_IPV6:
+			trace_ena_rx_rss();
 			switch (ena_rx_ctx->l4_proto) {
 			case ENA_ETH_IO_L4_PROTO_TCP:
 				M_HASHTYPE_SET(mbuf, M_HASHTYPE_RSS_TCP_IPV6);
@@ -400,6 +408,7 @@ ena_rx_hash_mbuf(struct ena_ring *rx_ring, struct ena_com_rx_ctx *ena_rx_ctx,
 			M_HASHTYPE_SET(mbuf, M_HASHTYPE_NONE);
 			break;
 		default:
+			trace_ena_rx_rss();
 			M_HASHTYPE_SET(mbuf, M_HASHTYPE_OPAQUE_HASH);
 		}
 	} else {
