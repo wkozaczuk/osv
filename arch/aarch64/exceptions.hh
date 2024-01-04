@@ -18,7 +18,7 @@
 #include <osv/interrupt.hh>
 #include <vector>
 
-#include "gic.hh"
+#include "gic-v3.hh"
 
 struct exception_frame {
     u64 regs[31];

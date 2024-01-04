@@ -37,10 +37,10 @@ interrupt_table::interrupt_table() {
     debug_early_entry("interrupt_table::interrupt_table()");
 #endif
 
-    gic::gic->init_cpu(0);
-    gic::gic->init_dist(0);
+    gic::gic->init_dist();
+    gic::gic->init_redist(0);
 
-    this->nr_irqs = gic::gic->nr_irqs;
+    this->nr_irqs = gic::gic->nr_of_irqs();
 #if CONF_logger_debug
     debug_early("interrupt table: gic driver created.\n");
 #endif
@@ -163,7 +163,7 @@ void interrupt(exception_frame* frame)
 
     /* note that special values 1022 and 1023 are used for
        group 1 and spurious interrupts respectively. */
-    if (irq >= gic::gic->nr_irqs) {
+    if (irq >= gic::gic->nr_of_irqs()) {
         debug_early_u64("special InterruptID detected irq=", irq);
 
     } else {

@@ -9,7 +9,7 @@
 #define ARCH_INTERRUPT_HH
 
 #include "exceptions.hh"
-#include "gic.hh"
+#include "gic-v3.hh"
 
 #include <functional>
 

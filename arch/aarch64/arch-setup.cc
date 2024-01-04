@@ -123,15 +123,20 @@ void arch_setup_free_memory()
 #endif
 
     /* linear_map [TTBR0 - GIC DIST and GIC CPU] */
-    u64 dist, cpu;
+    /*u64 dist, cpu;
     size_t dist_len, cpu_len;
     if (!dtb_get_gic_v2(&dist, &dist_len, &cpu, &cpu_len)) {
         abort("arch-setup: failed to get GICv2 information from dtb.\n");
+    }*/
+    u64 dist, redist;
+    size_t dist_len, redist_len;
+    if (!dtb_get_gic_v3(&dist, &dist_len, &redist, &redist_len)) {
+        abort("arch-setup: failed to get GICv3 information from dtb.\n");
     }
-    gic::gic = new gic::gic_driver(dist, cpu);
+    gic::gic = new gic::gic_v3_driver(dist, redist);
     mmu::linear_map((void *)dist, (mmu::phys)dist, dist_len, "gic_dist", mmu::page_size,
                     mmu::mattr::dev);
-    mmu::linear_map((void *)cpu, (mmu::phys)cpu, cpu_len, "gic_cpu", mmu::page_size,
+    mmu::linear_map((void *)redist, (mmu::phys)redist, redist_len, "gic_redist", mmu::page_size,
                     mmu::mattr::dev);
 
 #if CONF_drivers_pci
