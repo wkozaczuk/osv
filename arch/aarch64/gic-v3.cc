@@ -186,6 +186,12 @@ void gic_v3_driver::init_redist(int smp_idx)
     WRITE_SYS_REG32(ICC_IGRPEN1_EL1, 1);
 
     isb();
+
+    if (smp_idx) {
+        //unmask_irq(27);
+        u32 val = 1UL << (27 % GICR_I_PER_ISENABLERn);
+        _gicr.write_at_offset(smp_idx, GICR_ISENABLER0, val); //TODO: sched::cpu::current()->id;
+    }
 }
 
 void gic_v3_driver::mask_irq(unsigned int irq)
@@ -225,7 +231,10 @@ void gic_v3_driver::unmask_irq(unsigned int irq)
 void gic_v3_driver::set_irq_type(unsigned int id, irq_type type)
 {
     WITH_LOCK(gic_lock) {
-        //TODO this->gicd.write_reg_grp(gicd_reg_irq2::GICD_ICFGR, id, (u32)type << 1);
+        if (type == irq_type::IRQ_TYPE_EDGE) {
+            auto val = _gicd.read_reg_at_offset((u32)gicd_reg_irq2::GICD_ICFGR, id / 4);
+            _gicd.write_reg_at_offset((u32)gicd_reg_irq2::GICD_ICFGR, id / 4, val | 2);
+        }
     }
 }
 
