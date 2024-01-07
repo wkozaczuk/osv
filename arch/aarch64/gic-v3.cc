@@ -16,8 +16,6 @@
 
 namespace gic {
 
-class gic_v3_driver *gic;
-
 void gic_v3_dist::wait_for_write_complete()
 {
     unsigned int val;

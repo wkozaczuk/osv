@@ -37,8 +37,7 @@ interrupt_table::interrupt_table() {
     debug_early_entry("interrupt_table::interrupt_table()");
 #endif
 
-    gic::gic->init_dist();
-    gic::gic->init_redist(0);
+    gic::gic->init_on_primary_cpu();
 
     this->nr_irqs = gic::gic->nr_of_irqs();
 #if CONF_logger_debug

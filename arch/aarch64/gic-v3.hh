@@ -8,7 +8,6 @@
 #ifndef GIC_V3_HH
 #define GIC_V3_HH
 
-#include <osv/spinlock.h>
 #include "gic-common.hh"
 
 #define GICD_CTLR_WRITE_COMPLETE   (1UL << 31)
@@ -124,34 +123,35 @@ private:
 
 constexpr int max_sgi_cpus = 16;
 
-class gic_v3_driver {
+class gic_v3_driver : public gic_driver {
 public:
     gic_v3_driver(mmu::phys d, mmu::phys r) : _gicd(d), _gicr(r) {}
 
+    virtual void init_on_primary_cpu()
+    {
+        init_dist();
+        init_redist(0);
+    }
+
+    virtual void init_on_secondary_cpu(int smp_idx) { init_redist(smp_idx); }
+
+    virtual void mask_irq(unsigned int id);
+    virtual void unmask_irq(unsigned int id);
+
+    virtual void set_irq_type(unsigned int id, irq_type type);
+
+    virtual void send_sgi(sgi_filter filter, int smp_idx, unsigned int vector);
+
+    virtual unsigned int ack_irq();
+    virtual void end_irq(unsigned int iar);
+private:
     void init_dist();
     void init_redist(int smp_idx);
 
-    void mask_irq(unsigned int id);
-    void unmask_irq(unsigned int id);
-
-    void set_irq_type(unsigned int id, irq_type type);
-
-    void send_sgi(sgi_filter filter, int smp_idx, unsigned int vector);
-
-    unsigned int ack_irq();
-    void end_irq(unsigned int iar);
-
-    unsigned int nr_of_irqs() { return _nr_irqs; }
-private:
     gic_v3_dist _gicd;
     gic_v3_redist _gicr;
-    unsigned int _nr_irqs;
     u64 _mpids_by_smpid[max_sgi_cpus];
-    spinlock_t gic_lock;
-
 };
-
-extern class gic_v3_driver *gic;
 
 }
 

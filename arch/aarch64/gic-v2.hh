@@ -8,7 +8,6 @@
 #ifndef GIC_V2_HH
 #define GIC_V2_HH
 
-#include <osv/spinlock.h>
 #include "gic-common.hh"
 
 namespace gic {
@@ -56,33 +55,34 @@ protected:
     mmu::phys _base;
 };
 
-class gic_v2_driver {
+class gic_v2_driver : public gic_driver {
 public:
     gic_v2_driver(mmu::phys d, mmu::phys c) : _gicd(d), _gicc(c) {}
 
+    virtual void init_on_primary_cpu()
+    {
+        init_dist();
+        init_cpuif(0);
+    }
+
+    virtual void init_on_secondary_cpu(int smp_idx) { init_cpuif(smp_idx); }
+
+    virtual void mask_irq(unsigned int id);
+    virtual void unmask_irq(unsigned int id);
+
+    virtual void set_irq_type(unsigned int id, irq_type type);
+
+    virtual void send_sgi(sgi_filter filter, int smp_idx, unsigned int vector);
+
+    virtual unsigned int ack_irq();
+    virtual void end_irq(unsigned int iar);
+private:
     void init_dist();
     void init_cpuif(int smp_idx);
 
-    void mask_irq(unsigned int id);
-    void unmask_irq(unsigned int id);
-
-    void set_irq_type(unsigned int id, irq_type type);
-
-    void send_sgi(sgi_filter filter, int smp_idx, unsigned int vector);
-
-    unsigned int ack_irq();
-    void end_irq(unsigned int iar);
-
-    unsigned int nr_of_irqs() { return _nr_irqs; }
-private:
     gic_v2_dist _gicd;
     gic_v2_cpu _gicc;
-    unsigned int _nr_irqs;
-    spinlock_t gic_lock;
-
 };
-
-extern class gic_v2_driver *gic;
 
 }
 #endif

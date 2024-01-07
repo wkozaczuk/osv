@@ -15,8 +15,6 @@
 
 namespace gic {
 
-class gic_v2_driver *gic;
-
 void gic_v2_dist::disable()
 {
     unsigned int gicd_ctlr = read_reg(gicd_reg::GICD_CTLR);

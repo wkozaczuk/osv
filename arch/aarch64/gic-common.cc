@@ -41,4 +41,5 @@ unsigned int gic_dist::read_number_of_interrupts()
     return ((read_reg(gicd_reg::GICD_TYPER) & 0x1f) + 1) * 32;
 }
 
+class gic_driver *gic;
 }

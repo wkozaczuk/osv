@@ -10,6 +10,7 @@
 
 #include <osv/types.h>
 #include <osv/mmu-defs.hh>
+#include <osv/spinlock.h>
 
 #define GIC_MAX_IRQ  1019
 #define GIC_SPI_BASE 32
@@ -103,6 +104,31 @@ public:
 protected:
     mmu::phys _base;
 };
+
+class gic_driver {
+public:
+    virtual ~gic_driver() {}
+
+    virtual void init_on_primary_cpu() = 0;
+    virtual void init_on_secondary_cpu(int smp_idx) = 0;
+
+    virtual void mask_irq(unsigned int id) = 0;
+    virtual void unmask_irq(unsigned int id) = 0;
+
+    virtual void set_irq_type(unsigned int id, irq_type type) = 0;
+
+    virtual void send_sgi(sgi_filter filter, int smp_idx, unsigned int vector) = 0;
+
+    virtual unsigned int ack_irq() = 0;
+    virtual void end_irq(unsigned int iar) = 0;
+
+    unsigned int nr_of_irqs() { return _nr_irqs; }
+protected:
+    unsigned int _nr_irqs;
+    spinlock_t gic_lock;
+};
+
+extern class gic_driver *gic;
 
 }
 
