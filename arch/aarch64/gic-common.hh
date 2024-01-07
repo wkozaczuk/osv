@@ -92,7 +92,7 @@ protected:
 public:
     u32 read_reg(gicd_reg r);
     void write_reg(gicd_reg r, u32 v);
-    
+
     u32 read_reg_at_offset(u32 reg, u32 offset);
     void write_reg_at_offset(u32 reg, u32 offset, u32 value);
 
@@ -100,7 +100,7 @@ public:
 
     unsigned int read_number_of_interrupts();
 
-private:
+protected:
     mmu::phys _base;
 };
 

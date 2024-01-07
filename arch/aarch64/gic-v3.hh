@@ -24,7 +24,7 @@
 #define MPIDR_AFF0_MASK             0x00000000ff
 
 #define ICC_SGIxR_EL1_AFF3_SHIFT   48
-#define ICC_SGIxR_EL1_AFF2_SHIFT   32 
+#define ICC_SGIxR_EL1_AFF2_SHIFT   32
 #define ICC_SGIxR_EL1_AFF1_SHIFT   16
 #define ICC_SGIxR_EL1_RS_SHIFT     44
 
@@ -135,7 +135,7 @@ public:
     void unmask_irq(unsigned int id);
 
     void set_irq_type(unsigned int id, irq_type type);
-    
+
     void send_sgi(sgi_filter filter, int smp_idx, unsigned int vector);
 
     unsigned int ack_irq();
@@ -143,10 +143,10 @@ public:
 
     unsigned int nr_of_irqs() { return _nr_irqs; }
 private:
-    gic_v3_dist _gicd; 
+    gic_v3_dist _gicd;
     gic_v3_redist _gicr;
     unsigned int _nr_irqs;
-    u64 _mpids_by_smpid[max_sgi_cpus];    
+    u64 _mpids_by_smpid[max_sgi_cpus];
     spinlock_t gic_lock;
 
 };

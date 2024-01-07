@@ -10,6 +10,7 @@
 
 #include "processor.hh"
 #include "gic-v3.hh"
+#include "arm-clock.hh"
 
 #define isb() ({ asm volatile ("isb"); })
 
@@ -187,10 +188,10 @@ void gic_v3_driver::init_redist(int smp_idx)
 
     isb();
 
+    //Enable cpu timer
     if (smp_idx) {
-        //unmask_irq(27);
-        u32 val = 1UL << (27 % GICR_I_PER_ISENABLERn);
-        _gicr.write_at_offset(smp_idx, GICR_ISENABLER0, val); //TODO: sched::cpu::current()->id;
+        u32 val = 1UL << (get_timer_irq_id() % GICR_I_PER_ISENABLERn);
+        _gicr.write_at_offset(smp_idx, GICR_ISENABLER0, val);
     }
 }
 
@@ -213,7 +214,7 @@ void gic_v3_driver::unmask_irq(unsigned int irq)
         /*if (irq >= GIC_SPI_BASE) {
             uint64_t aff = (uint64_t)get_cpu_affinity();
             uint64_t irouter_val = GIC_AFF_TO_ROUTER(aff, 0);
-    
+
             write_gicd64(GICD_IROUTER(irq), irouter_val);
             uk_pr_debug("IRQ %d routed to 0x%lx (REG: 0x%lx)\n",
                     irq, aff, irouter_val);
