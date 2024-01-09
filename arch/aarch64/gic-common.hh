@@ -14,6 +14,7 @@
 
 #define GIC_MAX_IRQ  1019
 #define GIC_SPI_BASE 32
+#define GIC_PPI_BASE 16
 
 namespace gic {
 

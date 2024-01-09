@@ -16,6 +16,11 @@
 #define GICD_CTLR_ENABLE_G1NS      (1U << 1)
 #define GICD_CTLR_ENABLE_G0        (1U << 0)
 
+#define GICD_ICFGR_MASK            0x3
+#define GICD_ICFGR_TRIG_LVL        (0 << 1)
+#define GICD_ICFGR_TRIG_EDGE       (1 << 1)
+#define GICD_ICFGR_TRIG_MASK       0x2
+
 #define GICD_IROUTER_BASE          (0x6000)
 #define MPIDR_AFF3_MASK	            0xff00000000
 #define MPIDR_AFF2_MASK             0x0000ff0000

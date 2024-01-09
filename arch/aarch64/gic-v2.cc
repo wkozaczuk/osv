@@ -176,6 +176,10 @@ void gic_v2_driver::send_sgi(sgi_filter filter, int smp_idx, unsigned int vector
     assert(vector <= 0x0f);
     irq_save_lock_type irq_lock;
 
+    //We disable interrupts before taking a lock to prevent scenarios
+    //when interrupt arrives after gic_lock is taken and interrupt handler
+    //ends up calling send_sgi() (nested example) and stays spinning forever
+    //in attempt to take a lock again
     WITH_LOCK(irq_lock) {
         WITH_LOCK(gic_lock) {
             switch (filter) {

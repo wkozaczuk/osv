@@ -6,7 +6,8 @@
  */
 
 #include <osv/mmio.hh>
-//#include <osv/sched.hh>
+#include <osv/irqlock.hh>
+#include <osv/sched.hh>
 
 #include "processor.hh"
 #include "gic-v3.hh"
@@ -186,7 +187,7 @@ void gic_v3_driver::init_redist(int smp_idx)
 
     isb();
 
-    //Enable cpu timer
+    //Enable cpu timer on secondary CPU
     if (smp_idx) {
         u32 val = 1UL << (get_timer_irq_id() % GICR_I_PER_ISENABLERn);
         _gicr.write_at_offset(smp_idx, GICR_ISENABLER0, val);
@@ -198,10 +199,10 @@ void gic_v3_driver::mask_irq(unsigned int irq)
     WITH_LOCK(gic_lock) {
         if (irq >= GIC_SPI_BASE) {
             u32 val = 1UL << (irq % GICD_I_PER_ICENABLERn);
-            _gicd.write_reg_at_offset((u32)gicd_reg_irq1::GICD_ICENABLER, irq / 8, val);
+            _gicd.write_reg_at_offset((u32)gicd_reg_irq1::GICD_ICENABLER, 4 * (irq >> 5), val);
          } else {
             u32 val = 1UL << (irq % GICR_I_PER_ICENABLERn);
-            _gicr.write_at_offset(0, GICR_ICENABLER0, val); //TODO: sched::cpu::current()->id;
+            _gicr.write_at_offset(sched::cpu::current()->id, GICR_ICENABLER0, val);
          }
     }
 }
@@ -209,31 +210,45 @@ void gic_v3_driver::mask_irq(unsigned int irq)
 void gic_v3_driver::unmask_irq(unsigned int irq)
 {
     WITH_LOCK(gic_lock) {
-        /*if (irq >= GIC_SPI_BASE) {
-            uint64_t aff = (uint64_t)get_cpu_affinity();
-            uint64_t irouter_val = GIC_AFF_TO_ROUTER(aff, 0);
-
-            write_gicd64(GICD_IROUTER(irq), irouter_val);
-            uk_pr_debug("IRQ %d routed to 0x%lx (REG: 0x%lx)\n",
-                    irq, aff, irouter_val);
-        }*/
         if (irq >= GIC_SPI_BASE) {
             u32 val = 1UL << (irq % GICD_I_PER_ISENABLERn);
-            _gicd.write_reg_at_offset((u32)gicd_reg_irq1::GICD_ISENABLER, irq / 8, val);
+            _gicd.write_reg_at_offset((u32)gicd_reg_irq1::GICD_ISENABLER, 4 * (irq >> 5), val);
         } else {
             u32 val = 1UL << (irq % GICR_I_PER_ISENABLERn);
-            _gicr.write_at_offset(0, GICR_ISENABLER0, val); //TODO: sched::cpu::current()->id;
+            _gicr.write_at_offset(sched::cpu::current()->id, GICR_ISENABLER0, val);
         }
     }
 }
 
 void gic_v3_driver::set_irq_type(unsigned int id, irq_type type)
 {
+    //SGIs are always treated as edge-triggered so ignore call for these
+    if (id < GIC_PPI_BASE) {
+        return;
+    }
+
     WITH_LOCK(gic_lock) {
-        if (type == irq_type::IRQ_TYPE_EDGE) {
-            auto val = _gicd.read_reg_at_offset((u32)gicd_reg_irq2::GICD_ICFGR, id / 4);
-            _gicd.write_reg_at_offset((u32)gicd_reg_irq2::GICD_ICFGR, id / 4, val | 2);
+        auto offset = 4 * ((id) >> 4);
+        auto val = _gicd.read_reg_at_offset((u32)gicd_reg_irq2::GICD_ICFGR, offset);
+        u32 oldmask = (val >> ((id % GICD_I_PER_ICFGRn) * 2)) & GICD_ICFGR_MASK;
+
+        u32 mask = oldmask;
+        if (type == irq_type::IRQ_TYPE_LEVEL) {
+            mask &= ~GICD_ICFGR_TRIG_MASK;
+            mask |= GICD_ICFGR_TRIG_LVL;
+        } else if (type == irq_type::IRQ_TYPE_EDGE) {
+            mask &= ~GICD_ICFGR_TRIG_MASK;
+            mask |= GICD_ICFGR_TRIG_EDGE;
         }
+
+        //Check if nothing changed
+        if (mask == oldmask)
+            return;
+
+        // Update to new type
+        val &= (~(GICD_ICFGR_MASK << (id % GICD_I_PER_ICFGRn) * 2));
+        val |= (mask << (id % GICD_I_PER_ICFGRn) * 2);
+        _gicd.write_reg_at_offset((u32)gicd_reg_irq2::GICD_ICFGR, offset, val);
     }
 }
 
@@ -249,7 +264,7 @@ void gic_v3_driver::send_sgi(sgi_filter filter, int smp_idx, unsigned int vector
         sgi_register |= ICC_SGIxR_EL1_IRM;
     } else {
         if (filter == sgi_filter::SGI_TARGET_SELF) {
-            smp_idx = 0;//TODO sched::cpu::current()->id;
+            smp_idx = sched::cpu::current()->id;
         }
 
         auto mpid = _mpids_by_smpid[smp_idx];
@@ -258,17 +273,18 @@ void gic_v3_driver::send_sgi(sgi_filter filter, int smp_idx, unsigned int vector
                         (MPIDR_AFF2(mpid) << ICC_SGIxR_EL1_AFF2_SHIFT) |
                         (MPIDR_AFF1(mpid) << ICC_SGIxR_EL1_AFF1_SHIFT) |
                         ((aff0 >> 4) << ICC_SGIxR_EL1_RS_SHIFT) | (1 << (aff0 & 0xf));
-        /*TODO Check why Unikraft checks these two registers to see if it can send sgi
-        control_register_rss = READ_SYS_REG64(ICC_CTLR_EL1) & (1 << 18);
-        type_register_rss =  read_gicd32(GICD_TYPER)  & (1 << 26);
-        if (control_register_rss == 1 && type_register_rss == 1) {
-            ...
-        */
     }
 
+    //We disable interrupts before taking a lock to prevent scenarios
+    //when interrupt arrives after gic_lock is taken and interrupt handler
+    //ends up calling send_sgi() (nested example) and stays spinning forever
+    //in attempt to take a lock again
     /* Generate interrupt */
-    WITH_LOCK(gic_lock) {
-        WRITE_SYS_REG64(ICC_SGI1R_EL1, sgi_register);
+    irq_save_lock_type irq_lock;
+    WITH_LOCK(irq_lock) {
+        WITH_LOCK(gic_lock) {
+            WRITE_SYS_REG64(ICC_SGI1R_EL1, sgi_register);
+        }
     }
 }
 
