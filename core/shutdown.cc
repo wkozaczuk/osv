@@ -11,8 +11,8 @@ namespace osv {
 
 void shutdown()
 {
-    wait_strace_complete();
-    dhcp_release();
+    //wait_strace_complete();
+    //dhcp_release();
 
     // The vfs_exit() call below will forcibly unmount the filesystem. If any
     // thread is executing code mapped from a file, these threads may crash if

@@ -152,7 +152,7 @@ static bool opt_noshutdown = false;
 bool opt_power_off_on_abort = false;
 static bool opt_log_backtrace = false;
 static bool opt_list_tracepoints = false;
-static bool opt_strace = false;
+//static bool opt_strace = false;
 static bool opt_mount = true;
 static bool opt_pivot = true;
 static std::string opt_rootfs;
@@ -283,6 +283,7 @@ static void parse_options(int loader_argc, char** loader_argv)
         opt_bootchart = true;
     }
 
+/*
     if (options::option_value_exists(options_values, "trace")) {
         auto tv = options::extract_option_values(options_values, "trace");
         for (auto t : tv) {
@@ -296,7 +297,7 @@ static void parse_options(int loader_argc, char** loader_argv)
             opt_strace = true;
         }
     }
-
+*/
     opt_mount = !extract_option_flag(options_values, "nomount");
     opt_pivot = !extract_option_flag(options_values, "nopivot");
     opt_random = !extract_option_flag(options_values, "norandom");
@@ -396,7 +397,12 @@ std::vector<std::vector<std::string> > prepare_commands(char* app_cmdline)
     bool ok;
 
     printf("Cmdline: %s\n", app_cmdline);
-    commands = osv::parse_command_line(app_cmdline, ok);
+    //commands = osv::parse_command_line(app_cmdline, ok);
+    std::vector<std::string> single_command;
+    single_command.push_back(std::string(app_cmdline).substr(0,strlen(app_cmdline) - 1));
+    single_command.push_back(";");
+    commands.push_back(single_command);
+    ok = true;
 
     if (!ok) {
         puts("Failed to parse command line.");
@@ -409,13 +415,13 @@ std::vector<std::vector<std::string> > prepare_commands(char* app_cmdline)
 
     return commands;
 }
-
+/*
 static std::string read_file(std::string fn)
 {
   std::ifstream in(fn, std::ios::in | std::ios::binary);
   return std::string((std::istreambuf_iterator<char>(in)),
           std::istreambuf_iterator<char>());
-}
+}*/
 
 static void stop_all_remaining_app_threads()
 {
@@ -535,7 +541,7 @@ void* do_main_thread(void *_main_args)
     });
     if (has_if) {
         if (opt_ip.size() == 0) {
-            dhcp_start(true);
+            //dhcp_start(true);
         } else {
             for (auto t : opt_ip) {
                 std::vector<std::string> tmp;
@@ -623,6 +629,7 @@ void* do_main_thread(void *_main_args)
     auto commands = prepare_commands(app_cmdline);
 
     // Run command lines in /init/* before the manual command line
+    /*
     if (opt_init) {
         std::vector<std::vector<std::string>> init_commands;
         struct dirent **namelist = nullptr;
@@ -648,7 +655,7 @@ void* do_main_thread(void *_main_args)
         free(namelist);
         commands.insert(commands.begin(),
                  init_commands.begin(), init_commands.end());
-    }
+    }*/
 
     // run each payload in order
     // Our parse_command_line() leaves at the end of each command a delimiter,
@@ -734,7 +741,7 @@ void main_cont(int loader_argc, char** loader_argv)
         printf("Too many cpus, can't boot with greater than %u cpus.\n", sched::max_cpus);
         poweroff();
     }
-
+/*
     if (opt_list_tracepoints) {
         list_all_tracepoints();
     }
@@ -747,7 +754,7 @@ void main_cont(int loader_argc, char** loader_argv)
     }
     if (opt_strace) {
         start_strace();
-    }
+    }*/
     sched::init_detached_threads_reaper();
     elf::setup_missing_symbols_detector();
 

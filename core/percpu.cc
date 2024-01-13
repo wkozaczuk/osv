@@ -12,7 +12,7 @@
 #include <osv/debug.hh>
 #include <osv/ilog2.hh>
 
-static constexpr size_t dynamic_percpu_max = 65536;
+static constexpr size_t dynamic_percpu_max = 16384;
 
 struct dynamic_percpu_buffer {
     char buf[dynamic_percpu_max];

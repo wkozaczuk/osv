@@ -1066,9 +1066,11 @@ ulong evacuate(uintptr_t start, uintptr_t end)
             auto& dead = *i--;
             auto size = dead.operate_range(unpopulate<account_opt::yes>(dead.page_ops()));
             ret += size;
+#ifdef CONFIG_JVM_BALLOON
             if (dead.has_flags(mmap_jvm_heap)) {
                 memory::stats::on_jvm_heap_free(size);
             }
+#endif
             vma_list.erase(dead);
             WITH_LOCK(vma_range_set_mutex.for_write()) {
                 vma_range_set.erase(vma_range(&dead));
@@ -1554,12 +1556,17 @@ void vma::fault(uintptr_t addr, exception_frame *ef)
         size = page_size;
     }
 
+#ifdef CONFIG_JVM_BALLOON
     auto total = populate_vma<account_opt::yes>(this, (void*)addr, size,
         mmu::is_page_fault_write(ef->get_error()));
 
     if (_flags & mmap_jvm_heap) {
         memory::stats::on_jvm_heap_alloc(total);
     }
+#else
+    populate_vma<account_opt::yes>(this, (void*)addr, size,
+        mmu::is_page_fault_write(ef->get_error()));
+#endif
 }
 
 page_allocator* vma::page_ops()
@@ -1594,6 +1601,7 @@ error anon_vma::sync(uintptr_t start, uintptr_t end)
     return no_error();
 }
 
+#ifdef CONFIG_JVM_BALLOON
 // Balloon is backed by no pages, but in the case of partial copy, we may have
 // to back some of the pages. For that and for that only, we initialize a page
 // allocator. It is fine in this case to use the noinit allocator. Since this
@@ -1806,6 +1814,7 @@ ulong map_jvm(unsigned char* jvm_addr, size_t size, size_t align, balloon_ptr b)
     }
     return 0;
 }
+#endif
 
 file_vma::file_vma(addr_range range, unsigned perm, unsigned flags, fileref file, f_offset offset, page_allocator* page_ops)
     : vma(range, perm, flags | mmap_small, !(flags & mmap_shared), page_ops)

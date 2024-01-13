@@ -9,7 +9,7 @@
 #include <osv/mutex.h>
 #include <osv/semaphore.hh>
 #include <vector>
-#include <boost/algorithm/cxx11/all_of.hpp>
+//#include <boost/algorithm/cxx11/all_of.hpp>
 #include <osv/debug.hh>
 #include <osv/percpu.hh>
 #include <osv/preempt-lock.hh>
@@ -29,7 +29,7 @@ mutex mtx;
 
 struct rcu_defer_queue {
     int buf; // double-buffer: 0 or 1
-    std::array<std::function<void ()>, 2000> callbacks[2];
+    std::array<std::function<void ()>, 200> callbacks[2];
     unsigned int ncallbacks[2];
 };
 static PERCPU(rcu_defer_queue, percpu_callbacks);

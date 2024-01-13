@@ -140,15 +140,15 @@ TRACEPOINT(trace_net_packet_handling, "proto=%d, data=%s", int, slice_t);
 
 void log_packet_in(struct mbuf* m, int proto)
 {
-    trace_net_packet_in(proto, slice_t(m));
+    //trace_net_packet_in(proto, slice_t(m));
 }
 
 void log_packet_out(struct mbuf* m, int proto)
 {
-    trace_net_packet_out(proto, slice_t(m));
+    //trace_net_packet_out(proto, slice_t(m));
 }
 
 void log_packet_handling(struct mbuf* m, int proto)
 {
-    trace_net_packet_handling(proto, slice_t(m));
+    //trace_net_packet_handling(proto, slice_t(m));
 }

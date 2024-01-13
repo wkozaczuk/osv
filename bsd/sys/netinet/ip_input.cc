@@ -484,9 +484,9 @@ tooshort:
 	/*
 	 * DHCP
 	 */
-	if (dhcp_hook_rx(m)) {
-		return nullptr;
-	}
+	//if (dhcp_hook_rx(m)) {
+	//	return nullptr;
+	//}
 
 	/*
 	 * Run through list of hooks for input packets.

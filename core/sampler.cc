@@ -155,8 +155,8 @@ void start_sampler(config new_config) throw()
 
     assert(_active_cpus == 0);
 
-    trace_sampler_tick.enable(true);
-    trace_sampler_tick.backtrace(true);
+    //trace_sampler_tick.enable(true);
+    //trace_sampler_tick.backtrace(true);
 
     _n_cpus = sched::cpus.size();
     _config = new_config;
@@ -199,8 +199,8 @@ void stop_sampler() throw()
     sched::thread::wait_until([] { return _active_cpus == 0; });
     _controller.clear();
 
-    trace_sampler_tick.backtrace(false);
-    trace_sampler_tick.enable(false);
+    //trace_sampler_tick.backtrace(false);
+    //trace_sampler_tick.enable(false);
 
     _started = false;
     debug("Sampler stopped.\n");
