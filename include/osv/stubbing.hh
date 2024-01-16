@@ -21,7 +21,8 @@ static inline void debug_always(std::string str)
 template <typename... args>
 static inline void debug_always(const char* fmt, args... as)
 {
-    debug_always(osv::sprintf(fmt, as...));
+    //debug_always(osv::sprintf(fmt, as...));
+    debug("ale");
 }
 
 

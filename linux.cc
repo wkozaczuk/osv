@@ -8,7 +8,8 @@
 // linux syscalls
 
 #include <osv/debug.hh>
-#include <boost/format.hpp>
+#define BOOST_NO_STD_LOCALE 1
+//#include <boost/format.hpp>
 #include <osv/sched.hh>
 #include <osv/mutex.h>
 #include <osv/waitqueue.hh>

@@ -385,7 +385,7 @@ long sysconf(int name)
     case _SC_MINSIGSTKSZ: return MINSIGSTKSZ;
     case _SC_SIGSTKSZ: return SIGSTKSZ;
     default:
-        debug(fmt("sysconf(): stubbed for parameter %1%\n") % name);
+        //debug(fmt("sysconf(): stubbed for parameter %1%\n") % name);
         errno = EINVAL;
         return -1;
     }
@@ -442,7 +442,7 @@ int pclose(FILE *stream)
 
 void exit(int status)
 {
-    debug(fmt("program exited with status %d\n") % status);
+    //debug(fmt("program exited with status %d\n") % status);
     osv::shutdown();
 }
 

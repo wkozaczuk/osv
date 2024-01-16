@@ -9,8 +9,9 @@
 #include "fs/fs.hh"
 #include <bsd/init.hh>
 #include <bsd/net.hh>
-#include <boost/format.hpp>
-#include <boost/algorithm/string.hpp>
+#define BOOST_NO_STD_LOCALE 1
+//#include <boost/format.hpp>
+//#include <boost/algorithm/string.hpp>
 #include <cctype>
 #include <osv/elf.hh>
 #include "arch-tls.hh"
@@ -52,8 +53,8 @@
 #endif
 #include <osv/options.hh>
 #include <dirent.h>
-#include <iostream>
-#include <fstream>
+//#include <iostream>
+//#include <fstream>
 #include <mntent.h>
 
 #include "drivers/zfs.hh"
@@ -176,7 +177,7 @@ static int sampler_frequency;
 static bool opt_enable_sampler = false;
 
 static void usage()
-{
+{/*
     std::cout << "OSv options:\n";
     std::cout << "  --help                show help text\n";
     std::cout << "  --sampler=arg         start stack sampling profiler\n";
@@ -209,12 +210,12 @@ static void usage()
     std::cout << "  --nopci               disable PCI enumeration\n";
     std::cout << "  --extra-zfs-pools     import extra ZFS pools\n";
     std::cout << "  --mount-fs=arg        mount extra filesystem, format:<fs_type,url,path>\n";
-    std::cout << "  --preload-zfs-library preload ZFS library from /usr/lib/fs\n\n";
+    std::cout << "  --preload-zfs-library preload ZFS library from /usr/lib/fs\n\n";*/
 }
 
 static void handle_parse_error(const std::string &message)
 {
-    std::cout << message << std::endl;
+    //std::cout << message << std::endl;
     usage();
     osv::poweroff();
 }
@@ -324,7 +325,7 @@ static void parse_options(int loader_argc, char** loader_argv)
         auto mounts = options::extract_option_values(options_values, "mount-fs");
         for (auto m : mounts) {
             std::vector<std::string> tmp;
-            boost::split(tmp, m, boost::is_any_of(","), boost::token_compress_on);
+            //boost::split(tmp, m, boost::is_any_of(","), boost::token_compress_on);
             if (tmp.size() != 3 || tmp[0].empty() || tmp[1].empty() || tmp[2].empty()) {
                 printf("Ignoring value: '%s' for option mount-fs, expected in format: <fs_type,url,path>\n", m.c_str());
                 continue;
@@ -381,9 +382,9 @@ static void parse_options(int loader_argc, char** loader_argv)
     }
 
     if (!options_values.empty()) {
-        for (auto other_option : options_values) {
+        /*for (auto other_option : options_values) {
             std::cout << "unrecognized option: " << other_option.first << std::endl;
-        }
+        }*/
 
         usage();
         osv::poweroff();
@@ -545,7 +546,7 @@ void* do_main_thread(void *_main_args)
         } else {
             for (auto t : opt_ip) {
                 std::vector<std::string> tmp;
-                boost::split(tmp, t, boost::is_any_of(" ,"), boost::token_compress_on);
+                //boost::split(tmp, t, boost::is_any_of(" ,"), boost::token_compress_on);
                 if (tmp.size() != 3)
                     abort("incorrect parameter on --ip");
 
@@ -617,8 +618,8 @@ void* do_main_thread(void *_main_args)
         if (fd < 0) {
             perror("output redirection failed");
         } else {
-            std::cout << (append ? "Appending" : "Writing") <<
-                    " stdout and stderr to " << fn << "\n";
+            /*std::cout << (append ? "Appending" : "Writing") <<
+                    " stdout and stderr to " << fn << "\n";*/
             close(1);
             close(2);
             dup(fd);
@@ -685,7 +686,7 @@ void* do_main_thread(void *_main_args)
                 bg.push_back(app);
             }
         } catch (const launch_error& e) {
-            std::cerr << e.what() << ". Powering off.\n";
+            //std::cerr << e.what() << ". Powering off.\n";
             osv::poweroff();
         }
     }

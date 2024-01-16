@@ -1,0 +1,60 @@
+./scripts/build fs=rofs conf_hide_symbols=1 image=native-example drivers_profile=virtio-mmio -j$(nproc)
+---
+BEFORE:
+du -hk build/release/loader-stripped.elf
+3344	build/release/loader-stripped.elf
+
+AFTER TRACEPOINT macro replacement with empty function:
+3032	build/release/loader-stripped.elf
+
+AFTER disabling core/trace.cc, etc in Makefile
+2920	build/release/loader-stripped.elf
+
+AFTER building with native-example custom specific kernel:
+./scripts/build fs=rofs conf_hide_symbols=1 image=native-example drivers_profile=virtio-mmio -j$(nproc) conf_version_script=build/last/app_version_script
+2300	build/release/loader-stripped.elf
+
+AFTER dhcp removal:
+2276
+
+AFTER parse commands removal:
+2212
+
+AFTER changing the rcu_defer_queue.callbacks[] size from 2000 to 200 
+2100 (-112K)
+
+AFTER change of dynamic_percpu_max from 64K to 16K
+2052
+
+std::locale, boost format related
+---
+after some attempts to get rid of std::locale but before complete
+1936
+
+AFTER complete
+1476
+
+by directory and file
+-------------
+loader_cost/arch:    100.0%   177Ki 100.0%   184Ki    TOTAL
+loader_cost/bsd:     100.0%   377Ki 100.0%   398Ki    TOTAL
+loader_cost/core:    100.0%   342Ki 100.0%   401Ki    TOTAL
+loader_cost/drivers: 100.0%  54.7Ki 100.0%  55.0Ki    TOTAL
+loader_cost/fs:      100.0%   128Ki 100.0%   280Ki    TOTAL
+loader_cost/libc:    100.0%  77.7Ki 100.0%  91.1Ki    TOTAL
+loader_cost/musl:    100.0%  24.2Ki 100.0%  24.2Ki    TOTAL
+
+   1.7%  24.3Ki   1.4%  25.1Ki    loader.cc
+   0.8%  12.4Ki   0.7%  12.5Ki    linux.cc
+   0.2%  3.26Ki   0.2%  4.38Ki    runtime.cc
+
+--- HEADERs that seem to cause include of std::locale
++//#include <boost/algorithm/string.hpp>
++//#include <boost/algorithm/string/split.hpp>
++//#include <boost/date_time.hpp>
++//#include <boost/format.hpp>
++//#include <fstream>
++//#include <iomanip>
++//#include <iostream>
++//#include <osv/debug.hh>
++//#include <osv/printf.hh>

@@ -10,7 +10,7 @@
 #include <unistd.h>
 #include <string.h>
 #include <osv/debug.hh>
-#include <osv/printf.hh>
+//#include <osv/printf.hh>
 #include <osv/sched.hh>
 #include <osv/mutex.h>
 #include <osv/condvar.h>

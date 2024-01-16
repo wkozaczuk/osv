@@ -8,10 +8,11 @@
 #ifndef TRACE_HH_
 #define TRACE_HH_
 
-#include <iostream>
+//#include <iostream>
 #include <iterator>
 #include <tuple>
-#include <boost/format.hpp>
+#define BOOST_NO_STD_LOCALE 1
+//#include <boost/format.hpp>
 #include <osv/types.h>
 #include <osv/align.hh>
 #include <osv/sched.hh>
@@ -84,7 +85,7 @@ struct trace_log {
 };
 
 extern trace_log* _trace_log;
-
+/*
 template <size_t idx, size_t N, typename... args>
 struct tuple_formatter
 {
@@ -116,7 +117,7 @@ boost::format format_tuple(const char* fmt, std::tuple<args...> as)
     boost::format format(fmt);
     return format_tuple(format, as);
 }
-
+*/
 template <typename T, typename = void>
 struct signature_char;
 

@@ -1,0 +1,23 @@
+    FILE SIZE        VM SIZE    
+ --------------  -------------- 
+  37.2%  20.4Ki  37.1%  20.4Ki    drivers/virtio-net.cc
+  10.0%  5.48Ki  10.0%  5.49Ki    drivers/virtio-blk.cc
+   9.8%  5.38Ki   9.8%  5.38Ki    drivers/line-discipline.cc
+   6.3%  3.44Ki   6.3%  3.45Ki    drivers/virtio-mmio.cc
+   5.7%  3.11Ki   5.7%  3.11Ki    drivers/virtio-vring.cc
+   4.9%  2.70Ki   4.9%  2.71Ki    drivers/driver.cc
+   3.9%  2.16Ki   4.3%  2.34Ki    drivers/console.cc
+   3.8%  2.07Ki   3.8%  2.08Ki    drivers/console-multiplexer.cc
+   3.5%  1.91Ki   3.5%  1.92Ki    drivers/virtio.cc
+   3.5%  1.90Ki   3.5%  1.90Ki    drivers/kvmclock.cc
+   2.3%  1.27Ki   2.3%  1.27Ki    drivers/device.cc
+   2.2%  1.19Ki   2.2%  1.19Ki    drivers/random.cc
+   1.5%     848   1.5%     848    drivers/clock-common.cc
+   1.3%     706   1.3%     706    drivers/console-driver.cc
+   1.0%     584   1.0%     584    drivers/isa-serial.cc
+   1.0%     536   1.0%     536    drivers/isa-serial-base.cc
+   0.9%     528   1.0%     544    drivers/zfs.cc
+   0.4%     248   0.4%     248    drivers/null.cc
+   0.4%     216   0.4%     224    drivers/clock.cc
+   0.2%     136   0.3%     152    drivers/clockevent.cc
+ 100.0%  54.7Ki 100.0%  55.0Ki    TOTAL

@@ -1,0 +1,21 @@
+conf/base.mk
+-conf_linker_extra_options=
++conf_linker_extra_options=--build-id
+
+--- INTERESTING usages
+bloaty -d compileunits build/release/kernel-stripped.elf --debug-file build/release/kernel.elf -n 0
+
+bloaty build/release/core/elf.o -n 0 
+bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0
+bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file
+bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter arch
+bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter bsd
+bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter core
+bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter core/elf.cc
+bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter drivers
+bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter fs
+bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter libc
+bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter linux
+bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter musl
+bloaty -d symbols build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file
+bloaty -d symbols build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter core/elf.cc

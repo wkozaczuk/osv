@@ -10,7 +10,8 @@
 #include <osv/mmu.hh>
 #include "processor.hh"
 #include <osv/interrupt.hh>
-#include <boost/format.hpp>
+#define BOOST_NO_STD_LOCALE 1
+//#include <boost/format.hpp>
 #include <osv/sched.hh>
 #include <osv/debug.hh>
 #include <libc/signal.hh>
@@ -22,7 +23,7 @@
 
 #include "fault-fixup.hh"
 
-typedef boost::format fmt;
+//typedef boost::format fmt;
 
 __thread exception_frame* current_interrupt_frame;
 interrupt_descriptor_table idt __attribute__((init_priority((int)init_prio::idt)));

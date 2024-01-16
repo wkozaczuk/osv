@@ -10,7 +10,8 @@
 #include "processor.hh"
 #include <osv/debug.hh>
 #include "exceptions.hh"
-#include <boost/format.hpp>
+#define BOOST_NO_STD_LOCALE 1
+//#include <boost/format.hpp>
 #include <string.h>
 #include <iterator>
 #include "libc/signal.hh"
@@ -39,7 +40,7 @@ extern size_t elf_size;
 
 namespace {
 
-typedef boost::format fmt;
+//typedef boost::format fmt;
 
 }
 
@@ -2002,6 +2003,7 @@ linear_vma::~linear_vma() {
 }
 
 std::string sysfs_linear_maps() {
+    /*
     std::ostringstream os;
     WITH_LOCK(linear_vma_set_mutex.for_read()) {
         for(auto *vma : linear_vma_set) {
@@ -2010,7 +2012,8 @@ std::string sysfs_linear_maps() {
                 vma->_virt_addr, (void*)vma->_phys_addr, vma->_size, mattr, vma->_name.c_str());
         }
     }
-    return os.str();
+    return os.str();*/
+    return "str";
 }
 
 void linear_map(void* _virt, phys addr, size_t size, const char* name,
@@ -2103,25 +2106,26 @@ error mincore(const void *addr, size_t length, unsigned char *vec)
 
 std::string procfs_maps()
 {
-    std::ostringstream os;
+    //std::ostringstream os;
     WITH_LOCK(vma_list_mutex.for_read()) {
         for (auto& vma : vma_list) {
             char read    = vma.perm() & perm_read  ? 'r' : '-';
             char write   = vma.perm() & perm_write ? 'w' : '-';
             char execute = vma.perm() & perm_exec  ? 'x' : '-';
             char priv    = 'p';
-            osv::fprintf(os, "%x-%x %c%c%c%c ", vma.start(), vma.end(), read, write, execute, priv);
+            printf("%x-%x %c%c%c%c ", vma.start(), vma.end(), read, write, execute, priv);
             if (vma.flags() & mmap_file) {
                 const file_vma &f_vma = static_cast<file_vma&>(vma);
                 unsigned dev_id_major = major(f_vma.file_dev_id());
                 unsigned dev_id_minor = minor(f_vma.file_dev_id());
-                osv::fprintf(os, "%08x %02x:%02x %ld %s\n", f_vma.offset(), dev_id_major, dev_id_minor, f_vma.file_inode(), f_vma.file()->f_dentry->d_path);
+                printf("%08x %02x:%02x %ld %s\n", f_vma.offset(), dev_id_major, dev_id_minor, f_vma.file_inode(), f_vma.file()->f_dentry->d_path);
             } else {
-                osv::fprintf(os, "00000000 00:00 0\n");
+                printf("00000000 00:00 0\n");
             }
         }
     }
-    return os.str();
+    //return os.str();
+    return "ALE";
 }
 
 }

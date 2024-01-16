@@ -9,7 +9,7 @@
 #include <osv/percpu.hh>
 #include <osv/sched.hh>
 #include <osv/trace.hh>
-#include <osv/printf.hh>
+//#include <osv/printf.hh>
 
 #include <osv/irqlock.hh>
 #include <osv/preempt-lock.hh>
@@ -95,7 +95,8 @@ class async_worker {
 public:
     async_worker(sched::cpu* cpu)
         : _thread(sched::thread::make(std::bind(&async_worker::run, this),
-            sched::thread::attr().pin(cpu).name(osv::sprintf("async_worker%d", cpu->id))))
+            //sched::thread::attr().pin(cpu).name(osv::sprintf("async_worker%d", cpu->id))))
+            sched::thread::attr().pin(cpu).name("async_worker")))
         , _timer(*_thread)
         , _cpu(cpu)
     {

@@ -17,7 +17,8 @@
 
 #include <osv/debug.hh>
 #include <osv/net_trace.hh>
-
+#include <algorithm>
+/*
 std::ostream& operator<<(std::ostream& os, in_addr ia)
 {
     auto x = ntohl(ia.s_addr);
@@ -28,7 +29,7 @@ std::ostream& operator<<(std::ostream& os, in_addr ia)
 std::ostream& operator<<(std::ostream& os, ipv4_tcp_conn_id id)
 {
     return osv::fprintf(os, "{ ipv4 %s:%d -> %s:%d }", id.src_addr, id.src_port, id.dst_addr, id.dst_port);
-}
+}*/
 
 void net_channel::process_queue()
 {

@@ -8,10 +8,11 @@
 #ifndef PRINTF_HH_
 #define PRINTF_HH_
 
-#include <boost/format.hpp>
+#define BOOST_NO_STD_LOCALE 1
+//#include <boost/format.hpp>
 #include <string>
 #include <sstream>
-#include <iostream>
+//#include <iostream>
 
 namespace osv {
 

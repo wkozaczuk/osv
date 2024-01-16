@@ -8,7 +8,8 @@
 #include <osv/elf.hh>
 #include <osv/app.hh>
 #include <osv/mmu.hh>
-#include <boost/format.hpp>
+#define BOOST_NO_STD_LOCALE 1
+//#include <boost/format.hpp>
 #include <exception>
 #include <memory>
 #include <string.h>
@@ -16,7 +17,7 @@
 #include <osv/debug.hh>
 #include <stdlib.h>
 #include <unistd.h>
-#include <boost/algorithm/string.hpp>
+//#include <boost/algorithm/string.hpp>
 #include <boost/range/algorithm/find.hpp>
 #include <functional>
 #include <iterator>
@@ -53,7 +54,7 @@ extern char libvdso_start[];
 using namespace boost::range;
 
 namespace {
-    typedef boost::format fmt;
+    //typedef boost::format fmt;
 }
 
 namespace elf {
@@ -534,7 +535,7 @@ void object::process_headers()
         default:
             abort("Unknown p_type in executable %s: %d\n", pathname(), phdr.p_type);
         }
-    }
+    }/*
     if (_is_dynamically_linked_executable && _tls_segment) {
         auto app_tls_size = get_aligned_tls_size();
         ulong pie_static_tls_maximum_size = &_pie_static_tls_end - &_pie_static_tls_start;
@@ -551,7 +552,7 @@ void object::process_headers()
                   << "Either re-link the kernel by adding 'app_local_exec_tls_size=" << app_tls_needed_size
                   << "' to ./scripts/build or re-link the app with '-shared' instead of '-pie'.\n";
         }
-    }
+    }*/
 }
 
 void file::unload_segment(const Elf64_Phdr& phdr)
@@ -1056,7 +1057,7 @@ bool object::contains_addr(const void* addr)
 {
     return addr >= _base && addr < _end;
 }
-
+/*
 static std::string dirname(std::string path)
 {
     auto pos = path.rfind('/');
@@ -1064,7 +1065,7 @@ static std::string dirname(std::string path)
         return "/";
     }
     return path.substr(0, pos);
-}
+}*/
 
 void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
 {
@@ -1080,8 +1081,8 @@ void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
     }
 
     if (!rpath_str.empty()) {
-        boost::replace_all(rpath_str, "$ORIGIN", dirname(_pathname));
-        boost::split(rpath, rpath_str, boost::is_any_of(":"));
+        //boost::replace_all(rpath_str, "$ORIGIN", dirname(_pathname));
+        //boost::split(rpath, rpath_str, boost::is_any_of(":"));
     }
     auto needed = dynamic_str_array(DT_NEEDED);
     for (auto lib : needed) {

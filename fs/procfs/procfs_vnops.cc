@@ -18,7 +18,7 @@
 
 #include <libgen.h>
 #include <osv/mempool.hh>
-#include <osv/printf.hh>
+//#include <osv/printf.hh>
 
 #include <sys/resource.h>
 #include <mntent.h>
@@ -70,8 +70,8 @@ static std::string procfs_stats()
     int wchan = 0, rt_priority = 0, policy = 0; // SCHED_OTHER = 0
     int zero = 0;
 
-    std::ostringstream os;
-    osv::fprintf(os, "%d (%s) %c "
+    //std::ostringstream os;
+    printf("%d (%s) %c "
                      "%d %d %d %d %d "
                      "%lu %lu %lu %lu %lu "
                      "%lu %lu %ld %ld "
@@ -94,7 +94,7 @@ static std::string procfs_stats()
                      wchan, zero, zero,
                      exit_signal, cpu, rt_priority, policy
                 );
-    return os.str();
+    return "ale";
 }
 
 static std::string procfs_status()
@@ -105,13 +105,14 @@ static std::string procfs_status()
     // information about cpus and memory intended for numa library
     // For details about the format read here: http://man7.org/linux/man-pages/man5/proc.5.html
     // and here: http://man7.org/linux/man-pages/man7/cpuset.7.html (mask and list format)
-    std::ostringstream os;
+    /*std::ostringstream os;
     osv::fprintf(os, "Cpus_allowed:\t%s\n"
                      "Cpus_allowed_list:\t0-%d\n"
                      "Mems_allowed:\t00000001\n"
                      "Mems_allowed_list:\t0\n",
                      pseudofs::cpumap().c_str(), sched::cpus.size() - 1);
-    return os.str();
+    return os.str();*/
+    return "bale";
 }
 
 static std::string procfs_mounts()

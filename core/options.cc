@@ -5,7 +5,7 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-#include <iostream>
+//#include <iostream>
 #include <functional>
 #include <cassert>
 #include <osv/options.hh>
@@ -117,19 +117,19 @@ string extract_option_value(map<string,vector<string>> &options_values, const st
 {
     return extract_option_values(options_values, name)[0];
 }
-
+/*
 static void handle_invalid_argument(const string &name, const string &value, function<void (const string&)> error_handler)
 {
     error_handler(string("the argument ('") + value + "') for option '--" + name + "' is invalid");
-}
+}*/
 
 int extract_option_int_value(map<string,vector<string>> &options_values, const string &name, function<void (const string&)> error_handler)
 {
     auto value_str = extract_option_values(options_values, name)[0];
-    size_t pos;
+    //size_t pos;
     int value = 0;
 
-    try {
+    /*try {
         value = std::stoi(value_str, &pos);
         if (pos < value_str.length()) {
             handle_invalid_argument(name, value_str, error_handler);
@@ -137,17 +137,17 @@ int extract_option_int_value(map<string,vector<string>> &options_values, const s
     }
     catch (const invalid_argument& ia) {
         handle_invalid_argument(name, value_str, error_handler);
-    }
+    }*/
     return value;
 }
 
 float extract_option_float_value(map<string,vector<string>> &options_values, const string &name, function<void (const string&)> error_handler)
 {
     auto value_str = extract_option_values(options_values, name)[0];
-    size_t pos;
+    //size_t pos;
     float value = 0.0f;
 
-    try {
+    /*try {
         value =  std::stof(value_str, &pos);
         if (pos < value_str.length()) {
             handle_invalid_argument(name, value_str, error_handler);
@@ -155,7 +155,7 @@ float extract_option_float_value(map<string,vector<string>> &options_values, con
     }
     catch (const invalid_argument& ia) {
         handle_invalid_argument(name, value_str, error_handler);
-    }
+    }*/
     return value;
 }
 

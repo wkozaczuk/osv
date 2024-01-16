@@ -5,7 +5,7 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-#include <boost/date_time.hpp>
+//#include <boost/date_time.hpp>
 #include "rtc.hh"
 #include "processor.hh"
 
@@ -33,7 +33,7 @@ uint8_t rtc::cmos_read_date(uint8_t addr)
 }
 
 uint64_t rtc::wallclock_ns()
-{
+{/*
     // 0x80 : Update in progress. Wait for it.
     while ((cmos_read(0xA) & 0x80));
 
@@ -60,5 +60,6 @@ uint64_t rtc::wallclock_ns()
     auto base = boost::posix_time::ptime(boost::gregorian::date(1970, 1, 1));
     auto dur = now - base;
 
-    return dur.total_nanoseconds();
+    return dur.total_nanoseconds();*/
+    return 0;
 }

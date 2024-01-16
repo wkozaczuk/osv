@@ -7,9 +7,10 @@
 
 #include <cstring>
 #include <cstdarg>
-#include <iostream>
-#include <iomanip>
-#include "boost/format.hpp"
+//#include <iostream>
+//#include <iomanip>
+#define BOOST_NO_STD_LOCALE 1
+//#include "boost/format.hpp"
 #include "drivers/console.hh"
 #include <osv/sched.hh>
 #include <osv/debug.hh>
@@ -108,7 +109,7 @@ const char* logger::loggable_severity(logger_severity severity)
 
     return (ret);
 }
-
+/*
 void logger::wrt(const char* tag, logger_severity severity, const boost::format& _fmt)
 {
     if (this->is_filtered(tag, severity)) {
@@ -121,7 +122,7 @@ void logger::wrt(const char* tag, logger_severity severity, const boost::format&
     debug(_fmt);
     debug("\n");
     _lock.unlock();
-}
+}*/
 
 void logger::wrt(const char* tag, logger_severity severity, const char* _fmt, ...)
 {
@@ -184,11 +185,11 @@ void debug(std::string str)
         console::write(str.c_str(), str.length());
     }
 }
-
+/*
 void debug(const boost::format& fmt)
 {
     debug(fmt.str());
-}
+}*/
 
 void enable_verbose()
 {

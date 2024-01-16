@@ -8,7 +8,7 @@
 #include <unistd.h>
 #include <osv/mount.h>
 #include <mntent.h>
-#include <osv/printf.hh>
+//#include <osv/printf.hh>
 #include <osv/mempool.hh>
 
 #include "fs/pseudofs/pseudofs.hh"
@@ -34,7 +34,7 @@ static string sysfs_distance()
 
 using namespace memory;
 static string sysfs_free_page_ranges()
-{
+{/*
     stats::page_ranges_stats stats;
     stats::get_page_ranges_stats(stats);
 
@@ -51,11 +51,13 @@ static string sysfs_free_page_ranges()
         }
     }
 
-    return os.str();
+    return os.str();*/
+    return "ole";
 }
 
 static string sysfs_memory_pools()
 {
+/*
     stats::pool_stats stats;
     stats::get_global_l2_stats(stats);
 
@@ -70,7 +72,8 @@ static string sysfs_memory_pools()
             cpu->id, stats._max, stats._watermark_lo, stats._watermark_hi, stats._nr);
     }
 
-    return os.str();
+    return os.str();*/
+    return "ale";
 }
 
 static int
@@ -88,14 +91,14 @@ sysfs_mount(mount* mp, const char *dev, int flags, const void* data)
 
     auto system = make_shared<pseudo_dir_node>(inode_count++);
     system->add("node", node);
-
+/*
     auto cpu = make_shared<pseudo_dir_node>(inode_count++);
     cpu->add("online", inode_count++, [] {
        std::ostringstream os;
        osv::fprintf(os, "0-%d", sched::cpus.size() - 1);
        return os.str();
     });
-    system->add("cpu", cpu);
+    system->add("cpu", cpu);*/
 
     auto devices = make_shared<pseudo_dir_node>(inode_count++);
     devices->add("system", system);

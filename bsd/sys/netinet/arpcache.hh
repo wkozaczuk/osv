@@ -20,8 +20,8 @@
 
 #include <boost/optional.hpp>
 #include <functional>
-#include <iostream>
-#include <iomanip>
+//#include <iostream>
+//#include <iomanip>
 
 struct llentry;
 
@@ -47,13 +47,13 @@ struct arp_cache {
 
         void print(void) const
         {
-            using namespace std;
+            /*using namespace std;
             cout << showbase << hex;
             cout << "[ ";
             for (auto a : addr) {
                 cout << static_cast<unsigned>(a) << " ";
             }
-            cout << "]" << endl;
+            cout << "]" << endl;*/
         }
     };
 
