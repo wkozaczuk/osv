@@ -27,8 +27,6 @@
 #include <osv/device.h>
 #include <osv/debug.h>
 #include <fs/vfs/vfs_id.h>
-#include <iomanip>
-#include <iostream>
 
 static int rofs_mount(struct mount *mp, const char *dev, int flags, const void *data);
 static int rofs_sync(struct mount *mp);

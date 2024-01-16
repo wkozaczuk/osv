@@ -4,6 +4,8 @@
 #include <osv/osv_execve.h>
 #include <osv/wait_record.hh>
 #include <thread>
+#include <string>
+#include <sstream>
 
 /* Record thread state changes (termination) by storing exit status into a map.
  * It is used to implement waitpid like functionality for threads (osv_waittid).

@@ -17,6 +17,9 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
+#include <cassert>
+#include <unistd.h>
+
 namespace osv {
 
 // std::string is not fully functional when parse_cmdline is used for the first
