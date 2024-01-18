@@ -52,6 +52,9 @@ TRACEPOINT(trace_memory_page_free, "page=%p", void*);
 TRACEPOINT(trace_memory_huge_failure, "page ranges=%d", unsigned long);
 TRACEPOINT(trace_memory_reclaim, "shrinker %s, target=%d, delta=%d", const char *, long, long);
 TRACEPOINT(trace_memory_wait, "allocation size=%d", size_t);
+TRACEPOINT(trace_page_range_allocator_alloc, "size=%d", size_t);
+
+std::atomic<size_t> _page_range_alloc_total = {0};
 
 namespace dbg {
 
@@ -719,6 +722,8 @@ void page_range_allocator::bitmap_allocator<T>::deallocate(T* p, size_t n)
 template<bool UseBitmap>
 page_range* page_range_allocator::alloc(size_t size, bool contiguous)
 {
+    trace_page_range_allocator_alloc(size);
+    _page_range_alloc_total += size;
     auto exact_order = ilog2_roundup(size / page_size);
     if (exact_order > max_order) {
         exact_order = max_order;
@@ -774,6 +779,8 @@ page_range* page_range_allocator::alloc(size_t size, bool contiguous)
 page_range* page_range_allocator::alloc_aligned(size_t size, size_t offset,
                                                 size_t alignment, bool fill)
 {
+    trace_page_range_allocator_alloc(size);
+    _page_range_alloc_total += size;
     page_range* ret_header = nullptr;
     for_each(std::max(ilog2(size / page_size), 1u) - 1, [&] (page_range& header) {
         char* v = reinterpret_cast<char*>(&header);
@@ -1363,6 +1370,7 @@ static sched::cpu::notifier _notifier([] () {
     // Switch to smp_allocator only when all the N + 1 threads are ready
     if (smp_allocator_cnt++ == sched::cpus.size()) {
         smp_allocator = true;
+        debug_early_u64("Page ranges allocated at smp allocator activation: ", _page_range_alloc_total);
     }
 });
 static inline l1& get_l1()
@@ -1409,6 +1417,7 @@ void l1::refill()
 #endif
     SCOPE_LOCK(preempt_lock);
     auto& pbuf = get_l1();
+    auto old_nr = pbuf.nr;
     if (pbuf.nr + page_batch::nr_pages < pbuf.max / 2) {
         auto* pb = global_l2.alloc_page_batch();
         if (pb) {
@@ -1424,6 +1433,8 @@ void l1::refill()
             }
         }
     }
+    if (pbuf.nr - old_nr)
+    debug_early_u64("L1: grabbed 4K pages: ", pbuf.nr - old_nr);
 }
 
 void l1::unfill()
@@ -1489,6 +1500,7 @@ void l2::fill_thread()
 {
     if (smp_allocator_cnt++ == sched::cpus.size()) {
         smp_allocator = true;
+        debug_early_u64("Page ranges allocated at smp allocator activation: ", _page_range_alloc_total);
     }
 
     sched::thread::wait_until([] {return smp_allocator;});
@@ -1527,6 +1539,7 @@ void l2::refill()
                 total_size += page_size;
             }
             on_alloc(total_size);
+            debug_early_u64("L2: grabbed memory: ", total_size);
         }
         // Use the last page to store other page address
         pb = static_cast<page_batch*>(batch.pages[page_batch::nr_pages - 1]);

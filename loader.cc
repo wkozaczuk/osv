@@ -101,6 +101,8 @@ extern "C" {
     int mount_virtiofs_rootfs(bool);
 }
 
+#include <atomic>
+extern std::atomic<size_t> _page_range_alloc_total;
 void premain()
 {
     arch_init_early_console();
@@ -131,10 +133,12 @@ void premain()
 
     setup_tls(inittab);
     boot_time.event(3,"TLS initialization");
+    debug_early_u64("Page ranges allocated after setup_tls(): ", _page_range_alloc_total.load()); //0
     for (auto init = inittab.start; init < inittab.start + inittab.count; ++init) {
         (*init)();
     }
     boot_time.event(".init functions");
+    debug_early_u64("Page ranges allocated at premain end: ", _page_range_alloc_total.load()); //~850K
 }
 
 int main(int loader_argc, char **loader_argv)
@@ -464,7 +468,9 @@ void* do_main_thread(void *_main_args)
     if (!arch_setup_console(opt_console)) {
         abort("Unknown console:%s\n", opt_console.c_str());
     }
+    printf("Page ranges allocated BEFORE arch_init_drivers(): %ld\n", _page_range_alloc_total.load());
     arch_init_drivers();
+    printf("Page ranges allocated AFTER arch_init_drivers(): %ld\n", _page_range_alloc_total.load());
     console::console_init();
     nulldev::nulldev_init();
     if (opt_random) {
@@ -518,6 +524,7 @@ void* do_main_thread(void *_main_args)
         }
     }
 
+    printf("Page ranges allocated after FS mount: %ld\n", _page_range_alloc_total.load());
     if (opt_preload_zfs_library) {
         load_zfs_library();
     }
@@ -533,6 +540,7 @@ void* do_main_thread(void *_main_args)
             osv::ifup(if_name) != 0)
             debug("Could not initialize network interface.\n");
     });
+    printf("Page ranges allocated after osv::ifup(): %ld\n", _page_range_alloc_total.load());
     if (has_if) {
         if (opt_ip.size() == 0) {
             dhcp_start(true);
@@ -560,6 +568,7 @@ void* do_main_thread(void *_main_args)
         }
     }
 
+    printf("Page ranges allocated after set DNS: %ld\n", _page_range_alloc_total.load());
     std::string if_ip;
     auto nr_ips = 0;
 
@@ -620,6 +629,7 @@ void* do_main_thread(void *_main_args)
         }
     }
 
+    printf("Page ranges allocated before prepare_commands(): %ld\n", _page_range_alloc_total.load());
     auto commands = prepare_commands(app_cmdline);
 
     // Run command lines in /init/* before the manual command line
@@ -698,11 +708,13 @@ void* do_main_thread(void *_main_args)
 
 void main_cont(int loader_argc, char** loader_argv)
 {
+    debug_early_u64("Page ranges allocated at main_cont start: ", _page_range_alloc_total.load()); //almost 1MB at this point
     osv::firmware_probe();
 
     debug("Firmware vendor: %s\n", osv::firmware_vendor().c_str());
 
     elf::create_main_program();
+    printf("Page ranges allocated after elf::create_main_program(): %ld\n", _page_range_alloc_total.load()); //Little change
 
     std::vector<std::vector<std::string> > cmds;
 
@@ -713,9 +725,11 @@ void main_cont(int loader_argc, char** loader_argv)
 #if CONF_drivers_xen
     xen::irq_init();
 #endif
+    printf("Page ranges allocated BEFORE smp_launch(): %ld\n", _page_range_alloc_total.load());
     smp_launch();
     setenv("OSV_CPUS", std::to_string(sched::cpus.size()).c_str(), 1);
     boot_time.event("SMP launched");
+    printf("Page ranges allocated AFTER smp_launch(): %ld\n", _page_range_alloc_total.load()); //Increase by ~2.5MB (2524K)
 
     auto end = osv::clock::uptime::now() + boot_delay;
     while (end > osv::clock::uptime::now()) {
@@ -751,14 +765,18 @@ void main_cont(int loader_argc, char** loader_argv)
     sched::init_detached_threads_reaper();
     elf::setup_missing_symbols_detector();
 
+    printf("Page ranges allocated before bsd_init: %ld\n", _page_range_alloc_total.load());
     bsd_init();
 
+    printf("Page ranges allocated before vfs_init: %ld\n", _page_range_alloc_total.load());
     vfs_init();
     boot_time.event("VFS initialized");
     //ramdisk_init();
 
+    printf("Page ranges allocated before net_init: %ld\n", _page_range_alloc_total.load());
     net_init();
     boot_time.event("Network initialized");
+    printf("Page ranges allocated AFTER net_init: %ld\n", _page_range_alloc_total.load());
 
     arch::irq_enable();
 
@@ -793,6 +811,7 @@ void main_cont(int loader_argc, char** loader_argv)
         sched::thread::wait_until([] { return false; });
     }
 
+    printf("Page ranges allocated total: %ld\n", _page_range_alloc_total.load());
     if (memory::tracker_enabled) {
         debug("Leak testing done. Please use 'osv leak show' in gdb to analyze results.\n");
         osv::halt();

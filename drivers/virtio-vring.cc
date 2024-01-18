@@ -45,6 +45,7 @@ namespace virtio {
         // Alloc enough pages for the vring...
         size_t alignment = driver->get_vring_alignment();
         size_t sz = VIRTIO_ALIGN(vring::get_size(num, alignment), alignment);
+        printf("vring: allocating %d phys_contiguous bytes\n", sz);
         _vring_ptr = memory::alloc_phys_contiguous_aligned(sz, 4096);
         memset(_vring_ptr, 0, sz);
         
@@ -164,6 +165,7 @@ namespace virtio {
             vring_desc* descp = _desc;
 
             if (indirect) {
+                printf("alloc vring_desc size:%ld\n", ((_sg_vec.size())*sizeof(vring_desc)));
                 vring_desc* indirect = reinterpret_cast<vring_desc*>(alloc_phys_contiguous_aligned((_sg_vec.size())*sizeof(vring_desc), 8));
                 if (!indirect)
                     return false;

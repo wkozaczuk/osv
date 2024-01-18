@@ -626,12 +626,16 @@ void net::fill_rx_ring()
     vring* vq = _rxq.vqueue;
 
     int size_in_pages = _use_large_buffers ? LARGE_BUFFER_SIZE_IN_PAGES : 1;
+    int pages_alloced = 0;
     while (vq->avail_ring_not_empty()) {
         void *buffer;
         if (_use_large_buffers) {
+            printf("fill_rx_ring() allocating %ld bytes\n", size_in_pages * memory::page_size);
             buffer = memory::alloc_phys_contiguous_aligned(size_in_pages * memory::page_size, memory::page_size);
         } else {
+            //printf("fill_rx_ring() allocating %ld bytes\n", memory::page_size);
             buffer = memory::alloc_page();
+            pages_alloced++;
         }
 
         vq->init_sg();
@@ -642,6 +646,7 @@ void net::fill_rx_ring()
         }
         added++;
     }
+    printf("fill_rx_ring() allocated %ld 4K pages\n", pages_alloced);
 
     trace_virtio_net_fill_rx_ring_added(_ifn->if_index, added);
 

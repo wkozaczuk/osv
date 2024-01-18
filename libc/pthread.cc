@@ -33,6 +33,8 @@
 
 #include "pthread.hh"
 
+#include <atomic>
+extern std::atomic<size_t> _page_range_alloc_total;
 namespace pthread_private {
 
     const unsigned tsd_nkeys = PTHREAD_KEYS_MAX;
@@ -241,7 +243,9 @@ int pthread_create(pthread_t *thread, const pthread_attr_t *attr,
                "CPU set.\n The cpu_set_t provided will be ignored.\n");
     }
 
+    printf("Page ranges allocated BEFORE new pthread: %ld\n", _page_range_alloc_total.load());
     t = new pthread(start_routine, arg, sigset, &tmp);
+    printf("Page ranges allocated AFTER new pthread: %ld\n", _page_range_alloc_total.load());
     *thread = t->to_libc();
     t->start();
     return 0;

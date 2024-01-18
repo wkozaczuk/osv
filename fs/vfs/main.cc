@@ -2691,10 +2691,14 @@ extern "C" void bio_sync(void);
 
 int vfs_initialized;
 
+#include <atomic>
+extern std::atomic<size_t> _page_range_alloc_total;
+
 extern "C"
 void
 vfs_init(void)
 {
+    auto old = _page_range_alloc_total.load();
     const struct vfssw *fs;
 
     bio_init();
@@ -2715,6 +2719,7 @@ vfs_init(void)
 
     mount_rootfs();
     unpack_bootfs();
+    printf("VFS allocated %d bytes\n", _page_range_alloc_total.load() - old);
 
     //	if (open("/dev/console", O_RDWR, 0) != 0)
     if (console::open() != 0)

@@ -157,6 +157,7 @@ void thread::init_stack()
     if (!stack.size) {
         stack.size = 65536;
     }
+    debug_early_u64("thread stack: ", stack.size);
     if (!stack.begin) {
         stack.begin = malloc(stack.size);
         stack.deleter = stack.default_deleter;
