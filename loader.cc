@@ -771,10 +771,10 @@ void main_cont(int loader_argc, char** loader_argv)
     arch::irq_enable();
 
 #ifndef AARCH64_PORT_STUB
-    if (opt_enable_sampler) {
+/*    if (opt_enable_sampler) {
         prof::config config{std::chrono::nanoseconds(1000000000 / sampler_frequency)};
         prof::start_sampler(config);
-    }
+    }*/
 #endif /* !AARCH64_PORT_STUB */
 
     // multiple programs can be run -> separate their arguments

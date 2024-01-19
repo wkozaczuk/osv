@@ -76,15 +76,15 @@ static inline void tracker_remember(void *addr, size_t size)
 {
     // Check if tracker_enabled is true, but expect (be quicker in the case)
     // that it is false.
-    if (__builtin_expect(tracker_enabled, false)) {
+/*    if (__builtin_expect(tracker_enabled, false)) {
         tracker.remember(addr, size);
-    }
+    }*/
 }
 static inline void tracker_forget(void *addr)
-{
+{/*
     if (__builtin_expect(tracker_enabled, false)) {
         tracker.forget(addr);
-    }
+    }*/
 }
 
 //
