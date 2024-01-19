@@ -999,7 +999,7 @@ ifeq ($(conf_drivers_xen),1)
 objects += arch/$(arch)/xen.o
 endif
 
-$(out)/arch/x64/string-ssse3.o: CXXFLAGS += -mssse3
+#$(out)/arch/x64/string-ssse3.o: CXXFLAGS += -mssse3
 
 ifeq ($(arch),aarch64)
 objects += arch/$(arch)/psci.o
@@ -1011,7 +1011,7 @@ objects += arch/$(arch)/arch-dtb.o
 objects += arch/$(arch)/hypercall.o
 objects += arch/$(arch)/memset.o
 objects += arch/$(arch)/memcpy.o
-objects += arch/$(arch)/memmove.o
+#objects += arch/$(arch)/memmove.o
 objects += arch/$(arch)/tlsdesc.o
 objects += arch/$(arch)/sched.o
 objects += $(libfdt)
@@ -1019,8 +1019,8 @@ endif
 
 ifeq ($(arch),x64)
 objects += arch/x64/dmi.o
-objects += arch/x64/string.o
-objects += arch/x64/string-ssse3.o
+#objects += arch/x64/string.o
+#objects += arch/x64/string-ssse3.o
 objects += arch/x64/arch-trace.o
 objects += arch/x64/ioapic.o
 objects += arch/x64/apic.o
@@ -1579,7 +1579,7 @@ libc += arch/$(arch)/ucontext/setcontext.o
 libc += arch/$(arch)/ucontext/start_context.o
 libc_to_hide += arch/$(arch)/ucontext/start_context.o
 libc += arch/$(arch)/ucontext/ucontext.o
-libc += string/memmove.o
+#libc += string/memmove.o
 endif
 
 musl += search/tfind.o
@@ -1752,8 +1752,11 @@ musl += string/index.o
 musl += string/memccpy.o
 musl += string/memchr.o
 musl += string/memcmp.o
-libc += string/memcpy.o
-libc_to_hide += string/memcpy.o
+musl += string/memcpy.o
+musl += string/memset.o
+musl += string/memmove.o
+#libc += string/memcpy.o
+#libc_to_hide += string/memcpy.o
 musl += string/memmem.o
 musl += string/mempcpy.o
 musl += string/memrchr.o
