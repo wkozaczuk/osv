@@ -155,7 +155,7 @@ void thread::init_stack()
 {
     auto& stack = _attr._stack;
     if (!stack.size) {
-        stack.size = 65536;
+        stack.size = 65536 / 4;
     }
     if (!stack.begin) {
         stack.begin = malloc(stack.size);

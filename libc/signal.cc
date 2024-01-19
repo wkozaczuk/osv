@@ -457,6 +457,7 @@ private:
     bool _started = false;
 };
 
+/*
 static itimer itimer_real(SIGALRM, "itimer-real");
 static itimer itimer_virt(SIGVTALRM, "itimer-virt");
 
@@ -596,13 +597,14 @@ void itimer::get_interval(struct timeval *tv)
 {
     fill_tv(_interval, tv);
 }
-
+*/
 void cancel_this_thread_alarm()
 {
-    itimer_real.cancel_this_thread();
-    itimer_virt.cancel_this_thread();
+ //   itimer_real.cancel_this_thread();
+  //  itimer_virt.cancel_this_thread();
 }
 
+/*
 OSV_LIBC_API
 unsigned int alarm(unsigned int seconds)
 {
@@ -647,7 +649,7 @@ int getitimer(int which, struct itimerval *curr_value)
     default:
         return EINVAL;
     }
-}
+}*/
 
 // A per-thread stack set with sigaltstack() to be used by
 // build_signal_frame() when handling synchronous signals, most

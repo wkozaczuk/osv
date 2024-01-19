@@ -52,7 +52,7 @@
 #include <boost/intrusive/list.hpp>
 
 /* number of buffer cache */
-#define NBUFS		256
+#define NBUFS		16
 
 /* macros to clear/set/test flags. */
 #define	SET(t, f)	(t) |= (f)

@@ -1923,8 +1923,8 @@ libc += resource.o
 libc += mount.o
 libc += eventfd.o
 libc_to_hide += eventfd.o
-libc += timerfd.o
-libc_to_hide += timerfd.o
+#libc += timerfd.o
+#libc_to_hide += timerfd.o
 libc += shm.o
 libc += inotify.o
 libc += __pread64_chk.o
@@ -1991,9 +1991,9 @@ fs_objs += virtiofs/virtiofs_vfsops.o \
 	virtiofs/virtiofs_dax.o
 endif
 
-fs_objs += pseudofs/pseudofs.o
-fs_objs += procfs/procfs_vnops.o
-fs_objs += sysfs/sysfs_vnops.o
+//fs_objs += pseudofs/pseudofs.o
+//fs_objs += procfs/procfs_vnops.o
+//fs_objs += sysfs/sysfs_vnops.o
 fs_objs += zfs/zfs_null_vfsops.o
 
 objects += $(addprefix fs/, $(fs_objs))

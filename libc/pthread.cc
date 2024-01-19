@@ -105,7 +105,7 @@ namespace pthread_private {
         bool detached;
         cpu_set_t *cpuset;
         sched::cpu *cpu;
-        thread_attr() : stack_begin{}, stack_size{1<<20}, guard_size{4096}, detached{false}, cpuset{nullptr}, cpu{nullptr} {}
+        thread_attr() : stack_begin{}, stack_size{48*1024}, guard_size{4096}, detached{false}, cpuset{nullptr}, cpu{nullptr} {}
     };
 
     pthread::pthread(void *(*start)(void *arg), void *arg, sigset_t sigset,
@@ -140,7 +140,7 @@ namespace pthread_private {
         if (attr.stack_begin) {
             return {attr.stack_begin, attr.stack_size};
         }
-        size_t size = attr.stack_size;
+        size_t size = 48*1024;//attr.stack_size;
 #if CONF_lazy_stack
         unsigned stack_flags = mmu::mmap_stack;
 #else

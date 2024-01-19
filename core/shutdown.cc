@@ -6,11 +6,13 @@
 #include <osv/strace.hh>
 
 extern void vfs_exit(void);
+extern std::atomic<size_t> _page_range_alloc_total;
 
 namespace osv {
 
 void shutdown()
 {
+    printf("Page ranges allocated total: %ld\n", _page_range_alloc_total.load());
     //wait_strace_complete();
     //dhcp_release();
 

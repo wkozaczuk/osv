@@ -53,6 +53,7 @@ TRACEPOINT(trace_memory_huge_failure, "page ranges=%d", unsigned long);
 TRACEPOINT(trace_memory_reclaim, "shrinker %s, target=%d, delta=%d", const char *, long, long);
 TRACEPOINT(trace_memory_wait, "allocation size=%d", size_t);
 
+std::atomic<size_t> _page_range_alloc_total = {0};
 namespace dbg {
 
 static size_t object_size(void* v);
@@ -719,6 +720,7 @@ void page_range_allocator::bitmap_allocator<T>::deallocate(T* p, size_t n)
 template<bool UseBitmap>
 page_range* page_range_allocator::alloc(size_t size, bool contiguous)
 {
+    _page_range_alloc_total += size;
     auto exact_order = ilog2_roundup(size / page_size);
     if (exact_order > max_order) {
         exact_order = max_order;
@@ -774,6 +776,7 @@ page_range* page_range_allocator::alloc(size_t size, bool contiguous)
 page_range* page_range_allocator::alloc_aligned(size_t size, size_t offset,
                                                 size_t alignment, bool fill)
 {
+    _page_range_alloc_total += size;
     page_range* ret_header = nullptr;
     for_each(std::max(ilog2(size / page_size), 1u) - 1, [&] (page_range& header) {
         char* v = reinterpret_cast<char*>(&header);
@@ -1217,7 +1220,7 @@ struct l1 {
     }
     void push(void* page)
     {
-        assert(nr < 512);
+        assert(nr < 16);
         _pages[nr++] = page;
         l1_pool_stats[cpu_id]._nr = nr;
 
@@ -1228,7 +1231,7 @@ struct l1 {
     static void refill();
     static void unfill();
 
-    static constexpr size_t max = 512;
+    static constexpr size_t max = 16;
     static constexpr size_t watermark_lo = max * 1 / 4;
     static constexpr size_t watermark_hi = max * 3 / 4;
     size_t nr = 0;
@@ -1241,7 +1244,7 @@ private:
 
 struct page_batch {
     // Number of pages per batch
-    static constexpr size_t nr_pages = 32;
+    static constexpr size_t nr_pages = 4;
     void* pages[nr_pages];
 };
 

@@ -75,8 +75,8 @@ const struct vfssw vfssw[] = {
 	{"ramfs",	ramfs_init,	&ramfs_vfsops},
 	{"devfs",	devfs_init,	&devfs_vfsops},
 	{"nfs",		nfs_init,	&nfs_vfsops},
-	{"procfs",	procfs_init,	&procfs_vfsops},
-	{"sysfs",	sysfs_init,	&sysfs_vfsops},
+//	{"procfs",	procfs_init,	&procfs_vfsops},
+	//{"sysfs",	sysfs_init,	&sysfs_vfsops},
 	{"zfs",		zfs_init,	&zfs_vfsops},
 	{"rofs", 	rofs_init, 	&rofs_vfsops},
 #if CONF_drivers_virtio_fs

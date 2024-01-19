@@ -756,8 +756,8 @@ void main_cont(int loader_argc, char** loader_argv)
     if (opt_strace) {
         start_strace();
     }*/
-    sched::init_detached_threads_reaper();
-    elf::setup_missing_symbols_detector();
+    //sched::init_detached_threads_reaper();
+    //elf::setup_missing_symbols_detector();
 
     bsd_init();
 

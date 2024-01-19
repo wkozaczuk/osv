@@ -64,13 +64,13 @@ kvmclock::kvmclock()
     sync_wall_clock();
     //
     // Start a thread that will synchronize the wall clock with the host
-    auto t = sched::thread::make([this] {
+/*    auto t = sched::thread::make([this] {
         while (true) {
             sched::thread::sleep(std::chrono::seconds(1));
             this->sync_wall_clock();
         }
     }, sched::thread::attr().name("kvm_wall_clock_sync"));
-    t->start();
+    t->start();*/
     //TODO: Technically we should terminate the thread
     //when kvmclock object is destroyed but we are assuming it never will
     //before OSv goes down
