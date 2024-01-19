@@ -837,8 +837,8 @@ OSV_LIBC_API long syscall(long number, ...)
 #ifdef SYS_epoll_wait
     SYSCALL4(epoll_wait, int, struct epoll_event *, int, int);
 #endif
-    SYSCALL4(accept4, int, struct sockaddr *, socklen_t *, int);
-    SYSCALL3(connect, int, struct sockaddr *, socklen_t);
+    //SYSCALL4(accept4, int, struct sockaddr *, socklen_t *, int);
+    //SYSCALL3(connect, int, struct sockaddr *, socklen_t);
     SYSCALL5(get_mempolicy, int *, unsigned long *, unsigned long, void *, int);
     SYSCALL3(sys_sched_getaffinity, pid_t, unsigned, unsigned long *);
     SYSCALL6(long_mmap, void *, size_t, int, int, int, off_t);
@@ -854,22 +854,22 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL0(sched_yield);
     SYSCALL3(mincore, void *, size_t, unsigned char *);
     SYSCALL4(openat, int, const char *, int, mode_t);
-    SYSCALL3(socket, int, int, int);
-    SYSCALL5(setsockopt, int, int, int, char *, int);
-    SYSCALL5(getsockopt, int, int, int, char *, unsigned int *);
-    SYSCALL3(getpeername, int, struct sockaddr *, unsigned int *);
-    SYSCALL3(bind, int, struct sockaddr *, int);
-    SYSCALL2(listen, int, int);
+    //SYSCALL3(socket, int, int, int);
+    //SYSCALL5(setsockopt, int, int, int, char *, int);
+    //SYSCALL5(getsockopt, int, int, int, char *, unsigned int *);
+    //SYSCALL3(getpeername, int, struct sockaddr *, unsigned int *);
+    //SYSCALL3(bind, int, struct sockaddr *, int);
+    //SYSCALL2(listen, int, int);
     SYSCALL3(sys_ioctl, unsigned int, unsigned int, unsigned long);
 #ifdef SYS_stat
     SYSCALL2(stat, const char *, struct stat *);
 #endif
     SYSCALL2(fstat, int, struct stat *);
-    SYSCALL3(getsockname, int, struct sockaddr *, socklen_t *);
-    SYSCALL6(sendto, int, const void *, size_t, int, const struct sockaddr *, socklen_t);
-    SYSCALL3(sendmsg, int, const struct msghdr *, int);
-    SYSCALL6(recvfrom, int, void *, size_t, int, struct sockaddr *, socklen_t *);
-    SYSCALL3(recvmsg, int, struct msghdr *, int);
+    //SYSCALL3(getsockname, int, struct sockaddr *, socklen_t *);
+    //SYSCALL6(sendto, int, const void *, size_t, int, const struct sockaddr *, socklen_t);
+    //SYSCALL3(sendmsg, int, const struct msghdr *, int);
+    //SYSCALL6(recvfrom, int, void *, size_t, int, struct sockaddr *, socklen_t *);
+    //SYSCALL3(recvmsg, int, struct msghdr *, int);
     SYSCALL3(dup3, int, int, int);
     SYSCALL2(flock, int, int);
     SYSCALL4(pwrite64, int, const void *, size_t, off_t);
@@ -932,11 +932,11 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL0(getppid);
     SYSCALL1(sysinfo, struct sysinfo *);
     SYSCALL4(sendfile, int, int, off_t *, size_t);
-    SYSCALL4(socketpair, int, int, int, int *);
-    SYSCALL2(shutdown, int, int);
+    //SYSCALL4(socketpair, int, int, int, int *);
+    //SYSCALL2(shutdown, int, int);
     SYSCALL3(readv, unsigned long, const struct iovec *, unsigned long);
     SYSCALL2(getrusage, int, struct rusage *);
-    SYSCALL3(accept, int, struct sockaddr *, socklen_t *);
+    //SYSCALL3(accept, int, struct sockaddr *, socklen_t *);
     SYSCALL1(fchdir, unsigned int);
     SYSCALL2(fstatfs, unsigned int, struct statfs *);
     SYSCALL1(umask, mode_t);

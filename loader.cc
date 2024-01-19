@@ -529,7 +529,7 @@ void* do_main_thread(void *_main_args)
         load_zfs_library();
     }
 
-    bool has_if = false;
+    /*bool has_if = false;
     osv::for_each_if([&has_if] (std::string if_name) {
         if (if_name == "lo0")
             return;
@@ -578,7 +578,7 @@ void* do_main_thread(void *_main_args)
     });
     if (nr_ips == 1) {
        setenv("OSV_IP", if_ip.c_str(), 1);
-    }
+    }*/
 
     if (!opt_chdir.empty()) {
         debug("Chdir to: '%s'\n", opt_chdir.c_str());
@@ -765,7 +765,7 @@ void main_cont(int loader_argc, char** loader_argv)
     boot_time.event("VFS initialized");
     //ramdisk_init();
 
-    net_init();
+    //net_init();
     boot_time.event("Network initialized");
 
     arch::irq_enable();

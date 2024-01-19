@@ -19,3 +19,5 @@ bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/rele
 bloaty -d compileunits build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter musl
 bloaty -d symbols build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file
 bloaty -d symbols build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter core/elf.cc
+
+bloaty -d compileunits,symbols build/release/loader-stripped.elf --debug-file build/release/loader.elf -n 0 -s file --source-filter core/elf.cc

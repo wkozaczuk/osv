@@ -23,7 +23,7 @@ extern "C" {
 
 static void physmem_init()
 {
-    physmem = memory::phys_mem_size / memory::page_size;
+    //physmem = memory::phys_mem_size / memory::page_size;
 }
 
 void bsd_init(void)

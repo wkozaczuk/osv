@@ -345,7 +345,7 @@ void arch_init_drivers()
     drvman->register_driver(virtio::scsi::probe);
 #endif
 #if CONF_drivers_virtio_net
-    drvman->register_driver(virtio::net::probe);
+//    drvman->register_driver(virtio::net::probe);
 #endif
 #if CONF_drivers_virtio_rng
     drvman->register_driver(virtio::rng::probe);
