@@ -69,7 +69,7 @@ struct vnode;
 struct file;
 struct pollreq;
 
-#define FDMAX       (0x4000)
+#define FDMAX       (0x400)
 
 #ifdef __cplusplus
 
