@@ -1,0 +1,24 @@
+config driver_cadence
+  prompt "Cadence Console"
+  depends on arch_aarch64
+  default y
+
+config driver_ahci
+  prompt "AHCI"
+  depends on arch_x86_64
+  default y
+
+config driver_pvscsi
+  prompt "pvscsi"
+  depends on (arch_x86_64 && scsi)
+  default y
+
+config driver_vmxnet
+  prompt "vmxnet"
+  depends on arch_x86_64
+  default y
+
+config driver_ena
+  prompt "ena"
+  depends on arch_x86_64
+  default y

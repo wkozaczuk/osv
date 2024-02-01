@@ -1,0 +1,50 @@
+mainmenu "OSv Configuration"
+
+menu "Device Drivers"
+  source "conf/drivers/kconfig"
+endmenu
+
+menu "Core Components"
+  source "conf/core/kconfig"
+endmenu
+
+config preempt
+  prompt "Enable preemption"
+  def_bool $(shell,grep -q ^conf-preempt=1 conf/base.mk && echo y || echo n)
+
+config tracing
+  prompt "Enable code tracing"
+  def_bool $(shell,grep -q ^conf-tracing=1 conf/base.mk && echo y || echo n)
+
+config debug_memory
+  prompt "Enable memory debugging"
+  def_bool $(shell,grep -q ^conf-debug_memory=1 conf/base.mk && echo y || echo n)
+
+config logger_debug
+  prompt "Enable debug logger"
+  def_bool $(shell,grep -q ^conf-logger_debug=1 conf/base.mk && echo y || echo n)
+
+config hide_symbols
+  prompt "Hide non-libc symbols"
+  def_bool $(shell,grep -q ^conf_hide_symbols=1 conf/base.mk && echo y || echo n)
+
+config lazy_stack
+  prompt "Use lazy stack"
+  def_bool $(shell,grep -q ^conf-lazy_stack=1 conf/base.mk && echo y || echo n)
+
+choice
+  prompt "Select image filesystem"
+  default fs_zfs
+
+config fs_zfs
+  bool "Zeta File System"
+config fs_rofs
+  bool "Read-Only File System"
+config fs_rofs_with_zfs
+  bool "RoFS with ZFS"
+config fs_ramfs
+  bool "RAM FS"
+config fs_virtiofs
+  bool "Virtio FS"
+
+endchoice

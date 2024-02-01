@@ -1,0 +1,90 @@
+config core_alloc_tracker
+  prompt "Include allocation tracker"
+  bool
+  default y
+
+config core_c_wrappers
+  prompt "Include C wrapper functions"
+  bool
+  default y
+
+config core_callstack
+  prompt "Include callstack"
+  bool
+  default y
+
+config core_commands
+  prompt "Include commands"
+  bool
+  default y
+
+config core_dhcp
+  prompt "Include dhcp"
+  bool
+  default y
+
+config core_dynamic_percpu_size
+  prompt "Dynamic per-CPU size"
+  int
+  default 65536
+
+config core_epoll
+  prompt "Include epoll"
+  bool
+  default y
+
+config core_jvm_baloon
+  prompt "Include JVM baloon"
+  bool
+  default n
+
+config core_namespaces
+  prompt "Include ELF namespaces"
+  bool
+  default y
+
+config core_newpoll
+  prompt "Include newpoll"
+  bool
+  default n
+
+config core_poll
+  prompt "Include poll"
+  bool
+  default y
+
+config core_rcu_defer_queue_size
+  prompt "RCU defer queue size"
+  int
+  default 2000
+
+config core_sampler
+  prompt "Include sampler"
+  bool
+  default y
+
+config core_select
+  prompt "Include select"
+  bool
+  default y
+
+config core_strace
+  prompt "Include strace"
+  bool
+  default y
+
+config core_string_opt
+  prompt "Include mem* and sse optimized versions"
+  bool
+  default y
+
+config core_syscall
+  prompt "Include syscall"
+  bool
+  default y
+
+config core_tracepoints
+  prompt "Include tracepoints"
+  bool
+  default y
+
