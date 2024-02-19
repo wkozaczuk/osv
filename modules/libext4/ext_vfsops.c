@@ -7,6 +7,8 @@
 
 #include <sys/types.h>
 #include <errno.h>
+#include <stdlib.h>
+#include <stdio.h>
 
 #include <osv/device.h>
 #include <osv/bio.h>
@@ -47,10 +49,10 @@ static int blockdev_bread(struct ext4_blockdev *bdev, void *buf, uint64_t blk_id
     bio->bio_dev->driver->devops->strategy(bio);
     int error = bio_wait(bio);
     memcpy(buf, _buf, bio->bio_bcount);
-    free(_buf);
-
-    destroy_bio(bio);
     kprintf("[ext4] Read %ld bytes at offset %ld to %p\n", bio->bio_bcount, bio->bio_offset, _buf);
+
+    free(_buf);
+    destroy_bio(bio);
 
     return error;
 }
@@ -93,7 +95,7 @@ ext_mount(struct mount *mp, const char *dev, int flags, const void *data)
     int error = -1;
     const char *dev_name;
 
-    dev_name = "vblk1";//dev + 5;
+    dev_name = dev + 5;
     kprintf("[ext4] Trying to open device: [%s]\n", dev_name);
     error = device_open(dev_name, DO_RDWR, &device);
 
@@ -102,6 +104,7 @@ ext_mount(struct mount *mp, const char *dev, int flags, const void *data)
         return error;
     }
 
+    ext4_dmask_set(DEBUG_ALL);
     ext4_device_register(&ext_blockdev, strdup(dev_name));
     //
     // Save a reference to our superblock
@@ -109,13 +112,13 @@ ext_mount(struct mount *mp, const char *dev, int flags, const void *data)
     mp->m_dev = device;
     ext_blockdev.bdif->p_user = device;
     ext_blockdev.part_offset = 0;
-    ext_blockdev.part_size = 134217728;
+    ext_blockdev.part_size = device->size;
     ext_blockdev.bdif->ph_bcnt = ext_blockdev.part_size / ext_blockdev.bdif->ph_bsize;
 
     //TODO: Setup os_locks
 
-    kprintf("[ext4] Trying to mount ext4 on device: [%s]\n", dev_name);
-    auto ret = ext4_mount(dev_name, "/data/", false); 
+    kprintf("[ext4] Trying to mount ext4 on device: [%s] with size:%ld\n", dev_name, device->size);
+    int ret = ext4_mount(dev_name, "/data/", false); 
     kprintf("[ext4] Mounted ext4 on device: [%s] with code:%d\n", dev_name, ret);
     return ret;
 }
