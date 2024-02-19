@@ -333,8 +333,8 @@ cache_get_page_address(struct rofs_inode *inode, struct device *device, struct r
     // Prepare a cache transaction (copy from memory
     // or read from disk into cache memory and then copy into memory)
     auto segment_transactions = plan_cache_transactions(cache, uio);
-    print("[rofs] [%d] rofs_get_page_address called for i-node [%d] at %d with %d ops\n",
-          sched::thread::current()->id(), inode->inode_no, offset, segment_transactions.size());
+    //print("[rofs] [%d] rofs_get_page_address called for i-node [%d] at %d with %d ops\n",
+     //     sched::thread::current()->id(), inode->inode_no, offset, segment_transactions.size());
 
     int error = 0;
 
