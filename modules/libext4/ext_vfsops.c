@@ -18,7 +18,9 @@
 #include <osv/debug.h>
 
 #include <ext4_blockdev.h>
-#include <ext4.h>
+#include <ext4_debug.h>
+#include <ext4_fs.h>
+#include <ext4_super.h>
 
 int ext_init(void) { return 0;}
 
@@ -86,6 +88,8 @@ static int blockdev_close(struct ext4_blockdev *bdev)
 EXT4_BLOCKDEV_STATIC_INSTANCE(ext_blockdev, 512, 0, blockdev_open,
                               blockdev_bread, blockdev_bwrite, blockdev_close, 0, 0);
 
+static struct ext4_fs ext_fs;
+static struct ext4_bcache ext_block_cache;
 extern struct vnops ext_vnops;
 
 static int
@@ -105,7 +109,7 @@ ext_mount(struct mount *mp, const char *dev, int flags, const void *data)
     }
 
     ext4_dmask_set(DEBUG_ALL);
-    ext4_device_register(&ext_blockdev, strdup(dev_name));
+    //ext4_device_register(&ext_blockdev, strdup(dev_name));
     //
     // Save a reference to our superblock
     //TODO mp->m_data = rofs;
@@ -118,16 +122,54 @@ ext_mount(struct mount *mp, const char *dev, int flags, const void *data)
     //TODO: Setup os_locks
 
     kprintf("[ext4] Trying to mount ext4 on device: [%s] with size:%ld\n", dev_name, device->size);
-    int ret = ext4_mount(dev_name, "/data/", false); 
-    kprintf("[ext4] Mounted ext4 on device: [%s] with code:%d\n", dev_name, ret);
-    return ret;
+    int r = ext4_block_init(&ext_blockdev);
+    if (r != EOK)
+        return r;
+
+    r = ext4_fs_init(&ext_fs, &ext_blockdev, false);
+    if (r != EOK) {
+        ext4_block_fini(&ext_blockdev);
+        return r;
+    }
+
+    uint32_t bsize = ext4_sb_get_block_size(&ext_fs.sb);
+    ext4_block_set_lb_size(&ext_blockdev, bsize);
+
+    r = ext4_bcache_init_dynamic(&ext_block_cache, CONFIG_BLOCK_DEV_CACHE_SIZE, bsize);
+    if (r != EOK) {
+        ext4_block_fini(&ext_blockdev);
+        return r;
+    }
+
+    if (bsize != ext_block_cache.itemsize)
+        return ENOTSUP;
+
+    /*Bind block cache to block device*/
+    r = ext4_block_bind_bcache(&ext_blockdev, &ext_block_cache);
+    if (r != EOK) {
+        ext4_bcache_cleanup(&ext_block_cache);
+        ext4_block_fini(&ext_blockdev);
+        ext4_bcache_fini_dynamic(&ext_block_cache);
+        return r;
+    }
+
+    ext_blockdev.fs = &ext_fs;
+
+    kprintf("[ext4] Mounted ext4 on device: [%s] with code:%d\n", dev_name, r);
+    return r;
 }
 
 static int
 ext_unmount(struct mount *mp, int flags)
 {
-    int ret = ext4_umount("/data/");
-    kprintf("[ext4] Trying to unmount ext4 (after %d)!\n", ret);
+    int r = ext4_fs_fini(&ext_fs);
+    if (r == EOK) {
+        ext4_bcache_cleanup(&ext_block_cache);
+        ext4_bcache_fini_dynamic(&ext_block_cache);
+    }
+
+    r = ext4_block_fini(&ext_blockdev);
+    kprintf("[ext4] Trying to unmount ext4 (after %d)!\n", r);
     return device_close((struct device*)ext_blockdev.bdif->p_user);
 }
 
