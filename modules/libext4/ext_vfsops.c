@@ -46,12 +46,12 @@ static int blockdev_bread(struct ext4_blockdev *bdev, void *buf, uint64_t blk_id
 
     //TODO: Copy only if not malloced
     void *_buf = malloc(bio->bio_bcount);
-    kprintf("[ext4] Trying to read %ld bytes at offset %ld to %p\n", bio->bio_bcount, bio->bio_offset, _buf);
+    //kprintf("[ext4] Trying to read %ld bytes at offset %ld to %p\n", bio->bio_bcount, bio->bio_offset, _buf);
     bio->bio_data = _buf;
     bio->bio_dev->driver->devops->strategy(bio);
     int error = bio_wait(bio);
     memcpy(buf, _buf, bio->bio_bcount);
-    kprintf("[ext4] Read %ld bytes at offset %ld to %p\n", bio->bio_bcount, bio->bio_offset, _buf);
+    kprintf("[ext4] Read %ld bytes at offset %ld to %p with error:%d\n", bio->bio_bcount, bio->bio_offset, _buf, error);
 
     free(_buf);
     destroy_bio(bio);
@@ -109,10 +109,8 @@ ext_mount(struct mount *mp, const char *dev, int flags, const void *data)
     }
 
     ext4_dmask_set(DEBUG_ALL);
-    //ext4_device_register(&ext_blockdev, strdup(dev_name));
     //
-    // Save a reference to our superblock
-    //TODO mp->m_data = rofs;
+    // Save a reference to the filesystem
     mp->m_dev = device;
     ext_blockdev.bdif->p_user = device;
     ext_blockdev.part_offset = 0;
@@ -154,6 +152,8 @@ ext_mount(struct mount *mp, const char *dev, int flags, const void *data)
     }
 
     ext_blockdev.fs = &ext_fs;
+    mp->m_data = &ext_fs;
+    mp->m_root->d_vnode->v_ino = EXT4_INODE_ROOT_INDEX;
 
     kprintf("[ext4] Mounted ext4 on device: [%s] with code:%d\n", dev_name, r);
     return r;
