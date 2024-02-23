@@ -3,22 +3,22 @@ include ../common.gmk
 
 module_out := $(out)/modules/libext4
 
-CFLAGS = -fPIC -std=gnu99 $(INCLUDES) -I../lwext4/upstream/lwext4/include -I../lwext4/upstream/lwext4/build_lib_only/include \
-	 -D_KERNEL -D_GNU_SOURCE -Wall
+CXXFLAGS = -fPIC -std=gnu++11 $(INCLUDES) -I../lwext4/upstream/lwext4/include -I../lwext4/upstream/lwext4/build_lib_only/include \
+	 -D_KERNEL -D_GNU_SOURCE -Wall -fno-exceptions -fno-rtti
 
 # the build target executable:
 TARGET = libext4
-CC_FILES := ext_vfsops.c ext_vnops.c
-OBJ_FILES := $(addprefix $(module_out)/,$(CC_FILES:.c=.o))
+CPP_FILES := ext_vfsops.cc ext_vnops.cc
+OBJ_FILES := $(addprefix $(module_out)/,$(CPP_FILES:.cc=.o))
 DEPS := $(OBJ_FILES:.o=.d)
 
 LIBS = -L../lwext4/upstream/lwext4/build_lib_only/src/ -llwext4
 
 $(module_out)/$(TARGET).so: $(OBJ_FILES)
-	$(call quiet, $(CC) $(CFLAGS) $(LDFLAGS) -shared -o $(module_out)/$(TARGET).so $^ $(LIBS), LINK $@)
+	$(call quiet, $(CXX) $(CXXFLAGS) $(LDFLAGS) -static-libstdc++ -shared -o $(module_out)/$(TARGET).so $^ $(LIBS), LINK $@)
 
-$(module_out)/%.o: %.c
-	$(call quiet, $(CC) $(CFLAGS) -c -o $@ $<, CXX $@)
+$(module_out)/%.o: %.cc
+	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX $@)
 
 init:
 	@echo "  MKDIRS"

@@ -5,22 +5,22 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-#include <sys/types.h>
-#include <errno.h>
-#include <stdlib.h>
-#include <stdio.h>
-
+extern "C" {
+#define USE_C_INTERFACE 1
 #include <osv/device.h>
 #include <osv/bio.h>
 #include <osv/prex.h>
 #include <osv/vnode.h>
 #include <osv/mount.h>
 #include <osv/debug.h>
+}
 
 #include <ext4_blockdev.h>
 #include <ext4_debug.h>
 #include <ext4_fs.h>
 #include <ext4_super.h>
+
+#include <cstdlib>
 
 int ext_init(void) { return 0;}
 

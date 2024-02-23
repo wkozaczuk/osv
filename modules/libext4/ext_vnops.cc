@@ -4,21 +4,39 @@
  * This work is open source software, licensed under the terms of the
  * BSD license as described in the LICENSE file in the top-level directory.
  */
-#include <sys/types.h>
-#include <stdlib.h>
-#include <errno.h>
 
+extern "C" {
+#define USE_C_INTERFACE 1
 #include <osv/device.h>
 #include <osv/prex.h>
 #include <osv/vnode.h>
 #include <osv/mount.h>
 #include <osv/debug.h>
 #include <osv/file.h>
+}
 
 #include <ext4_errno.h>
 #include <ext4_dir.h>
 #include <ext4_inode.h>
 #include <ext4_fs.h>
+
+#include <cstdlib>
+
+#include <algorithm>
+
+struct auto_inode_ref {
+    struct ext4_inode_ref _ref;
+    int _r;
+
+    auto_inode_ref(struct ext4_fs *fs, uint32_t inode_no) {
+        _r = ext4_fs_get_inode_ref(fs, inode_no, &_ref);
+    }
+    ~auto_inode_ref() {
+        if (_r != EOK) {
+            ext4_fs_put_inode_ref(&_ref);
+        }
+    }
+};
 
 typedef	struct vnode vnode_t;
 typedef	struct file file_t;
@@ -43,16 +61,10 @@ ext_close(vnode_t *vp, file_t *fp)
 static int
 ext_internal_read(struct ext4_fs *fs, struct ext4_inode_ref *ref, uint64_t offset, void *buf, size_t size, size_t *rcnt)
 {
-    uint32_t unalg;
-    uint32_t iblock_idx;
-    uint32_t iblock_last;
-    uint32_t block_size;
-
     ext4_fsblk_t fblock;
     ext4_fsblk_t fblock_start;
-    uint32_t fblock_count;
 
-    uint8_t *u8_buf = buf;
+    uint8_t *u8_buf = (uint8_t *)buf;
     int r;
 
     if (!size)
@@ -66,14 +78,15 @@ ext_internal_read(struct ext4_fs *fs, struct ext4_inode_ref *ref, uint64_t offse
     /*Sync file size*/
     uint64_t fsize = ext4_inode_get_size(sb, ref->inode);
 
-    block_size = ext4_sb_get_block_size(sb);
+    uint32_t block_size = ext4_sb_get_block_size(sb);
     size = ((uint64_t)size > (fsize - offset))
         ? ((size_t)(fsize - offset)) : size;
 
-    iblock_idx = (uint32_t)((offset) / block_size);
-    iblock_last = (uint32_t)((offset + size) / block_size);
-    unalg = (offset) % block_size;
+    uint32_t iblock_idx = (uint32_t)((offset) / block_size);
+    uint32_t iblock_last = (uint32_t)((offset + size) / block_size);
+    uint32_t unalg = (offset) % block_size;
 
+    uint32_t fblock_count = 0;
     if (unalg) {
         size_t len =  size;
         if (size > (block_size - unalg))
@@ -106,7 +119,6 @@ ext_internal_read(struct ext4_fs *fs, struct ext4_inode_ref *ref, uint64_t offse
     }
 
     fblock_start = 0;
-    fblock_count = 0;
     while (size >= block_size) {
         while (iblock_idx < iblock_last) {
             r = ext4_fs_get_inode_dblk_idx(ref, iblock_idx,
@@ -143,12 +155,11 @@ ext_internal_read(struct ext4_fs *fs, struct ext4_inode_ref *ref, uint64_t offse
     }
 
     if (size) {
-        uint64_t off;
         r = ext4_fs_get_inode_dblk_idx(ref, iblock_idx, &fblock, true);
         if (r != EOK)
             goto Finish;
 
-        off = fblock * block_size;
+        uint64_t off = fblock * block_size;
         kprintf("[ext4] ext4_block_readbytes: off:%ld, size:%ld\n", off, size);
         r = ext4_block_readbytes(fs->bdev, off, u8_buf, size);
         if (r != EOK)
@@ -168,9 +179,6 @@ static int
 ext_read(vnode_t *vp, struct file *fp, uio_t *uio, int ioflag)
 {
     kprintf("[ext4] Reading %ld bytes at offset:%ld from file i-node:%ld\n", uio->uio_resid, uio->uio_offset, vp->v_ino);
-    void *buf;
-    int ret;
-    size_t read_count = 0;
 
     /* Cant read directories */
     if (vp->v_type == VDIR)
@@ -189,30 +197,26 @@ ext_read(vnode_t *vp, struct file *fp, uio_t *uio, int ioflag)
         return 0;
     
     struct ext4_fs *fs = (struct ext4_fs *)vp->v_mount->m_data;
-    struct ext4_inode_ref inode_ref;
-
-    int r = ext4_fs_get_inode_ref(fs, vp->v_ino, &inode_ref);
-    if (r != EOK) {
-        return r;
+    auto_inode_ref inode_ref(fs, vp->v_ino);
+    if (inode_ref._r != EOK) {
+        return inode_ref._r;
     }
 
     // Total read amount is what they requested, or what is left
-    uint64_t fsize = ext4_inode_get_size(&fs->sb, inode_ref.inode);
-    uint64_t read_amt = fsize - uio->uio_offset > uio->uio_resid ? uio->uio_resid : fsize - uio->uio_offset;
-    buf = malloc(read_amt);
+    uint64_t fsize = ext4_inode_get_size(&fs->sb, inode_ref._ref.inode);
+    uint64_t read_amt = std::min(fsize - uio->uio_offset, (uint64_t)uio->uio_resid);
+    void *buf = malloc(read_amt);
 
-    ret = ext_internal_read(fs, &inode_ref, uio->uio_offset, buf, read_amt, &read_count);
+    size_t read_count = 0;
+    int ret = ext_internal_read(fs, &inode_ref._ref, uio->uio_offset, buf, read_amt, &read_count);
     if (ret) {
         kprintf("[ext_read] Error reading data\n");
         free(buf);
-        ext4_fs_put_inode_ref(&inode_ref);
         return ret;
     }
 
     ret = uiomove(buf, read_count, uio);
     free(buf);
-
-    ext4_fs_put_inode_ref(&inode_ref);
 
     return ret;
 }
@@ -294,7 +298,7 @@ ext_readdir(struct vnode *dvp, struct file *fp, struct dirent *dir)
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
     struct ext4_inode_ref inode_ref;
 
-    if (file_offset(fp) == EXT4_DIR_ENTRY_OFFSET_TERM) {
+    if (file_offset(fp) == 1) {//EXT4_DIR_ENTRY_OFFSET_TERM) {
         return ENOENT;
     }
 
@@ -366,32 +370,29 @@ ext_lookup(struct vnode *dvp, char *nm, struct vnode **vpp)
 {
     kprintf("[ext4] Looking up %s in directory with i-node:%ld\n", nm, dvp->v_ino);
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
-    struct ext4_inode_ref inode_ref;
 
-    int r = ext4_fs_get_inode_ref(fs, dvp->v_ino, &inode_ref);
-    if (r != EOK) {
-        return r;
+    auto_inode_ref inode_ref(fs, dvp->v_ino);
+    if (inode_ref._r != EOK) {
+        return inode_ref._r;
     }
 
     /* Check if node is directory */
-    if (!ext4_inode_is_type(&fs->sb, inode_ref.inode, EXT4_INODE_MODE_DIRECTORY)) {
-        ext4_fs_put_inode_ref(&inode_ref);
+    if (!ext4_inode_is_type(&fs->sb, inode_ref._ref.inode, EXT4_INODE_MODE_DIRECTORY)) {
         return ENOTDIR;
     }
 
     struct ext4_dir_search_result result;
-    r = ext4_dir_find_entry(&result, &inode_ref, nm, strlen(nm));
+    int r = ext4_dir_find_entry(&result, &inode_ref._ref, nm, strlen(nm));
     if (r == EOK) {
         uint32_t inode_no = ext4_dir_en_get_inode(result.dentry);
         vget(dvp->v_mount, inode_no, vpp);
 
-        struct ext4_inode_ref inode_ref2;
-
-        int r = ext4_fs_get_inode_ref(fs, inode_no, &inode_ref2);
-        if (r != EOK) {
-            return r;
+        auto_inode_ref inode_ref2(fs, inode_no);
+        if (inode_ref2._r != EOK) {
+            return inode_ref2._r;
         }
-        uint32_t i_type = ext4_inode_type(&fs->sb, inode_ref2.inode);
+
+        uint32_t i_type = ext4_inode_type(&fs->sb, inode_ref2._ref.inode);
         if (i_type == EXT4_INODE_MODE_DIRECTORY) {
             (*vpp)->v_type = VDIR; 
         } else if (i_type == EXT4_INODE_MODE_FILE) {
@@ -399,15 +400,13 @@ ext_lookup(struct vnode *dvp, char *nm, struct vnode **vpp)
         } else if (i_type == EXT4_INODE_MODE_SOFTLINK) {
             (*vpp)->v_type = VLNK;
         }
-        ext4_fs_put_inode_ref(&inode_ref2);
 
         kprintf("[ext4] Looked up %s in directory with i-node:%ld as i-node:%d\n", nm, dvp->v_ino, inode_no);
     } else {
         r = ENOENT;
     }
 
-    ext4_dir_destroy_result(&inode_ref, &result);
-    ext4_fs_put_inode_ref(&inode_ref);
+    ext4_dir_destroy_result(&inode_ref._ref, &result);
 
     return r;
 }
@@ -453,16 +452,15 @@ ext_getattr(vnode_t *vp, vattr_t *vap)
 {
     kprintf("[ext4] Getting attributes at i-node:%ld\n", vp->v_ino);
     struct ext4_fs *fs = (struct ext4_fs *)vp->v_mount->m_data;
-    struct ext4_inode_ref inode_ref;
 
-    int r = ext4_fs_get_inode_ref(fs, vp->v_ino, &inode_ref);
-    if (r != EOK) {
-        return r;
+    auto_inode_ref inode_ref(fs, vp->v_ino);
+    if (inode_ref._r != EOK) {
+        return inode_ref._r;
     }
 
-    vap->va_mode = ext4_inode_get_mode(&fs->sb, inode_ref.inode);
+    vap->va_mode = ext4_inode_get_mode(&fs->sb, inode_ref._ref.inode);
 
-    uint32_t i_type = ext4_inode_type(&fs->sb, inode_ref.inode);
+    uint32_t i_type = ext4_inode_type(&fs->sb, inode_ref._ref.inode);
     if (i_type == EXT4_INODE_MODE_DIRECTORY) {
        vap->va_type = VDIR; 
     } else if (i_type == EXT4_INODE_MODE_FILE) {
@@ -472,17 +470,16 @@ ext_getattr(vnode_t *vp, vattr_t *vap)
     }
 
     vap->va_nodeid = vp->v_ino;
-    vap->va_size = ext4_inode_get_size(&fs->sb, inode_ref.inode);
+    vap->va_size = ext4_inode_get_size(&fs->sb, inode_ref._ref.inode);
     kprintf("[ext4] getattr: va_size:%ld\n", vap->va_size);
 
-    vap->va_atime.tv_sec = ext4_inode_get_access_time(inode_ref.inode);
-    vap->va_mtime.tv_sec = ext4_inode_get_modif_time(inode_ref.inode);
-    vap->va_ctime.tv_sec = ext4_inode_get_change_inode_time(inode_ref.inode);
+    vap->va_atime.tv_sec = ext4_inode_get_access_time(inode_ref._ref.inode);
+    vap->va_mtime.tv_sec = ext4_inode_get_modif_time(inode_ref._ref.inode);
+    vap->va_ctime.tv_sec = ext4_inode_get_change_inode_time(inode_ref._ref.inode);
 
     //auto *fsid = &vnode->v_mount->m_fsid; //TODO
     //attr->va_fsid = ((uint32_t)fsid->__val[0]) | ((dev_t) ((uint32_t)fsid->__val[1]) << 32);
 
-    ext4_fs_put_inode_ref(&inode_ref);
     return (EOK);
 }
 
