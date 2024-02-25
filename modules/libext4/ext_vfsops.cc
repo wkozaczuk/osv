@@ -68,13 +68,19 @@ static int blockdev_bwrite(struct ext4_blockdev *bdev, const void *buf,
 
     bio->bio_cmd = BIO_WRITE;
     bio->bio_dev = (struct device*)bdev->bdif->p_user;
-    //TODO bio->bio_data = buf;
     bio->bio_offset = blk_id * bdev->bdif->ph_bsize;
     bio->bio_bcount = blk_cnt * bdev->bdif->ph_bsize;
 
+    //TODO: Copy only if not malloced
+    void *_buf = malloc(bio->bio_bcount);
+    memcpy(_buf, buf, bio->bio_bcount);
+    bio->bio_data = _buf;
+
     bio->bio_dev->driver->devops->strategy(bio);
     int error = bio_wait(bio);
+    kprintf("[ext4] Wrote %ld bytes at offset %ld to %p with error:%d\n", bio->bio_bcount, bio->bio_offset, buf, error);
 
+    free(_buf);
     destroy_bio(bio);
 
     return error;

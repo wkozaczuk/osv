@@ -13,6 +13,7 @@ extern "C" {
 #include <osv/mount.h>
 #include <osv/debug.h>
 #include <osv/file.h>
+#include <osv/vnode_attr.h>
 }
 
 #include <ext4_errno.h>
@@ -21,6 +22,7 @@ extern "C" {
 #include <ext4_fs.h>
 
 #include <cstdlib>
+#include <time.h>
 
 #include <algorithm>
 
@@ -32,7 +34,7 @@ struct auto_inode_ref {
         _r = ext4_fs_get_inode_ref(fs, inode_no, &_ref);
     }
     ~auto_inode_ref() {
-        if (_r != EOK) {
+        if (_r == EOK) {
             ext4_fs_put_inode_ref(&_ref);
         }
     }
@@ -401,6 +403,8 @@ ext_lookup(struct vnode *dvp, char *nm, struct vnode **vpp)
             (*vpp)->v_type = VLNK;
         }
 
+        (*vpp)->v_mode = ext4_inode_get_mode(&fs->sb, inode_ref2._ref.inode);
+
         kprintf("[ext4] Looked up %s in directory with i-node:%ld as i-node:%d\n", nm, dvp->v_ino, inode_no);
     } else {
         r = ENOENT;
@@ -415,7 +419,63 @@ static int
 ext_create(struct vnode *dvp, char *name, mode_t mode)
 {
     kprintf("[ext4] create\n");
-    return (EINVAL);
+    uint32_t len = strlen(name);
+    if (len > NAME_MAX || len > EXT4_DIRECTORY_FILENAME_LEN) {
+        return ENAMETOOLONG;
+    }
+
+    kprintf("[ext4] create %s under i-node %li\n", name, dvp->v_ino);
+    if (!S_ISREG(mode))
+        return EINVAL;
+
+    struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
+    auto_inode_ref inode_ref(fs, dvp->v_ino);
+    if (inode_ref._r != EOK) {
+        return inode_ref._r;
+    }
+
+    /* Check if node is directory */
+    if (!ext4_inode_is_type(&fs->sb, inode_ref._ref.inode, EXT4_INODE_MODE_DIRECTORY)) {
+        return ENOTDIR;
+    }
+
+    struct ext4_dir_search_result result;
+    int r = ext4_dir_find_entry(&result, &inode_ref._ref, name, len);
+    if (r == EOK) {
+        ext4_dir_destroy_result(&inode_ref._ref, &result);
+        kprintf("[ext4] %s already exists under i-node %li\n", name, dvp->v_ino);
+        return EEXIST;
+    }
+    ext4_dir_destroy_result(&inode_ref._ref, &result);
+
+    struct ext4_inode_ref child_ref;
+    r = ext4_fs_alloc_inode(fs, &child_ref, EXT4_DE_REG_FILE);
+    if (r != EOK) {
+        return r;
+    }
+
+    ext4_fs_inode_blocks_init(fs, &child_ref);
+
+    r = ext4_dir_add_entry(&inode_ref._ref, name, len, &child_ref);
+    if (r != EOK) {
+        ext4_fs_free_inode(&child_ref);
+        //We do not want to write new inode. But block has to be released.
+        child_ref.dirty = false;
+    } else {
+        ext4_fs_inode_links_count_inc(&child_ref);
+
+        struct timespec now;
+        clock_gettime(CLOCK_REALTIME, &now);
+        ext4_inode_set_change_inode_time(child_ref.inode, now.tv_sec);
+        ext4_inode_set_modif_time(child_ref.inode, now.tv_sec);
+
+        child_ref.dirty = true;
+        kprintf("[ext4] created %s under i-node %li\n", name, dvp->v_ino);
+    }
+
+    ext4_fs_put_inode_ref(&child_ref);
+
+    return r;
 }
 
 static int
@@ -487,7 +547,34 @@ static int
 ext_setattr(vnode_t *vp, vattr_t *vap)
 {
     kprintf("[ext4] setattr\n");
-    return (EINVAL);
+    struct ext4_fs *fs = (struct ext4_fs *)vp->v_mount->m_data;
+
+    auto_inode_ref inode_ref(fs, vp->v_ino);
+    if (inode_ref._r != EOK) {
+        return inode_ref._r;
+    }
+
+    if (vap->va_mask & AT_ATIME) {
+        ext4_inode_set_access_time(inode_ref._ref.inode, vap->va_atime.tv_sec);
+        inode_ref._ref.dirty = true;
+    }
+
+    if (vap->va_mask & AT_CTIME) {
+        ext4_inode_set_change_inode_time(inode_ref._ref.inode, vap->va_ctime.tv_sec);
+        inode_ref._ref.dirty = true;
+    }
+
+    if (vap->va_mask & AT_MTIME) {
+        ext4_inode_set_modif_time(inode_ref._ref.inode, vap->va_mtime.tv_sec);
+        inode_ref._ref.dirty = true;
+    }
+
+    if (vap->va_mask & AT_MODE) {
+        ext4_inode_set_mode(&fs->sb, inode_ref._ref.inode, vap->va_mode);
+        inode_ref._ref.dirty = true;
+    }
+
+    return (EOK);
 }
 
 static int
