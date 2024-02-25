@@ -1349,6 +1349,8 @@ sys_utimensat(int dirfd, const char *pathname, const struct timespec times[2], i
     init_timespec(timespec_times[0], times ? times + 0 : nullptr);
     init_timespec(timespec_times[1], times ? times + 1 : nullptr);
 
+    printf("sys_utimensat: pathname: %s\n", pathname);
+
     if (pathname && pathname[0] == '/') {
 	ap = pathname;
     } else if (dirfd == AT_FDCWD) {
@@ -1415,7 +1417,7 @@ sys_futimens(int fd, const struct timespec times[2])
     if (!fp->f_dentry)
         return EBADF;
 
-    std::string pathname = fp->f_dentry->d_path;
+    std::string pathname = std::string(fp->f_dentry->d_mount->m_path) + fp->f_dentry->d_path;
     auto error = sys_utimensat(AT_FDCWD, pathname.c_str(), times, 0, false);
     return error;
 }
