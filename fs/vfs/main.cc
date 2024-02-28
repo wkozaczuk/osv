@@ -2314,6 +2314,17 @@ ssize_t sendfile(int out_fd, int in_fd, off_t *_offset, size_t count)
 #undef sendfile64
 LFS64(sendfile);
 
+extern "C" OSV_LIBC_API
+ssize_t copy_file_range(int fd_in, off_t *off_in,
+                        int fd_out, off_t *off_out,
+                        size_t len, unsigned int flags)
+{
+    //Flags are ingored according to the manual
+    printf("copy_file_range: in=%d, off_in=%d, out=%d, off_out=%d\n", fd_in,
+        off_in ? *off_in : -1, fd_out, off_out ? *off_out : -1);
+    return sendfile(fd_out, fd_in, off_in, len);
+}
+
 NO_SYS(OSV_LIBC_API int fchmodat(int dirfd, const char *pathname, mode_t mode, int flags));
 
 OSV_LIBC_API

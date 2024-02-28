@@ -47,6 +47,25 @@ typedef struct uio uio_t;
 typedef	off_t offset_t;
 typedef	struct vattr vattr_t;
 
+//TODO:
+//Ops:
+// - ext_write
+// - ext_rmdir
+// - ext_seek
+// - ext_truncate
+// - ext_link
+// - ext_readlink
+// - ext_symlink
+// - ext_rename
+// - ext_fallocate
+//
+// - ext_ioctl
+// - ext_fsync
+//
+// Later:
+// - ext_arc
+// - ext_inactive
+
 static int
 ext_open(struct file *fp)
 {
@@ -225,13 +244,167 @@ ext_read(vnode_t *vp, struct file *fp, uio_t *uio, int ioflag)
 }
 
 static int
+ext_internal_write(struct ext4_fs *fs, struct ext4_inode_ref *ref, uint64_t offset, void *buf, size_t size, size_t *wcnt)
+{
+    kprintf("[ext4_interna_write] Writing %ld bytes at offset:%ld\n", size, offset);
+    ext4_fsblk_t fblock;
+    ext4_fsblk_t fblock_start = 0;
+
+    uint8_t *u8_buf = (uint8_t *)buf;
+    int r;
+
+    if (!size)
+        return EOK;
+
+    struct ext4_sblock *const sb = &fs->sb;
+
+    if (wcnt)
+        *wcnt = 0;
+
+    /*Sync file size*/
+    uint64_t fsize = ext4_inode_get_size(sb, ref->inode);
+    uint32_t block_size = ext4_sb_get_block_size(sb);
+
+    uint32_t iblock_last = (uint32_t)((offset + size) / block_size);
+    uint32_t iblk_idx = (uint32_t)(offset / block_size);
+    uint32_t ifile_blocks = (uint32_t)((fsize + block_size - 1) / block_size);
+
+    uint32_t unalg = (offset) % block_size;
+
+    uint32_t fblock_count = 0;
+    if (unalg) {
+        size_t len = size;
+        uint64_t off;
+        if (size > (block_size - unalg))
+            len = block_size - unalg;
+
+        r = ext4_fs_init_inode_dblk_idx(ref, iblk_idx, &fblock);
+        if (r != EOK)
+            goto Finish;
+
+        off = fblock * block_size + unalg;
+        r = ext4_block_writebytes(fs->bdev, off, u8_buf, len);
+        kprintf("[ext_internal_write] Wrote unaligned %ld bytes at %ld\n", len, off);
+        if (r != EOK)
+            goto Finish;
+
+        u8_buf += len;
+        size -= len;
+        offset += len;
+
+        if (wcnt)
+            *wcnt += len;
+
+        iblk_idx++;
+    }
+
+    /*Start write back cache mode.*/
+    r = ext4_block_cache_write_back(fs->bdev, 1);
+    if (r != EOK)
+        goto Finish;
+
+    int rr;
+    while (size >= block_size) {
+
+        while (iblk_idx < iblock_last) {
+            if (iblk_idx < ifile_blocks) {
+                r = ext4_fs_init_inode_dblk_idx(ref, iblk_idx,
+                                &fblock);
+                if (r != EOK)
+                    goto Finish;
+            } else {
+                rr = ext4_fs_append_inode_dblk(ref, &fblock,
+                                   &iblk_idx);
+                if (rr != EOK) {
+                    /* Unable to append more blocks. But
+                     * some block might be allocated already
+                     * */
+                    break;
+                }
+            }
+
+            iblk_idx++;
+
+            if (!fblock_start) {
+                fblock_start = fblock;
+            }
+
+            if ((fblock_start + fblock_count) != fblock)
+                break;
+
+            fblock_count++;
+        }
+
+        r = ext4_blocks_set_direct(fs->bdev, u8_buf, fblock_start,
+                       fblock_count);
+        kprintf("[ext_internal_write] Wrote direct %d blocks at block %ld\n", fblock_count, fblock_start);
+        if (r != EOK)
+            break;
+
+        size -= block_size * fblock_count;
+        u8_buf += block_size * fblock_count;
+        offset += block_size * fblock_count;
+
+        if (wcnt)
+            *wcnt += block_size * fblock_count;
+
+        fblock_start = fblock;
+        fblock_count = 1;
+
+        if (rr != EOK) {
+            /*ext4_fs_append_inode_block has failed and no
+             * more blocks might be written. But node size
+             * should be updated.*/
+            r = rr;
+            goto out_fsize;
+        }
+    }
+
+    /*Stop write back cache mode*/
+    ext4_block_cache_write_back(fs->bdev, 0);
+
+    if (r != EOK)
+        goto Finish;
+
+    if (size) {
+        uint64_t off;
+        if (iblk_idx < ifile_blocks) {
+            r = ext4_fs_init_inode_dblk_idx(ref, iblk_idx, &fblock);
+            if (r != EOK)
+                goto Finish;
+        } else {
+            r = ext4_fs_append_inode_dblk(ref, &fblock, &iblk_idx);
+            if (r != EOK)
+                /*Node size sholud be updated.*/
+                goto out_fsize;
+        }
+
+        off = fblock * block_size;
+        r = ext4_block_writebytes(fs->bdev, off, u8_buf, size);
+        kprintf("[ext_internal_write] Wrote remaining %ld bytes at %ld\n", size, off);
+        if (r != EOK)
+            goto Finish;
+
+        offset += size;
+
+        if (wcnt)
+            *wcnt += size;
+    }
+
+out_fsize:
+    if (offset > fsize) {
+        ext4_inode_set_size(ref->inode, offset);
+        ref->dirty = true;
+    }
+
+Finish:
+    return r;
+}
+
+static int
 ext_write(vnode_t *vp, uio_t *uio, int ioflag)
-{/*
-    void *buf;
-    int ret;
-    size_t write_count = 0;
-    uio_t uio_copy = *uio;
-    ext4_file *efile = (ext4_file *) vp->v_mount->m_data;*/
+{
+    kprintf("[ext4] Writing %ld bytes at offset:%ld to file i-node:%ld\n", uio->uio_resid, uio->uio_offset, vp->v_ino);
 
     /* Cant write directories */
     if (vp->v_type == VDIR)
@@ -248,29 +421,33 @@ ext_write(vnode_t *vp, uio_t *uio, int ioflag)
     /* Need to write more than 1 byte */
     if (uio->uio_resid == 0)
         return 0;
-/*
-    
-    buf = malloc(uio->uio_resid);
-    ret = uiomove(buf, uio->uio_resid, &uio_copy);
+
+    struct ext4_fs *fs = (struct ext4_fs *)vp->v_mount->m_data;
+    auto_inode_ref inode_ref(fs, vp->v_ino);
+    if (inode_ref._r != EOK) {
+        return inode_ref._r;
+    }
+  
+    uio_t uio_copy = *uio;
+    if (ioflag & IO_APPEND) {
+        uio_copy.uio_offset = ext4_inode_get_size(&fs->sb, inode_ref._ref.inode);
+    }
+
+    void *buf = malloc(uio->uio_resid);
+    int ret = uiomove(buf, uio->uio_resid, &uio_copy);
     if (ret) {
         kprintf("[ext_write] Error copying data\n");
         free(buf);
         return ret;
     }
 
-    ext4_file f;
-    f.mp = efile->mp;
-    f.inode = efile->inode;
-    f.flags = efile->flags;
-    f.fpos = uio->uio_offset;
-
-    ret = ext4_fwrite(&f, buf, uio->uio_resid, &write_count);
+    size_t write_count = 0;
+    ret = ext_internal_write(fs, &inode_ref._ref, uio->uio_offset, buf, uio->uio_resid, &write_count);
 
     uio->uio_resid -= write_count;
     free(buf);
    
-    return ret;*/
-    return (EINVAL);
+    return ret;
 }
 
 static int
@@ -537,20 +714,12 @@ ext_create(struct vnode *dvp, char *name, mode_t mode)
 }
 
 static int
-ext_remove(struct vnode *dvp, struct vnode *vp, char *name)
+ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
 {
-    kprintf("[ext4] remove\n");
-
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
     auto_inode_ref parent(fs, dvp->v_ino);
     if (parent._r != EOK) {
         return parent._r;
-    }
-
-    /* Remove entry from parent directory */
-    int r = ext4_dir_remove_entry(&parent._ref, name, strlen(name));
-    if (r != EOK) {
-        return r;
     }
 
     auto_inode_ref child(fs, vp->v_ino);
@@ -558,9 +727,30 @@ ext_remove(struct vnode *dvp, struct vnode *vp, char *name)
         return child._r;
     }
 
-    if (ext4_inode_get_links_cnt(child._ref.inode)) {
+    /* TODO
+    if (ext4_inode_get_links_cnt(child._ref.inode) == 1) {
+        ext4_block_cache_write_back(mp->fs.bdev, 1);
+        r = ext4_trunc_inode(mp, child.index, 0);
+        ext4_block_cache_write_back(mp->fs.bdev, 0);
+        if (r != EOK) {
+            return r;
+        }
+    }*/
+
+    /* Remove entry from parent directory */
+    int r = ext4_dir_remove_entry(&parent._ref, name, strlen(name));
+    if (r != EOK) {
+        return r;
+    }
+
+    int links_cnt = ext4_inode_get_links_cnt(child._ref.inode);
+    if (links_cnt) {
         ext4_fs_inode_links_count_dec(&child._ref);
         child._ref.dirty = true;
+
+        if (links_cnt == 1) {//Zero now
+            ext4_fs_free_inode(&child._ref);
+        }
     }
 
     if (r == EOK) {
@@ -573,6 +763,13 @@ ext_remove(struct vnode *dvp, struct vnode *vp, char *name)
     }
 
     return r;
+}
+
+static int
+ext_remove(struct vnode *dvp, struct vnode *vp, char *name)
+{
+    kprintf("[ext4] remove\n");
+    return ext_dir_remove_entry(dvp, vp, name);
 }
 
 static int
@@ -603,7 +800,8 @@ static int
 ext_rmdir(vnode_t *dvp, vnode_t *vp, char *name)
 {
     kprintf("[ext4] rmdir\n");
-    return (EINVAL);
+    //TODO Add missing logic (look at lwext) like . and .. entries
+    return ext_dir_remove_entry(dvp, vp, name);
 }
 
 static int
