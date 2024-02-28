@@ -20,6 +20,7 @@ extern "C" {
 #include <ext4_dir.h>
 #include <ext4_inode.h>
 #include <ext4_fs.h>
+#include <ext4_dir_idx.h>
 
 #include <cstdlib>
 #include <time.h>
@@ -416,18 +417,44 @@ ext_lookup(struct vnode *dvp, char *nm, struct vnode **vpp)
 }
 
 static int
-ext_create(struct vnode *dvp, char *name, mode_t mode)
+ext_dir_initialize(ext4_inode_ref *parent, ext4_inode_ref *child, bool dir_index_on)
 {
-    kprintf("[ext4] create\n");
-    uint32_t len = strlen(name);
-    if (len > NAME_MAX || len > EXT4_DIRECTORY_FILENAME_LEN) {
-        return ENAMETOOLONG;
+    int r;
+#if CONFIG_DIR_INDEX_ENABLE
+    /* Initialize directory index if supported */
+    if (dir_index_on) {
+        r = ext4_dir_dx_init(child, parent);
+        if (r != EOK)
+            return r;
+
+        ext4_inode_set_flag(child->inode, EXT4_INODE_FLAG_INDEX);
+        child->dirty = true;
+    } else
+#endif
+    {
+        r = ext4_dir_add_entry(child, ".", strlen("."), child);
+        if (r != EOK) {
+            return r;
+        }
+
+        r = ext4_dir_add_entry(child, "..", strlen(".."), parent);
+        if (r != EOK) {
+            ext4_dir_remove_entry(child, ".", strlen("."));
+            return r;
+        }
     }
 
-    kprintf("[ext4] create %s under i-node %li\n", name, dvp->v_ino);
-    if (!S_ISREG(mode))
-        return EINVAL;
+    /*New empty directory. Two links (. and ..) */
+    ext4_inode_set_links_cnt(child->inode, 2);
+    ext4_fs_inode_links_count_inc(parent);
+    parent->dirty = true;
 
+    return r;
+}
+
+static int
+ext_dir_link(struct vnode *dvp, char *name, int file_type)
+{
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
     auto_inode_ref inode_ref(fs, dvp->v_ino);
     if (inode_ref._r != EOK) {
@@ -440,30 +467,40 @@ ext_create(struct vnode *dvp, char *name, mode_t mode)
     }
 
     struct ext4_dir_search_result result;
-    int r = ext4_dir_find_entry(&result, &inode_ref._ref, name, len);
+    int r = ext4_dir_find_entry(&result, &inode_ref._ref, name, strlen(name));
+    ext4_dir_destroy_result(&inode_ref._ref, &result);
     if (r == EOK) {
-        ext4_dir_destroy_result(&inode_ref._ref, &result);
         kprintf("[ext4] %s already exists under i-node %li\n", name, dvp->v_ino);
         return EEXIST;
     }
-    ext4_dir_destroy_result(&inode_ref._ref, &result);
 
     struct ext4_inode_ref child_ref;
-    r = ext4_fs_alloc_inode(fs, &child_ref, EXT4_DE_REG_FILE);
+    r = ext4_fs_alloc_inode(fs, &child_ref, file_type);
     if (r != EOK) {
         return r;
     }
 
     ext4_fs_inode_blocks_init(fs, &child_ref);
 
-    r = ext4_dir_add_entry(&inode_ref._ref, name, len, &child_ref);
-    if (r != EOK) {
-        ext4_fs_free_inode(&child_ref);
-        //We do not want to write new inode. But block has to be released.
-        child_ref.dirty = false;
-    } else {
-        ext4_fs_inode_links_count_inc(&child_ref);
+    r = ext4_dir_add_entry(&inode_ref._ref, name, strlen(name), &child_ref);
+    if (r == EOK) {
+        bool is_dir = ext4_inode_is_type(&fs->sb, child_ref.inode, EXT4_INODE_MODE_DIRECTORY);
+        if (is_dir) {
+#if CONFIG_DIR_INDEX_ENABLE
+            bool dir_index_on = ext4_sb_feature_com(&fs->sb, EXT4_FCOM_DIR_INDEX);
+#else
+            bool dir_index_on = false;
+#endif
+            r = ext_dir_initialize(&inode_ref._ref, &child_ref, dir_index_on);
+            if (r != EOK) {
+                ext4_dir_remove_entry(&inode_ref._ref, name, strlen(name));
+            }
+        } else {
+            ext4_fs_inode_links_count_inc(&child_ref);
+        }
+    }
 
+    if (r == EOK) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
         ext4_inode_set_change_inode_time(child_ref.inode, now.tv_sec);
@@ -471,6 +508,11 @@ ext_create(struct vnode *dvp, char *name, mode_t mode)
 
         child_ref.dirty = true;
         kprintf("[ext4] created %s under i-node %li\n", name, dvp->v_ino);
+    } else {
+        ext4_fs_free_inode(&child_ref);
+        //We do not want to write new inode. But block has to be released.
+        child_ref.dirty = false;
+        kprintf("[ext4] failed to create %s under i-node %li due to error:%d!\n", name, dvp->v_ino, r);
     }
 
     ext4_fs_put_inode_ref(&child_ref);
@@ -479,10 +521,58 @@ ext_create(struct vnode *dvp, char *name, mode_t mode)
 }
 
 static int
+ext_create(struct vnode *dvp, char *name, mode_t mode)
+{
+    kprintf("[ext4] create %s under i-node %li\n", name, dvp->v_ino);
+
+    uint32_t len = strlen(name);
+    if (len > NAME_MAX || len > EXT4_DIRECTORY_FILENAME_LEN) {
+        return ENAMETOOLONG;
+    }
+
+    if (!S_ISREG(mode))
+        return EINVAL;
+
+    return ext_dir_link(dvp, name, EXT4_DE_REG_FILE);
+}
+
+static int
 ext_remove(struct vnode *dvp, struct vnode *vp, char *name)
 {
     kprintf("[ext4] remove\n");
-    return (EINVAL);
+
+    struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
+    auto_inode_ref parent(fs, dvp->v_ino);
+    if (parent._r != EOK) {
+        return parent._r;
+    }
+
+    /* Remove entry from parent directory */
+    int r = ext4_dir_remove_entry(&parent._ref, name, strlen(name));
+    if (r != EOK) {
+        return r;
+    }
+
+    auto_inode_ref child(fs, vp->v_ino);
+    if (child._r != EOK) {
+        return child._r;
+    }
+
+    if (ext4_inode_get_links_cnt(child._ref.inode)) {
+        ext4_fs_inode_links_count_dec(&child._ref);
+        child._ref.dirty = true;
+    }
+
+    if (r == EOK) {
+        struct timespec now;
+        clock_gettime(CLOCK_REALTIME, &now);
+        ext4_inode_set_change_inode_time(parent._ref.inode, now.tv_sec);
+        ext4_inode_set_modif_time(parent._ref.inode, now.tv_sec);
+
+        parent._ref.dirty = true;
+    }
+
+    return r;
 }
 
 static int
@@ -496,8 +586,17 @@ ext_rename(struct vnode *sdvp, struct vnode *svp, char *snm,
 static int
 ext_mkdir(struct vnode *dvp, char *dirname, mode_t mode)
 {
-    kprintf("[ext4] mkdir\n");
-    return (EINVAL);
+    kprintf("[ext4] mkdir %s under i-node %li\n", dirname, dvp->v_ino);
+
+    uint32_t len = strlen(dirname);
+    if (len > NAME_MAX || len > EXT4_DIRECTORY_FILENAME_LEN) {
+        return ENAMETOOLONG;
+    }
+
+    if (!S_ISDIR(mode))
+        return EINVAL;
+
+    return ext_dir_link(dvp, dirname, EXT4_DE_DIR);
 }
 
 static int
