@@ -49,8 +49,6 @@ typedef	struct vattr vattr_t;
 
 //TODO:
 //Ops:
-// - ext_write
-// - ext_rmdir
 // - ext_seek
 // - ext_truncate
 // - ext_link
