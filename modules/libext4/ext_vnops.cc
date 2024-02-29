@@ -49,13 +49,9 @@ typedef	struct vattr vattr_t;
 
 //TODO:
 //Ops:
-// - ext_seek
-// - ext_truncate
 // - ext_link
-// - ext_readlink
-// - ext_symlink
+// - ext_truncate
 // - ext_rename
-// - ext_fallocate
 //
 // - ext_ioctl
 // - ext_fsync
@@ -63,6 +59,7 @@ typedef	struct vattr vattr_t;
 // Later:
 // - ext_arc
 // - ext_inactive
+// - ext_fallocate - Linux specific
 
 static int
 ext_open(struct file *fp)
@@ -449,13 +446,6 @@ ext_write(vnode_t *vp, uio_t *uio, int ioflag)
 }
 
 static int
-ext_seek(vnode_t *vp, file_t *fp, offset_t ooff, offset_t noffp)
-{
-    kprintf("[ext4] Seeking file i-node:%ld\n", vp->v_ino);
-    return (EINVAL);
-}
-
-static int
 ext_ioctl(vnode_t *vp, file_t *fp, u_long com, void *data)
 {
     kprintf("[ext4] ioctl\n");
@@ -628,7 +618,7 @@ ext_dir_initialize(ext4_inode_ref *parent, ext4_inode_ref *child, bool dir_index
 }
 
 static int
-ext_dir_link(struct vnode *dvp, char *name, int file_type)
+ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no_created)
 {
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
     auto_inode_ref inode_ref(fs, dvp->v_ino);
@@ -682,6 +672,9 @@ ext_dir_link(struct vnode *dvp, char *name, int file_type)
         ext4_inode_set_modif_time(child_ref.inode, now.tv_sec);
 
         child_ref.dirty = true;
+        if (inode_no_created) {
+            *inode_no_created = child_ref.index;
+        }
         kprintf("[ext4] created %s under i-node %li\n", name, dvp->v_ino);
     } else {
         ext4_fs_free_inode(&child_ref);
@@ -708,7 +701,7 @@ ext_create(struct vnode *dvp, char *name, mode_t mode)
     if (!S_ISREG(mode))
         return EINVAL;
 
-    return ext_dir_link(dvp, name, EXT4_DE_REG_FILE);
+    return ext_dir_link(dvp, name, EXT4_DE_REG_FILE, nullptr);
 }
 
 static int
@@ -791,7 +784,7 @@ ext_mkdir(struct vnode *dvp, char *dirname, mode_t mode)
     if (!S_ISDIR(mode))
         return EINVAL;
 
-    return ext_dir_link(dvp, dirname, EXT4_DE_DIR);
+    return ext_dir_link(dvp, dirname, EXT4_DE_DIR, nullptr);
 }
 
 static int
@@ -911,15 +904,101 @@ static int
 ext_readlink(vnode_t *vp, uio_t *uio)
 {
     kprintf("[ext4] readlink\n");
-    return (EINVAL);
+    if (vp->v_type != VLNK) {
+        return EINVAL;
+    }
+    if (uio->uio_offset < 0) {
+        return EINVAL;
+    }
+    if (uio->uio_resid == 0) {
+        return 0;
+    }
+
+    struct ext4_fs *fs = (struct ext4_fs *)vp->v_mount->m_data;
+
+    auto_inode_ref inode_ref(fs, vp->v_ino);
+    if (inode_ref._r != EOK) {
+        return inode_ref._r;
+    }
+
+    uint64_t fsize = ext4_inode_get_size(&fs->sb, inode_ref._ref.inode);
+    if (fsize < sizeof(inode_ref._ref.inode->blocks)
+             && !ext4_inode_get_blocks_count(&fs->sb, inode_ref._ref.inode)) {
+
+        char *content = (char *)inode_ref._ref.inode->blocks;
+        return uiomove(content, fsize, uio);
+    } else {
+        uint32_t block_size = ext4_sb_get_block_size(&fs->sb);
+        void *buf = malloc(block_size);
+        size_t read_count = 0;
+        int ret = ext_internal_read(fs, &inode_ref._ref, uio->uio_offset, buf, fsize, &read_count);
+        if (ret) {
+            kprintf("[ext_readlink] Error reading data\n");
+            free(buf);
+            return ret;
+        }
+
+        ret = uiomove(buf, read_count, uio);
+        free(buf);
+        return ret;
+    }
+}
+
+static int
+ext_fsymlink_set(struct ext4_fs *fs, uint32_t inode_no, const void *buf, uint32_t size)
+{
+    uint32_t block_size = ext4_sb_get_block_size(&fs->sb);
+    if (size > block_size) {
+        return EINVAL;
+    }
+
+    auto_inode_ref inode_ref(fs, inode_no);
+    if (inode_ref._r != EOK) {
+        return inode_ref._r;
+    }
+
+    /*If the size of symlink is smaller than 60 bytes*/
+    if (size < sizeof(inode_ref._ref.inode->blocks)) {
+        memset(inode_ref._ref.inode->blocks, 0, sizeof(inode_ref._ref.inode->blocks));
+        memcpy(inode_ref._ref.inode->blocks, buf, size);
+        ext4_inode_clear_flag(inode_ref._ref.inode, EXT4_INODE_FLAG_EXTENTS);
+    } else {
+        ext4_fs_inode_blocks_init(fs, &inode_ref._ref);
+
+        uint32_t sblock;
+        ext4_fsblk_t fblock;
+        int r = ext4_fs_append_inode_dblk(&inode_ref._ref, &fblock, &sblock);
+        if (r != EOK)
+            return r;
+
+        uint64_t off = fblock * block_size;
+        r = ext4_block_writebytes(fs->bdev, off, buf, size);
+        if (r != EOK)
+            return r;
+    }
+
+    ext4_inode_set_size(inode_ref._ref.inode, size);
+    inode_ref._ref.dirty = true;
+
+    return EOK;
 }
 
 static int
 ext_symlink(vnode_t *dvp, char *name, char *link)
 {
     kprintf("[ext4] symlink\n");
-    return (EINVAL);
+    struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
+    ext4_block_cache_write_back(fs->bdev, 1);
+    uint32_t inode_no_created;
+    int r = ext_dir_link(dvp, name, EXT4_DE_SYMLINK, &inode_no_created);
+    if (r == EOK ) {
+       r = ext_fsymlink_set(fs, inode_no_created, link, strlen(link));
+    }
+    ext4_block_cache_write_back(fs->bdev, 0);
+    return r;
 }
+
+#define ext_seek        ((vnop_seek_t)vop_nullop)
 
 struct vnops ext_vnops = {
     ext_open,       /* open */
