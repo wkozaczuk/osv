@@ -50,7 +50,6 @@ typedef	struct vattr vattr_t;
 //TODO:
 //Ops:
 // - ext_link
-// - ext_truncate
 // - ext_rename
 //
 // - ext_ioctl
@@ -705,6 +704,74 @@ ext_create(struct vnode *dvp, char *name, mode_t mode)
 }
 
 static int
+ext_trunc_inode(struct ext4_fs *fs, uint32_t index, uint64_t new_size)
+{
+    struct ext4_inode_ref inode_ref;
+    int r = ext4_fs_get_inode_ref(fs, index, &inode_ref);
+    if (r != EOK)
+        return r;
+
+    uint64_t inode_size = ext4_inode_get_size(&fs->sb, inode_ref.inode);
+    ext4_fs_put_inode_ref(&inode_ref);
+/*
+    bool has_trans = mp->fs.jbd_journal && mp->fs.curr_trans;
+    if (has_trans)
+        ext4_trans_stop(mp);*/
+
+    while (inode_size > new_size + CONFIG_MAX_TRUNCATE_SIZE) {
+
+        inode_size -= CONFIG_MAX_TRUNCATE_SIZE;
+
+        //ext4_trans_start(mp);
+        r = ext4_fs_get_inode_ref(fs, index, &inode_ref);
+        if (r != EOK) {
+            //ext4_trans_abort(mp);
+            break;
+        }
+        r = ext4_fs_truncate_inode(&inode_ref, inode_size);
+        if (r != EOK)
+            ext4_fs_put_inode_ref(&inode_ref);
+        else
+            r = ext4_fs_put_inode_ref(&inode_ref);
+
+        if (r != EOK) {
+            //ext4_trans_abort(mp);
+            goto Finish;
+        }/* else
+            ext4_trans_stop(mp);*/
+    }
+
+    if (inode_size > new_size) {
+        inode_size = new_size;
+
+        //ext4_trans_start(mp);
+        r = ext4_fs_get_inode_ref(fs, index, &inode_ref);
+        if (r != EOK) {
+            //ext4_trans_abort(mp);
+            goto Finish;
+        }
+        r = ext4_fs_truncate_inode(&inode_ref, inode_size);
+        if (r != EOK)
+            ext4_fs_put_inode_ref(&inode_ref);
+        else
+            r = ext4_fs_put_inode_ref(&inode_ref);
+/*
+        if (r != EOK)
+            ext4_trans_abort(mp);
+        else
+            ext4_trans_stop(mp);*/
+
+    }
+
+Finish:
+
+    /*if (has_trans)
+        ext4_trans_start(mp);*/
+
+    return r;
+}
+
+static int
 ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
 {
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
@@ -718,18 +785,18 @@ ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
         return child._r;
     }
 
-    /* TODO
+    int r = EOK;
     if (ext4_inode_get_links_cnt(child._ref.inode) == 1) {
-        ext4_block_cache_write_back(mp->fs.bdev, 1);
-        r = ext4_trunc_inode(mp, child.index, 0);
-        ext4_block_cache_write_back(mp->fs.bdev, 0);
+        ext4_block_cache_write_back(fs->bdev, 1);
+        r = ext_trunc_inode(fs, child._ref.index, 0);
+        ext4_block_cache_write_back(fs->bdev, 0);
         if (r != EOK) {
             return r;
         }
-    }*/
+    }
 
     /* Remove entry from parent directory */
-    int r = ext4_dir_remove_entry(&parent._ref, name, strlen(name));
+    r = ext4_dir_remove_entry(&parent._ref, name, strlen(name));
     if (r != EOK) {
         return r;
     }
@@ -876,7 +943,11 @@ static int
 ext_truncate(struct vnode *vp, off_t new_size)
 {
     kprintf("[ext4] truncate\n");
-    return (EINVAL);
+    struct ext4_fs *fs = (struct ext4_fs *)vp->v_mount->m_data;
+    ext4_block_cache_write_back(fs->bdev, 1);
+    auto r = ext_trunc_inode(fs, vp->v_ino, new_size);
+    ext4_block_cache_write_back(fs->bdev, 0);
+    return r;
 }
 
 static int
