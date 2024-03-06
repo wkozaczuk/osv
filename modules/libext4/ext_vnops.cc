@@ -49,7 +49,6 @@ typedef	struct vattr vattr_t;
 
 //TODO:
 //Ops:
-// - ext_link
 // - ext_rename
 //
 // - ext_ioctl
@@ -617,7 +616,7 @@ ext_dir_initialize(ext4_inode_ref *parent, ext4_inode_ref *child, bool dir_index
 }
 
 static int
-ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no_created)
+ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no, uint32_t *inode_no_created)
 {
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
     auto_inode_ref inode_ref(fs, dvp->v_ino);
@@ -639,17 +638,25 @@ ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no_cr
     }
 
     struct ext4_inode_ref child_ref;
-    r = ext4_fs_alloc_inode(fs, &child_ref, file_type);
+    if (inode_no) {
+        r = ext4_fs_get_inode_ref(fs, *inode_no, &child_ref);
+    } else {
+        r = ext4_fs_alloc_inode(fs, &child_ref, file_type);
+    }
     if (r != EOK) {
         return r;
     }
 
-    ext4_fs_inode_blocks_init(fs, &child_ref);
+    if (!inode_no ) {
+        ext4_fs_inode_blocks_init(fs, &child_ref);
+    }
 
     r = ext4_dir_add_entry(&inode_ref._ref, name, strlen(name), &child_ref);
     if (r == EOK) {
         bool is_dir = ext4_inode_is_type(&fs->sb, child_ref.inode, EXT4_INODE_MODE_DIRECTORY);
-        if (is_dir) {
+        if (is_dir && inode_no) {
+            r = EPERM; //Cannot create hard links for directories
+        } else if (is_dir) {
 #if CONFIG_DIR_INDEX_ENABLE
             bool dir_index_on = ext4_sb_feature_com(&fs->sb, EXT4_FCOM_DIR_INDEX);
 #else
@@ -668,7 +675,9 @@ ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no_cr
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
         ext4_inode_set_change_inode_time(child_ref.inode, now.tv_sec);
-        ext4_inode_set_modif_time(child_ref.inode, now.tv_sec);
+        if (!inode_no) {
+            ext4_inode_set_modif_time(child_ref.inode, now.tv_sec);
+        }
 
         child_ref.dirty = true;
         if (inode_no_created) {
@@ -676,10 +685,12 @@ ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no_cr
         }
         kprintf("[ext4] created %s under i-node %li\n", name, dvp->v_ino);
     } else {
-        ext4_fs_free_inode(&child_ref);
+        if (!inode_no) {
+            ext4_fs_free_inode(&child_ref);
+        }
         //We do not want to write new inode. But block has to be released.
-        child_ref.dirty = false;
         kprintf("[ext4] failed to create %s under i-node %li due to error:%d!\n", name, dvp->v_ino, r);
+        child_ref.dirty = false;
     }
 
     ext4_fs_put_inode_ref(&child_ref);
@@ -700,7 +711,7 @@ ext_create(struct vnode *dvp, char *name, mode_t mode)
     if (!S_ISREG(mode))
         return EINVAL;
 
-    return ext_dir_link(dvp, name, EXT4_DE_REG_FILE, nullptr);
+    return ext_dir_link(dvp, name, EXT4_DE_REG_FILE, nullptr, nullptr);
 }
 
 static int
@@ -851,7 +862,7 @@ ext_mkdir(struct vnode *dvp, char *dirname, mode_t mode)
     if (!S_ISDIR(mode))
         return EINVAL;
 
-    return ext_dir_link(dvp, dirname, EXT4_DE_DIR, nullptr);
+    return ext_dir_link(dvp, dirname, EXT4_DE_DIR, nullptr, nullptr);
 }
 
 static int
@@ -954,7 +965,13 @@ static int
 ext_link(vnode_t *tdvp, vnode_t *svp, char *name)
 {
     kprintf("[ext4] link\n");
-    return (EINVAL);
+    uint32_t len = strlen(name);
+    if (len > NAME_MAX || len > EXT4_DIRECTORY_FILENAME_LEN) {
+        return ENAMETOOLONG;
+    }
+
+    uint32_t source_link_no = svp->v_ino;
+    return ext_dir_link(tdvp, name, EXT4_DE_REG_FILE, &source_link_no, nullptr);
 }
 
 static int
@@ -1061,7 +1078,7 @@ ext_symlink(vnode_t *dvp, char *name, char *link)
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
     ext4_block_cache_write_back(fs->bdev, 1);
     uint32_t inode_no_created;
-    int r = ext_dir_link(dvp, name, EXT4_DE_SYMLINK, &inode_no_created);
+    int r = ext_dir_link(dvp, name, EXT4_DE_SYMLINK, nullptr, &inode_no_created);
     if (r == EOK ) {
        r = ext_fsymlink_set(fs, inode_no_created, link, strlen(link));
     }
