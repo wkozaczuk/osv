@@ -49,14 +49,11 @@ typedef	struct vattr vattr_t;
 
 //TODO:
 //Ops:
-// - ext_rename
-//
 // - ext_ioctl
 // - ext_fsync
 //
 // Later:
 // - ext_arc
-// - ext_inactive
 // - ext_fallocate - Linux specific
 
 static int
@@ -843,10 +840,72 @@ ext_remove(struct vnode *dvp, struct vnode *vp, char *name)
 
 static int
 ext_rename(struct vnode *sdvp, struct vnode *svp, char *snm,
-            struct vnode *tdvp, struct vnode *tvp, char *tnm)
+           struct vnode *tdvp, struct vnode *tvp, char *tnm)
 {
     kprintf("[ext4] rename\n");
-    return (EINVAL);
+    struct ext4_fs *fs = (struct ext4_fs *)sdvp->v_mount->m_data;
+    ext4_block_cache_write_back(fs->bdev, 1);
+
+    int r = EOK;
+    if (tvp) {
+        // Remove destination file, first ... if exists
+        kprintf("[ext4] rename removing %s from the target directory\n", tnm);
+        auto_inode_ref target_dir(fs, tdvp->v_ino);
+        if (target_dir._r != EOK) {
+            //ext4_block_cache_write_back(fs->bdev, 0);
+            return target_dir._r;
+        }
+        /* Remove entry from target directory */
+        r = ext4_dir_remove_entry(&target_dir._ref, tnm, strlen(tnm));
+        if (r != EOK) {
+            //ext4_block_cache_write_back(fs->bdev, 0);
+            return r;
+        }
+    }
+
+    //TODO: Handle directories and ".."
+    auto_inode_ref src_dir(fs, sdvp->v_ino);
+    if (src_dir._r != EOK) {
+        //ext4_block_cache_write_back(fs->bdev, 0);
+        return src_dir._r;
+    }
+
+    auto_inode_ref src_entry(fs, svp->v_ino);
+    if (src_entry._r != EOK) {
+        //ext4_block_cache_write_back(fs->bdev, 0);
+        return src_entry._r;
+    }
+
+    /* Same directory ? */
+    if (sdvp == tdvp) {
+        // Add new entry to the same directory
+        r = ext4_dir_add_entry(&src_dir._ref, tnm, strlen(tnm), &src_entry._ref);
+        if (r != EOK) {
+            return r;
+        }
+    } else {
+        // Add new entry to the destination directory
+        auto_inode_ref dest_dir(fs, tdvp->v_ino);
+        if (dest_dir._r != EOK) {
+            //ext4_block_cache_write_back(fs->bdev, 0);
+            return dest_dir._r;
+        }
+
+        r = ext4_dir_add_entry(&dest_dir._ref, tnm, strlen(tnm), &src_entry._ref);
+        if (r != EOK) {
+            return r;
+        }
+    }
+
+    /* Remove old entry from the source directory */
+    r = ext4_dir_remove_entry(&src_dir._ref, snm, strlen(snm));
+    if (r != EOK) {
+        //ext4_block_cache_write_back(fs->bdev, 0);
+        return r;
+    }
+
+    ext4_block_cache_write_back(fs->bdev, 0);
+    return r;
 }
 
 static int
@@ -941,13 +1000,6 @@ ext_setattr(vnode_t *vp, vattr_t *vap)
     }
 
     return (EOK);
-}
-
-static int
-ext_inactive(vnode_t *vp)
-{
-    kprintf("[ext4] inactive\n");
-    return (EINVAL);
 }
 
 static int
@@ -1087,6 +1139,7 @@ ext_symlink(vnode_t *dvp, char *name, char *link)
 }
 
 #define ext_seek        ((vnop_seek_t)vop_nullop)
+#define ext_inactive    ((vnop_inactive_t)vop_nullop)
 
 struct vnops ext_vnops = {
     ext_open,       /* open */
