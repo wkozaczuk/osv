@@ -780,6 +780,34 @@ Finish:
 }
 
 static int
+ext_dir_trunc(struct ext4_fs *fs, struct ext4_inode_ref *parent, struct ext4_inode_ref *dir)
+{
+    int r = EOK;
+    uint32_t block_size = ext4_sb_get_block_size(&fs->sb);
+
+#if CONFIG_DIR_INDEX_ENABLE
+    /* Initialize directory index if supported */
+    if (ext4_sb_feature_com(&fs->sb, EXT4_FCOM_DIR_INDEX)) {
+        r = ext4_dir_dx_init(dir, parent);
+        if (r != EOK)
+            return r;
+
+        r = ext_trunc_inode(fs, dir->index,
+                     EXT4_DIR_DX_INIT_BCNT * block_size);
+        if (r != EOK)
+            return r;
+    } else
+#endif
+    {
+        r = ext_trunc_inode(fs, dir->index, block_size);
+        if (r != EOK)
+            return r;
+    }
+
+    return ext4_fs_truncate_inode(dir, 0);
+}
+
+static int
 ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
 {
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
@@ -794,10 +822,18 @@ ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
     }
 
     int r = EOK;
-    if (ext4_inode_get_links_cnt(child._ref.inode) == 1) {
-        ext4_block_cache_write_back(fs->bdev, 1);
-        r = ext_trunc_inode(fs, child._ref.index, 0);
-        ext4_block_cache_write_back(fs->bdev, 0);
+    uint32_t inode_type = ext4_inode_type(&fs->sb, child._ref.inode);
+    if (inode_type != EXT4_INODE_MODE_DIRECTORY) {
+        if (ext4_inode_get_links_cnt(child._ref.inode) == 1) {
+            ext4_block_cache_write_back(fs->bdev, 1);
+            r = ext_trunc_inode(fs, child._ref.index, 0);
+            ext4_block_cache_write_back(fs->bdev, 0);
+            if (r != EOK) {
+                return r;
+            }
+        }
+    } else {
+        r = ext_dir_trunc(fs, &parent._ref, &child._ref);
         if (r != EOK) {
             return r;
         }
@@ -809,14 +845,18 @@ ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
         return r;
     }
 
-    int links_cnt = ext4_inode_get_links_cnt(child._ref.inode);
-    if (links_cnt) {
-        ext4_fs_inode_links_count_dec(&child._ref);
-        child._ref.dirty = true;
+    if (inode_type != EXT4_INODE_MODE_DIRECTORY) {
+        int links_cnt = ext4_inode_get_links_cnt(child._ref.inode);
+        if (links_cnt) {
+            ext4_fs_inode_links_count_dec(&child._ref);
+            child._ref.dirty = true;
 
-        if (links_cnt == 1) {//Zero now
-            ext4_fs_free_inode(&child._ref);
+            if (links_cnt == 1) {//Zero now
+                ext4_fs_free_inode(&child._ref);
+            }
         }
+    } else {
+        ext4_fs_free_inode(&child._ref);
     }
 
     if (r == EOK) {
@@ -928,7 +968,6 @@ static int
 ext_rmdir(vnode_t *dvp, vnode_t *vp, char *name)
 {
     kprintf("[ext4] rmdir\n");
-    //TODO Add missing logic (look at lwext) like . and .. entries
     return ext_dir_remove_entry(dvp, vp, name);
 }
 
