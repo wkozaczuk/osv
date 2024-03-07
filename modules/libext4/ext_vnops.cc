@@ -21,6 +21,7 @@ extern "C" {
 #include <ext4_inode.h>
 #include <ext4_fs.h>
 #include <ext4_dir_idx.h>
+#include <ext4_trans.h>
 
 #include <cstdlib>
 #include <time.h>
@@ -903,7 +904,6 @@ ext_rename(struct vnode *sdvp, struct vnode *svp, char *snm,
         }
     }
 
-    //TODO: Handle directories and ".."
     auto_inode_ref src_dir(fs, sdvp->v_ino);
     if (src_dir._r != EOK) {
         //ext4_block_cache_write_back(fs->bdev, 0);
@@ -935,6 +935,41 @@ ext_rename(struct vnode *sdvp, struct vnode *svp, char *snm,
         if (r != EOK) {
             return r;
         }
+    }
+
+    // If directory need to reposition '..' to different parent - target directory
+    if (ext4_inode_is_type(&fs->sb, src_entry._ref.inode, EXT4_INODE_MODE_DIRECTORY)) {
+        auto_inode_ref dest_dir(fs, tdvp->v_ino);
+        if (dest_dir._r != EOK) {
+            //ext4_block_cache_write_back(fs->bdev, 0);
+            return dest_dir._r;
+        }
+
+        bool idx;
+        idx = ext4_inode_has_flag(src_entry._ref.inode, EXT4_INODE_FLAG_INDEX);
+        struct ext4_dir_search_result res;
+        if (!idx) {
+            r = ext4_dir_find_entry(&res, &src_entry._ref, "..", strlen(".."));
+            if (r != EOK)
+                return EIO;
+
+            ext4_dir_en_set_inode(res.dentry, dest_dir._ref.index);
+            ext4_trans_set_block_dirty(res.block.buf);
+            r = ext4_dir_destroy_result(&src_entry._ref, &res);
+            if (r != EOK)
+                return r;
+
+        } else {
+#if CONFIG_DIR_INDEX_ENABLE
+            r = ext4_dir_dx_reset_parent_inode(&src_entry._ref, dest_dir._ref.index);
+            if (r != EOK)
+                return r;
+
+#endif
+        }
+
+        ext4_fs_inode_links_count_inc(&dest_dir._ref);
+        dest_dir._ref.dirty = true;
     }
 
     /* Remove old entry from the source directory */
