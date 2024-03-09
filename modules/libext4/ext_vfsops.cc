@@ -188,7 +188,22 @@ ext_sync(struct mount *mp)
 static int
 ext_statfs(struct mount *mp, struct statfs *statp)
 {
-    return EIO;
+    kprintf("[ext4] statfs\n");
+    struct ext4_fs *fs = (struct ext4_fs *)mp->m_data;
+    statp->f_bsize = ext4_sb_get_block_size(&fs->sb);
+
+    statp->f_blocks = ext4_sb_get_blocks_cnt(&fs->sb);
+    statp->f_bfree = ext4_sb_get_free_blocks_cnt(&fs->sb);
+    statp->f_bavail = ext4_sb_get_free_blocks_cnt(&fs->sb);
+
+    statp->f_ffree = ext4_get32(&fs->sb, free_inodes_count);
+    statp->f_files = ext4_get32(&fs->sb, inodes_count);
+
+    statp->f_namelen = EXT4_DIRECTORY_FILENAME_LEN;
+    statp->f_type = EXT4_SUPERBLOCK_MAGIC;
+
+    statp->f_fsid = mp->m_fsid; /* File system identifier */
+    return EOK;
 }
 
 // We are relying on vfsops structure defined in kernel
