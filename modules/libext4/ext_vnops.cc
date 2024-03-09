@@ -508,7 +508,7 @@ ext_readdir(struct vnode *dvp, struct file *fp, struct dirent *dir)
             ext4_dir_iterator_next(&it);
 
             off_t f_offset = file_offset(fp);
-            dir->d_fileno = f_offset; //TODO: Does it matter?
+            dir->d_fileno = f_offset;
             dir->d_off = f_offset + 1;
             file_setoffset(fp, it.curr ? it.curr_off : EXT4_DIR_ENTRY_OFFSET_TERM);
         } else {
