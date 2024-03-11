@@ -402,6 +402,12 @@ out_fsize:
     }
 
 Finish:
+    struct timespec now;
+    clock_gettime(CLOCK_REALTIME, &now);
+    ext4_inode_set_change_inode_time(ref->inode, now.tv_sec);
+    ext4_inode_set_modif_time(ref->inode, now.tv_sec);
+    ref->dirty = true;
+
     return r;
 }
 
@@ -696,6 +702,10 @@ ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no, u
             ext4_inode_set_modif_time(child_ref.inode, now.tv_sec);
         }
 
+        ext4_inode_set_change_inode_time(inode_ref._ref.inode, now.tv_sec);
+        ext4_inode_set_modif_time(inode_ref._ref.inode, now.tv_sec);
+
+        inode_ref._ref.dirty = true;
         child_ref.dirty = true;
         if (inode_no_created) {
             *inode_no_created = child_ref.index;
