@@ -42,6 +42,19 @@ struct auto_inode_ref {
     }
 };
 
+struct auto_write_back {
+    struct ext4_fs *_fs;
+
+    auto_write_back(struct ext4_fs *fs) {
+        _fs = fs;
+        ext4_block_cache_write_back(_fs->bdev, 1);
+    }
+
+    ~auto_write_back() {
+        ext4_block_cache_write_back(_fs->bdev, 0);
+    }
+};
+
 typedef	struct vnode vnode_t;
 typedef	struct file file_t;
 typedef struct uio uio_t;
@@ -567,7 +580,9 @@ ext_lookup(struct vnode *dvp, char *nm, struct vnode **vpp)
 
         (*vpp)->v_mode = ext4_inode_get_mode(&fs->sb, inode_ref2._ref.inode);
 
-        kprintf("[ext4] Looked up %s in directory with i-node:%ld as i-node:%d\n", nm, dvp->v_ino, inode_no);
+        kprintf("[ext4] Looked up %s %s in directory with i-node:%ld as i-node:%d\n",
+            (*vpp)->v_type == VDIR ? "DIR" : ((*vpp)->v_type == VREG ? "FILE" : "SYMLINK"),
+            nm, dvp->v_ino, inode_no);
     } else {
         r = ENOENT;
     }
@@ -584,12 +599,12 @@ ext_dir_initialize(ext4_inode_ref *parent, ext4_inode_ref *child, bool dir_index
 #if CONFIG_DIR_INDEX_ENABLE
     /* Initialize directory index if supported */
     if (dir_index_on) {
+        kprintf("[ext4] DIR_INDEX on initializing directory with inode no:%d\n", child->index);
         r = ext4_dir_dx_init(child, parent);
         if (r != EOK)
             return r;
 
         ext4_inode_set_flag(child->inode, EXT4_INODE_FLAG_INDEX);
-        child->dirty = true;
     } else
 #endif
     {
@@ -609,6 +624,7 @@ ext_dir_initialize(ext4_inode_ref *parent, ext4_inode_ref *child, bool dir_index
     ext4_inode_set_links_cnt(child->inode, 2);
     ext4_fs_inode_links_count_inc(parent);
     parent->dirty = true;
+    child->dirty = true;
 
     return r;
 }
@@ -617,6 +633,7 @@ static int
 ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no, uint32_t *inode_no_created)
 {
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
+    auto_write_back wb(fs);
     auto_inode_ref inode_ref(fs, dvp->v_ino);
     if (inode_ref._r != EOK) {
         return inode_ref._r;
@@ -660,6 +677,7 @@ ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no, u
 #else
             bool dir_index_on = false;
 #endif
+            kprintf("[ext4] initializing directory %s with i-node:%d\n", name, child_ref.index);
             r = ext_dir_initialize(&inode_ref._ref, &child_ref, dir_index_on);
             if (r != EOK) {
                 ext4_dir_remove_entry(&inode_ref._ref, name, strlen(name));
@@ -674,6 +692,7 @@ ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no, u
         clock_gettime(CLOCK_REALTIME, &now);
         ext4_inode_set_change_inode_time(child_ref.inode, now.tv_sec);
         if (!inode_no) {
+            ext4_inode_set_access_time(child_ref.inode, now.tv_sec);
             ext4_inode_set_modif_time(child_ref.inode, now.tv_sec);
         }
 
@@ -812,6 +831,7 @@ static int
 ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
 {
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
+    auto_write_back wb(fs);
     auto_inode_ref parent(fs, dvp->v_ino);
     if (parent._r != EOK) {
         return parent._r;
@@ -826,9 +846,7 @@ ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
     uint32_t inode_type = ext4_inode_type(&fs->sb, child._ref.inode);
     if (inode_type != EXT4_INODE_MODE_DIRECTORY) {
         if (ext4_inode_get_links_cnt(child._ref.inode) == 1) {
-            ext4_block_cache_write_back(fs->bdev, 1);
             r = ext_trunc_inode(fs, child._ref.index, 0);
-            ext4_block_cache_write_back(fs->bdev, 0);
             if (r != EOK) {
                 return r;
             }
@@ -885,7 +903,7 @@ ext_rename(struct vnode *sdvp, struct vnode *svp, char *snm,
 {
     kprintf("[ext4] rename\n");
     struct ext4_fs *fs = (struct ext4_fs *)sdvp->v_mount->m_data;
-    ext4_block_cache_write_back(fs->bdev, 1);
+    auto_write_back wb(fs);
 
     int r = EOK;
     if (tvp) {
@@ -893,26 +911,22 @@ ext_rename(struct vnode *sdvp, struct vnode *svp, char *snm,
         kprintf("[ext4] rename removing %s from the target directory\n", tnm);
         auto_inode_ref target_dir(fs, tdvp->v_ino);
         if (target_dir._r != EOK) {
-            //ext4_block_cache_write_back(fs->bdev, 0);
             return target_dir._r;
         }
         /* Remove entry from target directory */
         r = ext4_dir_remove_entry(&target_dir._ref, tnm, strlen(tnm));
         if (r != EOK) {
-            //ext4_block_cache_write_back(fs->bdev, 0);
             return r;
         }
     }
 
     auto_inode_ref src_dir(fs, sdvp->v_ino);
     if (src_dir._r != EOK) {
-        //ext4_block_cache_write_back(fs->bdev, 0);
         return src_dir._r;
     }
 
     auto_inode_ref src_entry(fs, svp->v_ino);
     if (src_entry._r != EOK) {
-        //ext4_block_cache_write_back(fs->bdev, 0);
         return src_entry._r;
     }
 
@@ -927,7 +941,6 @@ ext_rename(struct vnode *sdvp, struct vnode *svp, char *snm,
         // Add new entry to the destination directory
         auto_inode_ref dest_dir(fs, tdvp->v_ino);
         if (dest_dir._r != EOK) {
-            //ext4_block_cache_write_back(fs->bdev, 0);
             return dest_dir._r;
         }
 
@@ -941,7 +954,6 @@ ext_rename(struct vnode *sdvp, struct vnode *svp, char *snm,
     if (ext4_inode_is_type(&fs->sb, src_entry._ref.inode, EXT4_INODE_MODE_DIRECTORY)) {
         auto_inode_ref dest_dir(fs, tdvp->v_ino);
         if (dest_dir._r != EOK) {
-            //ext4_block_cache_write_back(fs->bdev, 0);
             return dest_dir._r;
         }
 
@@ -975,11 +987,9 @@ ext_rename(struct vnode *sdvp, struct vnode *svp, char *snm,
     /* Remove old entry from the source directory */
     r = ext4_dir_remove_entry(&src_dir._ref, snm, strlen(snm));
     if (r != EOK) {
-        //ext4_block_cache_write_back(fs->bdev, 0);
         return r;
     }
 
-    ext4_block_cache_write_back(fs->bdev, 0);
     return r;
 }
 
@@ -1048,6 +1058,7 @@ ext_setattr(vnode_t *vp, vattr_t *vap)
     kprintf("[ext4] setattr\n");
     struct ext4_fs *fs = (struct ext4_fs *)vp->v_mount->m_data;
 
+    auto_write_back wb(fs);
     auto_inode_ref inode_ref(fs, vp->v_ino);
     if (inode_ref._r != EOK) {
         return inode_ref._r;
@@ -1081,10 +1092,8 @@ ext_truncate(struct vnode *vp, off_t new_size)
 {
     kprintf("[ext4] truncate\n");
     struct ext4_fs *fs = (struct ext4_fs *)vp->v_mount->m_data;
-    ext4_block_cache_write_back(fs->bdev, 1);
-    auto r = ext_trunc_inode(fs, vp->v_ino, new_size);
-    ext4_block_cache_write_back(fs->bdev, 0);
-    return r;
+    auto_write_back wb(fs);
+    return ext_trunc_inode(fs, vp->v_ino, new_size);
 }
 
 static int
@@ -1202,13 +1211,12 @@ ext_symlink(vnode_t *dvp, char *name, char *link)
 {
     kprintf("[ext4] symlink\n");
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
-    ext4_block_cache_write_back(fs->bdev, 1);
+    auto_write_back wb(fs);
     uint32_t inode_no_created;
     int r = ext_dir_link(dvp, name, EXT4_DE_SYMLINK, nullptr, &inode_no_created);
     if (r == EOK ) {
-       r = ext_fsymlink_set(fs, inode_no_created, link, strlen(link));
+       return ext_fsymlink_set(fs, inode_no_created, link, strlen(link));
     }
-    ext4_block_cache_write_back(fs->bdev, 0);
     return r;
 }
 

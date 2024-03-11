@@ -1,0 +1,44 @@
+diff --git a/src/ext4_dir_idx.c b/src/ext4_dir_idx.c
+index f916cc6..94e05e6 100644
+--- a/src/ext4_dir_idx.c
++++ b/src/ext4_dir_idx.c
+@@ -373,6 +373,8 @@ int ext4_dir_dx_init(struct ext4_inode_ref *dir, struct ext4_inode_ref *parent)
+ 	if (rc != EOK)
+ 		return rc;
+ 
++        printf("ext4_dir_dx_init: data block:%lu, iblock:%lu, append:%d\n", block.lb_id, iblock, need_append);
++
+ 	/* Initialize pointers to data structures */
+ 	struct ext4_dir_idx_root *root = (void *)block.data;
+ 	struct ext4_dir_idx_rinfo *info = &(root->info);
+@@ -433,6 +435,8 @@ int ext4_dir_dx_init(struct ext4_inode_ref *dir, struct ext4_inode_ref *parent)
+ 	/* Fill the whole block with empty entry */
+ 	struct ext4_dir_en *be = (void *)new_block.data;
+ 
++	ext4_dir_en_set_inode(be, 0);
++
+ 	if (ext4_sb_feature_ro_com(sb, EXT4_FRO_COM_METADATA_CSUM)) {
+ 		uint16_t len = block_size - sizeof(struct ext4_dir_entry_tail);
+ 		ext4_dir_en_set_entry_len(be, len);
+@@ -440,12 +444,11 @@ int ext4_dir_dx_init(struct ext4_inode_ref *dir, struct ext4_inode_ref *parent)
+ 		ext4_dir_en_set_inode_type(sb, be, EXT4_DE_UNKNOWN);
+ 		ext4_dir_init_entry_tail(EXT4_DIRENT_TAIL(be, block_size));
+ 		ext4_dir_set_csum(dir, be);
++                printf("ext4_dir_dx_init: set csum for block:%lu\n", new_block.lb_id);
+ 	} else {
+ 		ext4_dir_en_set_entry_len(be, block_size);
+ 	}
+ 
+-	ext4_dir_en_set_inode(be, 0);
+-
+ 	ext4_trans_set_block_dirty(new_block.buf);
+ 	rc = ext4_block_set(dir->fs->bdev, &new_block);
+ 	if (rc != EOK) {
+@@ -778,6 +781,7 @@ int ext4_dir_dx_find_entry(struct ext4_dir_search_result *result,
+ 		if (rc != EOK)
+ 			goto cleanup;
+ 
++                printf("ext4_dir_dx_find_entry: leaf_blk_idx:%u, block id:%lu\n", leaf_blk_idx, b.lb_id);
+ 		if (!ext4_dir_csum_verify(inode_ref, (void *)b.data)) {
+ 			ext4_dbg(DEBUG_DIR_IDX,
+ 				 DBG_WARN "HTree leaf block checksum failed."
