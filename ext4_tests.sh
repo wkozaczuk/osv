@@ -13,9 +13,10 @@ if [[ "$1" != "" ]]; then
    exit 0
 fi
 
-#BASE='/data'
+BASE='/data'
 #BASE='/data/native-example'
-BASE='/data/native-example2'
+#BASE='/data/native-example2'
+#BASE='/data/TEST1'
 
 run_test "/find /data -ls"
 
