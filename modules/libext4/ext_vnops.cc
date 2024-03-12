@@ -14,6 +14,9 @@ extern "C" {
 #include <osv/debug.h>
 #include <osv/file.h>
 #include <osv/vnode_attr.h>
+
+void* alloc_contiguous_aligned(size_t size, size_t align);
+void free_contiguous_aligned(void* p);
 }
 
 #include <ext4_errno.h>
@@ -25,6 +28,7 @@ extern "C" {
 
 #include <cstdlib>
 #include <time.h>
+#include <cstddef>
 
 #include <algorithm>
 
@@ -231,7 +235,7 @@ ext_read(vnode_t *vp, struct file *fp, uio_t *uio, int ioflag)
     // Total read amount is what they requested, or what is left
     uint64_t fsize = ext4_inode_get_size(&fs->sb, inode_ref._ref.inode);
     uint64_t read_amt = std::min(fsize - uio->uio_offset, (uint64_t)uio->uio_resid);
-    void *buf = malloc(read_amt);
+    void *buf = alloc_contiguous_aligned(read_amt, alignof(std::max_align_t));
 
     size_t read_count = 0;
     int ret = ext_internal_read(fs, &inode_ref._ref, uio->uio_offset, buf, read_amt, &read_count);
@@ -242,7 +246,7 @@ ext_read(vnode_t *vp, struct file *fp, uio_t *uio, int ioflag)
     }
 
     ret = uiomove(buf, read_count, uio);
-    free(buf);
+    free_contiguous_aligned(buf);
 
     return ret;
 }
@@ -443,7 +447,7 @@ ext_write(vnode_t *vp, uio_t *uio, int ioflag)
         uio_copy.uio_offset = ext4_inode_get_size(&fs->sb, inode_ref._ref.inode);
     }
 
-    void *buf = malloc(uio->uio_resid);
+    void *buf = alloc_contiguous_aligned(uio->uio_resid, alignof(std::max_align_t));
     int ret = uiomove(buf, uio->uio_resid, &uio_copy);
     if (ret) {
         kprintf("[ext_write] Error copying data\n");
@@ -455,7 +459,7 @@ ext_write(vnode_t *vp, uio_t *uio, int ioflag)
     ret = ext_internal_write(fs, &inode_ref._ref, uio->uio_offset, buf, uio->uio_resid, &write_count);
 
     uio->uio_resid -= write_count;
-    free(buf);
+    free_contiguous_aligned(buf);
    
     return ret;
 }

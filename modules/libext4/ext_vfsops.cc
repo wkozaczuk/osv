@@ -13,6 +13,9 @@ extern "C" {
 #include <osv/vnode.h>
 #include <osv/mount.h>
 #include <osv/debug.h>
+
+void* alloc_contiguous_aligned(size_t size, size_t align);
+void free_contiguous_aligned(void* p);
 }
 
 #include <ext4_blockdev.h>
@@ -21,6 +24,9 @@ extern "C" {
 #include <ext4_super.h>
 
 #include <cstdlib>
+#include <cstddef>
+
+extern "C" bool is_linear_mapped(const void *addr);
 
 int ext_init(void) { return 0;}
 
@@ -28,62 +34,54 @@ static int blockdev_open(struct ext4_blockdev *bdev)
 {
     printf("[ext4] Called blockdev_open()\n");
     return EOK;
-    //TODO: Should open here or below in ext4_mount()?
 }
 
-//TODO: Collapse into single re-usable function
-static int blockdev_bread(struct ext4_blockdev *bdev, void *buf, uint64_t blk_id, uint32_t blk_cnt)
+static int blockdev_bread_or_write(struct ext4_blockdev *bdev, void *buf, uint64_t blk_id, uint32_t blk_cnt, bool read)
 {
     struct bio *bio = alloc_bio();
     if (!bio)
         return ENOMEM;
 
-    bio->bio_cmd = BIO_READ;
+    bio->bio_cmd = read ? BIO_READ : BIO_WRITE;
     bio->bio_dev = (struct device*)bdev->bdif->p_user;
-    bio->bio_data = buf;
     bio->bio_offset = blk_id * bdev->bdif->ph_bsize;
     bio->bio_bcount = blk_cnt * bdev->bdif->ph_bsize;
 
-    //TODO: Copy only if not malloced
-    void *_buf = malloc(bio->bio_bcount);
-    //kprintf("[ext4] Trying to read %ld bytes at offset %ld to %p\n", bio->bio_bcount, bio->bio_offset, _buf);
-    bio->bio_data = _buf;
+    if (!is_linear_mapped(buf)) {
+        bio->bio_data = alloc_contiguous_aligned(bio->bio_bcount, alignof(std::max_align_t));
+        if (!read) {
+            memcpy(bio->bio_data, buf, bio->bio_bcount);
+        }
+    } else {
+        bio->bio_data = buf;
+    }
+
     bio->bio_dev->driver->devops->strategy(bio);
     int error = bio_wait(bio);
-    memcpy(buf, _buf, bio->bio_bcount);
-    kprintf("[ext4] Read %ld bytes at offset %ld to %p with error:%d\n", bio->bio_bcount, bio->bio_offset, _buf, error);
 
-    free(_buf);
+    kprintf("[ext4] %s %ld bytes at offset %ld to %p with error:%d\n", read ? "Read" : "Wrote",
+        bio->bio_bcount, bio->bio_offset, bio->bio_data, error);
+
+    if (!is_linear_mapped(buf)) {
+        if (read && !error) {
+            memcpy(buf, bio->bio_data, bio->bio_bcount);
+        }
+        free_contiguous_aligned(bio->bio_data);
+    }
     destroy_bio(bio);
 
     return error;
+}
+
+static int blockdev_bread(struct ext4_blockdev *bdev, void *buf, uint64_t blk_id, uint32_t blk_cnt)
+{
+    return blockdev_bread_or_write(bdev, buf, blk_id, blk_cnt, true);
 }
 
 static int blockdev_bwrite(struct ext4_blockdev *bdev, const void *buf,
                            uint64_t blk_id, uint32_t blk_cnt)
 {
-    struct bio *bio = alloc_bio();
-    if (!bio)
-        return ENOMEM;
-
-    bio->bio_cmd = BIO_WRITE;
-    bio->bio_dev = (struct device*)bdev->bdif->p_user;
-    bio->bio_offset = blk_id * bdev->bdif->ph_bsize;
-    bio->bio_bcount = blk_cnt * bdev->bdif->ph_bsize;
-
-    //TODO: Copy only if not malloced
-    void *_buf = malloc(bio->bio_bcount);
-    memcpy(_buf, buf, bio->bio_bcount);
-    bio->bio_data = _buf;
-
-    bio->bio_dev->driver->devops->strategy(bio);
-    int error = bio_wait(bio);
-    kprintf("[ext4] Wrote %ld bytes at offset %ld to %p with error:%d\n", bio->bio_bcount, bio->bio_offset, buf, error);
-
-    free(_buf);
-    destroy_bio(bio);
-
-    return error;
+    return blockdev_bread_or_write(bdev, const_cast<void *>(buf), blk_id, blk_cnt, false);
 }
 
 static int blockdev_close(struct ext4_blockdev *bdev)
@@ -219,3 +217,5 @@ void __attribute__((constructor)) initialize_vfsops() {
     ext_vfsops.vfs_statfs = ext_statfs;
     ext_vfsops.vfs_vnops = &ext_vnops;
 }
+
+asm(".pushsection .note.osv-mlock, \"a\"; .long 0, 0, 0; .popsection");
