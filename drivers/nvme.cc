@@ -36,7 +36,6 @@ TRACEPOINT(trace_nvme_number_of_queues, "cq num=%d, sq num=%d, iv_num=%d", u16, 
 TRACEPOINT(trace_nvme_identify_namespace, "nsid=%d, blockcount=%d, blocksize=%d", u32, u64, u16);
 TRACEPOINT(trace_nvme_register_interrupt, "_io_queues[%d], iv=%d", int, int);
 
-
 #define QEMU_VID 0x1b36
 
 std::unique_ptr<nvme_sq_entry_t> alloc_cmd() {
@@ -59,15 +58,15 @@ static void nvme_strategy(struct bio* bio) {
 }
 
 static int
-nvme_read(struct device *dev, struct uio *uio, int ioflags)
+nvme_read(struct device *dev, struct uio *uio, int io_flags)
 {
-  return bdev_read(dev, uio, ioflags);
+    return bdev_read(dev, uio, io_flags);
 }
 
 static int
-nvme_write(struct device *dev, struct uio *uio, int ioflags)
+nvme_write(struct device *dev, struct uio *uio, int io_flags)
 {
-    return bdev_write(dev, uio, ioflags);
+    return bdev_write(dev, uio, io_flags);
 }
 
 static int
@@ -94,8 +93,7 @@ nvme_direct_rw(struct device *dev, struct uio *uio, int ioflags)
 
     refcount_init(&complete_io->bio_refcnt, uio->uio_iovcnt);
 
-    while(uio->uio_iovcnt > 0) 
-    {
+    while (uio->uio_iovcnt > 0) {
         bio* bio = alloc_bio();
         bio->bio_cmd = opcode;
         bio->bio_dev = dev;
@@ -117,6 +115,7 @@ nvme_direct_rw(struct device *dev, struct uio *uio, int ioflags)
         uio->uio_iov++;
         uio->uio_iovcnt--;
     }
+
     assert(uio->uio_resid == 0);
     int ret = bio_wait(complete_io);
     destroy_bio(complete_io);
@@ -180,13 +179,13 @@ nvme::nvme(pci::device &dev)
 
     identify_controller();
 
-    if(NVME_CHECK_FOR_ADDITIONAL_NAMESPACES) {
+    if (NVME_CHECK_FOR_ADDITIONAL_NAMESPACES) {
         identify_active_namespaces(1);
     } else {
         identify_namespace(1);
     }
 
-    if(_identify_controller->vwc & 0x1 && NVME_VWC_ENABLED) {
+    if (_identify_controller->vwc & 0x1 && NVME_VWC_ENABLED) {
         auto cmd = alloc_cmd();
         cmd->set_features.common.opc = NVME_ACMD_SET_FEATURES;
         cmd->set_features.fid = NVME_FEATURE_WRITE_CACHE;
@@ -195,7 +194,7 @@ nvme::nvme(pci::device &dev)
         trace_nvme_vwc_enabled(res->sc,res->sct);
     }
 
-    if(NVME_QUEUE_PER_CPU_ENABLED) {
+    if (NVME_QUEUE_PER_CPU_ENABLED) {
         u16 num = sched::cpus.size();
         u16 ret;
         set_number_of_queues(num, &ret);
@@ -203,7 +202,7 @@ nvme::nvme(pci::device &dev)
             int qid = cpu->id + 1;
             create_io_queue(qid, NVME_IO_QUEUE_SIZE, true, cpu);
         }
-    }else {
+    } else {
         u16 ret;
         set_number_of_queues(1, &ret);
         assert(ret>=1);
@@ -211,18 +210,15 @@ nvme::nvme(pci::device &dev)
         create_io_queue(1, qsize);
     }
 
-    if(_identify_controller->vid != QEMU_VID) {
+    if (_identify_controller->vid != QEMU_VID) {
         set_interrupt_coalescing(20,2);
     }
 
-    struct nvme_priv* prv;
-    struct device *osv_dev;
-    
     debugf("nvme: %s\n", _identify_controller->sn);
     
-    for(const auto& ns : _ns_data) {
+    for (const auto& ns : _ns_data) {
         std::string dev_name;
-        if(ns.first == 1 && _id == 0) {
+        if (ns.first == 1 && _id == 0) {
             dev_name = "vblk";
             dev_name += std::to_string(_id);
         } else {
@@ -234,8 +230,8 @@ nvme::nvme(pci::device &dev)
         
         debugf("nvme: Add namespace %d of nvme device %d as %s, devsize=%lld\n", ns.first, _id, dev_name.c_str(), size);
 
-        osv_dev = device_create(&nvme_driver,dev_name.c_str(), D_BLK);
-        prv = reinterpret_cast<struct nvme_priv*>(osv_dev->private_data);
+        struct device* osv_dev = device_create(&nvme_driver,dev_name.c_str(), D_BLK);
+        struct nvme_priv* prv = reinterpret_cast<struct nvme_priv*>(osv_dev->private_data);
         prv->strategy = nvme_strategy;
         prv->drv = this;
         prv->nsid = ns.first;
@@ -261,17 +257,17 @@ int nvme::set_number_of_queues(u16 num, u16* ret)
     cmd->set_features.common.opc = NVME_ACMD_SET_FEATURES;
     cmd->set_features.fid = NVME_FEATURE_NUM_QUEUES;
     cmd->set_features.val = (num << 16) | num;
+
     std::unique_ptr<nvme_cq_entry_t> res = _admin_queue->submit_and_return_on_completion(std::move(cmd));
-    u16 cq_num, sq_num;
-    cq_num = res->cs >> 16;
-    sq_num = res->cs & 0xffff;
+    u16 cq_num = res->cs >> 16;
+    u16 sq_num = res->cs & 0xffff;
     
-    trace_nvme_number_of_queues(res->cs >> 16, res->cs & 0xffff,_dev.msix_get_num_entries());
+    trace_nvme_number_of_queues(res->cs >> 16, res->cs & 0xffff, _dev.msix_get_num_entries());
     
-    if(res->sct != 0 || res->sc != 0)
+    if (res->sct != 0 || res->sc != 0)
         return EIO;
 
-    if(num > cq_num || num > sq_num) {
+    if (num > cq_num || num > sq_num) {
         *ret = (cq_num > sq_num) ? cq_num : sq_num;  
     } else {
         *ret = num;
@@ -335,9 +331,9 @@ void nvme::init_controller_config()
 {
     nvme_controller_config_t cc;
     cc.val = mmio_getl(&_control_reg->cc.val);
-    cc.iocqes    = 4;  // completion queue entry size 16B
-    cc.iosqes    = 6;  // submission queue entry size 64B
-    cc.mps        = 0;  // memory page size 4096B
+    cc.iocqes = 4;  // completion queue entry size 16B
+    cc.iosqes = 6;  // submission queue entry size 64B
+    cc.mps = 0;  // memory page size 4096B
 
     mmio_setl(&_control_reg->cc, cc.val);
 }
@@ -376,17 +372,17 @@ int nvme::create_io_queue(int qid, int qsize, bool pin_t, sched::cpu* cpu, int q
     memset(cqbuf,0,sizeof(nvme_cq_entry_t)*qsize);
 
     // create completion queue
-    nvme_acmd_create_cq_t* cmd = (nvme_acmd_create_cq_t*) malloc(sizeof(nvme_acmd_create_cq_t));
-    assert(cmd);
-    memset(cmd, 0, sizeof (*cmd));
+    nvme_acmd_create_cq_t* cmd_cq = (nvme_acmd_create_cq_t*) malloc(sizeof(nvme_acmd_create_cq_t));
+    assert(cmd_cq);
+    memset(cmd_cq, 0, sizeof (*cmd_cq));
     
-    cmd->qid = qid;
-    cmd->qsize = qsize - 1;
-    cmd->iv = iv;
-    cmd->pc = 1;
-    cmd->ien = 1;
-    cmd->common.opc = NVME_ACMD_CREATE_CQ;
-    cmd->common.prp1 = (u64) mmu::virt_to_phys(cqbuf);
+    cmd_cq->qid = qid;
+    cmd_cq->qsize = qsize - 1;
+    cmd_cq->iv = iv;
+    cmd_cq->pc = 1;
+    cmd_cq->ien = 1;
+    cmd_cq->common.opc = NVME_ACMD_CREATE_CQ;
+    cmd_cq->common.prp1 = (u64) mmu::virt_to_phys(cqbuf);
 
     // create submission queue
     nvme_acmd_create_sq_t* cmd_sq = (nvme_acmd_create_sq_t*) malloc(sizeof(nvme_acmd_create_sq_t));
@@ -409,7 +405,7 @@ int nvme::create_io_queue(int qid, int qsize, bool pin_t, sched::cpu* cpu, int q
     
     register_interrupt(iv, qid-1, pin_t, cpu);
 
-    _admin_queue->submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t>((nvme_sq_entry_t*)cmd));
+    _admin_queue->submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t>((nvme_sq_entry_t*)cmd_cq));
     _admin_queue->submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t>((nvme_sq_entry_t*)cmd_sq));
 
     debugf("nvme: Created I/O queue pair for qid:%d\n", qid);
@@ -426,7 +422,7 @@ int nvme::identify_controller()
     auto data = new nvme_identify_ctlr_t;
     auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data),4096);
     
-    if(res->sc != 0 || res->sct != 0) {
+    if (res->sc != 0 || res->sct != 0) {
         NVME_ERROR("Identify controller failed nvme%d, sct=%d, sc=%d", _id, res->sct, res->sc);
         return EIO;
     }
@@ -478,10 +474,10 @@ int nvme::identify_active_namespaces(u32 start)
     memset(active_namespaces, 0, 4096);
 
     _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(active_namespaces), 4096);
-    int err;
-    for(int i=0; i < 1024; i++) {
+
+    for (int i = 0; i < 1024; i++) {
         if(active_namespaces[i]) {
-            err = identify_namespace(active_namespaces[i]);
+            int err = identify_namespace(active_namespaces[i]);
             if (err) {
                 free_phys_contiguous_aligned(active_namespaces);
                 return err;

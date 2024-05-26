@@ -64,8 +64,6 @@ protected:
 
     u16 submit_cmd_without_lock(std::unique_ptr<nvme_sq_entry_t> cmd);
 
-    u16 submit_cmd_batch_without_lock(std::vector<std::unique_ptr<nvme_sq_entry_t>> cmds);
-
     std::unique_ptr<nvme_cq_entry_t> get_completion_queue_entry();
 };
 
@@ -89,8 +87,6 @@ public:
     int self_test();
     int make_request(struct bio* bio, u32 nsid);
     void req_done();
-
-    int submit_io_batch(std::vector<bio*> bios, u32 nsid=1);
 private:
     std::vector<struct bio**> _pending_bios;
     int submit_rw(u16 cid, void* data, u64 slba, u32 nlb, u32 nsid, int opc);
