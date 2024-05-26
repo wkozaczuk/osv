@@ -26,7 +26,7 @@
 /*bdev block cache will not be used if enabled*/
 #define NVME_DIRECT_RW_ENABLED 0
 
-#define NVME_QUEUE_PER_CPU_ENABLED 0
+#define NVME_QUEUE_PER_CPU_ENABLED 1
 
 //Volatile Write Cache
 #define NVME_VWC_ENABLED 1
@@ -63,7 +63,7 @@ public:
 
     int get_interrupt_coalescing();
 
-    int create_io_queue(int qsize=NVME_IO_QUEUE_SIZE, int qprio=2);
+    int create_io_queue(int qid, int qsize=NVME_IO_QUEUE_SIZE, bool pin_t=false, sched::cpu* cpu = NULL, int qprio = 2);
     
     bool register_interrupt(unsigned int iv,unsigned int qid,bool pin_t=false, sched::cpu* cpu = NULL);
 
@@ -80,7 +80,6 @@ private:
     void register_admin_interrupts();
 
     void init_controller_config();
-    void create_io_queues_foreach_cpu();
 
     void enable_controller();
     void disable_controller();
