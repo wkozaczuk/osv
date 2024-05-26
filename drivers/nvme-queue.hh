@@ -67,8 +67,6 @@ protected:
     u16 submit_cmd_batch_without_lock(std::vector<std::unique_ptr<nvme_sq_entry_t>> cmds);
 
     std::unique_ptr<nvme_cq_entry_t> get_completion_queue_entry();
-
-    std::unique_ptr<nvme_cq_entry_t> check_for_completion(u16 cid);
 };
 
 class nvme_io_queue_pair : public nvme_queue_pair {

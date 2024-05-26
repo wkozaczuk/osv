@@ -81,12 +81,9 @@ inline void nvme_queue_pair::advance_sq_tail()
 }
 
 u16 nvme_queue_pair::submit_cmd(std::unique_ptr<nvme_sq_entry_t> cmd)
-{   u16 ret;
-    WITH_LOCK(_lock) 
-    {
-        ret = submit_cmd_without_lock(std::move(cmd));
-    }
-    return ret;
+{
+    SCOPE_LOCK(_lock);
+    return submit_cmd_without_lock(std::move(cmd));
 }
 
 u16 nvme_queue_pair::submit_cmd_without_lock(std::unique_ptr<nvme_sq_entry_t> cmd)
@@ -183,35 +180,6 @@ void nvme_queue_pair::disable_interrupts()
 {
     _dev->msix_mask_entry(_id);
     trace_nvme_disable_interrupts(_driverid,_id);
-}
-
-//only use with interrupts disabled
-std::unique_ptr<nvme_cq_entry_t> nvme_queue_pair::check_for_completion(u16 cid)
-{
-    int msec = 1000;
-    int timeout = 50;
-    int i;
-
-    std::unique_ptr<nvme_cq_entry_t> cqe;
-    for(i = 0; i < timeout; i++) {
-        if(completion_queue_not_empty()) {
-            cqe = get_completion_queue_entry();
-            assert(cqe->cid == cid);
-            if(cqe->sct != 0 || cqe->sc != 0) {
-                NVME_ERROR("polling nvme%d qid=%d, cid=%d, sct=%#x, sc=%#x\n", _driverid, _id, cid, cqe->sct, cqe->sc);
-                _sq_head = cqe->sqhd; //update sq_head
-                mmio_setl(_cq_doorbell, _cq_head);
-                return cqe;
-            }
-
-            _sq_head = cqe->sqhd; //update sq_head
-            mmio_setl(_cq_doorbell, _cq_head);
-            return cqe;
-        }
-        usleep(msec);
-    }
-    NVME_ERROR("polling timeout nvme%d qid=%d cid=%d\n", _driverid, _id, cid);
-    return cqe;
 }
 
 int nvme_io_queue_pair::make_request(bio* bio, u32 nsid=1)
