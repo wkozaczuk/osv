@@ -19,7 +19,15 @@
 
 namespace nvme {
 
-class queue_pair;
+template<typename T>
+struct queue {
+    queue(T* addr, u32* doorbell) :
+        _addr(addr), _doorbell(doorbell), _head(0), _tail(0) {}
+    T* _addr;
+    volatile u32* _doorbell;
+    u32 _head;
+    u32 _tail;
+};
 
 class queue_pair
 {
@@ -54,16 +62,10 @@ protected:
     u32 _qsize;
     pci::device* _dev;
 
-    nvme_sq_entry_t* _sq_addr;
-    u32 _sq_head;
-    u32 _sq_tail;
-    volatile u32* _sq_doorbell;
+    queue<nvme_sq_entry_t> _sq;
     bool _sq_full;
 
-    nvme_cq_entry_t* _cq_addr;
-    u32 _cq_head;
-    u32 _cq_tail;
-    volatile u32* _cq_doorbell;
+    queue<nvme_cq_entry_t> _cq;
     int _cq_phase_tag;
 
     std::map<u32, nvme_ns_t*> _ns;
