@@ -151,6 +151,26 @@ struct driver _nvme_driver = {
 
 int nvme_driver::_instance = 0;
 
+static std::unique_ptr<nvme_sq_entry_t>
+alloc_set_features_cmd(u8 feature_id, u32 val)
+{
+    auto cmd = alloc_cmd();
+    cmd->set_features.common.opc = NVME_ACMD_SET_FEATURES;
+    cmd->set_features.fid = feature_id;
+    cmd->set_features.val = val;
+    return cmd;
+}
+
+static std::unique_ptr<nvme_sq_entry_t>
+alloc_identify_cmd(u32 namespace_id, u32 cns)
+{
+    auto cmd = alloc_cmd();
+    cmd->identify.common.opc = NVME_ACMD_IDENTIFY;
+    cmd->identify.common.nsid = namespace_id;
+    cmd->identify.cns = cns;
+    return cmd;
+}
+
 nvme_driver::nvme_driver(pci::device &dev)
      : _dev(dev)
      , _msi(&dev)
@@ -186,10 +206,7 @@ nvme_driver::nvme_driver(pci::device &dev)
     }
 
     if (_identify_controller->vwc & 0x1 && NVME_VWC_ENABLED) {
-        auto cmd = alloc_cmd();
-        cmd->set_features.common.opc = NVME_ACMD_SET_FEATURES;
-        cmd->set_features.fid = NVME_FEATURE_WRITE_CACHE;
-        cmd->set_features.val = 1;
+        auto cmd = alloc_set_features_cmd(NVME_FEATURE_WRITE_CACHE, 1);
         auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd));
         trace_nvme_vwc_enabled(res->sc,res->sct);
     }
@@ -253,12 +270,9 @@ nvme_driver::nvme_driver(pci::device &dev)
 
 int nvme_driver::set_number_of_queues(u16 num, u16* ret)
 {
-    auto cmd = alloc_cmd();
-    cmd->set_features.common.opc = NVME_ACMD_SET_FEATURES;
-    cmd->set_features.fid = NVME_FEATURE_NUM_QUEUES;
-    cmd->set_features.val = (num << 16) | num;
-
+    auto cmd = alloc_set_features_cmd(NVME_FEATURE_NUM_QUEUES, (num << 16) | num);
     std::unique_ptr<nvme_cq_entry_t> res = _admin_queue->submit_and_return_on_completion(std::move(cmd));
+
     u16 cq_num = res->cs >> 16;
     u16 sq_num = res->cs & 0xffff;
     
@@ -277,10 +291,7 @@ int nvme_driver::set_number_of_queues(u16 num, u16* ret)
 /*time in 100ms increments*/
 int nvme_driver::set_interrupt_coalescing(u8 threshold, u8 time)
 {
-    auto cmd = alloc_cmd();
-    cmd->set_features.common.opc = NVME_ACMD_SET_FEATURES;
-    cmd->set_features.fid = NVME_FEATURE_INT_COALESCING;
-    cmd->set_features.val = threshold | (time << 8);
+    auto cmd = alloc_set_features_cmd(NVME_FEATURE_INT_COALESCING, threshold | (time << 8));
     std::unique_ptr<nvme_cq_entry_t> res = _admin_queue->submit_and_return_on_completion(std::move(cmd));
 
     if(res->sct != 0 || res->sc != 0)
@@ -417,9 +428,7 @@ int nvme_driver::create_io_queue(int qid, int qsize, bool pin_t, sched::cpu* cpu
 int nvme_driver::identify_controller()
 {
     assert(_admin_queue);
-    auto cmd = alloc_cmd();
-    cmd->identify.cns = 1;
-    cmd->identify.common.opc = NVME_ACMD_IDENTIFY;
+    auto cmd = alloc_identify_cmd(0, 1);
     auto data = new nvme_identify_ctlr_t;
     auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data),mmu::page_size);
     
@@ -435,12 +444,8 @@ int nvme_driver::identify_controller()
 int nvme_driver::identify_namespace(u32 ns)
 {
     assert(_admin_queue);
-    auto cmd = alloc_cmd();
-    cmd->identify.cns = 0;
-    cmd->identify.common.nsid = ns;
-    cmd->identify.common.opc = NVME_ACMD_IDENTIFY;
+    auto cmd = alloc_identify_cmd(ns, 0);
     auto data = std::unique_ptr<nvme_identify_ns_t>(new nvme_identify_ns_t);
-    
     auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data.get()),mmu::page_size);
     if(res->sc != 0 || res->sct != 0) {
         NVME_ERROR("Identify namespace failed nvme%d nsid=%d, sct=%d, sc=%d", _id, ns, res->sct, res->sc);
@@ -467,10 +472,7 @@ int nvme_driver::identify_active_namespaces(u32 start)
     u32 nn = _identify_controller->nn;
     assert(nn > start);
 
-    auto cmd = alloc_cmd();
-    cmd->identify.cns = 2;
-    cmd->identify.common.nsid = start - 1;
-    cmd->identify.common.opc = NVME_ACMD_IDENTIFY;
+    auto cmd = alloc_identify_cmd(start - 1, 2);
     auto active_namespaces = (u64*) alloc_phys_contiguous_aligned(mmu::page_size, 4);
     memset(active_namespaces, 0, mmu::page_size);
 
