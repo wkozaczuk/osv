@@ -1,31 +1,45 @@
 #ifndef NVME_QUEUE_H
 #define NVME_QUEUE_H
 
-#include "drivers/nvme.hh"
+#include "drivers/pci-device.hh"
+#include "drivers/nvme-structs.h"
 
-class nvme_queue_pair;
+#include <osv/bio.h>
 
-class nvme_queue_pair 
+#define nvme_tag "nvme"
+#define nvme_d(...)    tprintf_d(nvme_tag, __VA_ARGS__)
+#define nvme_i(...)    tprintf_i(nvme_tag, __VA_ARGS__)
+#define nvme_w(...)    tprintf_w(nvme_tag, __VA_ARGS__)
+#define nvme_e(...)    tprintf_e(nvme_tag, __VA_ARGS__)
+
+#define NVME_ERROR(...) nvme_e(__VA_ARGS__)
+
+#define NVME_PAGESIZE 4096
+#define NVME_PAGESHIFT 12
+
+namespace nvme {
+
+class queue_pair;
+
+class queue_pair
 {
 public:
-    nvme_queue_pair(
-        int did,
+    queue_pair(
+        int driver_id,
         u32 id,
         int qsize,
         pci::device& dev,
-
         nvme_sq_entry_t* sq_addr,
         u32* sq_doorbell,
-
         nvme_cq_entry_t* cq_addr,
         u32* cq_doorbell,
         std::map<u32, nvme_ns_t*>& ns
-        );
+    );
 
-    ~nvme_queue_pair();
-    
+    ~queue_pair();
+
     u16 submit_cmd(std::unique_ptr<nvme_sq_entry_t> cmd);
-    
+
     virtual void req_done() {};
     void wait_for_completion_queue_entries();
     bool completion_queue_not_empty() const;
@@ -35,7 +49,7 @@ public:
 
     u32 _id;
 protected:
-    int _driverid;
+    int _driver_id;
 
     u32 _qsize;
     pci::device* _dev;
@@ -54,8 +68,8 @@ protected:
 
     std::map<u32, nvme_ns_t*> _ns;
 
-    std::vector<u64**> _prplists_in_use;
-    
+    std::vector<u64**> _prp_lists_in_use;
+
     mutex _lock;
     sched::thread_handle _waiter;
 
@@ -67,22 +81,20 @@ protected:
     std::unique_ptr<nvme_cq_entry_t> get_completion_queue_entry();
 };
 
-class nvme_io_queue_pair : public nvme_queue_pair {
+class io_queue_pair : public queue_pair {
 public:
-    nvme_io_queue_pair(
-        int did,
+    io_queue_pair(
+        int driver_id,
         int id,
         int qsize,
         pci::device& dev,
-
         nvme_sq_entry_t* sq_addr,
         u32* sq_doorbell,
-
         nvme_cq_entry_t* cq_addr,
         u32* cq_doorbell,
         std::map<u32, nvme_ns_t*>& ns
     );
-    ~nvme_io_queue_pair();
+    ~io_queue_pair();
 
     int self_test();
     int make_request(struct bio* bio, u32 nsid);
@@ -93,17 +105,15 @@ private:
     int submit_flush();
 };
 
-class nvme_admin_queue_pair : public nvme_queue_pair {
+class admin_queue_pair : public queue_pair {
 public:
-    nvme_admin_queue_pair(
-        int did,
+    admin_queue_pair(
+        int driver_id,
         int id,
         int qsize,
         pci::device& dev,
-
         nvme_sq_entry_t* sq_addr,
         u32* sq_doorbell,
-
         nvme_cq_entry_t* cq_addr,
         u32* cq_doorbell,
         std::map<u32, nvme_ns_t*>& ns
@@ -112,9 +122,12 @@ public:
     std::unique_ptr<nvme_cq_entry_t> _req_res;
     volatile bool new_cq;
     void req_done();
-    std::unique_ptr<nvme_cq_entry_t> submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t> cmd, void* data=nullptr, unsigned int datasize=0);
+    std::unique_ptr<nvme_cq_entry_t>
+    submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t> cmd, void* data=nullptr, unsigned int datasize=0);
 private:
     sched::thread_handle _req_waiter;
 };
+
+}
 
 #endif

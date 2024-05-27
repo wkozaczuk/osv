@@ -12,17 +12,6 @@
 #include <memory>
 #include <map>
 
-#define nvme_tag "nvme"
-#define nvme_d(...)    tprintf_d(nvme_tag, __VA_ARGS__)
-#define nvme_i(...)    tprintf_i(nvme_tag, __VA_ARGS__)
-#define nvme_w(...)    tprintf_w(nvme_tag, __VA_ARGS__)
-#define nvme_e(...)    tprintf_e(nvme_tag, __VA_ARGS__)
-
-#define NVME_ERROR(...) nvme_e(__VA_ARGS__)
-
-#define NVME_PAGESIZE 4096
-#define NVME_PAGESHIFT 12
-
 /*bdev block cache will not be used if enabled*/
 #define NVME_DIRECT_RW_ENABLED 0
 
@@ -40,13 +29,15 @@
 specified queue size */ 
 #define NVME_IO_QUEUE_SIZE 256
 
-class nvme_io_queue_pair;
-class nvme_admin_queue_pair;
+namespace nvme {
 
-class nvme : public hw_driver {
+class io_queue_pair;
+class admin_queue_pair;
+
+class nvme_driver : public hw_driver {
 public:
-    explicit nvme(pci::device& dev);
-    virtual ~nvme() {};
+    explicit nvme_driver(pci::device& dev);
+    virtual ~nvme_driver() {};
 
     virtual std::string get_name() const { return "nvme"; }
 
@@ -95,17 +86,17 @@ private:
 
     std::vector<std::unique_ptr<msix_vector>> _msix_vectors;
     bool msix_register(unsigned iv,
-    // high priority ISR
-    std::function<void ()> isr,
-    // bottom half
-    sched::thread *t,
-    // set affinity of the vector to the cpu running t
-    bool assign_affinity=false);
+        // high priority ISR
+        std::function<void ()> isr,
+        // bottom half
+        sched::thread *t,
+        // set affinity of the vector to the cpu running t
+        bool assign_affinity=false);
 
-    std::unique_ptr<nvme_admin_queue_pair> _admin_queue;
+    std::unique_ptr<admin_queue_pair> _admin_queue;
 
-    std::vector<std::unique_ptr<nvme_io_queue_pair>> _io_queues;
-    u32 _doorbellstride;
+    std::vector<std::unique_ptr<io_queue_pair>> _io_queues;
+    u32 _doorbell_stride;
 
     std::unique_ptr<nvme_identify_ctlr_t> _identify_controller;
 
@@ -114,4 +105,6 @@ private:
 
     pci::bar *_bar0 = nullptr;
 };
+
+}
 #endif

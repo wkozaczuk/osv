@@ -38,6 +38,8 @@ TRACEPOINT(trace_nvme_register_interrupt, "_io_queues[%d], iv=%d", int, int);
 
 #define QEMU_VID 0x1b36
 
+namespace nvme {
+
 std::unique_ptr<nvme_sq_entry_t> alloc_cmd() {
     auto cmd = std::unique_ptr<nvme_sq_entry_t>(new nvme_sq_entry_t);
     assert(cmd);
@@ -47,7 +49,7 @@ std::unique_ptr<nvme_sq_entry_t> alloc_cmd() {
 
 struct nvme_priv {
     devop_strategy_t strategy;
-    nvme* drv;
+    nvme_driver* drv;
     u32 nsid;
 };
 
@@ -141,17 +143,15 @@ static struct devops nvme_devops {
     multiplex_strategy,
 };
 
-struct driver nvme_driver = {
+struct driver _nvme_driver = {
     "nvme",
     &nvme_devops,
     sizeof(struct nvme_priv),
 };
 
-int nvme::_instance = 0;
+int nvme_driver::_instance = 0;
 
-extern std::vector<sched::cpu*> sched::cpus;
-
-nvme::nvme(pci::device &dev)
+nvme_driver::nvme_driver(pci::device &dev)
      : _dev(dev)
      , _msi(&dev)
 {
@@ -166,7 +166,7 @@ nvme::nvme(pci::device &dev)
 
     _id = _instance++;
     
-    _doorbellstride = 1 << (2 + _control_reg->cap.dstrd);
+    _doorbell_stride = 1 << (2 + _control_reg->cap.dstrd);
     
     wait_for_controller_ready_change(1);
     disable_controller();
@@ -230,7 +230,7 @@ nvme::nvme(pci::device &dev)
         
         debugf("nvme: Add namespace %d of nvme device %d as %s, devsize=%lld\n", ns.first, _id, dev_name.c_str(), size);
 
-        struct device* osv_dev = device_create(&nvme_driver,dev_name.c_str(), D_BLK);
+        struct device* osv_dev = device_create(&_nvme_driver,dev_name.c_str(), D_BLK);
         struct nvme_priv* prv = reinterpret_cast<struct nvme_priv*>(osv_dev->private_data);
         prv->strategy = nvme_strategy;
         prv->drv = this;
@@ -240,7 +240,7 @@ nvme::nvme(pci::device &dev)
         * IO size greater than 4096 << 9 would mean we need 
         * more than 1 page for the prplist which is not implemented
         */
-        osv_dev->max_io_size = 4096 << ((9 < _identify_controller->mdts)? 9 : _identify_controller->mdts );
+        osv_dev->max_io_size = mmu::page_size << ((9 < _identify_controller->mdts)? 9 : _identify_controller->mdts );
 
         #if CONF_drivers_io_test
             test_block_device(osv_dev, 20*1e6, 8);
@@ -251,7 +251,7 @@ nvme::nvme(pci::device &dev)
     }
 }
 
-int nvme::set_number_of_queues(u16 num, u16* ret) 
+int nvme_driver::set_number_of_queues(u16 num, u16* ret)
 {
     auto cmd = alloc_cmd();
     cmd->set_features.common.opc = NVME_ACMD_SET_FEATURES;
@@ -275,7 +275,7 @@ int nvme::set_number_of_queues(u16 num, u16* ret)
     return 0;
 }
 /*time in 100ms increments*/
-int nvme::set_interrupt_coalescing(u8 threshold, u8 time) 
+int nvme_driver::set_interrupt_coalescing(u8 threshold, u8 time)
 {
     auto cmd = alloc_cmd();
     cmd->set_features.common.opc = NVME_ACMD_SET_FEATURES;
@@ -288,7 +288,7 @@ int nvme::set_interrupt_coalescing(u8 threshold, u8 time)
     return 0;
 }
 
-void nvme::enable_controller() 
+void nvme_driver::enable_controller()
 {
     nvme_controller_config_t cc;
     cc.val = mmio_getl(&_control_reg->cc);
@@ -301,7 +301,7 @@ void nvme::enable_controller()
     assert(s==0);
 }
 
-void nvme::disable_controller() 
+void nvme_driver::disable_controller()
 {   
     nvme_controller_config_t cc;
     cc.val = mmio_getl(&_control_reg->cc);
@@ -314,7 +314,7 @@ void nvme::disable_controller()
     assert(s==0);
 }
 
-int nvme::wait_for_controller_ready_change(int ready)
+int nvme_driver::wait_for_controller_ready_change(int ready)
 {
     int timeout = mmio_getb(&_control_reg->cap.to) * 10000; // timeout in 0.05ms steps
     nvme_controller_status_t csts;
@@ -327,7 +327,7 @@ int nvme::wait_for_controller_ready_change(int ready)
     return ETIME;
 }
 
-void nvme::init_controller_config()
+void nvme_driver::init_controller_config()
 {
     nvme_controller_config_t cc;
     cc.val = mmio_getl(&_control_reg->cc.val);
@@ -338,20 +338,21 @@ void nvme::init_controller_config()
     mmio_setl(&_control_reg->cc, cc.val);
 }
 
-void nvme::create_admin_queue()
+void nvme_driver::create_admin_queue()
 {
     int qsize = NVME_ADMIN_QUEUE_SIZE;
-    nvme_sq_entry_t* sqbuf = (nvme_sq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_sq_entry_t),4096);
-    nvme_cq_entry_t* cqbuf = (nvme_cq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_cq_entry_t),4096);
+    nvme_sq_entry_t* sqbuf = (nvme_sq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_sq_entry_t),mmu::page_size);
+    nvme_cq_entry_t* cqbuf = (nvme_cq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_cq_entry_t),mmu::page_size);
     
     nvme_adminq_attr_t aqa;
     aqa.val = 0;
     aqa.asqs = aqa.acqs = qsize - 1;
     
     u32* sq_doorbell = _control_reg->sq0tdbl;
-    u32* cq_doorbell = (u32*) ((u64)sq_doorbell + _doorbellstride);
+    u32* cq_doorbell = (u32*) ((u64)sq_doorbell + _doorbell_stride);
 
-    _admin_queue = std::unique_ptr<nvme_admin_queue_pair>(new nvme_admin_queue_pair(_id,0, qsize, _dev, sqbuf, sq_doorbell, cqbuf, cq_doorbell, _ns_data));
+    _admin_queue = std::unique_ptr<admin_queue_pair>(
+            new admin_queue_pair(_id,0, qsize, _dev, sqbuf, sq_doorbell, cqbuf, cq_doorbell, _ns_data));
     
     register_admin_interrupts();
     
@@ -360,12 +361,12 @@ void nvme::create_admin_queue()
     mmio_setq(&_control_reg->acq, (u64) mmu::virt_to_phys((void*) cqbuf));
 }
 
-int nvme::create_io_queue(int qid, int qsize, bool pin_t, sched::cpu* cpu, int qprio)
+int nvme_driver::create_io_queue(int qid, int qsize, bool pin_t, sched::cpu* cpu, int qprio)
 {
     int iv = qid;
 
-    nvme_sq_entry_t* sqbuf = (nvme_sq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_sq_entry_t),4096);
-    nvme_cq_entry_t* cqbuf = (nvme_cq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_cq_entry_t),4096);
+    nvme_sq_entry_t* sqbuf = (nvme_sq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_sq_entry_t),mmu::page_size);
+    nvme_cq_entry_t* cqbuf = (nvme_cq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_cq_entry_t),mmu::page_size);
     assert(sqbuf);
     assert(cqbuf);
     memset(sqbuf,0,sizeof(nvme_sq_entry_t)*qsize);
@@ -397,11 +398,11 @@ int nvme::create_io_queue(int qid, int qsize, bool pin_t, sched::cpu* cpu, int q
     cmd_sq->common.opc = NVME_ACMD_CREATE_SQ;
     cmd_sq->common.prp1 = (u64) mmu::virt_to_phys(sqbuf);
 
-    u32* sq_doorbell = (u32*) ((u64) _control_reg->sq0tdbl + 2 * _doorbellstride * qid);
-    u32* cq_doorbell = (u32*) ((u64) sq_doorbell + _doorbellstride);
+    u32* sq_doorbell = (u32*) ((u64) _control_reg->sq0tdbl + 2 * _doorbell_stride * qid);
+    u32* cq_doorbell = (u32*) ((u64) sq_doorbell + _doorbell_stride);
 
-    _io_queues.push_back(std::unique_ptr<nvme_io_queue_pair>(
-        new nvme_io_queue_pair(_id, iv, qsize, _dev, sqbuf, sq_doorbell, cqbuf, cq_doorbell, _ns_data)));
+    _io_queues.push_back(std::unique_ptr<io_queue_pair>(
+        new io_queue_pair(_id, iv, qsize, _dev, sqbuf, sq_doorbell, cqbuf, cq_doorbell, _ns_data)));
     
     register_interrupt(iv, qid-1, pin_t, cpu);
 
@@ -413,14 +414,14 @@ int nvme::create_io_queue(int qid, int qsize, bool pin_t, sched::cpu* cpu, int q
     return 0;
 }
 
-int nvme::identify_controller()
+int nvme_driver::identify_controller()
 {
     assert(_admin_queue);
     auto cmd = alloc_cmd();
     cmd->identify.cns = 1;
     cmd->identify.common.opc = NVME_ACMD_IDENTIFY;
     auto data = new nvme_identify_ctlr_t;
-    auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data),4096);
+    auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data),mmu::page_size);
     
     if (res->sc != 0 || res->sct != 0) {
         NVME_ERROR("Identify controller failed nvme%d, sct=%d, sc=%d", _id, res->sct, res->sc);
@@ -431,7 +432,7 @@ int nvme::identify_controller()
     return 0;
 }
 
-int nvme::identify_namespace(u32 ns)
+int nvme_driver::identify_namespace(u32 ns)
 {
     assert(_admin_queue);
     auto cmd = alloc_cmd();
@@ -440,7 +441,7 @@ int nvme::identify_namespace(u32 ns)
     cmd->identify.common.opc = NVME_ACMD_IDENTIFY;
     auto data = std::unique_ptr<nvme_identify_ns_t>(new nvme_identify_ns_t);
     
-    auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data.get()),4096);
+    auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data.get()),mmu::page_size);
     if(res->sc != 0 || res->sct != 0) {
         NVME_ERROR("Identify namespace failed nvme%d nsid=%d, sct=%d, sc=%d", _id, ns, res->sct, res->sc);
         return EIO;
@@ -458,7 +459,7 @@ int nvme::identify_namespace(u32 ns)
 }
 
 //identify all active namespaces with nsid >= start
-int nvme::identify_active_namespaces(u32 start)
+int nvme_driver::identify_active_namespaces(u32 start)
 {
     assert(start >= 1);
     assert(_identify_controller);
@@ -470,10 +471,10 @@ int nvme::identify_active_namespaces(u32 start)
     cmd->identify.cns = 2;
     cmd->identify.common.nsid = start - 1;
     cmd->identify.common.opc = NVME_ACMD_IDENTIFY;
-    auto active_namespaces = (u64*) alloc_phys_contiguous_aligned(4096, 4);
-    memset(active_namespaces, 0, 4096);
+    auto active_namespaces = (u64*) alloc_phys_contiguous_aligned(mmu::page_size, 4);
+    memset(active_namespaces, 0, mmu::page_size);
 
-    _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(active_namespaces), 4096);
+    _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(active_namespaces), mmu::page_size);
 
     for (int i = 0; i < 1024; i++) {
         if(active_namespaces[i]) {
@@ -488,7 +489,7 @@ int nvme::identify_active_namespaces(u32 start)
     return 0;
 }
 
-int nvme::make_request(bio* bio, u32 nsid)
+int nvme_driver::make_request(bio* bio, u32 nsid)
 {  
     if(bio->bio_bcount % _ns_data[nsid]->blocksize || bio->bio_offset % _ns_data[nsid]->blocksize) {
         NVME_ERROR("bio request not block-aligned length=%d, offset=%d blocksize=%d\n",bio->bio_bcount, bio->bio_offset, _ns_data[nsid]->blocksize);
@@ -510,7 +511,7 @@ int nvme::make_request(bio* bio, u32 nsid)
     return _io_queues[sched::current_cpu->id]->make_request(bio, nsid);
 }
 
-void nvme::register_admin_interrupts() 
+void nvme_driver::register_admin_interrupts()
 {
     sched::thread* aq_thread = sched::thread::make([this] { this->_admin_queue->req_done(); },
         sched::thread::attr().name("nvme"+ std::to_string(_id)+"_aq_req_done"));
@@ -522,7 +523,7 @@ void nvme::register_admin_interrupts()
         printf("admin interrupt registration failed\n");
 }
 
-bool nvme::msix_register(unsigned iv,
+bool nvme_driver::msix_register(unsigned iv,
     // high priority ISR
     std::function<void ()> isr,
     // bottom half
@@ -565,7 +566,7 @@ bool nvme::msix_register(unsigned iv,
         vec->set_affinity(t->get_cpu()->arch.apic_id);
     }
 
-    if(iv < _msix_vectors.size()) {
+    if (iv < _msix_vectors.size()) {
         _msix_vectors.at(iv) = std::move(vec);
     } else {
         NVME_ERROR("binding_entry %d registration failed\n",iv);
@@ -578,7 +579,7 @@ bool nvme::msix_register(unsigned iv,
 }
 //qid should be the index that corresponds to the queue in _io_queues.
 //In general qid = iv - 1
-bool nvme::register_interrupt(unsigned int iv, unsigned int qid, bool pin_t, sched::cpu* cpu)
+bool nvme_driver::register_interrupt(unsigned int iv, unsigned int qid, bool pin_t, sched::cpu* cpu)
 {
     sched::thread* t;
     bool ok;
@@ -606,7 +607,7 @@ bool nvme::register_interrupt(unsigned int iv, unsigned int qid, bool pin_t, sch
     return ok;
 }
 
-void nvme::dump_config(void)
+void nvme_driver::dump_config(void)
 {
     u8 B, D, F;
     _dev.get_bdf(B, D, F);
@@ -618,7 +619,7 @@ void nvme::dump_config(void)
              _dev.get_device_id());
 }
 
-void nvme::parse_pci_config()
+void nvme_driver::parse_pci_config()
 {
     _bar0 = _dev.get_bar(1);
     _bar0->map();
@@ -629,11 +630,15 @@ void nvme::parse_pci_config()
     _control_reg = (nvme_controller_reg_t*) _bar0->get_mmio();
 }
 
-hw_driver* nvme::probe(hw_device* dev)
+hw_driver* nvme_driver::probe(hw_device* dev)
 {
     if (auto pci_dev = dynamic_cast<pci::device*>(dev)) {
-        if ((pci_dev->get_base_class_code()==1) && (pci_dev->get_sub_class_code()==8) && (pci_dev->get_programming_interface()==2)) // detect NVMe device
-            return aligned_new<nvme>(*pci_dev);
+        if ((pci_dev->get_base_class_code()==1) &&
+            (pci_dev->get_sub_class_code()==8) &&
+            (pci_dev->get_programming_interface()==2))// detect NVMe device
+            return aligned_new<nvme_driver>(*pci_dev);
     }
     return nullptr;
+}
+
 }
