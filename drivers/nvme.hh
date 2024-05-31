@@ -65,7 +65,6 @@ public:
 private:
     int identify_controller();
     int identify_namespace(u32 ns);
-    int identify_active_namespaces(u32 start);
 
     void create_admin_queue();
     void register_admin_interrupts();

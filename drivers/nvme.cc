@@ -199,11 +199,7 @@ nvme_driver::nvme_driver(pci::device &dev)
 
     identify_controller();
 
-    if (NVME_CHECK_FOR_ADDITIONAL_NAMESPACES) {
-        identify_active_namespaces(1);
-    } else {
-        identify_namespace(1);
-    }
+    identify_namespace(1);
 
     if (_identify_controller->vwc & 0x1 && NVME_VWC_ENABLED) {
         auto cmd = alloc_set_features_cmd(NVME_FEATURE_WRITE_CACHE, 1);
@@ -464,34 +460,6 @@ int nvme_driver::identify_namespace(u32 ns)
     _ns_data[ns]->id = ns;
     
     trace_nvme_identify_namespace(ns, _ns_data[ns]->blockcount, _ns_data[ns]->blocksize);
-    return 0;
-}
-
-//identify all active namespaces with nsid >= start
-int nvme_driver::identify_active_namespaces(u32 start)
-{
-    assert(start >= 1);
-    assert(_identify_controller);
-    //max number of namespaces supported by the controller
-    u32 nn = _identify_controller->nn;
-    assert(nn > start);
-
-    auto cmd = alloc_identify_cmd(start - 1, 2);
-    auto active_namespaces = (u64*) alloc_phys_contiguous_aligned(mmu::page_size, 4);
-    memset(active_namespaces, 0, mmu::page_size);
-
-    _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(active_namespaces), mmu::page_size);
-
-    for (int i = 0; i < 1024; i++) {
-        if(active_namespaces[i]) {
-            int err = identify_namespace(active_namespaces[i]);
-            if (err) {
-                free_phys_contiguous_aligned(active_namespaces);
-                return err;
-            }
-        } else { break;}
-    }
-    free_phys_contiguous_aligned(active_namespaces);
     return 0;
 }
 
