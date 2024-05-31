@@ -72,60 +72,6 @@ nvme_write(struct device *dev, struct uio *uio, int io_flags)
 }
 
 static int
-nvme_direct_rw(struct device *dev, struct uio *uio, int ioflags)
-{
-    auto* prv = reinterpret_cast<struct nvme_priv*>(dev->private_data);
-
-	assert((uio->uio_offset % prv->drv->_ns_data[prv->nsid]->blocksize) == 0);
-	assert((uio->uio_resid % prv->drv->_ns_data[prv->nsid]->blocksize) == 0);
-
-    bio* complete_io = alloc_bio();
-
-    u8 opcode;
-    switch (uio->uio_rw) {
-    case UIO_READ :
-        opcode = BIO_READ;
-        break;
-    case UIO_WRITE :
-        opcode = BIO_WRITE;
-        break;
-    default :
-        return EINVAL;
-    }
-
-    refcount_init(&complete_io->bio_refcnt, uio->uio_iovcnt);
-
-    while (uio->uio_iovcnt > 0) {
-        bio* bio = alloc_bio();
-        bio->bio_cmd = opcode;
-        bio->bio_dev = dev;
-
-        assert((uio->uio_iov->iov_len % prv->drv->_ns_data[prv->nsid]->blocksize) == 0);
-
-        bio->bio_bcount = uio->uio_iov->iov_len;
-        bio->bio_data = uio->uio_iov->iov_base;
-        bio->bio_offset = uio->uio_offset;
-
-        bio->bio_caller1 = complete_io;
-        bio->bio_private = complete_io->bio_private;
-        bio->bio_done = multiplex_bio_done;
-        
-        dev->driver->devops->strategy(bio);
-
-        uio->uio_offset += uio->uio_iov->iov_len;
-        uio->uio_resid -= uio->uio_iov->iov_len;
-        uio->uio_iov++;
-        uio->uio_iovcnt--;
-    }
-
-    assert(uio->uio_resid == 0);
-    int ret = bio_wait(complete_io);
-    destroy_bio(complete_io);
-
-    return ret;
-}
-
-static int
 nvme_open(struct device *dev, int ioflags)
 {
     return 0;
@@ -136,8 +82,8 @@ nvme_open(struct device *dev, int ioflags)
 static struct devops nvme_devops {
     nvme_open,
     no_close,
-    NVME_DIRECT_RW_ENABLED ? nvme_direct_rw : nvme_read,
-    NVME_DIRECT_RW_ENABLED ? nvme_direct_rw : nvme_write,
+    nvme_read,
+    nvme_write,
     blk_ioctl,
     no_devctl,
     multiplex_strategy,
