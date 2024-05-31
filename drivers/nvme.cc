@@ -352,70 +352,74 @@ void nvme_driver::init_controller_config()
 void nvme_driver::create_admin_queue()
 {
     int qsize = NVME_ADMIN_QUEUE_SIZE;
-    nvme_sq_entry_t* sqbuf = (nvme_sq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_sq_entry_t),mmu::page_size);
-    nvme_cq_entry_t* cqbuf = (nvme_cq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_cq_entry_t),mmu::page_size);
-    
-    nvme_adminq_attr_t aqa;
-    aqa.val = 0;
-    aqa.asqs = aqa.acqs = qsize - 1;
+    nvme_sq_entry_t* sq_buf = (nvme_sq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_sq_entry_t), mmu::page_size);
+    nvme_cq_entry_t* cq_buf = (nvme_cq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_cq_entry_t), mmu::page_size);
     
     u32* sq_doorbell = _control_reg->sq0tdbl;
     u32* cq_doorbell = (u32*) ((u64)sq_doorbell + _doorbell_stride);
 
     _admin_queue = std::unique_ptr<admin_queue_pair>(
-            new admin_queue_pair(_id,0, qsize, _dev, sqbuf, sq_doorbell, cqbuf, cq_doorbell, _ns_data));
+            new admin_queue_pair(_id,0, qsize, _dev, sq_buf, sq_doorbell, cq_buf, cq_doorbell, _ns_data));
     
     register_admin_interrupts();
-    
+
+    nvme_adminq_attr_t aqa;
+    aqa.val = 0;
+    aqa.asqs = aqa.acqs = qsize - 1;
+
     mmio_setl(&_control_reg->aqa, aqa.val);
-    mmio_setq(&_control_reg->asq, (u64) mmu::virt_to_phys((void*) sqbuf));
-    mmio_setq(&_control_reg->acq, (u64) mmu::virt_to_phys((void*) cqbuf));
+    mmio_setq(&_control_reg->asq, (u64) mmu::virt_to_phys((void*) sq_buf));
+    mmio_setq(&_control_reg->acq, (u64) mmu::virt_to_phys((void*) cq_buf));
+}
+
+template<typename T,typename Q>
+Q* alloc_create_queue_cmd(int qid, int qsize, u8 command_opcode, T** addr)
+{
+    T* buf = (T*) alloc_phys_contiguous_aligned(qsize * sizeof(T), mmu::page_size);
+    assert(buf);
+    memset(buf, 0, sizeof(T) * qsize);
+
+    Q* create_queue_cmd = (Q*) malloc(sizeof(Q));
+    assert(create_queue_cmd);
+    memset(create_queue_cmd, 0, sizeof (*create_queue_cmd));
+
+    create_queue_cmd->common.opc = command_opcode;
+    create_queue_cmd->common.prp1 = (u64) mmu::virt_to_phys(buf);
+    create_queue_cmd->qid = qid;
+    create_queue_cmd->qsize = qsize - 1;
+    create_queue_cmd->pc = 1;
+
+    *addr = buf;
+    return create_queue_cmd;
 }
 
 int nvme_driver::create_io_queue(int qid, int qsize, bool pin_t, sched::cpu* cpu, int qprio)
 {
     int iv = qid;
 
-    nvme_sq_entry_t* sqbuf = (nvme_sq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_sq_entry_t),mmu::page_size);
-    nvme_cq_entry_t* cqbuf = (nvme_cq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_cq_entry_t),mmu::page_size);
-    assert(sqbuf);
-    assert(cqbuf);
-    memset(sqbuf,0,sizeof(nvme_sq_entry_t)*qsize);
-    memset(cqbuf,0,sizeof(nvme_cq_entry_t)*qsize);
-
     // create completion queue
-    nvme_acmd_create_cq_t* cmd_cq = (nvme_acmd_create_cq_t*) malloc(sizeof(nvme_acmd_create_cq_t));
-    assert(cmd_cq);
-    memset(cmd_cq, 0, sizeof (*cmd_cq));
-    
-    cmd_cq->qid = qid;
-    cmd_cq->qsize = qsize - 1;
+    nvme_cq_entry_t* cq_addr;
+    nvme_acmd_create_cq_t* cmd_cq = alloc_create_queue_cmd<nvme_cq_entry_t,nvme_acmd_create_cq_t>(
+        qid, qsize, NVME_ACMD_CREATE_CQ, &cq_addr);
+
     cmd_cq->iv = iv;
-    cmd_cq->pc = 1;
     cmd_cq->ien = 1;
-    cmd_cq->common.opc = NVME_ACMD_CREATE_CQ;
-    cmd_cq->common.prp1 = (u64) mmu::virt_to_phys(cqbuf);
 
     // create submission queue
-    nvme_acmd_create_sq_t* cmd_sq = (nvme_acmd_create_sq_t*) malloc(sizeof(nvme_acmd_create_sq_t));
-    assert(cmd_sq);
-    memset(cmd_sq, 0, sizeof(nvme_acmd_create_sq_t));
-    
-    cmd_sq->pc = 1;
+    nvme_sq_entry_t* sq_addr;
+    nvme_acmd_create_sq_t* cmd_sq = alloc_create_queue_cmd<nvme_sq_entry_t,nvme_acmd_create_sq_t>(
+        qid, qsize, NVME_ACMD_CREATE_SQ, &sq_addr);
+
     cmd_sq->qprio = qprio; // 0=urgent 1=high 2=medium 3=low
-    cmd_sq->qid = qid;
     cmd_sq->cqid = qid;
-    cmd_sq->qsize = qsize - 1;
-    cmd_sq->common.opc = NVME_ACMD_CREATE_SQ;
-    cmd_sq->common.prp1 = (u64) mmu::virt_to_phys(sqbuf);
 
     u32* sq_doorbell = (u32*) ((u64) _control_reg->sq0tdbl + 2 * _doorbell_stride * qid);
     u32* cq_doorbell = (u32*) ((u64) sq_doorbell + _doorbell_stride);
 
     _io_queues.push_back(std::unique_ptr<io_queue_pair>(
-        new io_queue_pair(_id, iv, qsize, _dev, sqbuf, sq_doorbell, cqbuf, cq_doorbell, _ns_data)));
+        new io_queue_pair(_id, iv, qsize, _dev, sq_addr, sq_doorbell, cq_addr, cq_doorbell, _ns_data)));
     
-    register_interrupt(iv, qid-1, pin_t, cpu);
+    register_interrupt(iv, qid - 1, pin_t, cpu);
 
     _admin_queue->submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t>((nvme_sq_entry_t*)cmd_cq));
     _admin_queue->submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t>((nvme_sq_entry_t*)cmd_sq));
