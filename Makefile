@@ -901,9 +901,6 @@ ifeq ($(conf_drivers_nvme),1)
 drivers += drivers/nvme.o
 drivers += drivers/nvme-queue.o
 endif
-ifeq ($(conf_drivers_io_test),1)
-drivers += drivers/io_test.o
-endif
 drivers += drivers/virtio-net.o
 drivers += drivers/virtio-blk.o
 drivers += drivers/virtio-scsi.o

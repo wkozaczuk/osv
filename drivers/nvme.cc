@@ -27,7 +27,6 @@ using namespace memory;
 #include <sys/refcount.h>
 
 #include <osv/drivers_config.h>
-#include "drivers/io-test.hh"
 
 TRACEPOINT(trace_nvme_read_config, "capacity=%lu blk_size=%u max_io_size=%u", u64, u32, u64);
 TRACEPOINT(trace_nvme_strategy, "bio=%p", struct bio*);
@@ -107,6 +106,13 @@ alloc_set_features_cmd(u8 feature_id, u32 val)
     return cmd;
 }
 
+enum CMD_IDENTIFY_CNS {
+    CMD_IDENTIFY_NAMESPACE = 0,
+    CMD_IDENTIFY_CONTROLLER = 1,
+};
+
+#define NVME_NAMESPACE_DEFAULT_NS 1
+
 static std::unique_ptr<nvme_sq_entry_t>
 alloc_identify_cmd(u32 namespace_id, u32 cns)
 {
@@ -121,31 +127,32 @@ nvme_driver::nvme_driver(pci::device &dev)
      : _dev(dev)
      , _msi(&dev)
 {
-    parse_pci_config(); //Sets _control_reg
-    //TODO: use pci_command_bits enum:
-    // - 0x4 - PCI_COMMAND_BUS_MASTER
-    // - 0x2 - PCI_COMMAND_BAR_MEM_ENABLE
-    // - 0x400 - PCI_COMMAND_INTX_DISABLE
-    u16 command = dev.get_command();
-    command |= 0x4 | 0x2 | 0x400;
-    dev.set_command(command);
+    auto parse_ok = parse_pci_config();
+    assert(parse_ok);
+
+    _dev.set_bus_master(true);
+    _dev.disable_intx(); //PCI_COMMAND_INTX_DISABLE - TODO - Move to to msix setup
 
     _id = _instance++;
     
     _doorbell_stride = 1 << (2 + _control_reg->cap.dstrd);
-    
-    wait_for_controller_ready_change(1);
-    disable_controller();
+
+    //Wait for controller to become ready
+    assert(wait_for_controller_ready_change(1) == 0);
+
+    //Disable controller
+    assert(enable_disable_controller(false) == 0);
 
     init_controller_config();
 
     create_admin_queue();
-    
-    enable_controller();
 
-    identify_controller();
+    //Enable controller
+    assert(enable_disable_controller(true) == 0);
 
-    identify_namespace(1);
+    assert(identify_controller() == 0);
+
+    identify_namespace(NVME_NAMESPACE_DEFAULT_NS);
 
     if (_identify_controller->vwc & 0x1 && NVME_VWC_ENABLED) {
         auto cmd = alloc_set_features_cmd(NVME_FEATURE_WRITE_CACHE, 1);
@@ -195,17 +202,10 @@ nvme_driver::nvme_driver(pci::device &dev)
         prv->drv = this;
         prv->nsid = ns.first;
         osv_dev->size = size;
-        /*
-        * IO size greater than 4096 << 9 would mean we need 
-        * more than 1 page for the prplist which is not implemented
-        */
-        osv_dev->max_io_size = mmu::page_size << ((9 < _identify_controller->mdts)? 9 : _identify_controller->mdts );
+        //IO size greater than 4096 << 9 would mean we need
+        //more than 1 page for the prplist which is not implemented
+        osv_dev->max_io_size = mmu::page_size << ((9 < _identify_controller->mdts)? 9 : _identify_controller->mdts);
 
-        #if CONF_drivers_io_test
-            test_block_device(osv_dev, 20*1e6, 8);
-            test_block_device(osv_dev, 20*1e6, 512);
-        #endif
-        
         read_partition_table(osv_dev);
     }
 }
@@ -241,30 +241,24 @@ int nvme_driver::set_interrupt_coalescing(u8 threshold, u8 time)
     return 0;
 }
 
-void nvme_driver::enable_controller()
+enum NVME_CONTROLLER_EN {
+    CTRL_EN_DISABLE = 0,
+    CTRL_EN_ENABLE = 1,
+};
+
+int nvme_driver::enable_disable_controller(bool enable)
 {
     nvme_controller_config_t cc;
     cc.val = mmio_getl(&_control_reg->cc);
-    
-    assert(cc.en == 0);
-    cc.en = 1;
 
-    mmio_setl(&_control_reg->cc,cc.val);
-    int s = wait_for_controller_ready_change(1);
-    assert(s==0);
-}
+    u32 expected_en = enable ? CTRL_EN_DISABLE : CTRL_EN_ENABLE;
+    u32 new_en = enable ? CTRL_EN_ENABLE : CTRL_EN_DISABLE;
 
-void nvme_driver::disable_controller()
-{   
-    nvme_controller_config_t cc;
-    cc.val = mmio_getl(&_control_reg->cc);
-    
-    assert(cc.en == 1);
-    cc.en = 0;
+    assert(cc.en == expected_en); //check current status
+    cc.en = new_en;
 
-    mmio_setl(&_control_reg->cc,cc.val);
-    int s = wait_for_controller_ready_change(0);
-    assert(s==0);
+    mmio_setl(&_control_reg->cc, cc.val);
+    return wait_for_controller_ready_change(new_en);
 }
 
 int nvme_driver::wait_for_controller_ready_change(int ready)
@@ -280,13 +274,17 @@ int nvme_driver::wait_for_controller_ready_change(int ready)
     return ETIME;
 }
 
+#define NVME_CTRL_CONFIG_IO_CQ_ENTRY_SIZE_16_BYTES 4
+#define NVME_CTRL_CONFIG_IO_SQ_ENTRY_SIZE_64_BYTES 6
+#define NVME_CTRL_CONFIG_PAGE_SIZE_4K              0
+
 void nvme_driver::init_controller_config()
 {
     nvme_controller_config_t cc;
     cc.val = mmio_getl(&_control_reg->cc.val);
-    cc.iocqes = 4;  // completion queue entry size 16B
-    cc.iosqes = 6;  // submission queue entry size 64B
-    cc.mps = 0;  // memory page size 4096B
+    cc.iocqes = NVME_CTRL_CONFIG_IO_CQ_ENTRY_SIZE_16_BYTES;
+    cc.iosqes = NVME_CTRL_CONFIG_IO_SQ_ENTRY_SIZE_64_BYTES;
+    cc.mps = NVME_CTRL_CONFIG_PAGE_SIZE_4K;
 
     mmio_setl(&_control_reg->cc, cc.val);
 }
@@ -301,7 +299,7 @@ void nvme_driver::create_admin_queue()
     u32* cq_doorbell = (u32*) ((u64)sq_doorbell + _doorbell_stride);
 
     _admin_queue = std::unique_ptr<admin_queue_pair>(
-            new admin_queue_pair(_id,0, qsize, _dev, sq_buf, sq_doorbell, cq_buf, cq_doorbell, _ns_data));
+        new admin_queue_pair(_id, 0, qsize, _dev, sq_buf, sq_doorbell, cq_buf, cq_doorbell, _ns_data));
     
     register_admin_interrupts();
 
@@ -374,7 +372,7 @@ int nvme_driver::create_io_queue(int qid, int qsize, bool pin_t, sched::cpu* cpu
 int nvme_driver::identify_controller()
 {
     assert(_admin_queue);
-    auto cmd = alloc_identify_cmd(0, 1);
+    auto cmd = alloc_identify_cmd(0, CMD_IDENTIFY_CONTROLLER);
     auto data = new nvme_identify_ctlr_t;
     auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data),mmu::page_size);
     
@@ -390,7 +388,7 @@ int nvme_driver::identify_controller()
 int nvme_driver::identify_namespace(u32 ns)
 {
     assert(_admin_queue);
-    auto cmd = alloc_identify_cmd(ns, 0);
+    auto cmd = alloc_identify_cmd(ns, CMD_IDENTIFY_NAMESPACE);
     auto data = std::unique_ptr<nvme_identify_ns_t>(new nvme_identify_ns_t);
     auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data.get()),mmu::page_size);
     if(res->sc != 0 || res->sct != 0) {
@@ -434,13 +432,12 @@ int nvme_driver::make_request(bio* bio, u32 nsid)
 void nvme_driver::register_admin_interrupts()
 {
     sched::thread* aq_thread = sched::thread::make([this] { this->_admin_queue->req_done(); },
-        sched::thread::attr().name("nvme"+ std::to_string(_id)+"_aq_req_done"));
+        sched::thread::attr().name("nvme" + std::to_string(_id) + "_aq_req_done"));
     aq_thread->start();
         
     bool ok = msix_register(0, [this] { this->_admin_queue->disable_interrupts(); }, aq_thread);
     _dev.msix_unmask_entry(0);
-    if(not ok)
-        printf("admin interrupt registration failed\n");
+    assert(ok);
 }
 
 bool nvme_driver::msix_register(unsigned iv,
@@ -539,15 +536,18 @@ void nvme_driver::dump_config(void)
              _dev.get_device_id());
 }
 
-void nvme_driver::parse_pci_config()
+bool nvme_driver::parse_pci_config()
 {
     _bar0 = _dev.get_bar(1);
-    _bar0->map();
     if (_bar0 == nullptr) {
-        throw std::runtime_error("BAR1 is absent");
+        return false;
     }
-    assert(_bar0->is_mapped());
+    _bar0->map();
+    if (!_bar0->is_mapped()) {
+        return false;
+    }
     _control_reg = (nvme_controller_reg_t*) _bar0->get_mmio();
+    return true;
 }
 
 hw_driver* nvme_driver::probe(hw_device* dev)

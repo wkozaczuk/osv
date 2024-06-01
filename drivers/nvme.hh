@@ -71,11 +71,10 @@ private:
 
     void init_controller_config();
 
-    void enable_controller();
-    void disable_controller();
+    int enable_disable_controller(bool enable);
     int wait_for_controller_ready_change(int ready);
 
-    void parse_pci_config();
+    bool parse_pci_config();
 
     nvme_controller_reg_t* _control_reg;
     
