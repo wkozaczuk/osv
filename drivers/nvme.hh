@@ -12,16 +12,10 @@
 #include <memory>
 #include <map>
 
-/*bdev block cache will not be used if enabled*/
-#define NVME_DIRECT_RW_ENABLED 0
-
 #define NVME_QUEUE_PER_CPU_ENABLED 1
 
 //Volatile Write Cache
 #define NVME_VWC_ENABLED 1
-
-//checks for all active namespaces instead of just ns 1
-#define NVME_CHECK_FOR_ADDITIONAL_NAMESPACES 1
 
 #define NVME_ADMIN_QUEUE_SIZE 8
 
@@ -43,7 +37,7 @@ public:
 
     virtual void dump_config();
 
-    int make_request(struct bio* bio, u32 nsid=1);
+    int make_request(struct bio* bio, u32 nsid = 1);
     static hw_driver* probe(hw_device* dev);
 
     int set_feature();
@@ -53,10 +47,6 @@ public:
     int set_interrupt_coalescing(u8 threshold, u8 time);
 
     int get_interrupt_coalescing();
-
-    int create_io_queue(int qid, int qsize=NVME_IO_QUEUE_SIZE, bool pin_t=false, sched::cpu* cpu = NULL, int qprio = 2);
-    
-    bool register_interrupt(unsigned int iv,unsigned int qid,bool pin_t=false, sched::cpu* cpu = NULL);
 
     int shutdown();
 
@@ -69,27 +59,33 @@ private:
     void create_admin_queue();
     void register_admin_interrupts();
 
+    void create_io_queues();
+    int create_io_queue(int qid, int qsize = NVME_IO_QUEUE_SIZE, bool pin = false, sched::cpu* cpu = NULL, int qprio = 2);
+    bool register_io_interrupt(unsigned int iv, unsigned int qid, bool pin = false, sched::cpu* cpu = NULL);
+
     void init_controller_config();
 
     int enable_disable_controller(bool enable);
     int wait_for_controller_ready_change(int ready);
 
     bool parse_pci_config();
+    void enable_msix();
 
-    nvme_controller_reg_t* _control_reg;
-    
-    //maintains the nvme instance number for multiple adapters
-    static int _instance;
-    int _id;
+    void enable_write_cache();
 
-    std::vector<std::unique_ptr<msix_vector>> _msix_vectors;
     bool msix_register(unsigned iv,
         // high priority ISR
         std::function<void ()> isr,
         // bottom half
         sched::thread *t,
         // set affinity of the vector to the cpu running t
-        bool assign_affinity=false);
+        bool assign_affinity = false);
+
+    //maintains the nvme instance number for multiple adapters
+    static int _instance;
+    int _id;
+
+    std::vector<std::unique_ptr<msix_vector>> _msix_vectors;
 
     std::unique_ptr<admin_queue_pair> _admin_queue;
 
@@ -97,6 +93,7 @@ private:
     u32 _doorbell_stride;
 
     std::unique_ptr<nvme_identify_ctlr_t> _identify_controller;
+    nvme_controller_reg_t* _control_reg = nullptr;
 
     pci::device& _dev;
     interrupt_manager _msi;
