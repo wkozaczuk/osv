@@ -313,7 +313,7 @@ void nvme_driver::create_admin_queue()
 }
 
 template<typename T,typename Q>
-Q* alloc_create_queue_cmd(int qid, int qsize, u8 command_opcode, T** addr)
+Q* alloc_create_io_queue_cmd(int qid, int qsize, u8 command_opcode, T** addr)
 {
     T* buf = (T*) alloc_phys_contiguous_aligned(qsize * sizeof(T), mmu::page_size);
     assert(buf);
@@ -339,7 +339,7 @@ int nvme_driver::create_io_queue(int qid, int qsize, bool pin_t, sched::cpu* cpu
 
     // create completion queue
     nvme_cq_entry_t* cq_addr;
-    nvme_acmd_create_cq_t* cmd_cq = alloc_create_queue_cmd<nvme_cq_entry_t,nvme_acmd_create_cq_t>(
+    nvme_acmd_create_cq_t* cmd_cq = alloc_create_io_queue_cmd<nvme_cq_entry_t,nvme_acmd_create_cq_t>(
         qid, qsize, NVME_ACMD_CREATE_CQ, &cq_addr);
 
     cmd_cq->iv = iv;
@@ -347,7 +347,7 @@ int nvme_driver::create_io_queue(int qid, int qsize, bool pin_t, sched::cpu* cpu
 
     // create submission queue
     nvme_sq_entry_t* sq_addr;
-    nvme_acmd_create_sq_t* cmd_sq = alloc_create_queue_cmd<nvme_sq_entry_t,nvme_acmd_create_sq_t>(
+    nvme_acmd_create_sq_t* cmd_sq = alloc_create_io_queue_cmd<nvme_sq_entry_t,nvme_acmd_create_sq_t>(
         qid, qsize, NVME_ACMD_CREATE_SQ, &sq_addr);
 
     cmd_sq->qprio = qprio; // 0=urgent 1=high 2=medium 3=low
@@ -391,7 +391,7 @@ int nvme_driver::identify_namespace(u32 ns)
     auto cmd = alloc_identify_cmd(ns, CMD_IDENTIFY_NAMESPACE);
     auto data = std::unique_ptr<nvme_identify_ns_t>(new nvme_identify_ns_t);
     auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data.get()),mmu::page_size);
-    if(res->sc != 0 || res->sct != 0) {
+    if (res->sc != 0 || res->sct != 0) {
         NVME_ERROR("Identify namespace failed nvme%d nsid=%d, sct=%d, sc=%d", _id, ns, res->sct, res->sc);
         return EIO;
     }

@@ -181,6 +181,39 @@ void queue_pair::disable_interrupts()
 
 extern std::unique_ptr<nvme_sq_entry_t> alloc_cmd();
 
+io_queue_pair::io_queue_pair(
+    int driver_id,
+    int id,
+    int qsize,
+    pci::device& dev,
+    nvme_sq_entry_t* sq_addr,
+    u32* sq_doorbell,
+    nvme_cq_entry_t* cq_addr,
+    u32* cq_doorbell,
+    std::map<u32, nvme_ns_t*>& ns
+    ) : queue_pair(
+        driver_id,
+        id,
+        qsize,
+        dev,
+        sq_addr,
+        sq_doorbell,
+        cq_addr,
+        cq_doorbell,
+        ns
+    )
+{
+    auto bios_array = (bio**) malloc(sizeof(bio*) * qsize);
+    memset(bios_array, 0, sizeof(bio*) * qsize);
+    _pending_bios.push_back(bios_array);
+}
+
+io_queue_pair::~io_queue_pair()
+{
+    for(auto vec : _pending_bios)
+        free(vec);
+}
+
 int io_queue_pair::make_request(struct bio* bio, u32 nsid=1)
 {
     u64 slba = bio->bio_offset;
@@ -303,6 +336,28 @@ int io_queue_pair::submit_rw(u16 cid, void* data, u64 slba, u32 nlb, u32 nsid, i
     return submit_cmd_without_lock(std::move(cmd));
 }
 
+admin_queue_pair::admin_queue_pair(
+    int driver_id,
+    int id,
+    int qsize,
+    pci::device& dev,
+    nvme_sq_entry_t* sq_addr,
+    u32* sq_doorbell,
+    nvme_cq_entry_t* cq_addr,
+    u32* cq_doorbell,
+    std::map<u32, nvme_ns_t*>& ns
+    ) : queue_pair(
+        driver_id,
+        id,
+        qsize,
+        dev,
+        sq_addr,
+        sq_doorbell,
+        cq_addr,
+        cq_doorbell,
+        ns
+) {}
+
 void admin_queue_pair::req_done()
 {   
     std::unique_ptr<nvme_cq_entry_t> cqe;
@@ -363,59 +418,4 @@ admin_queue_pair::submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_
     _lock.unlock();
     return std::move(_req_res);
 }
-
-io_queue_pair::io_queue_pair(
-    int driver_id,
-    int id,
-    int qsize,
-    pci::device& dev,
-    nvme_sq_entry_t* sq_addr,
-    u32* sq_doorbell,
-    nvme_cq_entry_t* cq_addr,
-    u32* cq_doorbell,
-    std::map<u32, nvme_ns_t*>& ns
-    ) : queue_pair(
-        driver_id,
-        id,
-        qsize,
-        dev,
-        sq_addr,
-        sq_doorbell,
-        cq_addr,
-        cq_doorbell,
-        ns
-    )
-{
-    auto bios_array = (bio**) malloc(sizeof(bio*) * qsize);
-    memset(bios_array, 0, sizeof(bio*) * qsize);
-    _pending_bios.push_back(bios_array);
-}
-
-io_queue_pair::~io_queue_pair()
-{
-    for(auto vec : _pending_bios)
-        free(vec);
-}
-
-admin_queue_pair::admin_queue_pair(
-    int driver_id,
-    int id,
-    int qsize,
-    pci::device& dev,
-    nvme_sq_entry_t* sq_addr,
-    u32* sq_doorbell,
-    nvme_cq_entry_t* cq_addr,
-    u32* cq_doorbell,
-    std::map<u32, nvme_ns_t*>& ns
-    ) : queue_pair(
-        driver_id,
-        id,
-        qsize,
-        dev,
-        sq_addr,
-        sq_doorbell,
-        cq_addr,
-        cq_doorbell,
-        ns
-    ) {};
 }
