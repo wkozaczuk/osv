@@ -48,7 +48,7 @@ std::unique_ptr<nvme_sq_entry_t> alloc_cmd() {
 
 struct nvme_priv {
     devop_strategy_t strategy;
-    driver* drv;
+    ::driver* drv;
     u32 nsid;
 };
 
@@ -88,7 +88,7 @@ static struct devops nvme_devops {
     multiplex_strategy,
 };
 
-struct ::driver _driver = {
+struct driver _driver = {
     "nvme",
     &nvme_devops,
     sizeof(struct nvme_priv),

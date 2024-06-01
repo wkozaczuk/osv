@@ -375,7 +375,7 @@ void arch_init_drivers()
     drvman->register_driver(aws::ena::probe);
 #endif
 #if CONF_drivers_nvme
-    drvman->register_driver(nvme::nvme_driver::probe);
+    drvman->register_driver(nvme::driver::probe);
 #endif
     boot_time.event("drivers probe");
     drvman->load_all();

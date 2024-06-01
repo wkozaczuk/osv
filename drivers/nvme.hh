@@ -34,10 +34,10 @@ namespace nvme {
 class io_queue_pair;
 class admin_queue_pair;
 
-class nvme_driver : public hw_driver {
+class driver : public hw_driver {
 public:
-    explicit nvme_driver(pci::device& dev);
-    virtual ~nvme_driver() {};
+    explicit driver(pci::device& dev);
+    virtual ~driver() {};
 
     virtual std::string get_name() const { return "nvme"; }
 
