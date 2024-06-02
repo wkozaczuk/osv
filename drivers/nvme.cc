@@ -39,6 +39,9 @@ TRACEPOINT(trace_nvme_register_interrupt, "_io_queues[%d], iv=%d", int, int);
 
 namespace nvme {
 
+int driver::_disk_idx = 0;
+int driver::_instance = 0;
+
 std::unique_ptr<nvme_sq_entry_t> alloc_cmd() {
     auto cmd = std::unique_ptr<nvme_sq_entry_t>(new nvme_sq_entry_t);
     assert(cmd);
@@ -94,8 +97,6 @@ struct ::driver _driver = {
     sizeof(struct nvme_priv),
 };
 
-int driver::_instance = 0;
-
 static std::unique_ptr<nvme_sq_entry_t>
 alloc_set_features_cmd(u8 feature_id, u32 val)
 {
@@ -123,9 +124,9 @@ alloc_identify_cmd(u32 namespace_id, u32 cns)
     return cmd;
 }
 
-driver::driver(pci::device &dev)
-     : _dev(dev)
-     , _msi(&dev)
+driver::driver(pci::device &pci_dev)
+     : _dev(pci_dev)
+     , _msi(&pci_dev)
 {
     auto parse_ok = parse_pci_config();
     assert(parse_ok);
@@ -163,34 +164,28 @@ driver::driver(pci::device &dev)
         set_interrupt_coalescing(20, 2);
     }
 
-    debugf("nvme: %s\n", _identify_controller->sn);
-    
-    for (const auto& ns : _ns_data) {
-        std::string dev_name;
-        if (ns.first == 1 && _id == 0) {
-            dev_name = "vblk";
-            dev_name += std::to_string(_id);
-        } else {
-            dev_name = "nvme";
-            dev_name += std::to_string(_id) + "n";
-            dev_name += std::to_string(ns.first);
-        }
-        off_t size = ((off_t) ns.second->blockcount) << ns.second->blockshift;
-        
-        debugf("nvme: Add namespace %d of nvme device %d as %s, devsize=%lld\n", ns.first, _id, dev_name.c_str(), size);
+    std::string dev_name("vblk");
+    dev_name += std::to_string(_disk_idx++);
 
-        struct device* osv_dev = device_create(&_driver, dev_name.c_str(), D_BLK);
-        struct nvme_priv* prv = reinterpret_cast<struct nvme_priv*>(osv_dev->private_data);
-        prv->strategy = nvme_strategy;
-        prv->drv = this;
-        prv->nsid = ns.first;
-        osv_dev->size = size;
-        //IO size greater than 4096 << 9 would mean we need
-        //more than 1 page for the prplist which is not implemented
-        osv_dev->max_io_size = mmu::page_size << ((9 < _identify_controller->mdts)? 9 : _identify_controller->mdts);
+    struct device* dev = device_create(&_driver, dev_name.c_str(), D_BLK);
+    struct nvme_priv* prv = reinterpret_cast<struct nvme_priv*>(dev->private_data);
 
-        read_partition_table(osv_dev);
-    }
+    unsigned int nsid = NVME_NAMESPACE_DEFAULT_NS;
+    const auto& ns = _ns_data[nsid];
+    off_t size = ((off_t) ns->blockcount) << ns->blockshift;
+
+    prv->strategy = nvme_strategy;
+    prv->drv = this;
+    prv->nsid = nsid;
+    dev->size = size;
+    //IO size greater than 4096 << 9 would mean we need
+    //more than 1 page for the prplist which is not implemented
+    dev->max_io_size = mmu::page_size << ((9 < _identify_controller->mdts)? 9 : _identify_controller->mdts);
+
+    read_partition_table(dev);
+
+    debugf("nvme: Add nvme device instances %d as %s, devsize=%lld, serial number:%s\n",
+        _id, dev_name.c_str(), dev->size, _identify_controller->sn);
 }
 
 int driver::set_number_of_queues(u16 num, u16* ret)

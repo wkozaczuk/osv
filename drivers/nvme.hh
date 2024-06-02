@@ -90,9 +90,12 @@ private:
         // set affinity of the vector to the cpu running t
         bool assign_affinity = false);
 
-    //maintains the nvme instance number for multiple adapters
+    //Maintains the nvme instance number for multiple adapters
     static int _instance;
     int _id;
+
+    //Disk index number
+    static int _disk_idx;
 
     std::vector<std::unique_ptr<msix_vector>> _msix_vectors;
 
