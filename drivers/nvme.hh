@@ -19,14 +19,21 @@
 
 #define NVME_ADMIN_QUEUE_SIZE 8
 
-/*Will be lower if the device doesnt support the
-specified queue size */ 
+//Will be lower if the device doesnt support the
+//specified queue size
 #define NVME_IO_QUEUE_SIZE 256
 
 namespace nvme {
 
 class io_queue_pair;
 class admin_queue_pair;
+
+enum NVME_IO_QUEUE_PRIORITY {
+    NVME_IO_QUEUE_PRIORITY_URGENT = 0,
+    NVME_IO_QUEUE_PRIORITY_HIGH = 1,
+    NVME_IO_QUEUE_PRIORITY_MEDIUM = 2,
+    NVME_IO_QUEUE_PRIORITY_LOW = 3,
+};
 
 class driver : public hw_driver {
 public:
@@ -60,8 +67,10 @@ private:
     void register_admin_interrupts();
 
     void create_io_queues();
-    int create_io_queue(int qid, int qsize = NVME_IO_QUEUE_SIZE, bool pin = false, sched::cpu* cpu = NULL, int qprio = 2);
-    bool register_io_interrupt(unsigned int iv, unsigned int qid, bool pin = false, sched::cpu* cpu = NULL);
+    int create_io_queue(int qid, int qsize = NVME_IO_QUEUE_SIZE, bool pin = false,
+        sched::cpu* cpu = NULL, int qprio = NVME_IO_QUEUE_PRIORITY_HIGH);
+    bool register_io_interrupt(unsigned int iv, unsigned int qid, bool pin = false,
+        sched::cpu* cpu = NULL);
 
     void init_controller_config();
 

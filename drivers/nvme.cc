@@ -151,7 +151,7 @@ driver::driver(pci::device &dev)
 
     assert(identify_controller() == 0);
 
-    identify_namespace(NVME_NAMESPACE_DEFAULT_NS);
+    assert(identify_namespace(NVME_NAMESPACE_DEFAULT_NS) == 0);
 
     if (_identify_controller->vwc & 0x1 && NVME_VWC_ENABLED) {
         enable_write_cache();
@@ -361,7 +361,7 @@ int driver::create_io_queue(int qid, int qsize, bool pin, sched::cpu* cpu, int q
     nvme_acmd_create_sq_t* cmd_sq = alloc_create_io_queue_cmd<nvme_sq_entry_t, nvme_acmd_create_sq_t>(
         qid, qsize, NVME_ACMD_CREATE_SQ, &sq_addr);
 
-    cmd_sq->qprio = qprio; // 0=urgent 1=high 2=medium 3=low
+    cmd_sq->qprio = qprio;
     cmd_sq->cqid = qid;
 
     u32* sq_doorbell = (u32*) ((u64) _control_reg->sq0tdbl + 2 * _doorbell_stride * qid);
