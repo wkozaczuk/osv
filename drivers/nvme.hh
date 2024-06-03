@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2023 Jan Braunwarth
+ * Copyright (C) 2024 Waldemar Kozaczuk
+ *
+ * This work is open source software, licensed under the terms of the
+ * BSD license as described in the LICENSE file in the top-level directory.
+ */
+
 #ifndef NVME_DRIVER_H
 #define NVME_DRIVER_H
 

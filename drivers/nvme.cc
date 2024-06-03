@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2023 Jan Braunwarth
+ * Copyright (C) 2024 Waldemar Kozaczuk
+ *
+ * This work is open source software, licensed under the terms of the
+ * BSD license as described in the LICENSE file in the top-level directory.
+ */
+
 #include <sys/cdefs.h>
 
 #include "drivers/nvme.hh"
@@ -29,7 +37,7 @@ using namespace memory;
 #include <osv/drivers_config.h>
 
 TRACEPOINT(trace_nvme_read_config, "capacity=%lu blk_size=%u max_io_size=%u", u64, u32, u64);
-TRACEPOINT(trace_nvme_strategy, "bio=%p", struct bio*);
+TRACEPOINT(trace_nvme_strategy, "bio=%p, bcount=%lu", struct bio*, size_t);
 TRACEPOINT(trace_nvme_vwc_enabled, "sc=%#x sct=%#x", u16, u16);
 TRACEPOINT(trace_nvme_number_of_queues, "cq num=%d, sq num=%d, iv_num=%d", u16, u16, u32);
 TRACEPOINT(trace_nvme_identify_namespace, "nsid=%d, blockcount=%d, blocksize=%d", u32, u64, u16);
@@ -57,7 +65,7 @@ struct nvme_priv {
 
 static void nvme_strategy(struct bio* bio) {
     auto* prv = reinterpret_cast<struct nvme_priv*>(bio->bio_dev->private_data);
-    trace_nvme_strategy(bio);
+    trace_nvme_strategy(bio, bio->bio_bcount);
     prv->drv->make_request(bio);
 }
 
@@ -297,15 +305,12 @@ void driver::init_controller_config()
 
 void driver::create_admin_queue()
 {
-    int qsize = NVME_ADMIN_QUEUE_SIZE;
-    nvme_sq_entry_t* sq_buf = (nvme_sq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_sq_entry_t), mmu::page_size);
-    nvme_cq_entry_t* cq_buf = (nvme_cq_entry_t*) alloc_phys_contiguous_aligned(qsize * sizeof(nvme_cq_entry_t), mmu::page_size);
-    
     u32* sq_doorbell = _control_reg->sq0tdbl;
     u32* cq_doorbell = (u32*) ((u64)sq_doorbell + _doorbell_stride);
 
+    int qsize = NVME_ADMIN_QUEUE_SIZE;
     _admin_queue = std::unique_ptr<admin_queue_pair>(
-        new admin_queue_pair(_id, 0, qsize, _dev, sq_buf, sq_doorbell, cq_buf, cq_doorbell, _ns_data));
+        new admin_queue_pair(_id, 0, qsize, _dev, sq_doorbell, cq_doorbell, _ns_data));
     
     register_admin_interrupts();
 
@@ -314,28 +319,23 @@ void driver::create_admin_queue()
     aqa.asqs = aqa.acqs = qsize - 1;
 
     mmio_setl(&_control_reg->aqa, aqa.val);
-    mmio_setq(&_control_reg->asq, (u64) mmu::virt_to_phys((void*) sq_buf));
-    mmio_setq(&_control_reg->acq, (u64) mmu::virt_to_phys((void*) cq_buf));
+    mmio_setq(&_control_reg->asq, _admin_queue->sq_phys_addr());
+    mmio_setq(&_control_reg->acq, _admin_queue->cq_phys_addr());
 }
 
-template<typename T,typename Q>
-Q* alloc_create_io_queue_cmd(int qid, int qsize, u8 command_opcode, T** addr)
+template<typename Q>
+Q* alloc_create_io_queue_cmd(int qid, int qsize, u8 command_opcode, u64 queue_addr)
 {
-    T* buf = (T*) alloc_phys_contiguous_aligned(qsize * sizeof(T), mmu::page_size);
-    assert(buf);
-    memset(buf, 0, sizeof(T) * qsize);
-
     Q* create_queue_cmd = (Q*) malloc(sizeof(Q));
     assert(create_queue_cmd);
     memset(create_queue_cmd, 0, sizeof (*create_queue_cmd));
 
     create_queue_cmd->common.opc = command_opcode;
-    create_queue_cmd->common.prp1 = (u64) mmu::virt_to_phys(buf);
+    create_queue_cmd->common.prp1 = queue_addr;
     create_queue_cmd->qid = qid;
     create_queue_cmd->qsize = qsize - 1;
     create_queue_cmd->pc = 1;
 
-    *addr = buf;
     return create_queue_cmd;
 }
 
@@ -343,30 +343,32 @@ int driver::create_io_queue(int qid, int qsize, bool pin, sched::cpu* cpu, int q
 {
     int iv = qid;
 
-    // create completion queue
-    nvme_cq_entry_t* cq_addr;
-    nvme_acmd_create_cq_t* cmd_cq = alloc_create_io_queue_cmd<nvme_cq_entry_t, nvme_acmd_create_cq_t>(
-        qid, qsize, NVME_ACMD_CREATE_CQ, &cq_addr);
+    u32* sq_doorbell = (u32*) ((u64) _control_reg->sq0tdbl + 2 * _doorbell_stride * qid);
+    u32* cq_doorbell = (u32*) ((u64) sq_doorbell + _doorbell_stride);
+
+    // create queue pair with allocated SQ and CQ ring buffers
+    auto queue = std::unique_ptr<io_queue_pair>(
+        new io_queue_pair(_id, iv, qsize, _dev, sq_doorbell, cq_doorbell, _ns_data));
+
+    // create completion queue command
+    nvme_acmd_create_cq_t* cmd_cq = alloc_create_io_queue_cmd<nvme_acmd_create_cq_t>(
+        qid, qsize, NVME_ACMD_CREATE_CQ, queue->cq_phys_addr());
 
     cmd_cq->iv = iv;
     cmd_cq->ien = 1;
 
-    // create submission queue
-    nvme_sq_entry_t* sq_addr;
-    nvme_acmd_create_sq_t* cmd_sq = alloc_create_io_queue_cmd<nvme_sq_entry_t, nvme_acmd_create_sq_t>(
-        qid, qsize, NVME_ACMD_CREATE_SQ, &sq_addr);
+    // create submission queue command
+    nvme_acmd_create_sq_t* cmd_sq = alloc_create_io_queue_cmd<nvme_acmd_create_sq_t>(
+        qid, qsize, NVME_ACMD_CREATE_SQ, queue->sq_phys_addr());
 
     cmd_sq->qprio = qprio;
     cmd_sq->cqid = qid;
 
-    u32* sq_doorbell = (u32*) ((u64) _control_reg->sq0tdbl + 2 * _doorbell_stride * qid);
-    u32* cq_doorbell = (u32*) ((u64) sq_doorbell + _doorbell_stride);
-
-    _io_queues.push_back(std::unique_ptr<io_queue_pair>(
-        new io_queue_pair(_id, iv, qsize, _dev, sq_addr, sq_doorbell, cq_addr, cq_doorbell, _ns_data)));
+    _io_queues.push_back(std::move(queue));
     
     register_io_interrupt(iv, qid - 1, pin, cpu);
 
+    //According to the NVMe spec, the completion queue (CQ) needs to be created before the submission queue (SQ)
     _admin_queue->submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t>((nvme_sq_entry_t*)cmd_cq));
     _admin_queue->submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t>((nvme_sq_entry_t*)cmd_sq));
 

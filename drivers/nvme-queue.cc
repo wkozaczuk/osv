@@ -1,3 +1,11 @@
+/*
+ * Copyright (C) 2023 Jan Braunwarth
+ * Copyright (C) 2024 Waldemar Kozaczuk
+ *
+ * This work is open source software, licensed under the terms of the
+ * BSD license as described in the LICENSE file in the top-level directory.
+ */
+
 #include <sys/cdefs.h>
 
 #include <vector>
@@ -31,6 +39,8 @@ TRACEPOINT(trace_nvme_admin_req_done_success, "nvme%d qid=%d, cid=%d",int,int, u
 TRACEPOINT(trace_advance_sq_tail_full, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int, int, int, int);
 TRACEPOINT(trace_nvme_wait_for_entry, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int, int, int, int);
 
+using namespace memory;
+
 namespace nvme {
 
 queue_pair::queue_pair(
@@ -38,21 +48,29 @@ queue_pair::queue_pair(
     u32 id,
     int qsize,
     pci::device &dev,
-    nvme_sq_entry_t* sq_addr,
     u32* sq_doorbell,
-    nvme_cq_entry_t* cq_addr,
     u32* cq_doorbell,
     std::map<u32, nvme_ns_t*>& ns)
       : _id(id)
       ,_driver_id(did)
       ,_qsize(qsize)
       ,_dev(&dev)
-      ,_sq(sq_addr, sq_doorbell)
+      ,_sq(sq_doorbell)
       ,_sq_full(false)
-      ,_cq(cq_addr, cq_doorbell)
+      ,_cq(cq_doorbell)
       ,_cq_phase_tag(1)
       ,_ns(ns)
 {
+    size_t sq_buf_size = qsize * sizeof(nvme_sq_entry_t);
+    _sq._addr = (nvme_sq_entry_t*) alloc_phys_contiguous_aligned(sq_buf_size, mmu::page_size);
+    assert(_sq._addr);
+    memset(_sq._addr, 0, sq_buf_size);
+
+    size_t cq_buf_size = qsize * sizeof(nvme_cq_entry_t);
+    _cq._addr = (nvme_cq_entry_t*) alloc_phys_contiguous_aligned(cq_buf_size, mmu::page_size);
+    assert(_cq._addr);
+    memset(_cq._addr, 0, cq_buf_size);
+
     auto prp_lists = (u64**) malloc(sizeof(u64*)*qsize);
     memset(prp_lists,0,sizeof(u64*)*qsize);
     _prp_lists_in_use.push_back(prp_lists);
@@ -62,10 +80,11 @@ queue_pair::queue_pair(
 
 queue_pair::~queue_pair()
 {
-    memory::free_phys_contiguous_aligned(_sq._addr);
-    memory::free_phys_contiguous_aligned(_cq._addr);
     for(auto vec: _prp_lists_in_use)
-        memory::free_phys_contiguous_aligned(vec);
+        free_phys_contiguous_aligned(vec);
+
+    free_phys_contiguous_aligned(_sq._addr);
+    free_phys_contiguous_aligned(_cq._addr);
 }
 
 inline void queue_pair::advance_sq_tail()
@@ -73,7 +92,7 @@ inline void queue_pair::advance_sq_tail()
     _sq._tail = (_sq._tail + 1) % _qsize;
     if(_sq._tail == _sq._head) {
         _sq_full = true;
-        trace_advance_sq_tail_full(_driver_id,_id,_sq._tail,_sq._head);
+        trace_advance_sq_tail_full(_driver_id, _id, _sq._tail, _sq._head);
     }
 }
 
@@ -87,7 +106,7 @@ u16 queue_pair::submit_cmd_without_lock(std::unique_ptr<nvme_sq_entry_t> cmd)
 {
     _sq._addr[_sq._tail] = *cmd;
     advance_sq_tail();
-    mmio_setl(_sq._doorbell,_sq._tail);
+    mmio_setl(_sq._doorbell, _sq._tail);
     return _sq._tail;
 }
 
@@ -125,7 +144,7 @@ int queue_pair::map_prps(u16 cid, void* data, u64 datasize, u64* prp1, u64* prp2
         *prp2 = ((addr >> NVME_PAGESHIFT) +1 ) << NVME_PAGESHIFT;
     } else if (numpages > 2) {
         assert(numpages / 512 == 0);
-        u64* prp_list = (u64*) memory::alloc_phys_contiguous_aligned(numpages * 8, mmu::page_size);
+        u64* prp_list = (u64*) alloc_phys_contiguous_aligned(numpages * 8, mmu::page_size);
         assert(prp_list != nullptr);
         *prp2 = mmu::virt_to_phys(prp_list);
         _prp_lists_in_use.at(cid / _qsize)[cid % _qsize] = prp_list;
@@ -163,20 +182,20 @@ std::unique_ptr<nvme_cq_entry_t> queue_pair::get_completion_queue_entry()
 bool queue_pair::completion_queue_not_empty() const
 {
     bool a = reinterpret_cast<volatile nvme_cq_entry_t*>(&_cq._addr[_cq._head])->p == _cq_phase_tag;
-    trace_nvme_completion_queue_not_empty(_driver_id,_id,a);
+    trace_nvme_completion_queue_not_empty(_driver_id, _id, a);
     return a;
 }
 
 void queue_pair::enable_interrupts()
 {
     _dev->msix_unmask_entry(_id);
-    trace_nvme_enable_interrupts(_driver_id,_id);
+    trace_nvme_enable_interrupts(_driver_id, _id);
 }
 
 void queue_pair::disable_interrupts()
 {
     _dev->msix_mask_entry(_id);
-    trace_nvme_disable_interrupts(_driver_id,_id);
+    trace_nvme_disable_interrupts(_driver_id, _id);
 }
 
 extern std::unique_ptr<nvme_sq_entry_t> alloc_cmd();
@@ -186,9 +205,7 @@ io_queue_pair::io_queue_pair(
     int id,
     int qsize,
     pci::device& dev,
-    nvme_sq_entry_t* sq_addr,
     u32* sq_doorbell,
-    nvme_cq_entry_t* cq_addr,
     u32* cq_doorbell,
     std::map<u32, nvme_ns_t*>& ns
     ) : queue_pair(
@@ -196,9 +213,7 @@ io_queue_pair::io_queue_pair(
         id,
         qsize,
         dev,
-        sq_addr,
         sq_doorbell,
-        cq_addr,
         cq_doorbell,
         ns
     )
@@ -214,7 +229,7 @@ io_queue_pair::~io_queue_pair()
         free(vec);
 }
 
-int io_queue_pair::make_request(struct bio* bio, u32 nsid=1)
+int io_queue_pair::make_request(struct bio* bio, u32 nsid = 1)
 {
     u64 slba = bio->bio_offset;
     u32 nlb = bio->bio_bcount; //do the blockshift in nvme_driver
@@ -224,8 +239,8 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid=1)
     if(_sq_full) {
         //Wait for free entries
         _waiter.reset(*sched::thread::current());
-        trace_nvme_wait_for_entry(_driver_id,_id,_sq._tail,_sq._head);
-        sched::thread::wait_until([this] {return !(this->_sq_full);});
+        trace_nvme_wait_for_entry(_driver_id, _id, _sq._tail, _sq._head);
+        sched::thread::wait_until([this] { return !(this->_sq_full); });
         _waiter.clear();
     }
     /* 
@@ -254,12 +269,12 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid=1)
     switch (bio->bio_cmd) {
     case BIO_READ:
         trace_nvme_read(_driver_id, _id, cid, bio->bio_data, slba, nlb);
-        submit_rw(cid,(void*)mmu::virt_to_phys(bio->bio_data),slba,nlb, nsid, NVME_CMD_READ);
+        submit_rw(cid, (void*)mmu::virt_to_phys(bio->bio_data), slba, nlb, nsid, NVME_CMD_READ);
         break;
     
     case BIO_WRITE:
         trace_nvme_write(_driver_id, _id, cid, bio->bio_data, slba, nlb);
-        submit_rw(cid,(void*)mmu::virt_to_phys(bio->bio_data),slba,nlb, nsid, NVME_CMD_WRITE);
+        submit_rw(cid, (void*)mmu::virt_to_phys(bio->bio_data), slba, nlb, nsid, NVME_CMD_WRITE);
         break;
     
     case BIO_FLUSH: {
@@ -304,7 +319,7 @@ void io_queue_pair::req_done()
 
             _pending_bios.at(cid / _qsize)[cid % _qsize] = nullptr;
             if (_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]) {
-                memory::free_phys_contiguous_aligned(_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]);
+                free_phys_contiguous_aligned(_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]);
                 _prp_lists_in_use.at(cid / _qsize)[cid % _qsize] = nullptr;
             }
             _sq._head = cqe->sqhd; //update sq_head
@@ -341,9 +356,7 @@ admin_queue_pair::admin_queue_pair(
     int id,
     int qsize,
     pci::device& dev,
-    nvme_sq_entry_t* sq_addr,
     u32* sq_doorbell,
-    nvme_cq_entry_t* cq_addr,
     u32* cq_doorbell,
     std::map<u32, nvme_ns_t*>& ns
     ) : queue_pair(
@@ -351,9 +364,7 @@ admin_queue_pair::admin_queue_pair(
         id,
         qsize,
         dev,
-        sq_addr,
         sq_doorbell,
-        cq_addr,
         cq_doorbell,
         ns
 ) {}
@@ -375,7 +386,7 @@ void admin_queue_pair::req_done()
             }
             
             if (_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]) {
-                memory::free_phys_contiguous_aligned(_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]);
+                free_phys_contiguous_aligned(_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]);
                 _prp_lists_in_use.at(cid / _qsize)[cid % _qsize] = nullptr;
             }
             _sq._head = cqe->sqhd; //update sq_head
@@ -404,10 +415,10 @@ admin_queue_pair::submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_
         map_prps(_sq._tail,data, datasize, &cmd->rw.common.prp1, &cmd->rw.common.prp2);
     }
     
-    trace_nvme_admin_queue_submit(_driver_id,_id,cid);
+    trace_nvme_admin_queue_submit(_driver_id, _id, cid);
     submit_cmd_without_lock(std::move(cmd));
     
-    sched::thread::wait_until([this] {return this->new_cq;});
+    sched::thread::wait_until([this] { return this->new_cq; });
     _req_waiter.clear();
     
     new_cq = false;
