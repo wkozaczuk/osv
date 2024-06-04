@@ -39,6 +39,8 @@ TRACEPOINT(trace_nvme_admin_req_done_success, "nvme%d qid=%d, cid=%d",int,int, u
 TRACEPOINT(trace_advance_sq_tail_full, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int, int, int, int);
 TRACEPOINT(trace_nvme_wait_for_entry, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int, int, int, int);
 
+TRACEPOINT(trace_nvme_expand_bios, "nvme%d qid=%d", int, int);
+
 using namespace memory;
 
 namespace nvme {
@@ -169,13 +171,16 @@ nvme_cq_entry_t* queue_pair::get_completion_queue_entry()
     auto* cqe = &_cq._addr[_cq._head];
     assert(cqe->p == _cq_phase_tag);
 
+    return cqe;
+}
+
+inline void queue_pair::advance_cq_head()
+{
     if(++_cq._head == _qsize) {
         _cq._head -= _qsize;
         _cq_phase_tag = !_cq_phase_tag;
     }
-    return cqe; 
 }
-
 
 bool queue_pair::completion_queue_not_empty() const
 {
@@ -258,6 +263,7 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid = 1)
             auto prplists = (u64**) malloc(sizeof(u64*)* _qsize);
             memset(prplists,0,sizeof(u64*)* _qsize);
             _prp_lists_in_use.push_back(prplists);
+            trace_nvme_expand_bios(_driver_id, _id);
         }
     }
     _pending_bios.at(cid / _qsize)[cid % _qsize] = bio;
@@ -320,6 +326,8 @@ void io_queue_pair::req_done()
                 _prp_lists_in_use.at(cid / _qsize)[cid % _qsize] = nullptr;
             }
             _sq._head = cqe->sqhd; //update sq_head
+
+            advance_cq_head();
         }
         mmio_setl(_cq._doorbell, _cq._head);
         if (_sq_full) { //wake up the requesting thread in case the submission queue was full before
@@ -374,7 +382,7 @@ void admin_queue_pair::req_done()
     {
         wait_for_completion_queue_entries();
         trace_nvme_admin_queue_wake(_driver_id,_id);
-        while((cqe = get_completion_queue_entry())) {
+        while ((cqe = get_completion_queue_entry())) {
             u16 cid = cqe->cid;
             if (cqe->sct != 0 || cqe->sc != 0) {
                 trace_nvme_admin_req_done_error(_driver_id, _id, cid, cqe->sct, cqe->sc);
@@ -389,6 +397,8 @@ void admin_queue_pair::req_done()
             }
             _sq._head = cqe->sqhd; //update sq_head
             _req_res = *cqe; //save the cqe so that the requesting thread can return it
+
+            advance_cq_head();
         }
         mmio_setl(_cq._doorbell, _cq._head);
         

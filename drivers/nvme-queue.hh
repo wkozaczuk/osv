@@ -107,6 +107,8 @@ protected:
     sched::thread_handle _waiter;
 
     void advance_sq_tail();
+    void advance_cq_head();
+
     int map_prps(u16 cid, void* data, u64 datasize, u64* prp1, u64* prp2);
 
     u16 submit_cmd_without_lock(nvme_sq_entry_t* cmd);
