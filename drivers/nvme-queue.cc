@@ -96,13 +96,13 @@ inline void queue_pair::advance_sq_tail()
     }
 }
 
-u16 queue_pair::submit_cmd(std::unique_ptr<nvme_sq_entry_t> cmd)
+u16 queue_pair::submit_cmd(nvme_sq_entry_t* cmd)
 {
     SCOPE_LOCK(_lock);
-    return submit_cmd_without_lock(std::move(cmd));
+    return submit_cmd_without_lock(cmd);
 }
 
-u16 queue_pair::submit_cmd_without_lock(std::unique_ptr<nvme_sq_entry_t> cmd)
+u16 queue_pair::submit_cmd_without_lock(nvme_sq_entry_t* cmd)
 {
     _sq._addr[_sq._tail] = *cmd;
     advance_sq_tail();
@@ -198,8 +198,6 @@ void queue_pair::disable_interrupts()
     trace_nvme_disable_interrupts(_driver_id, _id);
 }
 
-extern std::unique_ptr<nvme_sq_entry_t> alloc_cmd();
-
 io_queue_pair::io_queue_pair(
     int driver_id,
     int id,
@@ -278,11 +276,12 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid = 1)
         break;
     
     case BIO_FLUSH: {
-        auto cmd = alloc_cmd(); 
-        cmd->vs.common.opc = NVME_CMD_FLUSH;
-        cmd->vs.common.nsid = nsid;
-        cmd->vs.common.cid = cid;
-        submit_cmd_without_lock(std::move(cmd));
+        nvme_sq_entry_t cmd;
+        memset(&cmd, 0, sizeof(cmd));
+        cmd.vs.common.opc = NVME_CMD_FLUSH;
+        cmd.vs.common.nsid = nsid;
+        cmd.vs.common.cid = cid;
+        submit_cmd_without_lock(&cmd);
     } break;
         
     default:
@@ -335,20 +334,21 @@ void io_queue_pair::req_done()
 
 int io_queue_pair::submit_rw(u16 cid, void* data, u64 slba, u32 nlb, u32 nsid, int opc)
 {
-    auto cmd = alloc_cmd();
+    nvme_sq_entry_t cmd;
+    memset(&cmd, 0, sizeof(cmd));
     u64 prp1 = 0, prp2 = 0;
     u32 datasize = nlb << _ns[nsid]->blockshift;
     
     map_prps(cid, data, datasize, &prp1, &prp2);
-    cmd->rw.common.cid = cid;
-    cmd->rw.common.opc = opc;
-    cmd->rw.common.nsid = nsid;
-    cmd->rw.common.prp1 = prp1;
-    cmd->rw.common.prp2 = prp2;
-    cmd->rw.slba = slba;
-    cmd->rw.nlb = nlb - 1;
+    cmd.rw.common.cid = cid;
+    cmd.rw.common.opc = opc;
+    cmd.rw.common.nsid = nsid;
+    cmd.rw.common.prp1 = prp1;
+    cmd.rw.common.prp2 = prp2;
+    cmd.rw.slba = slba;
+    cmd.rw.nlb = nlb - 1;
         
-    return submit_cmd_without_lock(std::move(cmd));
+    return submit_cmd_without_lock(&cmd);
 }
 
 admin_queue_pair::admin_queue_pair(
@@ -401,7 +401,7 @@ void admin_queue_pair::req_done()
 }
 
 std::unique_ptr<nvme_cq_entry_t>
-admin_queue_pair::submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t> cmd, void* data, unsigned int datasize)
+admin_queue_pair::submit_and_return_on_completion(nvme_sq_entry_t* cmd, void* data, unsigned int datasize)
 {
     _lock.lock();
     
@@ -416,7 +416,7 @@ admin_queue_pair::submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_
     }
     
     trace_nvme_admin_queue_submit(_driver_id, _id, cid);
-    submit_cmd_without_lock(std::move(cmd));
+    submit_cmd_without_lock(cmd);
     
     sched::thread::wait_until([this] { return this->new_cq; });
     _req_waiter.clear();

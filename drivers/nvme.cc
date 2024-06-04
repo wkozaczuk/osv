@@ -50,13 +50,6 @@ namespace nvme {
 int driver::_disk_idx = 0;
 int driver::_instance = 0;
 
-std::unique_ptr<nvme_sq_entry_t> alloc_cmd() {
-    auto cmd = std::unique_ptr<nvme_sq_entry_t>(new nvme_sq_entry_t);
-    assert(cmd);
-    memset(cmd.get(), 0, sizeof(nvme_ns_t));
-    return cmd;
-}
-
 struct nvme_priv {
     devop_strategy_t strategy;
     driver* drv;
@@ -105,14 +98,12 @@ struct ::driver _driver = {
     sizeof(struct nvme_priv),
 };
 
-static std::unique_ptr<nvme_sq_entry_t>
-alloc_set_features_cmd(u8 feature_id, u32 val)
+static void setup_features_cmd(nvme_sq_entry_t* cmd, u8 feature_id, u32 val)
 {
-    auto cmd = alloc_cmd();
+    memset(cmd, 0, sizeof(nvme_sq_entry_t));
     cmd->set_features.common.opc = NVME_ACMD_SET_FEATURES;
     cmd->set_features.fid = feature_id;
     cmd->set_features.val = val;
-    return cmd;
 }
 
 enum CMD_IDENTIFY_CNS {
@@ -122,14 +113,12 @@ enum CMD_IDENTIFY_CNS {
 
 #define NVME_NAMESPACE_DEFAULT_NS 1
 
-static std::unique_ptr<nvme_sq_entry_t>
-alloc_identify_cmd(u32 namespace_id, u32 cns)
+static void setup_identify_cmd(nvme_sq_entry_t* cmd, u32 namespace_id, u32 cns)
 {
-    auto cmd = alloc_cmd();
+    memset(cmd, 0, sizeof(nvme_sq_entry_t));
     cmd->identify.common.opc = NVME_ACMD_IDENTIFY;
     cmd->identify.common.nsid = namespace_id;
     cmd->identify.cns = cns;
-    return cmd;
 }
 
 driver::driver(pci::device &pci_dev)
@@ -198,8 +187,9 @@ driver::driver(pci::device &pci_dev)
 
 int driver::set_number_of_queues(u16 num, u16* ret)
 {
-    auto cmd = alloc_set_features_cmd(NVME_FEATURE_NUM_QUEUES, (num << 16) | num);
-    std::unique_ptr<nvme_cq_entry_t> res = _admin_queue->submit_and_return_on_completion(std::move(cmd));
+    nvme_sq_entry_t cmd;
+    setup_features_cmd(&cmd, NVME_FEATURE_NUM_QUEUES, (num << 16) | num);
+    std::unique_ptr<nvme_cq_entry_t> res = _admin_queue->submit_and_return_on_completion(&cmd);
 
     u16 cq_num = res->cs >> 16;
     u16 sq_num = res->cs & 0xffff;
@@ -219,19 +209,23 @@ int driver::set_number_of_queues(u16 num, u16* ret)
 /*time in 100ms increments*/
 int driver::set_interrupt_coalescing(u8 threshold, u8 time)
 {
-    auto cmd = alloc_set_features_cmd(NVME_FEATURE_INT_COALESCING, threshold | (time << 8));
-    std::unique_ptr<nvme_cq_entry_t> res = _admin_queue->submit_and_return_on_completion(std::move(cmd));
+    nvme_sq_entry_t cmd;
+    setup_features_cmd(&cmd, NVME_FEATURE_INT_COALESCING, threshold | (time << 8));
+    std::unique_ptr<nvme_cq_entry_t> res = _admin_queue->submit_and_return_on_completion(&cmd);
 
-    if(res->sct != 0 || res->sc != 0)
+    if(res->sct != 0 || res->sc != 0) {
         return EIO;
-    return 0;
+    } else {
+        return 0;
+    }
 }
 
 void driver::enable_write_cache()
 {
-    auto cmd = alloc_set_features_cmd(NVME_FEATURE_WRITE_CACHE, 1);
-    auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd));
-    trace_nvme_vwc_enabled(res->sc,res->sct);
+    nvme_sq_entry_t cmd;
+    setup_features_cmd(&cmd, NVME_FEATURE_WRITE_CACHE, 1);
+    auto res = _admin_queue->submit_and_return_on_completion(&cmd);
+    trace_nvme_vwc_enabled(res->sc, res->sct);
 }
 
 void driver::create_io_queues()
@@ -324,9 +318,8 @@ void driver::create_admin_queue()
 }
 
 template<typename Q>
-Q* alloc_create_io_queue_cmd(int qid, int qsize, u8 command_opcode, u64 queue_addr)
+void setup_create_io_queue_cmd(Q* create_queue_cmd, int qid, int qsize, u8 command_opcode, u64 queue_addr)
 {
-    Q* create_queue_cmd = (Q*) malloc(sizeof(Q));
     assert(create_queue_cmd);
     memset(create_queue_cmd, 0, sizeof (*create_queue_cmd));
 
@@ -335,8 +328,6 @@ Q* alloc_create_io_queue_cmd(int qid, int qsize, u8 command_opcode, u64 queue_ad
     create_queue_cmd->qid = qid;
     create_queue_cmd->qsize = qsize - 1;
     create_queue_cmd->pc = 1;
-
-    return create_queue_cmd;
 }
 
 int driver::create_io_queue(int qid, int qsize, bool pin, sched::cpu* cpu, int qprio)
@@ -351,26 +342,28 @@ int driver::create_io_queue(int qid, int qsize, bool pin, sched::cpu* cpu, int q
         new io_queue_pair(_id, iv, qsize, _dev, sq_doorbell, cq_doorbell, _ns_data));
 
     // create completion queue command
-    nvme_acmd_create_cq_t* cmd_cq = alloc_create_io_queue_cmd<nvme_acmd_create_cq_t>(
-        qid, qsize, NVME_ACMD_CREATE_CQ, queue->cq_phys_addr());
+    nvme_acmd_create_cq_t cmd_cq;
+    setup_create_io_queue_cmd<nvme_acmd_create_cq_t>(
+        &cmd_cq, qid, qsize, NVME_ACMD_CREATE_CQ, queue->cq_phys_addr());
 
-    cmd_cq->iv = iv;
-    cmd_cq->ien = 1;
+    cmd_cq.iv = iv;
+    cmd_cq.ien = 1;
 
     // create submission queue command
-    nvme_acmd_create_sq_t* cmd_sq = alloc_create_io_queue_cmd<nvme_acmd_create_sq_t>(
-        qid, qsize, NVME_ACMD_CREATE_SQ, queue->sq_phys_addr());
+    nvme_acmd_create_sq_t cmd_sq;
+    setup_create_io_queue_cmd<nvme_acmd_create_sq_t>(
+        &cmd_sq, qid, qsize, NVME_ACMD_CREATE_SQ, queue->sq_phys_addr());
 
-    cmd_sq->qprio = qprio;
-    cmd_sq->cqid = qid;
+    cmd_sq.qprio = qprio;
+    cmd_sq.cqid = qid;
 
     _io_queues.push_back(std::move(queue));
     
     register_io_interrupt(iv, qid - 1, pin, cpu);
 
     //According to the NVMe spec, the completion queue (CQ) needs to be created before the submission queue (SQ)
-    _admin_queue->submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t>((nvme_sq_entry_t*)cmd_cq));
-    _admin_queue->submit_and_return_on_completion(std::unique_ptr<nvme_sq_entry_t>((nvme_sq_entry_t*)cmd_sq));
+    _admin_queue->submit_and_return_on_completion((nvme_sq_entry_t*)&cmd_cq);
+    _admin_queue->submit_and_return_on_completion((nvme_sq_entry_t*)&cmd_sq);
 
     debugf("nvme: Created I/O queue pair for qid:%d with size:%d\n", qid, qsize);
 
@@ -380,9 +373,10 @@ int driver::create_io_queue(int qid, int qsize, bool pin, sched::cpu* cpu, int q
 int driver::identify_controller()
 {
     assert(_admin_queue);
-    auto cmd = alloc_identify_cmd(0, CMD_IDENTIFY_CONTROLLER);
+    nvme_sq_entry_t cmd;
+    setup_identify_cmd(&cmd, 0, CMD_IDENTIFY_CONTROLLER);
     auto data = new nvme_identify_ctlr_t;
-    auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data),mmu::page_size);
+    auto res = _admin_queue->submit_and_return_on_completion(&cmd, (void*) mmu::virt_to_phys(data), mmu::page_size);
     
     if (res->sc != 0 || res->sct != 0) {
         NVME_ERROR("Identify controller failed nvme%d, sct=%d, sc=%d", _id, res->sct, res->sc);
@@ -396,9 +390,10 @@ int driver::identify_controller()
 int driver::identify_namespace(u32 ns)
 {
     assert(_admin_queue);
-    auto cmd = alloc_identify_cmd(ns, CMD_IDENTIFY_NAMESPACE);
+    nvme_sq_entry_t cmd;
+    setup_identify_cmd(&cmd, ns, CMD_IDENTIFY_NAMESPACE);
     auto data = std::unique_ptr<nvme_identify_ns_t>(new nvme_identify_ns_t);
-    auto res = _admin_queue->submit_and_return_on_completion(std::move(cmd), (void*) mmu::virt_to_phys(data.get()), mmu::page_size);
+    auto res = _admin_queue->submit_and_return_on_completion(&cmd, (void*) mmu::virt_to_phys(data.get()), mmu::page_size);
     if (res->sc != 0 || res->sct != 0) {
         NVME_ERROR("Identify namespace failed nvme%d nsid=%d, sct=%d, sc=%d", _id, ns, res->sct, res->sc);
         return EIO;
