@@ -160,15 +160,13 @@ int queue_pair::map_prps(u16 cid, void* data, u64 datasize, u64* prp1, u64* prp2
     return 0;
 }
 
-std::unique_ptr<nvme_cq_entry_t> queue_pair::get_completion_queue_entry()
+nvme_cq_entry_t* queue_pair::get_completion_queue_entry()
 {
     if(!completion_queue_not_empty()) {
         return nullptr;
     }
 
-    auto* tcqe = new nvme_cq_entry_t; 
-    *tcqe = _cq._addr[_cq._head];
-    std::unique_ptr<nvme_cq_entry_t> cqe(tcqe);
+    auto* cqe = &_cq._addr[_cq._head];
     assert(cqe->p == _cq_phase_tag);
 
     if(++_cq._head == _qsize) {
@@ -295,7 +293,7 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid = 1)
 
 void io_queue_pair::req_done()
 {
-    std::unique_ptr<nvme_cq_entry_t> cqe;
+    nvme_cq_entry_t* cqe = nullptr;
     while (true)
     {
         wait_for_completion_queue_entries();
@@ -306,12 +304,12 @@ void io_queue_pair::req_done()
                 trace_nvme_req_done_error(_driver_id,_id, cid, cqe->sct, cqe->sc, _pending_bios.at(cid / _qsize)[cid % _qsize]);
                 if(_pending_bios.at(cid / _qsize)[cid % _qsize])
                     biodone(_pending_bios.at(cid / _qsize)[cid % _qsize],false);
-                NVME_ERROR("I/O queue: cid=%d, sct=%#x, sc=%#x, bio=%#x, slba=%llu, nlb=%llu\n",cqe->cid, cqe->sct, 
+                NVME_ERROR("I/O queue: cid=%d, sct=%#x, sc=%#x, bio=%#x, slba=%llu, nlb=%llu\n", cqe->cid, cqe->sct, 
                     cqe->sc,_pending_bios.at(cid / _qsize)[cid % _qsize],
                     cqe->sc,_pending_bios.at(cid / _qsize)[cid % _qsize]->bio_offset,
                     cqe->sc,_pending_bios.at(cid / _qsize)[cid % _qsize]->bio_bcount);
             } else {
-                trace_nvme_req_done_success(_driver_id,_id, cid, _pending_bios.at(cid / _qsize)[cid % _qsize]);
+                trace_nvme_req_done_success(_driver_id, _id, cid, _pending_bios.at(cid / _qsize)[cid % _qsize]);
                 if(_pending_bios.at(cid / _qsize)[cid % _qsize])
                     biodone(_pending_bios.at(cid / _qsize)[cid % _qsize],true);
             }
@@ -371,7 +369,7 @@ admin_queue_pair::admin_queue_pair(
 
 void admin_queue_pair::req_done()
 {   
-    std::unique_ptr<nvme_cq_entry_t> cqe;
+    nvme_cq_entry_t* cqe = nullptr;
     while (true)
     {
         wait_for_completion_queue_entries();
@@ -379,10 +377,10 @@ void admin_queue_pair::req_done()
         while((cqe = get_completion_queue_entry())) {
             u16 cid = cqe->cid;
             if (cqe->sct != 0 || cqe->sc != 0) {
-                trace_nvme_admin_req_done_error(_driver_id,_id, cid, cqe->sct, cqe->sc);
+                trace_nvme_admin_req_done_error(_driver_id, _id, cid, cqe->sct, cqe->sc);
                 NVME_ERROR("Admin queue cid=%d, sct=%#x, sc=%#x\n",cid,cqe->sct,cqe->sc);
             } else {
-                trace_nvme_admin_req_done_success(_driver_id,_id, cid);
+                trace_nvme_admin_req_done_success(_driver_id, _id, cid);
             }
             
             if (_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]) {
@@ -390,7 +388,7 @@ void admin_queue_pair::req_done()
                 _prp_lists_in_use.at(cid / _qsize)[cid % _qsize] = nullptr;
             }
             _sq._head = cqe->sqhd; //update sq_head
-            _req_res = std::move(cqe); //save the cqe so that the requesting thread can return it
+            _req_res = *cqe; //save the cqe so that the requesting thread can return it
         }
         mmio_setl(_cq._doorbell, _cq._head);
         
@@ -400,7 +398,7 @@ void admin_queue_pair::req_done()
     }
 }
 
-std::unique_ptr<nvme_cq_entry_t>
+nvme_cq_entry_t
 admin_queue_pair::submit_and_return_on_completion(nvme_sq_entry_t* cmd, void* data, unsigned int datasize)
 {
     _lock.lock();
@@ -427,6 +425,6 @@ admin_queue_pair::submit_and_return_on_completion(nvme_sq_entry_t* cmd, void* da
     }
     
     _lock.unlock();
-    return std::move(_req_res);
+    return _req_res;
 }
 }

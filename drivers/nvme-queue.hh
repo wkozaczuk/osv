@@ -111,7 +111,7 @@ protected:
 
     u16 submit_cmd_without_lock(nvme_sq_entry_t* cmd);
 
-    std::unique_ptr<nvme_cq_entry_t> get_completion_queue_entry();
+    nvme_cq_entry_t* get_completion_queue_entry();
 };
 
 class io_queue_pair : public queue_pair {
@@ -148,11 +148,10 @@ public:
     );
 
     void req_done();
-    std::unique_ptr<nvme_cq_entry_t>
-    submit_and_return_on_completion(nvme_sq_entry_t* cmd, void* data = nullptr, unsigned int datasize = 0);
+    nvme_cq_entry_t submit_and_return_on_completion(nvme_sq_entry_t* cmd, void* data = nullptr, unsigned int datasize = 0);
 private:
     sched::thread_handle _req_waiter;
-    std::unique_ptr<nvme_cq_entry_t> _req_res;
+    nvme_cq_entry_t _req_res;
     volatile bool new_cq;
 };
 

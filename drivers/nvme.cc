@@ -189,14 +189,14 @@ int driver::set_number_of_queues(u16 num, u16* ret)
 {
     nvme_sq_entry_t cmd;
     setup_features_cmd(&cmd, NVME_FEATURE_NUM_QUEUES, (num << 16) | num);
-    std::unique_ptr<nvme_cq_entry_t> res = _admin_queue->submit_and_return_on_completion(&cmd);
+    auto res = _admin_queue->submit_and_return_on_completion(&cmd);
 
-    u16 cq_num = res->cs >> 16;
-    u16 sq_num = res->cs & 0xffff;
+    u16 cq_num = res.cs >> 16;
+    u16 sq_num = res.cs & 0xffff;
     
-    trace_nvme_number_of_queues(res->cs >> 16, res->cs & 0xffff, _dev.msix_get_num_entries());
+    trace_nvme_number_of_queues(res.cs >> 16, res.cs & 0xffff, _dev.msix_get_num_entries());
     
-    if (res->sct != 0 || res->sc != 0)
+    if (res.sct != 0 || res.sc != 0)
         return EIO;
 
     if (num > cq_num || num > sq_num) {
@@ -211,9 +211,9 @@ int driver::set_interrupt_coalescing(u8 threshold, u8 time)
 {
     nvme_sq_entry_t cmd;
     setup_features_cmd(&cmd, NVME_FEATURE_INT_COALESCING, threshold | (time << 8));
-    std::unique_ptr<nvme_cq_entry_t> res = _admin_queue->submit_and_return_on_completion(&cmd);
+    auto res = _admin_queue->submit_and_return_on_completion(&cmd);
 
-    if(res->sct != 0 || res->sc != 0) {
+    if (res.sct != 0 || res.sc != 0) {
         return EIO;
     } else {
         return 0;
@@ -225,7 +225,7 @@ void driver::enable_write_cache()
     nvme_sq_entry_t cmd;
     setup_features_cmd(&cmd, NVME_FEATURE_WRITE_CACHE, 1);
     auto res = _admin_queue->submit_and_return_on_completion(&cmd);
-    trace_nvme_vwc_enabled(res->sc, res->sct);
+    trace_nvme_vwc_enabled(res.sc, res.sct);
 }
 
 void driver::create_io_queues()
@@ -378,8 +378,8 @@ int driver::identify_controller()
     auto data = new nvme_identify_ctlr_t;
     auto res = _admin_queue->submit_and_return_on_completion(&cmd, (void*) mmu::virt_to_phys(data), mmu::page_size);
     
-    if (res->sc != 0 || res->sct != 0) {
-        NVME_ERROR("Identify controller failed nvme%d, sct=%d, sc=%d", _id, res->sct, res->sc);
+    if (res.sc != 0 || res.sct != 0) {
+        NVME_ERROR("Identify controller failed nvme%d, sct=%d, sc=%d", _id, res.sct, res.sc);
         return EIO;
     }
 
@@ -394,8 +394,8 @@ int driver::identify_namespace(u32 ns)
     setup_identify_cmd(&cmd, ns, CMD_IDENTIFY_NAMESPACE);
     auto data = std::unique_ptr<nvme_identify_ns_t>(new nvme_identify_ns_t);
     auto res = _admin_queue->submit_and_return_on_completion(&cmd, (void*) mmu::virt_to_phys(data.get()), mmu::page_size);
-    if (res->sc != 0 || res->sct != 0) {
-        NVME_ERROR("Identify namespace failed nvme%d nsid=%d, sct=%d, sc=%d", _id, ns, res->sct, res->sc);
+    if (res.sc != 0 || res.sct != 0) {
+        NVME_ERROR("Identify namespace failed nvme%d nsid=%d, sct=%d, sc=%d", _id, ns, res.sct, res.sc);
         return EIO;
     }
 
