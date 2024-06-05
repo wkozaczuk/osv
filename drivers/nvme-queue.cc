@@ -131,11 +131,12 @@ void queue_pair::wait_for_completion_queue_entries()
     });
 }
 
-int queue_pair::map_prps(u16 cid, void* data, u64 datasize, u64* prp1, u64* prp2)
+void queue_pair::map_prps(nvme_sq_entry_t* cmd, void* data, u64 datasize)
 {
     u64 addr = (u64) data;
-    *prp1 = addr;
-    *prp2 = 0;
+    cmd->rw.common.prp1 = addr;
+    cmd->rw.common.prp2 = 0;
+
     int numpages = 0;
     u64 offset = addr - ( (addr >> NVME_PAGESHIFT) << NVME_PAGESHIFT );
     if(offset) numpages = 1;
@@ -143,13 +144,13 @@ int queue_pair::map_prps(u16 cid, void* data, u64 datasize, u64* prp1, u64* prp2
     numpages += ( datasize - offset + NVME_PAGESIZE - 1) >> NVME_PAGESHIFT;
 
     if (numpages == 2) {
-        *prp2 = ((addr >> NVME_PAGESHIFT) +1 ) << NVME_PAGESHIFT;
+        cmd->rw.common.prp2 = ((addr >> NVME_PAGESHIFT) +1 ) << NVME_PAGESHIFT;
     } else if (numpages > 2) {
         assert(numpages / 512 == 0);
         u64* prp_list = (u64*) alloc_phys_contiguous_aligned(numpages * 8, mmu::page_size);
         assert(prp_list != nullptr);
-        *prp2 = mmu::virt_to_phys(prp_list);
-        _prp_lists_in_use.at(cid / _qsize)[cid % _qsize] = prp_list;
+        cmd->rw.common.prp2 = mmu::virt_to_phys(prp_list);
+        _prp_lists_in_use.at(cmd->rw.common.cid / _qsize)[cmd->rw.common.cid % _qsize] = prp_list;
         
         addr = ((addr >> NVME_PAGESHIFT) +1 ) << NVME_PAGESHIFT;
         prp_list[0] = addr;
@@ -159,7 +160,6 @@ int queue_pair::map_prps(u16 cid, void* data, u64 datasize, u64* prp1, u64* prp2
             prp_list[i] = addr;
         }
     }
-    return 0;
 }
 
 nvme_cq_entry_t* queue_pair::get_completion_queue_entry()
@@ -239,10 +239,10 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid = 1)
     u16 cid = _sq._tail;
     if(_sq_full) {
         //Wait for free entries
-        _waiter.reset(*sched::thread::current());
+        _sq_full_waiter.reset(*sched::thread::current());
         trace_nvme_wait_for_entry(_driver_id, _id, _sq._tail, _sq._head);
         sched::thread::wait_until([this] { return !(this->_sq_full); });
-        _waiter.clear();
+        _sq_full_waiter.clear();
     }
     /* 
     We need to check if there is an outstanding command that uses 
@@ -271,22 +271,17 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid = 1)
     switch (bio->bio_cmd) {
     case BIO_READ:
         trace_nvme_read(_driver_id, _id, cid, bio->bio_data, slba, nlb);
-        submit_rw(cid, (void*)mmu::virt_to_phys(bio->bio_data), slba, nlb, nsid, NVME_CMD_READ);
+        submit_read_write_cmd(cid, nsid, NVME_CMD_READ, slba, nlb, (void*)mmu::virt_to_phys(bio->bio_data));
         break;
     
     case BIO_WRITE:
         trace_nvme_write(_driver_id, _id, cid, bio->bio_data, slba, nlb);
-        submit_rw(cid, (void*)mmu::virt_to_phys(bio->bio_data), slba, nlb, nsid, NVME_CMD_WRITE);
+        submit_read_write_cmd(cid, nsid, NVME_CMD_WRITE, slba, nlb, (void*)mmu::virt_to_phys(bio->bio_data));
         break;
     
-    case BIO_FLUSH: {
-        nvme_sq_entry_t cmd;
-        memset(&cmd, 0, sizeof(cmd));
-        cmd.vs.common.opc = NVME_CMD_FLUSH;
-        cmd.vs.common.nsid = nsid;
-        cmd.vs.common.cid = cid;
-        submit_cmd_without_lock(&cmd);
-    } break;
+    case BIO_FLUSH:
+        submit_flush_cmd(cid, nsid);
+        break;
         
     default:
         NVME_ERROR("Operation not implemented\n");
@@ -330,30 +325,42 @@ void io_queue_pair::req_done()
             advance_cq_head();
         }
         mmio_setl(_cq._doorbell, _cq._head);
+        //TODO: Maybe check if cqe->sqhd <> old _sq._head to be sure the _head advanced
+        //TODO: Maybe check and disable full in the loop above
         if (_sq_full) { //wake up the requesting thread in case the submission queue was full before
             _sq_full = false;
-            if (_waiter)
-                _waiter.wake_from_kernel_or_with_irq_disabled();
+            if (_sq_full_waiter)
+                _sq_full_waiter.wake_from_kernel_or_with_irq_disabled();
         }
     }
 }
 
-int io_queue_pair::submit_rw(u16 cid, void* data, u64 slba, u32 nlb, u32 nsid, int opc)
+u16 io_queue_pair::submit_read_write_cmd(u16 cid, u32 nsid, int opc, u64 slba, u32 nlb, void* data)
 {
     nvme_sq_entry_t cmd;
     memset(&cmd, 0, sizeof(cmd));
-    u64 prp1 = 0, prp2 = 0;
-    u32 datasize = nlb << _ns[nsid]->blockshift;
     
-    map_prps(cid, data, datasize, &prp1, &prp2);
     cmd.rw.common.cid = cid;
     cmd.rw.common.opc = opc;
     cmd.rw.common.nsid = nsid;
-    cmd.rw.common.prp1 = prp1;
-    cmd.rw.common.prp2 = prp2;
     cmd.rw.slba = slba;
     cmd.rw.nlb = nlb - 1;
+
+    u32 datasize = nlb << _ns[nsid]->blockshift;
+    map_prps(&cmd, data, datasize);
         
+    return submit_cmd_without_lock(&cmd);
+}
+
+u16 io_queue_pair::submit_flush_cmd(u16 cid, u32 nsid)
+{
+    nvme_sq_entry_t cmd;
+    memset(&cmd, 0, sizeof(cmd));
+
+    cmd.vs.common.opc = NVME_CMD_FLUSH;
+    cmd.vs.common.nsid = nsid;
+    cmd.vs.common.cid = cid;
+
     return submit_cmd_without_lock(&cmd);
 }
 
@@ -420,7 +427,7 @@ admin_queue_pair::submit_and_return_on_completion(nvme_sq_entry_t* cmd, void* da
     cmd->rw.common.cid = cid;
 
     if(data != nullptr && datasize > 0) {
-        map_prps(_sq._tail,data, datasize, &cmd->rw.common.prp1, &cmd->rw.common.prp2);
+        map_prps(cmd, data, datasize);
     }
     
     trace_nvme_admin_queue_submit(_driver_id, _id, cid);

@@ -88,34 +88,47 @@ public:
 
     u32 _id;
 protected:
-    int _driver_id;
-
-    u32 _qsize;
-    pci::device* _dev;
-
-    queue<nvme_sq_entry_t> _sq;
-    bool _sq_full;
-
-    queue<nvme_cq_entry_t> _cq;
-    int _cq_phase_tag;
-
-    std::map<u32, nvme_ns_t*> _ns;
-
-    std::vector<u64**> _prp_lists_in_use;
-
-    mutex _lock;
-    sched::thread_handle _waiter;
-
     void advance_sq_tail();
     void advance_cq_head();
 
-    int map_prps(u16 cid, void* data, u64 datasize, u64* prp1, u64* prp2);
+    void map_prps(nvme_sq_entry_t* cmd, void* data, u64 datasize);
 
     u16 submit_cmd_without_lock(nvme_sq_entry_t* cmd);
 
     nvme_cq_entry_t* get_completion_queue_entry();
+
+    int _driver_id;
+
+    // Length of the CQ and SQ
+    // Admin queue is 8 entries long, therefore occupies 640 bytes (8 * (64 + 16))
+    // I/O queue is normally 256 entries long, therefore occupies 20K (256 * (64 + 16))
+    u32 _qsize;
+
+    pci::device* _dev;
+
+    // Submission Queue (SQ) - each entry is 64 bytes in size
+    queue<nvme_sq_entry_t> _sq;
+    bool _sq_full;
+    sched::thread_handle _sq_full_waiter;
+
+    // Completion Queue (CQ) - each entry is 16 bytes in size
+    queue<nvme_cq_entry_t> _cq;
+    int _cq_phase_tag;
+
+    // Map of namespaces (for now there would normally be one entry keyed by 1)
+    std::map<u32, nvme_ns_t*> _ns;
+
+    // PRP stands for Physical Region Page and is used to specify locations in
+    // physical memory for data tranfers. In essence, they are arrays of physical
+    // addresses of pages to read from or write to data.
+    // We use _prp_lists_in_use to track those PRP arrays as we allocate
+    // them as needed and free them once the read or write request is done.
+    std::vector<u64**> _prp_lists_in_use;
+
+    mutex _lock;
 };
 
+// Pair of SQ and CQ queues used for reading from and writing to (I/O)
 class io_queue_pair : public queue_pair {
 public:
     io_queue_pair(
@@ -132,11 +145,19 @@ public:
     int make_request(struct bio* bio, u32 nsid);
     void req_done();
 private:
+    u16 submit_read_write_cmd(u16 cid, u32 nsid, int opc, u64 slba, u32 nlb, void* data);
+    u16 submit_flush_cmd(u16 cid, u32 nsid);
+
+    // Vector of arrays of pointers to struct bio used to track bio associated
+    // with given command. The scheme (similar to the one used with _prp_lists_in_use)
+    // to generate 16-bit 'cid' is - _sq._tail + N * qsize - where N is typically 0 and
+    // is equal to a row in _pending_bios and _sq._tail is equal to a column.
+    // Given cid, 
     std::vector<struct bio**> _pending_bios;
-    int submit_rw(u16 cid, void* data, u64 slba, u32 nlb, u32 nsid, int opc);
-    int submit_flush();
 };
 
+// Pair of SQ and CQ queues used for setting up/configuring controller
+// like creating I/O queues
 class admin_queue_pair : public queue_pair {
 public:
     admin_queue_pair(
