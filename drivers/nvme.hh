@@ -55,16 +55,6 @@ public:
     int make_request(struct bio* bio, u32 nsid = 1);
     static hw_driver* probe(hw_device* dev);
 
-    int set_feature();
-    int get_feature();
-
-    int set_number_of_queues(u16 num, u16* ret);
-    int set_interrupt_coalescing(u8 threshold, u8 time);
-
-    int get_interrupt_coalescing();
-
-    int shutdown();
-
     std::map<u32, nvme_ns_t*> _ns_data;
     
 private:
@@ -72,18 +62,21 @@ private:
     int identify_namespace(u32 ns);
 
     void create_admin_queue();
-    void register_admin_interrupts();
+    void register_admin_interrupt();
 
     void create_io_queues();
-    int create_io_queue(int qid, int qsize = NVME_IO_QUEUE_SIZE, bool pin = false,
+    int create_io_queue(int qid, int qsize = NVME_IO_QUEUE_SIZE,
         sched::cpu* cpu = NULL, int qprio = NVME_IO_QUEUE_PRIORITY_HIGH);
-    bool register_io_interrupt(unsigned int iv, unsigned int qid, bool pin = false,
+    bool register_io_interrupt(unsigned int iv, unsigned int qid,
         sched::cpu* cpu = NULL);
 
     void init_controller_config();
 
     int enable_disable_controller(bool enable);
     int wait_for_controller_ready_change(int ready);
+
+    int set_number_of_queues(u16 num, u16* ret);
+    int set_interrupt_coalescing(u8 threshold, u8 time);
 
     bool parse_pci_config();
     void enable_msix();

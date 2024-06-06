@@ -36,12 +36,7 @@ using namespace memory;
 
 #include <osv/drivers_config.h>
 
-TRACEPOINT(trace_nvme_read_config, "capacity=%lu blk_size=%u max_io_size=%u", u64, u32, u64);
 TRACEPOINT(trace_nvme_strategy, "bio=%p, bcount=%lu", struct bio*, size_t);
-TRACEPOINT(trace_nvme_vwc_enabled, "sc=%#x sct=%#x", u16, u16);
-TRACEPOINT(trace_nvme_number_of_queues, "cq num=%d, sq num=%d, iv_num=%d", u16, u16, u32);
-TRACEPOINT(trace_nvme_identify_namespace, "nsid=%d, blockcount=%d, blocksize=%d", u32, u64, u16);
-TRACEPOINT(trace_nvme_register_interrupt, "_io_queues[%d], iv=%d", int, int);
 
 #define QEMU_VID 0x1b36
 
@@ -151,10 +146,12 @@ driver::driver(pci::device &pci_dev)
 
     assert(identify_namespace(NVME_NAMESPACE_DEFAULT_NS) == 0);
 
+    //Enable write cache if available
     if (_identify_controller->vwc & 0x1 && NVME_VWC_ENABLED) {
         enable_write_cache();
     }
 
+    //Create IO queues
     create_io_queues();
 
     if (_identify_controller->vid != QEMU_VID) {
@@ -193,8 +190,9 @@ int driver::set_number_of_queues(u16 num, u16* ret)
 
     u16 cq_num = res.cs >> 16;
     u16 sq_num = res.cs & 0xffff;
-    
-    trace_nvme_number_of_queues(res.cs >> 16, res.cs & 0xffff, _dev.msix_get_num_entries());
+
+    nvme_i("Queues supported: CQ num=%d, SQ num=%d, MSI/X entries=%d",
+        res.cs >> 16, res.cs & 0xffff, _dev.msix_get_num_entries());
     
     if (res.sct != 0 || res.sc != 0)
         return EIO;
@@ -214,8 +212,10 @@ int driver::set_interrupt_coalescing(u8 threshold, u8 time)
     auto res = _admin_queue->submit_and_return_on_completion(&cmd);
 
     if (res.sct != 0 || res.sc != 0) {
+        nvme_e("Failed to enable interrupt coalescing: sc=%#x sct=%#x", res.sc, res.sct);
         return EIO;
     } else {
+        nvme_i("Enabled interrupt coalescing");
         return 0;
     }
 }
@@ -225,7 +225,11 @@ void driver::enable_write_cache()
     nvme_sq_entry_t cmd;
     setup_features_cmd(&cmd, NVME_FEATURE_WRITE_CACHE, 1);
     auto res = _admin_queue->submit_and_return_on_completion(&cmd);
-    trace_nvme_vwc_enabled(res.sc, res.sct);
+    if (res.sct != 0 || res.sc != 0) {
+        nvme_e("Failed to enable write cache: sc=%#x sct=%#x", res.sc, res.sct);
+    } else {
+        nvme_i("Enabled write cache");
+    }
 }
 
 void driver::create_io_queues()
@@ -242,7 +246,7 @@ void driver::create_io_queues()
     if (NVME_QUEUE_PER_CPU_ENABLED) {
         for(sched::cpu* cpu : sched::cpus) {
             int qid = cpu->id + 1;
-            create_io_queue(qid, qsize, true, cpu);
+            create_io_queue(qid, qsize, cpu);
         }
     } else {
         create_io_queue(1, qsize);
@@ -306,7 +310,7 @@ void driver::create_admin_queue()
     _admin_queue = std::unique_ptr<admin_queue_pair>(
         new admin_queue_pair(_id, 0, qsize, _dev, sq_doorbell, cq_doorbell, _ns_data));
     
-    register_admin_interrupts();
+    register_admin_interrupt();
 
     nvme_adminq_attr_t aqa;
     aqa.val = 0;
@@ -330,7 +334,7 @@ void setup_create_io_queue_cmd(Q* create_queue_cmd, int qid, int qsize, u8 comma
     create_queue_cmd->pc = 1;
 }
 
-int driver::create_io_queue(int qid, int qsize, bool pin, sched::cpu* cpu, int qprio)
+int driver::create_io_queue(int qid, int qsize, sched::cpu* cpu, int qprio)
 {
     int iv = qid;
 
@@ -359,7 +363,7 @@ int driver::create_io_queue(int qid, int qsize, bool pin, sched::cpu* cpu, int q
 
     _io_queues.push_back(std::move(queue));
     
-    register_io_interrupt(iv, qid - 1, pin, cpu);
+    register_io_interrupt(iv, qid - 1, cpu);
 
     //According to the NVMe spec, the completion queue (CQ) needs to be created before the submission queue (SQ)
     _admin_queue->submit_and_return_on_completion((nvme_sq_entry_t*)&cmd_cq);
@@ -387,26 +391,27 @@ int driver::identify_controller()
     return 0;
 }
 
-int driver::identify_namespace(u32 ns)
+int driver::identify_namespace(u32 nsid)
 {
     assert(_admin_queue);
     nvme_sq_entry_t cmd;
-    setup_identify_cmd(&cmd, ns, CMD_IDENTIFY_NAMESPACE);
+    setup_identify_cmd(&cmd, nsid, CMD_IDENTIFY_NAMESPACE);
     auto data = std::unique_ptr<nvme_identify_ns_t>(new nvme_identify_ns_t);
     auto res = _admin_queue->submit_and_return_on_completion(&cmd, (void*) mmu::virt_to_phys(data.get()), mmu::page_size);
     if (res.sc != 0 || res.sct != 0) {
-        NVME_ERROR("Identify namespace failed nvme%d nsid=%d, sct=%d, sc=%d", _id, ns, res.sct, res.sc);
+        NVME_ERROR("Identify namespace failed nvme%d nsid=%d, sct=%d, sc=%d", _id, nsid, res.sct, res.sc);
         return EIO;
     }
 
-    _ns_data.insert(std::make_pair(ns, new nvme_ns_t));
-    _ns_data[ns]->blockcount = data->ncap;
-    _ns_data[ns]->blockshift = data->lbaf[data->flbas & 0xF].lbads;
-    _ns_data[ns]->blocksize = 1 << _ns_data[ns]->blockshift;
-    _ns_data[ns]->bpshift = NVME_PAGESHIFT - _ns_data[ns]->blockshift;
-    _ns_data[ns]->id = ns;
+    _ns_data.insert(std::make_pair(nsid, new nvme_ns_t));
+    _ns_data[nsid]->blockcount = data->ncap;
+    _ns_data[nsid]->blockshift = data->lbaf[data->flbas & 0xF].lbads;
+    _ns_data[nsid]->blocksize = 1 << _ns_data[nsid]->blockshift;
+    _ns_data[nsid]->bpshift = NVME_PAGESHIFT - _ns_data[nsid]->blockshift;
+    _ns_data[nsid]->id = nsid;
     
-    trace_nvme_identify_namespace(ns, _ns_data[ns]->blockcount, _ns_data[ns]->blocksize);
+    nvme_i("Identified namespace with nsid=%d, blockcount=%d, blocksize=%d",
+        nsid, _ns_data[nsid]->blockcount, _ns_data[nsid]->blocksize);
     return 0;
 }
 
@@ -430,7 +435,7 @@ int driver::make_request(bio* bio, u32 nsid)
     return _io_queues[qidx]->make_request(bio, nsid);
 }
 
-void driver::register_admin_interrupts()
+void driver::register_admin_interrupt()
 {
     sched::thread* aq_thread = sched::thread::make([this] { this->_admin_queue->req_done(); },
         sched::thread::attr().name("nvme" + std::to_string(_id) + "_aq_req_done"));
@@ -497,7 +502,7 @@ bool driver::msix_register(unsigned iv,
 
 //qid should be the index that corresponds to the queue in _io_queues.
 //In general qid = iv - 1
-bool driver::register_io_interrupt(unsigned int iv, unsigned int qid, bool pin, sched::cpu* cpu)
+bool driver::register_io_interrupt(unsigned int iv, unsigned int qid, sched::cpu* cpu)
 {
     sched::thread* t;
     bool ok;
@@ -508,13 +513,15 @@ bool driver::register_io_interrupt(unsigned int iv, unsigned int qid, bool pin, 
     }
 
     if(_io_queues[qid]->_id != iv)
-        printf("Warning: Queue %d ->_id = %d != iv %d\n", qid, _io_queues[qid]->_id, iv);
+        nvme_w("Queue %d ->_id = %d != iv %d\n", qid, _io_queues[qid]->_id, iv);
 
-    trace_nvme_register_interrupt(qid, iv);
     t = sched::thread::make([this,qid] { this->_io_queues[qid]->req_done(); },
         sched::thread::attr().name("nvme" + std::to_string(_id) + "_ioq" + std::to_string(qid) + "_iv" + std::to_string(iv)));
     t->start();
-    if(pin && cpu) {
+
+    // If cpu specified, let us pin the worker thread to this cpu
+    bool pin = cpu != nullptr;
+    if (pin) {
         sched::thread::pin(t, cpu);
     }
 
