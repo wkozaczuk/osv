@@ -22,7 +22,7 @@
 
 #define NVME_ERROR(...) nvme_e(__VA_ARGS__)
 
-#define NVME_PAGESIZE  4096
+#define NVME_PAGESIZE  mmu::page_size
 #define NVME_PAGESHIFT 12
 
 namespace nvme {

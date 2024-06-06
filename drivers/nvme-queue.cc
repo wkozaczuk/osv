@@ -15,6 +15,7 @@
 #include <osv/bio.h>
 #include <osv/trace.hh>
 #include <osv/mempool.hh>
+#include <osv/align.hh>
 
 #include "nvme-queue.hh"
 
@@ -133,29 +134,38 @@ void queue_pair::wait_for_completion_queue_entries()
 
 void queue_pair::map_prps(nvme_sq_entry_t* cmd, void* data, u64 datasize)
 {
+    // Depending on the datasize, we map PRPs (Physical Region Page) as follows:
+    // 0. We always set the prp1 field to the beginning of the data
+    // 1. If data falls within single 4K page then we simply set prp2 to 0
+    // 2. If data falls within 2 pages then set prp2 to the second 4K-aligned part of data
+    // 3. Otherwise, allocate a physically contigous array long enough to hold addresses
+    //    of remaining 4K pages of data
     u64 addr = (u64) data;
     cmd->rw.common.prp1 = addr;
     cmd->rw.common.prp2 = 0;
 
-    int numpages = 0;
-    u64 offset = addr - ( (addr >> NVME_PAGESHIFT) << NVME_PAGESHIFT );
-    if(offset) numpages = 1;
+    // Calculate number of 4K pages and therefore number of entries in the PRP
+    // list. The 1st entry rw.common.prp1 can be misaligned but every
+    // other one needs to be 4K-aligned
+    u64 first_page_start = align_down(addr, NVME_PAGESIZE);
+    u64 last_page_end = align_up(addr + datasize, NVME_PAGESIZE);
+    int num_of_pages = (last_page_end - first_page_start) / NVME_PAGESIZE;
 
-    numpages += ( datasize - offset + NVME_PAGESIZE - 1) >> NVME_PAGESHIFT;
-
-    if (numpages == 2) {
-        cmd->rw.common.prp2 = ((addr >> NVME_PAGESHIFT) +1 ) << NVME_PAGESHIFT;
-    } else if (numpages > 2) {
-        assert(numpages / 512 == 0);
-        u64* prp_list = (u64*) alloc_phys_contiguous_aligned(numpages * 8, mmu::page_size);
+    if (num_of_pages == 2) {
+        cmd->rw.common.prp2 = first_page_start + NVME_PAGESIZE; //2nd page start
+    } else if (num_of_pages > 2) {
+        // Allocate PRP list as the request is larger than 8K
+        assert(num_of_pages / 512 == 0); //For now we can only accomodate datasize <= 2MB
+        u64* prp_list = (u64*) alloc_page();
         assert(prp_list != nullptr);
         cmd->rw.common.prp2 = mmu::virt_to_phys(prp_list);
         _prp_lists_in_use.at(cmd->rw.common.cid / _qsize)[cmd->rw.common.cid % _qsize] = prp_list;
-        
-        addr = ((addr >> NVME_PAGESHIFT) +1 ) << NVME_PAGESHIFT;
+
+        // Fill in the PRP list with address of subsequent 4K pages
+        addr = first_page_start + NVME_PAGESIZE; //2nd page start
         prp_list[0] = addr;
 
-        for (int i = 1; i < numpages - 1; i++) {
+        for (int i = 1; i < num_of_pages - 1; i++) {
             addr += NVME_PAGESIZE;
             prp_list[i] = addr;
         }
@@ -317,7 +327,7 @@ void io_queue_pair::req_done()
 
             _pending_bios.at(cid / _qsize)[cid % _qsize] = nullptr;
             if (_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]) {
-                free_phys_contiguous_aligned(_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]);
+                free_page(_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]);
                 _prp_lists_in_use.at(cid / _qsize)[cid % _qsize] = nullptr;
             }
             _sq._head = cqe->sqhd; //update sq_head
@@ -399,7 +409,7 @@ void admin_queue_pair::req_done()
             }
             
             if (_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]) {
-                free_phys_contiguous_aligned(_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]);
+                free_page(_prp_lists_in_use.at(cid / _qsize)[cid % _qsize]);
                 _prp_lists_in_use.at(cid / _qsize)[cid % _qsize] = nullptr;
             }
             _sq._head = cqe->sqhd; //update sq_head
