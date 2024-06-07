@@ -13,6 +13,7 @@
 #include "drivers/nvme-structs.h"
 
 #include <osv/bio.h>
+#include <lockfree/unordered-queue-spsc.hh>
 
 #define nvme_tag "nvme"
 #define nvme_d(...)    tprintf_d(nvme_tag, __VA_ARGS__)
@@ -55,6 +56,10 @@ struct queue {
     volatile u32* _doorbell;
     std::atomic<u32> _head;
     u32 _tail;
+};
+
+struct free_prp_list {
+    free_prp_list* next;
 };
 
 // Pair of submission queue and completion queue - SQ and CQ.
@@ -125,6 +130,8 @@ protected:
     std::map<u32, nvme_ns_t*> _ns;
 
     static constexpr size_t max_pending_levels = 4;
+
+    lockfree::unordered_queue_spsc<free_prp_list, 16> _free_prp_lists;
 
     mutex _lock;
 };

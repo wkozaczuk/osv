@@ -28,6 +28,7 @@
 #include <osv/bio.h>
 #include <osv/ioctl.h>
 #include <osv/contiguous_alloc.hh>
+#include <osv/aligned_new.hh>
 
 using namespace memory;
 
@@ -308,7 +309,7 @@ void driver::create_admin_queue()
 
     int qsize = NVME_ADMIN_QUEUE_SIZE;
     _admin_queue = std::unique_ptr<admin_queue_pair>(
-        new admin_queue_pair(_id, 0, qsize, _dev, sq_doorbell, cq_doorbell, _ns_data));
+        aligned_new<admin_queue_pair>(_id, 0, qsize, _dev, sq_doorbell, cq_doorbell, _ns_data));
     
     register_admin_interrupt();
 
@@ -343,7 +344,7 @@ int driver::create_io_queue(int qid, int qsize, sched::cpu* cpu, int qprio)
 
     // create queue pair with allocated SQ and CQ ring buffers
     auto queue = std::unique_ptr<io_queue_pair>(
-        new io_queue_pair(_id, iv, qsize, _dev, sq_doorbell, cq_doorbell, _ns_data));
+        aligned_new<io_queue_pair>(_id, iv, qsize, _dev, sq_doorbell, cq_doorbell, _ns_data));
 
     // create completion queue command
     nvme_acmd_create_cq_t cmd_cq;

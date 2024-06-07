@@ -38,6 +38,7 @@ TRACEPOINT(trace_nvme_sq_full_wait, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int
 TRACEPOINT(trace_nvme_sq_full_wake, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int, int, int, int);
 
 TRACEPOINT(trace_nvme_cid_conflict, "nvme%d qid=%d, cid=%d", int, int, int);
+TRACEPOINT(trace_nvme_prp_alloc, "nvme%d qid=%d, prp=%d", int, int, void*);
 
 using namespace memory;
 
@@ -76,6 +77,10 @@ queue_pair::queue_pair(
 
 queue_pair::~queue_pair()
 {
+    free_prp_list* free_prp;
+    while ((free_prp = _free_prp_lists.pop()))
+       free_page((void*)free_prp);
+
     free_phys_contiguous_aligned(_sq._addr);
     free_phys_contiguous_aligned(_cq._addr);
 }
@@ -153,7 +158,12 @@ void queue_pair::map_prps(nvme_sq_entry_t* cmd, struct bio* bio, u64 datasize)
         // For now we can only accomodate datasize <= 2MB so single page
         // should be exactly enough to map up to 512 pages of the request data
         assert(num_of_pages / 512 == 0);
-        u64* prp_list = (u64*) alloc_page();
+        u64* prp_list = (u64*)_free_prp_lists.pop();
+        if (!prp_list) { // No free pre-allocated ones, so allocate new one
+            prp_list = (u64*) alloc_page();
+            trace_nvme_prp_alloc(_driver_id, _id, prp_list);
+        }
+
         assert(prp_list != nullptr);
         cmd->rw.common.prp2 = mmu::virt_to_phys(prp_list);
 
@@ -318,8 +328,9 @@ void io_queue_pair::req_done()
             u16 cid = cqe->cid;
             auto pending_bio = _pending_bios[cid_to_row(cid)][cid_to_col(cid)].exchange(nullptr);
             // Free PRP list saved under bio_private if any
-            if (pending_bio && pending_bio->bio_private)
-                free_page(pending_bio->bio_private);
+            if (pending_bio && pending_bio->bio_private) {
+                _free_prp_lists.push((free_prp_list*)pending_bio->bio_private);
+            }
 
             if (cqe->sct != 0 || cqe->sc != 0) {
                 trace_nvme_req_done_error(_driver_id, _id, cid, cqe->sct, cqe->sc, pending_bio);
