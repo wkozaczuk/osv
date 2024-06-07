@@ -29,7 +29,7 @@
 
 //Will be lower if the device doesnt support the
 //specified queue size
-#define NVME_IO_QUEUE_SIZE 256
+#define NVME_IO_QUEUE_SIZE 64
 
 namespace nvme {
 
