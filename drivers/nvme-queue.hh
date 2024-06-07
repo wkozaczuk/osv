@@ -13,7 +13,7 @@
 #include "drivers/nvme-structs.h"
 
 #include <osv/bio.h>
-#include <lockfree/unordered-queue-spsc.hh>
+#include <lockfree/unordered-queue-mpsc.hh>
 
 #define nvme_tag "nvme"
 #define nvme_d(...)    tprintf_d(nvme_tag, __VA_ARGS__)
@@ -131,7 +131,7 @@ protected:
 
     static constexpr size_t max_pending_levels = 4;
 
-    lockfree::unordered_queue_spsc<free_prp_list, 16> _free_prp_lists;
+    lockfree::unordered_queue_mpsc<free_prp_list> _free_prp_lists;
 
     mutex _lock;
 };
