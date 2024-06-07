@@ -316,6 +316,10 @@ void io_queue_pair::req_done()
         while ((cqe = get_completion_queue_entry())) {
             u16 cid = cqe->cid;
             auto pending_bio = _pending_bios[cid_to_row(cid)][cid_to_col(cid)].exchange(nullptr);
+            // Free PRP list saved under bio_private if any
+            if (pending_bio && pending_bio->bio_private)
+                free_page(pending_bio->bio_private);
+
             if (cqe->sct != 0 || cqe->sc != 0) {
                 trace_nvme_req_done_error(_driver_id, _id, cid, cqe->sct, cqe->sc, pending_bio);
                 if (pending_bio)
@@ -329,9 +333,6 @@ void io_queue_pair::req_done()
                 if (pending_bio)
                     biodone(pending_bio, true);
             }
-
-            if (pending_bio->bio_private)
-                free_page(pending_bio->bio_private);
 
             _sq._head = cqe->sqhd; //update sq_head
 
