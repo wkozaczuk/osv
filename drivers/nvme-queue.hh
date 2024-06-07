@@ -127,7 +127,8 @@ protected:
 
     static constexpr size_t max_pending_levels = 4;
 
-    ring_spsc<u64*, unsigned, 8> _free_prp_lists;
+    // Let us hold to allocated PRP pages but also limit to up 16 ones
+    ring_spsc<u64*, unsigned, 16> _free_prp_lists;
 
     mutex _lock;
 };
