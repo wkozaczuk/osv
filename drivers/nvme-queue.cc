@@ -38,7 +38,9 @@ TRACEPOINT(trace_nvme_sq_full_wait, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int
 TRACEPOINT(trace_nvme_sq_full_wake, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int, int, int, int);
 
 TRACEPOINT(trace_nvme_cid_conflict, "nvme%d qid=%d, cid=%d", int, int, int);
+
 TRACEPOINT(trace_nvme_prp_alloc, "nvme%d qid=%d, prp=%#x", int, int, void*);
+TRACEPOINT(trace_nvme_prp_free, "nvme%d qid=%d, prp=%#x", int, int, void*);
 
 using namespace memory;
 
@@ -332,7 +334,7 @@ void io_queue_pair::req_done()
             if (pending_bio && pending_bio->bio_private) {
                 if (!_free_prp_lists.push((u64*)pending_bio->bio_private)) {
                    free_page(pending_bio->bio_private);
-                   printf("-> Freed page\n");
+                   trace_nvme_prp_alloc(_driver_id, _id, pending_bio->bio_private);
                 }
             }
 
