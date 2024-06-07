@@ -334,7 +334,7 @@ void io_queue_pair::req_done()
             if (pending_bio && pending_bio->bio_private) {
                 if (!_free_prp_lists.push((u64*)pending_bio->bio_private)) {
                    free_page(pending_bio->bio_private);
-                   trace_nvme_prp_alloc(_driver_id, _id, pending_bio->bio_private);
+                   trace_nvme_prp_free(_driver_id, _id, pending_bio->bio_private);
                 }
             }
 
