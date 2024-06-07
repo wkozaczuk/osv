@@ -53,7 +53,7 @@ struct queue {
         _addr(nullptr), _doorbell(doorbell), _head(0), _tail(0) {}
     T* _addr;
     volatile u32* _doorbell;
-    u32 _head;
+    std::atomic<u32> _head;
     u32 _tail;
 };
 
@@ -97,6 +97,9 @@ protected:
 
     nvme_cq_entry_t* get_completion_queue_entry();
 
+    inline u16 cid_to_row(u16 cid) { return cid / _qsize; }
+    inline u16 cid_to_col(u16 cid) { return cid % _qsize; }
+
     int _driver_id;
 
     // Length of the CQ and SQ
@@ -108,7 +111,7 @@ protected:
 
     // Submission Queue (SQ) - each entry is 64 bytes in size
     queue<nvme_sq_entry_t> _sq;
-    bool _sq_full;
+    std::atomic<bool> _sq_full;
     sched::thread_handle _sq_full_waiter;
 
     // Completion Queue (CQ) - each entry is 16 bytes in size
@@ -123,6 +126,7 @@ protected:
     // addresses of pages to read from or write to data.
     // We use _prp_lists_in_use to track those PRP arrays as we allocate
     // them as needed and free them once the read or write request is done.
+    static constexpr size_t max_pending_levels = 4;
     std::vector<u64**> _prp_lists_in_use;
 
     mutex _lock;
@@ -145,6 +149,8 @@ public:
     int make_request(struct bio* bio, u32 nsid);
     void req_done();
 private:
+    void init_pending_bios(u32 level);
+
     u16 submit_read_write_cmd(u16 cid, u32 nsid, int opc, u64 slba, u32 nlb, void* data);
     u16 submit_flush_cmd(u16 cid, u32 nsid);
 
@@ -153,7 +159,7 @@ private:
     // to generate 16-bit 'cid' is - _sq._tail + N * qsize - where N is typically 0 and
     // is equal to a row in _pending_bios and _sq._tail is equal to a column.
     // Given cid, 
-    std::vector<struct bio**> _pending_bios;
+    std::atomic<struct bio*>* _pending_bios[max_pending_levels] = {};
 };
 
 // Pair of SQ and CQ queues used for setting up/configuring controller

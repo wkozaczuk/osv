@@ -417,7 +417,7 @@ int driver::identify_namespace(u32 nsid)
 
 int driver::make_request(bio* bio, u32 nsid)
 {  
-    if(bio->bio_bcount % _ns_data[nsid]->blocksize || bio->bio_offset % _ns_data[nsid]->blocksize) {
+    if (bio->bio_bcount % _ns_data[nsid]->blocksize || bio->bio_offset % _ns_data[nsid]->blocksize) {
         NVME_ERROR("bio request not block-aligned length=%d, offset=%d blocksize=%d\n",bio->bio_bcount, bio->bio_offset, _ns_data[nsid]->blocksize);
         return EINVAL;
     }
@@ -426,7 +426,7 @@ int driver::make_request(bio* bio, u32 nsid)
 
     assert((bio->bio_offset + bio->bio_bcount) <= _ns_data[nsid]->blockcount);
     
-    if(bio->bio_cmd == BIO_FLUSH && (_identify_controller->vwc == 0 || !NVME_VWC_ENABLED )) {
+    if (bio->bio_cmd == BIO_FLUSH && (_identify_controller->vwc == 0 || !NVME_VWC_ENABLED )) {
         biodone(bio, true);
         return 0;
     }
@@ -507,12 +507,12 @@ bool driver::register_io_interrupt(unsigned int iv, unsigned int qid, sched::cpu
     sched::thread* t;
     bool ok;
 
-    if(_io_queues.size() <= qid) {
+    if (_io_queues.size() <= qid) {
         NVME_ERROR("queue %d not initialized\n",qid);
         return false;
     }
 
-    if(_io_queues[qid]->_id != iv)
+    if (_io_queues[qid]->_id != iv)
         nvme_w("Queue %d ->_id = %d != iv %d\n", qid, _io_queues[qid]->_id, iv);
 
     t = sched::thread::make([this,qid] { this->_io_queues[qid]->req_done(); },
@@ -526,7 +526,7 @@ bool driver::register_io_interrupt(unsigned int iv, unsigned int qid, sched::cpu
     }
 
     ok = msix_register(iv, [this,qid] { this->_io_queues[qid]->disable_interrupts(); }, t, pin);
-    if(not ok)
+    if (not ok)
         NVME_ERROR("Interrupt registration failed: queue=%d interruptvector=%d\n", qid, iv);
     return ok;
 }
