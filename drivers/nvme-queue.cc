@@ -70,18 +70,11 @@ queue_pair::queue_pair(
     assert(_cq._addr);
     memset(_cq._addr, 0, cq_buf_size);
 
-    auto prp_lists = (u64**) malloc(sizeof(u64*)*qsize);
-    memset(prp_lists,0,sizeof(u64*)*qsize);
-    _prp_lists_in_use.push_back(prp_lists);
-
     assert(!completion_queue_not_empty());
 }
 
 queue_pair::~queue_pair()
 {
-    for(auto vec: _prp_lists_in_use)
-        free_phys_contiguous_aligned(vec);
-
     free_phys_contiguous_aligned(_sq._addr);
     free_phys_contiguous_aligned(_cq._addr);
 }
@@ -130,8 +123,11 @@ void queue_pair::wait_for_completion_queue_entries()
     });
 }
 
-void queue_pair::map_prps(nvme_sq_entry_t* cmd, void* data, u64 datasize)
+void queue_pair::map_prps(nvme_sq_entry_t* cmd, struct bio* bio, u64 datasize)
 {
+    void* data = (void*)mmu::virt_to_phys(bio->bio_data);
+    bio->bio_private = nullptr;
+
     // Depending on the datasize, we map PRPs (Physical Region Page) as follows:
     // 0. We always set the prp1 field to the beginning of the data
     // 1. If data falls within single 4K page then we simply set prp2 to 0
@@ -160,8 +156,8 @@ void queue_pair::map_prps(nvme_sq_entry_t* cmd, void* data, u64 datasize)
         assert(prp_list != nullptr);
         cmd->rw.common.prp2 = mmu::virt_to_phys(prp_list);
 
-        auto cid = cmd->rw.common.cid;
-        _prp_lists_in_use.at(cid_to_row(cid))[cid_to_col(cid)] = prp_list;
+        // Save PRP list in bio so it can be de-allocated later
+        bio->bio_private = prp_list;
 
         // Fill in the PRP list with address of subsequent 4K pages
         addr = first_page_start + NVME_PAGESIZE; //2nd page start
@@ -276,28 +272,25 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid = 1)
     while (_pending_bios[cid_to_row(cid)][cid_to_col(cid)]) {
         trace_nvme_cid_conflict(_driver_id, _id, cid);
         cid += _qsize;
+        // Allocate next row of _pending_bios if needed
         if (!_pending_bios[cid_to_row(cid)]) {
             auto level = cid_to_row(cid);
             assert(level < max_pending_levels);
             init_pending_bios(level);
-
-            auto prplists = (u64**) malloc(sizeof(u64*)* _qsize);
-            memset(prplists,0,sizeof(u64*)* _qsize);
-            _prp_lists_in_use.push_back(prplists);
         }
     }
-    //Save bios
+    //Save bio
     _pending_bios[cid_to_row(cid)][cid_to_col(cid)] = bio;
 
     switch (bio->bio_cmd) {
     case BIO_READ:
         trace_nvme_read_write_cmd_submit(_driver_id, _id, cid, bio->bio_data, slba, nlb, false);
-        submit_read_write_cmd(cid, nsid, NVME_CMD_READ, slba, nlb, (void*)mmu::virt_to_phys(bio->bio_data));
+        submit_read_write_cmd(cid, nsid, NVME_CMD_READ, slba, nlb, bio);
         break;
     
     case BIO_WRITE:
         trace_nvme_read_write_cmd_submit(_driver_id, _id, cid, bio->bio_data, slba, nlb, true);
-        submit_read_write_cmd(cid, nsid, NVME_CMD_WRITE, slba, nlb, (void*)mmu::virt_to_phys(bio->bio_data));
+        submit_read_write_cmd(cid, nsid, NVME_CMD_WRITE, slba, nlb, bio);
         break;
     
     case BIO_FLUSH:
@@ -337,10 +330,9 @@ void io_queue_pair::req_done()
                     biodone(pending_bio, true);
             }
 
-            if (_prp_lists_in_use.at(cid_to_row(cid))[cid_to_col(cid)]) {
-                free_page(_prp_lists_in_use.at(cid_to_row(cid))[cid_to_col(cid)]);
-                _prp_lists_in_use.at(cid_to_row(cid))[cid_to_col(cid)] = nullptr;
-            }
+            if (pending_bio->bio_private)
+                free_page(pending_bio->bio_private);
+
             _sq._head = cqe->sqhd; //update sq_head
 
             advance_cq_head();
@@ -356,7 +348,7 @@ void io_queue_pair::req_done()
     }
 }
 
-u16 io_queue_pair::submit_read_write_cmd(u16 cid, u32 nsid, int opc, u64 slba, u32 nlb, void* data)
+u16 io_queue_pair::submit_read_write_cmd(u16 cid, u32 nsid, int opc, u64 slba, u32 nlb, struct bio* bio)
 {
     nvme_sq_entry_t cmd;
     memset(&cmd, 0, sizeof(cmd));
@@ -368,7 +360,7 @@ u16 io_queue_pair::submit_read_write_cmd(u16 cid, u32 nsid, int opc, u64 slba, u
     cmd.rw.nlb = nlb - 1;
 
     u32 datasize = nlb << _ns[nsid]->blockshift;
-    map_prps(&cmd, data, datasize);
+    map_prps(&cmd, bio, datasize);
         
     return submit_cmd_without_lock(&cmd);
 }
@@ -419,10 +411,6 @@ void admin_queue_pair::req_done()
                 trace_nvme_req_done_success(_driver_id, _id, cid, nullptr);
             }
             
-            if (_prp_lists_in_use.at(cid_to_row(cid))[cid_to_col(cid)]) {
-                free_page(_prp_lists_in_use.at(cid_to_row(cid))[cid_to_col(cid)]);
-                _prp_lists_in_use.at(cid_to_row(cid))[cid_to_col(cid)] = nullptr;
-            }
             _sq._head = cqe->sqhd; //Update sq_head
             _req_res = *cqe; //Save the cqe so that the requesting thread can return it
 
@@ -448,7 +436,8 @@ admin_queue_pair::submit_and_return_on_completion(nvme_sq_entry_t* cmd, void* da
     cmd->rw.common.cid = cid;
 
     if (data != nullptr && datasize > 0) {
-        map_prps(cmd, data, datasize);
+        cmd->rw.common.prp1 = (u64)data;
+        cmd->rw.common.prp2 = 0;
     }
     
     trace_nvme_admin_cmd_submit(_driver_id, _id, cid, cmd->set_features.common.opc);
@@ -458,9 +447,6 @@ admin_queue_pair::submit_and_return_on_completion(nvme_sq_entry_t* cmd, void* da
     _req_waiter.clear();
     
     new_cq = false;
-    if (_prp_lists_in_use.at(0)[cid]) {
-        free(_prp_lists_in_use.at(0)[cid]);
-    }
     
     _lock.unlock();
     return _req_res;

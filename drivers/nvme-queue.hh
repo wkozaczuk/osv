@@ -91,7 +91,10 @@ protected:
     void advance_sq_tail();
     void advance_cq_head();
 
-    void map_prps(nvme_sq_entry_t* cmd, void* data, u64 datasize);
+    // PRP stands for Physical Region Page and is used to specify locations in
+    // physical memory for data tranfers. In essence, they are arrays of physical
+    // addresses of pages to read from or write to data.
+    void map_prps(nvme_sq_entry_t* cmd, struct bio* bio, u64 datasize);
 
     u16 submit_cmd_without_lock(nvme_sq_entry_t* cmd);
 
@@ -121,13 +124,7 @@ protected:
     // Map of namespaces (for now there would normally be one entry keyed by 1)
     std::map<u32, nvme_ns_t*> _ns;
 
-    // PRP stands for Physical Region Page and is used to specify locations in
-    // physical memory for data tranfers. In essence, they are arrays of physical
-    // addresses of pages to read from or write to data.
-    // We use _prp_lists_in_use to track those PRP arrays as we allocate
-    // them as needed and free them once the read or write request is done.
     static constexpr size_t max_pending_levels = 4;
-    std::vector<u64**> _prp_lists_in_use;
 
     mutex _lock;
 };
@@ -151,7 +148,7 @@ public:
 private:
     void init_pending_bios(u32 level);
 
-    u16 submit_read_write_cmd(u16 cid, u32 nsid, int opc, u64 slba, u32 nlb, void* data);
+    u16 submit_read_write_cmd(u16 cid, u32 nsid, int opc, u64 slba, u32 nlb, struct bio* bio);
     u16 submit_flush_cmd(u16 cid, u32 nsid);
 
     // Vector of arrays of pointers to struct bio used to track bio associated
