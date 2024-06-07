@@ -38,7 +38,7 @@ TRACEPOINT(trace_nvme_sq_full_wait, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int
 TRACEPOINT(trace_nvme_sq_full_wake, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int, int, int, int);
 
 TRACEPOINT(trace_nvme_cid_conflict, "nvme%d qid=%d, cid=%d", int, int, int);
-TRACEPOINT(trace_nvme_prp_alloc, "nvme%d qid=%d, prp=%d", int, int, void*);
+TRACEPOINT(trace_nvme_prp_alloc, "nvme%d qid=%d, prp=%#x", int, int, void*);
 
 using namespace memory;
 
