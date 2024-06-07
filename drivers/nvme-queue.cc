@@ -35,6 +35,7 @@ TRACEPOINT(trace_nvme_read_write_cmd_submit, "nvme%d qid=%d cid=%d, bio data=%#x
 
 TRACEPOINT(trace_nvme_advance_sq_tail, "nvme%d qid=%d, sq_tail=%d, sq_head=%d, depth=%d, full=%d", int, int, int, int, int, bool);
 TRACEPOINT(trace_nvme_sq_full_wait, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int, int, int, int);
+TRACEPOINT(trace_nvme_sq_full_wake, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int, int, int, int);
 
 TRACEPOINT(trace_nvme_cid_conflict, "nvme%d qid=%d, cid=%d", int, int, int);
 
@@ -269,7 +270,7 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid = 1)
     //    This means we could post the command but need a different cid. To still
     //    use the cid as index to find the corresponding bios we use a matrix
     //    adding columns if we need them
-    while (_pending_bios[cid_to_row(cid)][cid_to_col(cid)]) {
+    while (_pending_bios[cid_to_row(cid)][cid_to_col(cid)].load()) {
         trace_nvme_cid_conflict(_driver_id, _id, cid);
         cid += _qsize;
         // Allocate next row of _pending_bios if needed
@@ -341,10 +342,12 @@ void io_queue_pair::req_done()
         mmio_setl(_cq._doorbell, _cq._head);
         //
         // Wake up the requesting thread in case the submission queue was full before
-        if (_sq_full && _sq._tail != _sq._head) {
+        if (_sq_full) {
             _sq_full = false;
-            if (_sq_full_waiter)
+            if (_sq_full_waiter) {
+                 trace_nvme_sq_full_wake(_driver_id, _id, _sq._tail, _sq._head);
                 _sq_full_waiter.wake_from_kernel_or_with_irq_disabled();
+            }
         }
     }
 }
