@@ -45,7 +45,7 @@ namespace nvme {
 // The queue is considered empty, if _head == _tail.
 // The queue is considered full, if _head == (_tail + 1)
 //
-// The _doorbool points to the address where _tail of the submission
+// The _doorbell points to the address where _tail of the submission
 // queue is written to. For completion queue, it points to the address
 // where the _head value is written to.
 template<typename T>
@@ -120,7 +120,7 @@ protected:
 
     // Completion Queue (CQ) - each entry is 16 bytes in size
     queue<nvme_cq_entry_t> _cq;
-    int _cq_phase_tag;
+    u16 _cq_phase_tag;
 
     // Map of namespaces (for now there would normally be one entry keyed by 1)
     std::map<u32, nvme_ns_t*> _ns;
@@ -129,6 +129,8 @@ protected:
 
     // Let us hold to allocated PRP pages but also limit to up 16 ones
     ring_spsc<u64*, unsigned, 16> _free_prp_lists;
+
+    bool _irq_enabled = true;
 
     mutex _lock;
 };

@@ -19,28 +19,29 @@
 
 #include "nvme-queue.hh"
 
-TRACEPOINT(trace_nvme_queue_woken, "nvme%d qid=%d", int, int);
+TRACEPOINT(trace_nvme_cq_woken, "nvme%d qid=%d", int, int);
 
-TRACEPOINT(trace_nvme_completion_queue_wait, "nvme%d qid=%d, have_elements=%d", int, int, bool);
-TRACEPOINT(trace_nvme_completion_queue_not_empty, "nvme%d qid=%d, not_empty=%d", int, int, bool);
+TRACEPOINT(trace_nvme_cq_wait, "nvme%d qid=%d, have_elements=%d", int, int, bool);
+TRACEPOINT(trace_nvme_cq_not_empty, "nvme%d qid=%d, not_empty=%d", int, int, bool);
+TRACEPOINT(trace_nvme_cq_head_advance, "nvme%d qid=%d cq_head=%d", int, int, int);
 
 TRACEPOINT(trace_nvme_enable_interrupts, "nvme%d qid=%d", int, int);
 TRACEPOINT(trace_nvme_disable_interrupts, "nvme%d qid=%d", int, int);
 
-TRACEPOINT(trace_nvme_req_done_error, "nvme%d qid=%d, cid=%d, status type=%#x, status code=%#x, bio=%#x", int, int, u16, u8, u8, bio*);
-TRACEPOINT(trace_nvme_req_done_success, "nvme%d qid=%d, cid=%d, bio=%#x", int, int, u16, bio*);
+TRACEPOINT(trace_nvme_req_done_error, "nvme%d qid=%d, cid=%d, status type=%#x, status code=%#x, bio=%p", int, int, u16, u8, u8, bio*);
+TRACEPOINT(trace_nvme_req_done_success, "nvme%d qid=%d, cid=%d, bio=%p", int, int, u16, bio*);
 
 TRACEPOINT(trace_nvme_admin_cmd_submit, "nvme%d qid=%d, cid=%d, opc=%d", int, int, int, u8);
-TRACEPOINT(trace_nvme_read_write_cmd_submit, "nvme%d qid=%d cid=%d, bio data=%#x, slba=%d, nlb=%d, write=%d", int, int, u16, void*, u64, u32, bool);
+TRACEPOINT(trace_nvme_read_write_cmd_submit, "nvme%d qid=%d cid=%d, bio=%p, slba=%d, nlb=%d, write=%d", int, int, u16, void*, u64, u32, bool);
 
-TRACEPOINT(trace_nvme_advance_sq_tail, "nvme%d qid=%d, sq_tail=%d, sq_head=%d, depth=%d, full=%d", int, int, int, int, int, bool);
+TRACEPOINT(trace_nvme_sq_tail_advance, "nvme%d qid=%d, sq_tail=%d, sq_head=%d, depth=%d, full=%d", int, int, int, int, int, bool);
 TRACEPOINT(trace_nvme_sq_full_wait, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int, int, int, int);
 TRACEPOINT(trace_nvme_sq_full_wake, "nvme%d qid=%d, sq_tail=%d, sq_head=%d", int, int, int, int);
 
 TRACEPOINT(trace_nvme_cid_conflict, "nvme%d qid=%d, cid=%d", int, int, int);
 
-TRACEPOINT(trace_nvme_prp_alloc, "nvme%d qid=%d, prp=%#x", int, int, void*);
-TRACEPOINT(trace_nvme_prp_free, "nvme%d qid=%d, prp=%#x", int, int, void*);
+TRACEPOINT(trace_nvme_prp_alloc, "nvme%d qid=%d, prp=%p", int, int, void*);
+TRACEPOINT(trace_nvme_prp_free, "nvme%d qid=%d, prp=%p", int, int, void*);
 
 using namespace memory;
 
@@ -90,10 +91,10 @@ queue_pair::~queue_pair()
 inline void queue_pair::advance_sq_tail()
 {
     _sq._tail = (_sq._tail + 1) % _qsize;
-    if (_sq._tail == _sq._head) {
+    if (((_sq._tail + 1) % _qsize) == _sq._head) {
         _sq_full = true;
     }
-    trace_nvme_advance_sq_tail(_driver_id, _id, _sq._tail, _sq._head,
+    trace_nvme_sq_tail_advance(_driver_id, _id, _sq._tail, _sq._head,
         (_sq._tail >= _sq._head) ? _sq._tail - _sq._head : _sq._tail + (_qsize - _sq._head),
          _sq_full);
 }
@@ -114,6 +115,10 @@ u16 queue_pair::submit_cmd_without_lock(nvme_sq_entry_t* cmd)
 
 void queue_pair::wait_for_completion_queue_entries()
 {
+    /*sched::timer t(*sched::thread::current());
+    using namespace osv::clock::literals;
+    t.set(100_us);
+    sched::thread::wait_until([this,&t] {*/
     sched::thread::wait_until([this] {
         bool have_elements = this->completion_queue_not_empty();
         if (!have_elements) {
@@ -126,8 +131,9 @@ void queue_pair::wait_for_completion_queue_entries()
             }
         }
 
-        trace_nvme_completion_queue_wait(_driver_id, _id, have_elements);
+        trace_nvme_cq_wait(_driver_id, _id, have_elements);
         return have_elements;
+        //return have_elements || t.expired();
     });
 }
 
@@ -198,27 +204,34 @@ nvme_cq_entry_t* queue_pair::get_completion_queue_entry()
 
 inline void queue_pair::advance_cq_head()
 {
+    trace_nvme_cq_head_advance(_driver_id, _id, _cq._head);
     if (++_cq._head == _qsize) {
-        _cq._head -= _qsize;
-        _cq_phase_tag = !_cq_phase_tag;
+        _cq._head = 0;
+        _cq_phase_tag = _cq_phase_tag ? 0 : 1;
     }
 }
 
 bool queue_pair::completion_queue_not_empty() const
 {
     bool a = reinterpret_cast<volatile nvme_cq_entry_t*>(&_cq._addr[_cq._head])->p == _cq_phase_tag;
-    trace_nvme_completion_queue_not_empty(_driver_id, _id, a);
+    trace_nvme_cq_not_empty(_driver_id, _id, a);
     return a;
 }
 
 void queue_pair::enable_interrupts()
 {
+    if (_irq_enabled)
+       return;
+    _irq_enabled = true;
     _dev->msix_unmask_entry(_id);
     trace_nvme_enable_interrupts(_driver_id, _id);
 }
 
 void queue_pair::disable_interrupts()
 {
+    if (!_irq_enabled)
+       return;
+    _irq_enabled = false;
     _dev->msix_mask_entry(_id);
     trace_nvme_disable_interrupts(_driver_id, _id);
 }
@@ -275,6 +288,7 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid = 1)
         sched::thread::wait_until([this] { return !(this->_sq_full); });
         _sq_full_waiter.clear();
     }
+    assert((((_sq._tail + 1) % _qsize) != _sq._head));
     // We need to check if there is an outstanding command that uses
     // _sq._tail as command id.
     // This happens if:
@@ -286,10 +300,10 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid = 1)
     while (_pending_bios[cid_to_row(cid)][cid_to_col(cid)].load()) {
         trace_nvme_cid_conflict(_driver_id, _id, cid);
         cid += _qsize;
+        auto level = cid_to_row(cid);
+        assert(level < max_pending_levels);
         // Allocate next row of _pending_bios if needed
         if (!_pending_bios[cid_to_row(cid)]) {
-            auto level = cid_to_row(cid);
-            assert(level < max_pending_levels);
             init_pending_bios(level);
         }
     }
@@ -298,12 +312,12 @@ int io_queue_pair::make_request(struct bio* bio, u32 nsid = 1)
 
     switch (bio->bio_cmd) {
     case BIO_READ:
-        trace_nvme_read_write_cmd_submit(_driver_id, _id, cid, bio->bio_data, slba, nlb, false);
+        trace_nvme_read_write_cmd_submit(_driver_id, _id, cid, bio, slba, nlb, false);
         submit_read_write_cmd(cid, nsid, NVME_CMD_READ, slba, nlb, bio);
         break;
     
     case BIO_WRITE:
-        trace_nvme_read_write_cmd_submit(_driver_id, _id, cid, bio->bio_data, slba, nlb, true);
+        trace_nvme_read_write_cmd_submit(_driver_id, _id, cid, bio, slba, nlb, true);
         submit_read_write_cmd(cid, nsid, NVME_CMD_WRITE, slba, nlb, bio);
         break;
     
@@ -326,12 +340,13 @@ void io_queue_pair::req_done()
     while (true)
     {
         wait_for_completion_queue_entries();
-        trace_nvme_queue_woken(_driver_id, _id);
+        trace_nvme_cq_woken(_driver_id, _id);
         while ((cqe = get_completion_queue_entry())) {
             u16 cid = cqe->cid;
             auto pending_bio = _pending_bios[cid_to_row(cid)][cid_to_col(cid)].exchange(nullptr);
+            assert(pending_bio);
             // Free PRP list saved under bio_private if any
-            if (pending_bio && pending_bio->bio_private) {
+            if (pending_bio->bio_private) {
                 if (!_free_prp_lists.push((u64*)pending_bio->bio_private)) {
                    free_page(pending_bio->bio_private);
                    trace_nvme_prp_free(_driver_id, _id, pending_bio->bio_private);
@@ -340,32 +355,40 @@ void io_queue_pair::req_done()
 
             if (cqe->sct != 0 || cqe->sc != 0) {
                 trace_nvme_req_done_error(_driver_id, _id, cid, cqe->sct, cqe->sc, pending_bio);
-                if (pending_bio)
-                    biodone(pending_bio, false);
+                biodone(pending_bio, false);
                 NVME_ERROR("I/O queue: cid=%d, sct=%#x, sc=%#x, bio=%#x, slba=%llu, nlb=%llu\n",
                     cqe->cid, cqe->sct, cqe->sc, pending_bio,
                     pending_bio ? pending_bio->bio_offset : 0,
                     pending_bio ? pending_bio->bio_bcount : 0);
             } else {
                 trace_nvme_req_done_success(_driver_id, _id, cid, pending_bio);
-                if (pending_bio)
-                    biodone(pending_bio, true);
+                biodone(pending_bio, true);
             }
 
-            _sq._head = cqe->sqhd; //update sq_head
+            //
+            // Wake up the requesting thread in case the submission queue was full before
+            auto old_sq_head = _sq._head.exchange(cqe->sqhd); //update sq_head
+            if (old_sq_head != cqe->sqhd && _sq_full) {
+                _sq_full = false;
+                if (_sq_full_waiter) {
+                     trace_nvme_sq_full_wake(_driver_id, _id, _sq._tail, _sq._head);
+                    _sq_full_waiter.wake_from_kernel_or_with_irq_disabled();
+                }
+            }
 
             advance_cq_head();
+            //mmio_setl(_cq._doorbell, _cq_head);
         }
         mmio_setl(_cq._doorbell, _cq._head);
         //
         // Wake up the requesting thread in case the submission queue was full before
-        if (_sq_full) {
+        /*if (_sq_full && sq_head_changed) {
             _sq_full = false;
             if (_sq_full_waiter) {
                  trace_nvme_sq_full_wake(_driver_id, _id, _sq._tail, _sq._head);
                 _sq_full_waiter.wake_from_kernel_or_with_irq_disabled();
             }
-        }
+        }*/
     }
 }
 
@@ -422,7 +445,7 @@ void admin_queue_pair::req_done()
     while (true)
     {
         wait_for_completion_queue_entries();
-        trace_nvme_queue_woken(_driver_id, _id);
+        trace_nvme_cq_woken(_driver_id, _id);
         while ((cqe = get_completion_queue_entry())) {
             u16 cid = cqe->cid;
             if (cqe->sct != 0 || cqe->sc != 0) {
