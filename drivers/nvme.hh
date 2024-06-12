@@ -31,14 +31,15 @@
 //specified queue size
 //#define NVME_IO_QUEUE_SIZE 2 //Works
 //#define NVME_IO_QUEUE_SIZE 3 //Hangs
-//#define NVME_IO_QUEUE_SIZE 4 //Hangs
+#define NVME_IO_QUEUE_SIZE 4 //Hangs
 //#define NVME_IO_QUEUE_SIZE 5 //Hangs
 //#define NVME_IO_QUEUE_SIZE 6 //Most of the time works
 //#define NVME_IO_QUEUE_SIZE 7 //Most of the time works
 //#define NVME_IO_QUEUE_SIZE 8 //It looks like it works now - could not make it hang
+//----------- Below work
 //#define NVME_IO_QUEUE_SIZE 16
 //#define NVME_IO_QUEUE_SIZE 32
-#define NVME_IO_QUEUE_SIZE 64 // Ideal
+//#define NVME_IO_QUEUE_SIZE 64 // Ideal
 
 namespace nvme {
 

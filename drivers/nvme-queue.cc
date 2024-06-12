@@ -23,6 +23,7 @@ TRACEPOINT(trace_nvme_cq_wait, "nvme%d qid=%d, cq_head=%d", int, int, int);
 TRACEPOINT(trace_nvme_cq_woken, "nvme%d qid=%d, have_elements=%d", int, int, bool);
 TRACEPOINT(trace_nvme_cq_not_empty, "nvme%d qid=%d, not_empty=%d", int, int, bool);
 TRACEPOINT(trace_nvme_cq_head_advance, "nvme%d qid=%d cq_head=%d", int, int, int);
+TRACEPOINT(trace_nvme_cq_new_entry, "nvme%d qid=%d sqhd=%d", int, int, int);
 
 TRACEPOINT(trace_nvme_enable_interrupts, "nvme%d qid=%d", int, int);
 TRACEPOINT(trace_nvme_disable_interrupts, "nvme%d qid=%d", int, int);
@@ -108,6 +109,7 @@ u16 queue_pair::submit_cmd_without_lock(nvme_sq_entry_t* cmd)
 {
     _sq._addr[_sq._tail] = *cmd;
     advance_sq_tail();
+    //asm volatile("sfence" ::: "memory");
     mmio_setl(_sq._doorbell, _sq._tail);
     return _sq._tail;
 }
@@ -194,6 +196,7 @@ nvme_cq_entry_t* queue_pair::get_completion_queue_entry()
     auto* cqe = &_cq._addr[_cq._head];
     assert(cqe->p == _cq_phase_tag);
 
+    trace_nvme_cq_new_entry(_driver_id, _id, cqe->sqhd);
     return cqe;
 }
 
