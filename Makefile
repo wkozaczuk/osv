@@ -1055,7 +1055,6 @@ objects += core/rcu.o
 objects += core/pagecache.o
 objects += core/mempool.o
 objects += core/alloctracker.o
-objects += core/printf.o
 objects += core/sampler.o
 
 objects += linux.o

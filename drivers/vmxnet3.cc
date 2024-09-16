@@ -471,15 +471,17 @@ void vmxnet3::do_version_handshake()
 {
     auto val = _bar1->readl(bar1::vrrs);
     if ((val & VMXNET3_VERSIONS_MASK) != VMXNET3_REVISION) {
-        auto err = boost::format("unknown HW version %d") % val;
-        throw std::runtime_error(err.str());
+        //TODO auto err = boost::format("unknown HW version %d") % val;
+        //throw std::runtime_error(err.str());
+        throw std::runtime_error("unknown HW version");
     }
     _bar1->writel(bar1::vrrs, VMXNET3_REVISION);
 
     val = _bar1->readl(bar1::uvrs);
     if ((val & VMXNET3_VERSIONS_MASK) != VMXNET3_UPT_VERSION) {
-        auto err = boost::format("unknown UPT version %d") % val;
-        throw std::runtime_error(err.str());
+        //TODO auto err = boost::format("unknown UPT version %d") % val;
+        //throw std::runtime_error(err.str());
+        throw std::runtime_error("unknown UPT version");
     }
     _bar1->writel(bar1::uvrs, VMXNET3_UPT_VERSION);
 }

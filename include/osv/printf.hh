@@ -8,7 +8,6 @@
 #ifndef PRINTF_HH_
 #define PRINTF_HH_
 
-#include <boost/format.hpp>
 #include <string>
 #include <sstream>
 #include <iostream>
@@ -16,37 +15,28 @@
 namespace osv {
 
 template <typename... args>
-std::ostream& fprintf(std::ostream& os, boost::format& fmt, args... as);
-
-template <typename... args>
 std::string sprintf(const char* fmt, args... as);
 
 // implementation
 
-template <>
-std::ostream& fprintf(std::ostream& os, boost::format& fmt);
-
-template <typename arg0, typename... args>
-inline
-std::ostream& fprintf(std::ostream& os, boost::format& fmt, const arg0& a0, args... as)
-{
-    return fprintf(os, fmt % a0, as...);
-}
-
+//TODO: Change it to not to use ostream
 template <typename... args>
 std::ostream& fprintf(std::ostream& os, const char* fmt, args... as)
 {
-    boost::format f(fmt);
-    return fprintf(os, f, as...);
+    //boost::format f(fmt);
+    //return fprintf(os, f, as...);
+    return os;
 }
 
 template <typename... args>
 std::string sprintf(const char* fmt, args... as)
 {
-    boost::format f(fmt);
+    //TODO: Re-implement
+    /*boost::format f(fmt);
     std::ostringstream os;
     fprintf(os, f, as...);
-    return os.str();
+    return os.str();*/
+    return "";
 }
 
 } // namespace osv
