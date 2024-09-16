@@ -135,9 +135,9 @@ apply options for each script at script execution (second script would modify
 environment setup by the first script, causing a race).
 */
 static void runscript_process_options_usage(std::string &message) {
-    std::cout << message << "\n";
-    std::cout << "OSv runscript options:\n";
-    std::cout << "  --env=arg             set Unix-like environment variable (putenv())\n";
+    //TODO std::cout << message << "\n";
+    //std::cout << "OSv runscript options:\n";
+    //std::cout << "  --env=arg             set Unix-like environment variable (putenv())\n";
     osv::poweroff();
 }
 

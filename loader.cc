@@ -51,7 +51,7 @@
 #endif
 #include <osv/options.hh>
 #include <dirent.h>
-#include <iostream>
+//#include <iostream>
 #include <fstream>
 #include <mntent.h>
 
@@ -175,7 +175,7 @@ static int sampler_frequency;
 static bool opt_enable_sampler = false;
 
 static void usage()
-{
+{/* TODO
     std::cout << "OSv options:\n";
     std::cout << "  --help                show help text\n";
     std::cout << "  --sampler=arg         start stack sampling profiler\n";
@@ -208,12 +208,12 @@ static void usage()
     std::cout << "  --nopci               disable PCI enumeration\n";
     std::cout << "  --extra-zfs-pools     import extra ZFS pools\n";
     std::cout << "  --mount-fs=arg        mount extra filesystem, format:<fs_type,url,path>\n";
-    std::cout << "  --preload-zfs-library preload ZFS library from /usr/lib/fs\n\n";
+    std::cout << "  --preload-zfs-library preload ZFS library from /usr/lib/fs\n\n";*/
 }
 
 static void handle_parse_error(const std::string &message)
 {
-    std::cout << message << std::endl;
+    //TODO std::cout << message << std::endl;
     usage();
     osv::poweroff();
 }
@@ -380,7 +380,8 @@ static void parse_options(int loader_argc, char** loader_argv)
 
     if (!options_values.empty()) {
         for (auto other_option : options_values) {
-            std::cout << "unrecognized option: " << other_option.first << std::endl;
+            //std::cout << "unrecognized option: " << other_option.first << std::endl;
+            printf("unrecognized option: ???\n");
         }
 
         usage();
@@ -610,8 +611,8 @@ void* do_main_thread(void *_main_args)
         if (fd < 0) {
             perror("output redirection failed");
         } else {
-            std::cout << (append ? "Appending" : "Writing") <<
-                    " stdout and stderr to " << fn << "\n";
+            //TODO std::cout << (append ? "Appending" : "Writing") <<
+            //TODO         " stdout and stderr to " << fn << "\n";
             close(1);
             close(2);
             dup(fd);
@@ -677,7 +678,8 @@ void* do_main_thread(void *_main_args)
                 bg.push_back(app);
             }
         } catch (const launch_error& e) {
-            std::cerr << e.what() << ". Powering off.\n";
+            //TODO std::cerr << e.what() << ". Powering off.\n";
+            printf("Powering off.\n");
             osv::poweroff();
         }
     }

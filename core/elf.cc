@@ -530,6 +530,7 @@ void object::process_headers()
             abort("Unknown p_type in executable %s: %d\n", pathname(), phdr.p_type);
         }
     }
+    /* TODO: Eliminate std::cout
     if (_is_dynamically_linked_executable && _tls_segment) {
         auto app_tls_size = get_aligned_tls_size();
         ulong pie_static_tls_maximum_size = &_pie_static_tls_end - &_pie_static_tls_start;
@@ -546,7 +547,7 @@ void object::process_headers()
                   << "Either re-link the kernel by adding 'app_local_exec_tls_size=" << app_tls_needed_size
                   << "' to ./scripts/build or re-link the app with '-shared' instead of '-pie'.\n";
         }
-    }
+    }*/
 }
 
 void file::unload_segment(const Elf64_Phdr& phdr)
