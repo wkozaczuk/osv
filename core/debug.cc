@@ -7,8 +7,6 @@
 
 #include <cstring>
 #include <cstdarg>
-#include <iostream>
-#include <iomanip>
 #include "drivers/console.hh"
 #include <osv/sched.hh>
 #include <osv/debug.hh>

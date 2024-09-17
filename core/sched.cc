@@ -27,6 +27,7 @@
 #include <osv/app.hh>
 #include <osv/symbols.hh>
 #include <osv/stubbing.hh>
+#include <algorithm>
 
 MAKE_SYMBOL(sched::thread::current);
 MAKE_SYMBOL(sched::cpu::current);
