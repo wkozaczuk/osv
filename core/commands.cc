@@ -6,12 +6,15 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
+#include <cassert>
+#include <cstdio>
 #include <iterator>
-#include <fstream>
+#include <unistd.h>
+//#include <fstream>
 #include <osv/debug.hh>
 
 #include <boost/config/warning_disable.hpp>
-#include <boost/spirit/include/qi.hpp>
+//#include <boost/spirit/include/qi.hpp>
 #include <osv/power.hh>
 #include <osv/commands.hh>
 #include <osv/align.hh>
@@ -19,14 +22,14 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-namespace qi = boost::spirit::qi;
-namespace ascii = boost::spirit::ascii;
-using boost::spirit::ascii::space;
+//namespace qi = boost::spirit::qi;
+//namespace ascii = boost::spirit::ascii;
+//using boost::spirit::ascii::space;
 
 namespace osv {
 
 typedef std::string::const_iterator sciter;
-
+/*
 struct command : qi::grammar<sciter,
                              std::vector<std::string>(),
                              ascii::space_type>
@@ -65,14 +68,16 @@ struct commands : qi::grammar<sciter,
     qi::rule<sciter,
              std::vector<std::vector<std::string> >(),
              ascii::space_type> start;
-};
+};*/
 
 std::vector<std::vector<std::string> >
 parse_command_line_min(const std::string line, bool &ok)
 {
-    std::vector<std::vector<std::string> > result;
+    std::vector<std::vector<std::string> > result = { { strdup(line.c_str()), "" } };
+    ok = true;
 
     // Lines with only {blank char or ;} are ignored.
+    /*TODO
     if (std::string::npos == line.find_first_not_of(" \f\n\r\t\v;")) {
         ok = true;
         return result;
@@ -85,7 +90,7 @@ parse_command_line_min(const std::string line, bool &ok)
                       end,
                       g,
                       space,
-                      result);
+                      result);*/
 
     return result;
 }
@@ -134,10 +139,11 @@ Applying all options before running any command is also safer than trying to
 apply options for each script at script execution (second script would modify
 environment setup by the first script, causing a race).
 */
+/*TODO
 static void runscript_process_options_usage(std::string &message) {
-    //TODO std::cout << message << "\n";
-    //std::cout << "OSv runscript options:\n";
-    //std::cout << "  --env=arg             set Unix-like environment variable (putenv())\n";
+    std::cout << message << "\n";
+    std::cout << "OSv runscript options:\n";
+    std::cout << "  --env=arg             set Unix-like environment variable (putenv())\n";
     osv::poweroff();
 }
 
@@ -192,7 +198,7 @@ static void runscript_process_options(std::vector<std::vector<std::string> >& re
         cmd.erase(cmd.begin(), cmd.begin() + nr_options);
         result[ii] = cmd;
     }
-}
+}*/
 
 /*
 If cmd starts with "runscript file", read content of file and
@@ -202,15 +208,16 @@ ok flag is set to false on parse error, and left unchanged otherwise.
 
 If cmd doesn't start with runscript, then vector with size 0 is returned.
 */
+/* TODO
 std::vector<std::vector<std::string>>
 runscript_expand(const std::vector<std::string>& cmd, bool &ok, bool &is_runscript)
 {
     std::vector<std::vector<std::string> > result2, result3;
     if (cmd[0] == "runscript") {
         is_runscript = true;
-        /*
-        The cmd vector ends with additional ";" or "\0" element.
-        */
+        //
+        //The cmd vector ends with additional ";" or "\0" element.
+        //
         if (cmd.size() != 3 && cmd[2].c_str()[0] != 0x00) {
             puts("Failed expanding runscript - filename missing or extra parameters present.");
             ok = false;
@@ -253,12 +260,12 @@ runscript_expand(const std::vector<std::string>& cmd, bool &ok, bool &is_runscri
         is_runscript = false;
     }
     return result2;
-}
+}*/
 
 std::vector<std::vector<std::string>>
 parse_command_line(const std::string line,  bool &ok)
 {
-    std::vector<std::vector<std::string> > result, result2;
+    std::vector<std::vector<std::string> > result;//, result2;
     result = parse_command_line_min(line, ok);
     // First replace environ variables in input command line.
     expand_environ_vars(result);
@@ -267,6 +274,7 @@ parse_command_line(const std::string line,  bool &ok)
     If command starts with runscript, we need to read actual command to
     execute from the given file.
     */
+    /*TODO
     std::vector<std::vector<std::string>>::iterator cmd_iter;
     for (cmd_iter=result.begin(); ok && cmd_iter!=result.end(); ) {
         bool is_runscript;
@@ -283,7 +291,7 @@ parse_command_line(const std::string line,  bool &ok)
         else {
             cmd_iter++;
         }
-    }
+    }*/
 
     return result;
 }
