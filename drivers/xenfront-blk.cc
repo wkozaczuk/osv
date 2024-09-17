@@ -54,12 +54,13 @@ void disk_create(struct disk *dp, int version)
     struct device *dev = blkfront_from_softc(sc);
     xenfront::xenfront_driver *blkfront = xenfront::xenfront_driver::from_device(dev);
 
-    std::stringstream name; 
+    /*TODO std::stringstream name; 
     name << blkfront->get_name();
-    name << dp->d_unit;
+    name << dp->d_unit;*/
 
     dev->driver = &xenfront_blk_driver;
-    device_register(dev, name.str().c_str(), D_BLK);
+    //device_register(dev, name.str().c_str(), D_BLK);
+    device_register(dev, "", D_BLK);
 
     struct xenfront_blk_priv *prv;
     prv = static_cast<struct xenfront_blk_priv*>(dev->private_data);

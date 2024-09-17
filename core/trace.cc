@@ -11,10 +11,10 @@
 #include <osv/mutex.h>
 #include "arch.hh"
 #include <atomic>
-#include <regex>
-#include <fstream>
+//#include <regex>
+//#include <fstream>
 #include <unordered_map>
-#include <boost/algorithm/string/replace.hpp>
+//#include <boost/algorithm/string/replace.hpp>
 #include <boost/range/algorithm/remove.hpp>
 #include <sys/types.h>
 #include <sys/stat.h>
@@ -136,7 +136,7 @@ typeof(tracepoint_base::tp_list) tracepoint_base::tp_list __attribute__((init_pr
 
 // Note: the definition of this list is: "expressions from command line",
 // and its only use is to deal with late initialization of tp:s
-std::vector<std::regex> enabled_tracepoint_regexs;
+//std::vector<std::regex> enabled_tracepoint_regexs;
 
 void enable_trace()
 {
@@ -173,11 +173,11 @@ void ensure_log_initialized()
 
 void enable_tracepoint(std::string wildcard)
 {
-    wildcard = boost::algorithm::replace_all_copy(wildcard, std::string("*"), std::string(".*"));
+    /*TODO wildcard = boost::algorithm::replace_all_copy(wildcard, std::string("*"), std::string(".*"));
     wildcard = boost::algorithm::replace_all_copy(wildcard, std::string("?"), std::string("."));
     std::regex re(wildcard);
     trace::set_event_state(re, true);
-    enabled_tracepoint_regexs.push_back(re);
+    enabled_tracepoint_regexs.push_back(re);*/
 }
 
 void enable_backtraces(bool backtrace) {
@@ -309,14 +309,14 @@ void tracepoint_base::run_probes() {
 
 void tracepoint_base::try_enable()
 {
-    for (auto& re : enabled_tracepoint_regexs) {
+    /*TODO for (auto& re : enabled_tracepoint_regexs) {
         if (std::regex_match(std::string(name), re)) {
             // keep the same semantics for command line enabled
             // tp:s as before individually controlled points.
             backtrace(global_backtrace_enabled);
             enable();
         }
-    }
+    }*/
 }
 
 void tracepoint_base::add_probe(probe* p)
@@ -447,7 +447,7 @@ trace::get_event_info()
     return res;
 }
 
-std::vector<trace::event_info>
+/*std::vector<trace::event_info>
 trace::get_event_info(const std::regex & ex)
 {
     std::vector<event_info> res;
@@ -480,7 +480,7 @@ trace::set_event_state(const std::regex & ex, bool enable, bool backtrace) {
     }
 
     return res;
-}
+}*/
 
 trace::event_info
 trace::get_event_info(const ext_id & id)
@@ -543,6 +543,7 @@ trace::remove_symbol_callback(generator_id id) {
 }
 
 // Helper type to build trace dump binary files
+/*TODO
 class trace_out: public std::ofstream {
 public:
     std::string path;
@@ -622,7 +623,7 @@ public:
 private:
     trace_out & _out;
     trace_out::pos_type _pos;
-};
+};*/
 
 /*
   Format (please keep in sync with doc/wiki)
@@ -719,6 +720,7 @@ dump = <chunk> {
 };
 
  */
+/*
 std::string
 trace::create_trace_dump()
 {
@@ -1024,4 +1026,4 @@ trace::create_trace_dump()
     out.close();
 
     return std::move(out.path);
-}
+}*/

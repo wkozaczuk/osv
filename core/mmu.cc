@@ -1986,7 +1986,7 @@ linear_vma::~linear_vma() {
 }
 
 std::string sysfs_linear_maps() {
-    std::ostringstream os;
+    /*TODO: std::ostringstream os;
     WITH_LOCK(linear_vma_set_mutex.for_read()) {
         for(auto *vma : linear_vma_set) {
             char mattr = vma->_mem_attr == mmu::mattr::normal ? 'n' : 'd';
@@ -1994,7 +1994,8 @@ std::string sysfs_linear_maps() {
                 vma->_virt_addr, (void*)vma->_phys_addr, vma->_size, mattr, vma->_name.c_str());
         }
     }
-    return os.str();
+    return os.str();*/
+    return "";
 }
 
 void linear_map(void* _virt, phys addr, size_t size, const char* name,
@@ -2086,7 +2087,7 @@ error mincore(const void *addr, size_t length, unsigned char *vec)
 }
 
 std::string procfs_maps()
-{
+{/*TODO
     std::ostringstream os;
     WITH_LOCK(vma_list_mutex.for_read()) {
         for (auto& vma : vma_list) {
@@ -2105,7 +2106,8 @@ std::string procfs_maps()
             }
         }
     }
-    return os.str();
+    return os.str();*/
+    return "";
 }
 
 }
