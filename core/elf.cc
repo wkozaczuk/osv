@@ -15,7 +15,8 @@
 #include <osv/debug.hh>
 #include <stdlib.h>
 #include <unistd.h>
-#include <boost/algorithm/string.hpp>
+//#define BOOST_NO_STD_LOCALE 1 - this disables pulling std::locale but boost::replace_all() and boost::split() are heavy
+//#include <boost/algorithm/string.hpp>
 #include <boost/range/algorithm/find.hpp>
 #include <functional>
 #include <iterator>
@@ -1053,14 +1054,14 @@ bool object::contains_addr(const void* addr)
     return addr >= _base && addr < _end;
 }
 
-static std::string dirname(std::string path)
+/*static std::string dirname(std::string path)
 {
     auto pos = path.rfind('/');
     if (pos == path.npos) {
         return "/";
     }
     return path.substr(0, pos);
-}
+}*/
 
 void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
 {
@@ -1075,10 +1076,10 @@ void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
         rpath_str = dynamic_str(DT_RPATH);
     }
 
-    if (!rpath_str.empty()) {
+    /*if (!rpath_str.empty()) {
         boost::replace_all(rpath_str, "$ORIGIN", dirname(_pathname));
         boost::split(rpath, rpath_str, boost::is_any_of(":"));
-    }
+    }*/
     auto needed = dynamic_str_array(DT_NEEDED);
     for (auto lib : needed) {
         elf_debug("Loading DT_NEEDED object: %s \n", lib);

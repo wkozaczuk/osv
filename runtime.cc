@@ -5,6 +5,7 @@
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
+#define BOOST_NO_STD_LOCALE 1
 #include <osv/drivers_config.h>
 #include <osv/sched.hh>
 #include <osv/elf.hh>
