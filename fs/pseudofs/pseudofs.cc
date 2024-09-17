@@ -181,7 +181,7 @@ int getattr(vnode *vp, vattr *attr)
 }
 
 string cpumap()
-{
+{/* TODO
     auto cpu_count = sched::cpus.size();
     uint32_t first_set = 0xffffffff >> (32 - cpu_count % 32);
     int remaining_cpus_sets = cpu_count / 32;
@@ -191,7 +191,8 @@ string cpumap()
     for (; remaining_cpus_sets > 0; remaining_cpus_sets--) {
         osv::fprintf(os, ",%08x", 0xffffffff);
     }
-    return os.str();
+    return os.str();*/
+    return "";
 }
 
 string meminfo(const char* format)

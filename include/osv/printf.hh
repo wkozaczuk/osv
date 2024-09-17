@@ -8,9 +8,11 @@
 #ifndef PRINTF_HH_
 #define PRINTF_HH_
 
+#define BOOST_NO_STD_LOCALE 1
+
 #include <string>
-#include <sstream>
-#include <iostream>
+//#include <sstream>
+//#include <iostream>
 
 namespace osv {
 
@@ -20,13 +22,13 @@ std::string sprintf(const char* fmt, args... as);
 // implementation
 
 //TODO: Change it to not to use ostream
-template <typename... args>
+/*template <typename... args>
 std::ostream& fprintf(std::ostream& os, const char* fmt, args... as)
 {
     //boost::format f(fmt);
     //return fprintf(os, f, as...);
     return os;
-}
+}*/
 
 template <typename... args>
 std::string sprintf(const char* fmt, args... as)

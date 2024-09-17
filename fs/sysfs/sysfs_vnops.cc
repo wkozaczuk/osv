@@ -34,7 +34,7 @@ static string sysfs_distance()
 
 using namespace memory;
 static string sysfs_free_page_ranges()
-{
+{/*TODO
     stats::page_ranges_stats stats;
     stats::get_page_ranges_stats(stats);
 
@@ -51,11 +51,12 @@ static string sysfs_free_page_ranges()
         }
     }
 
-    return os.str();
+    return os.str();*/
+    return "";
 }
 
 static string sysfs_memory_pools()
-{
+{/*TODO
     stats::pool_stats stats;
     stats::get_global_l2_stats(stats);
 
@@ -70,7 +71,8 @@ static string sysfs_memory_pools()
             cpu->id, stats._max, stats._watermark_lo, stats._watermark_hi, stats._nr);
     }
 
-    return os.str();
+    return os.str();*/
+    return "";
 }
 
 static int
