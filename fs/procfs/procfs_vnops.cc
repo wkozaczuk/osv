@@ -103,11 +103,10 @@ static std::string procfs_status()
     // information about cpus and memory intended for numa library
     // For details about the format read here: http://man7.org/linux/man-pages/man5/proc.5.html
     // and here: http://man7.org/linux/man-pages/man7/cpuset.7.html (mask and list format)
-    return osv::sprintf("Cpus_allowed:\t%s\n"
-                     "Cpus_allowed_list:\t0-%d\n"
-                     "Mems_allowed:\t00000001\n"
-                     "Mems_allowed_list:\t0\n",
-                     pseudofs::cpumap().c_str(), sched::cpus.size() - 1);
+    return std::string("Cpus_allowed:\t") + pseudofs::cpumap() + "\n"
+                       "Cpus_allowed_list:\t0-" + std::to_string(sched::cpus.size() - 1) + "\n"
+                       "Mems_allowed:\t00000001\n"
+                       "Mems_allowed_list:\t0\n";
 }
 
 static std::string procfs_mounts()

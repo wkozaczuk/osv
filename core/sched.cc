@@ -165,7 +165,7 @@ cpu::cpu(unsigned _id)
 void cpu::init_idle_thread()
 {
     running_since = osv::clock::uptime::now();
-    std::string name = osv::sprintf("idle%d", id);
+    std::string name = std::string("idle") + std::to_string(id);
     idle_thread = thread::make([this] { idle(); }, thread::attr().pin(this).name(name));
     idle_thread->set_priority(thread::priority_idle);
 }

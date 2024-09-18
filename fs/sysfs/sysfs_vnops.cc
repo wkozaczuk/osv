@@ -8,7 +8,6 @@
 #include <unistd.h>
 #include <osv/mount.h>
 #include <mntent.h>
-#include <osv/printf.hh>
 #include <osv/mempool.hh>
 
 #include "fs/pseudofs/pseudofs.hh"
@@ -93,7 +92,7 @@ sysfs_mount(mount* mp, const char *dev, int flags, const void* data)
 
     auto cpu = make_shared<pseudo_dir_node>(inode_count++);
     cpu->add("online", inode_count++, [] {
-       return osv::sprintf("0-%d", sched::cpus.size() - 1);
+       return std::string("0-") + std::to_string(sched::cpus.size() - 1);
     });
     system->add("cpu", cpu);
 

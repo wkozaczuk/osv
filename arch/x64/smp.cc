@@ -247,7 +247,7 @@ void smp_launch()
     processor::kvm_pv_eoi_init();
     auto boot_cpu = smp_initial_find_current_cpu();
     for (auto c : sched::cpus) {
-        auto name = osv::sprintf("balancer%d", c->id);
+        auto name = std::string("balancer") + std::to_string(c->id);
         if (c == boot_cpu) {
             sched::thread::current()->_detached_state->_cpu = c;
             // c->init_on_cpu() already done in main().
