@@ -55,7 +55,6 @@ int xenfront_driver::attach()
 void xenfront_driver::set_ivars(struct xenbus_device_ivars *ivars)
 {
     driver_t *table;
-    //std::stringstream ss;//TODO: Check why this does not pull locale
 
     _otherend_path = std::string(ivars->xd_otherend_path);
     _otherend_id = ivars->xd_otherend_id;
@@ -65,7 +64,7 @@ void xenfront_driver::set_ivars(struct xenbus_device_ivars *ivars)
     if (!strcmp(ivars->xd_type, "vif")) {
         table = &netfront_driver;
         _irq_type = INTR_TYPE_NET;//,
-        //ss << "vif";
+        _driver_name = "vif";
 
         std::vector<std::string> node_info;
         //boost::split(node_info, _node_path, boost::is_any_of("/"));
@@ -81,12 +80,11 @@ void xenfront_driver::set_ivars(struct xenbus_device_ivars *ivars)
     } else if (!strcmp(ivars->xd_type, "vbd")) {
         table = &blkfront_driver;
         _irq_type = INTR_TYPE_BIO;
-        //ss << "vblk";
+        _driver_name = "vblk";
         _bsd_dev.softc = reinterpret_cast<void *>(new bf_softc);
     } else
         return;
 
-    _driver_name = "";//ss.str();
     device_method_t *dm = table->methods;
     for (auto i = 0; dm[i].id; i++) {
         if (dm[i].id == bus_device_probe)
