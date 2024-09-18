@@ -213,7 +213,7 @@ static void usage()
 
 static void handle_parse_error(const std::string &message)
 {
-    //TODO std::cout << message << std::endl;
+    printf("%s\n", message.c_str());
     usage();
     osv::poweroff();
 }

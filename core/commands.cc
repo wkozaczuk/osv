@@ -73,7 +73,9 @@ struct commands : qi::grammar<sciter,
 std::vector<std::vector<std::string> >
 parse_command_line_min(const std::string line, bool &ok)
 {
-    std::vector<std::vector<std::string> > result = { { strdup(line.c_str()), "" } };
+    //TODO
+    //std::vector<std::vector<std::string> > result = { { strdup(line.c_str()), "" } };
+    std::vector<std::vector<std::string> > result = { { "/hello", "" } };
     ok = true;
 
     // Lines with only {blank char or ;} are ignored.
