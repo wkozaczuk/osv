@@ -10,12 +10,6 @@
 
 namespace osv {
 
-/*template <>
-std::ostream& fprintf(std::ostream& os, boost::format& fmt)
-{
-    return os << fmt;
-}*/
-
 std::string sprintf(const char* fmt...)
 {
     char *output;
@@ -23,6 +17,7 @@ std::string sprintf(const char* fmt...)
     va_start(ap, fmt);
     auto ret = vasprintf(&output, fmt, ap);
     va_end(ap);
+
     if (ret >= 0 && output) {
         auto res = std::string(output);
         free(output);
