@@ -175,40 +175,41 @@ static int sampler_frequency;
 static bool opt_enable_sampler = false;
 
 static void usage()
-{/* TODO
-    std::cout << "OSv options:\n";
-    std::cout << "  --help                show help text\n";
-    std::cout << "  --sampler=arg         start stack sampling profiler\n";
-    std::cout << "  --trace=arg           tracepoints to enable\n";
-    std::cout << "  --trace-backtrace     log backtraces in the tracepoint log\n";
-    std::cout << "  --trace-list          list available tracepoints\n";
-    std::cout << "  --strace              start a thread to print tracepoints to the console on the fly\n";
-    std::cout << "  --leak                start leak detector after boot\n";
-    std::cout << "  --nomount             don't mount the root file system\n";
-    std::cout << "  --nopivot             do not pivot the root from bootfs to the root fs\n";
-    std::cout << "  --rootfs=arg          root filesystem to use (zfs, rofs, ramfs or virtiofs)\n";
-    std::cout << "  --assign-net          assign virtio network to the application\n";
-    std::cout << "  --maxnic=arg          maximum NIC number\n";
-    std::cout << "  --norandom            don't initialize any random device\n";
-    std::cout << "  --noshutdown          continue running after main() returns\n";
-    std::cout << "  --power-off-on-abort  use poweroff instead of halt if it's aborted\n";
-    std::cout << "  --noinit              don't run commands from /init\n";
-    std::cout << "  --verbose             be verbose, print debug messages\n";
-    std::cout << "  --console=arg         select console driver\n";
-    std::cout << "  --env=arg             set Unix-like environment variable (putenv())\n";
-    std::cout << "  --cwd=arg             set current working directory\n";
-    std::cout << "  --bootchart           perform a test boot measuring a time distribution of\n";
-    std::cout << "                        the various operations\n\n";
-    std::cout << "  --ip=arg              set static IP on NIC\n";
-    std::cout << "  --defaultgw=arg       set default gateway address\n";
-    std::cout << "  --nameserver=arg      set nameserver address\n";
-    std::cout << "  --delay=arg (=0)      delay in seconds before boot\n";
-    std::cout << "  --redirect=arg        redirect stdout and stderr to file\n";
-    std::cout << "  --disable_rofs_cache  disable ROFS memory cache\n";
-    std::cout << "  --nopci               disable PCI enumeration\n";
-    std::cout << "  --extra-zfs-pools     import extra ZFS pools\n";
-    std::cout << "  --mount-fs=arg        mount extra filesystem, format:<fs_type,url,path>\n";
-    std::cout << "  --preload-zfs-library preload ZFS library from /usr/lib/fs\n\n";*/
+{
+    printf(
+        "OSv options:\n"
+        "  --help                show help text\n"
+        "  --sampler=arg         start stack sampling profiler\n"
+        "  --trace=arg           tracepoints to enable\n"
+        "  --trace-backtrace     log backtraces in the tracepoint log\n"
+        "  --trace-list          list available tracepoints\n"
+        "  --strace              start a thread to print tracepoints to the console on the fly\n"
+        "  --leak                start leak detector after boot\n"
+        "  --nomount             don't mount the root file system\n"
+        "  --nopivot             do not pivot the root from bootfs to the root fs\n"
+        "  --rootfs=arg          root filesystem to use (zfs, rofs, ramfs or virtiofs)\n"
+        "  --assign-net          assign virtio network to the application\n"
+        "  --maxnic=arg          maximum NIC number\n"
+        "  --norandom            don't initialize any random device\n"
+        "  --noshutdown          continue running after main() returns\n"
+        "  --power-off-on-abort  use poweroff instead of halt if it's aborted\n"
+        "  --noinit              don't run commands from /init\n"
+        "  --verbose             be verbose, print debug messages\n"
+        "  --console=arg         select console driver\n"
+        "  --env=arg             set Unix-like environment variable (putenv())\n"
+        "  --cwd=arg             set current working directory\n"
+        "  --bootchart           perform a test boot measuring a time distribution of\n"
+        "                        the various operations\n\n"
+        "  --ip=arg              set static IP on NIC\n"
+        "  --defaultgw=arg       set default gateway address\n"
+        "  --nameserver=arg      set nameserver address\n"
+        "  --delay=arg (=0)      delay in seconds before boot\n"
+        "  --redirect=arg        redirect stdout and stderr to file\n"
+        "  --disable_rofs_cache  disable ROFS memory cache\n"
+        "  --nopci               disable PCI enumeration\n"
+        "  --extra-zfs-pools     import extra ZFS pools\n"
+        "  --mount-fs=arg        mount extra filesystem, format:<fs_type,url,path>\n"
+        "  --preload-zfs-library preload ZFS library from /usr/lib/fs\n\n");
 }
 
 static void handle_parse_error(const std::string &message)
@@ -381,8 +382,7 @@ static void parse_options(int loader_argc, char** loader_argv)
 
     if (!options_values.empty()) {
         for (auto other_option : options_values) {
-            //std::cout << "unrecognized option: " << other_option.first << std::endl;
-            printf("unrecognized option: ???\n");
+            printf("unrecognized option: %s\n", other_option.first.c_str());
         }
 
         usage();
@@ -614,8 +614,7 @@ void* do_main_thread(void *_main_args)
         if (fd < 0) {
             perror("output redirection failed");
         } else {
-            //TODO std::cout << (append ? "Appending" : "Writing") <<
-            //TODO         " stdout and stderr to " << fn << "\n";
+            printf("%s stdout and stderr to %s\n", (append ? "Appending" : "Writing"), fn.c_str());
             close(1);
             close(2);
             dup(fd);
@@ -682,8 +681,7 @@ void* do_main_thread(void *_main_args)
                 bg.push_back(app);
             }
         } catch (const launch_error& e) {
-            //TODO std::cerr << e.what() << ". Powering off.\n";
-            printf("Powering off.\n");
+            fprintf(stderr, "%s. Powering off.\n", e.what());
             osv::poweroff();
         }
     }

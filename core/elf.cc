@@ -531,7 +531,6 @@ void object::process_headers()
             abort("Unknown p_type in executable %s: %d\n", pathname(), phdr.p_type);
         }
     }
-    /* TODO: Eliminate std::cout
     if (_is_dynamically_linked_executable && _tls_segment) {
         auto app_tls_size = get_aligned_tls_size();
         ulong pie_static_tls_maximum_size = &_pie_static_tls_end - &_pie_static_tls_start;
@@ -543,12 +542,13 @@ void object::process_headers()
             auto kernel_tls_used_size = kernel_tls_size - pie_static_tls_maximum_size;
             auto kernel_tls_needed_size = align_up(kernel_tls_used_size + app_tls_size, 64UL);
             auto app_tls_needed_size = kernel_tls_needed_size - kernel_tls_used_size;
-            std::cout << "WARNING: " << pathname() << " is a PIE using TLS of size " << app_tls_size
-                  << " which is greater than the " << pie_static_tls_maximum_size << " bytes limit. "
-                  << "Either re-link the kernel by adding 'app_local_exec_tls_size=" << app_tls_needed_size
-                  << "' to ./scripts/build or re-link the app with '-shared' instead of '-pie'.\n";
+            printf("WARNING: %s is a PIE using TLS of size %ld "
+                "which is greater than the %ld bytes limit. "
+                "Either re-link the kernel by adding 'app_local_exec_tls_size=%ld' "
+                "to ./scripts/build or re-link the app with '-shared' instead of '-pie'.\n",
+                pathname().c_str(), app_tls_size, pie_static_tls_maximum_size, app_tls_needed_size);
         }
-    }*/
+    }
 }
 
 void file::unload_segment(const Elf64_Phdr& phdr)
