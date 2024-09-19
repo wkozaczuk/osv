@@ -71,28 +71,27 @@ static std::string procfs_stats()
     int zero = 0;
 
     return osv::sprintf("%d (%s) %c "
-                     "%d %d %d %d %d "
-                     "%lu %lu %lu %lu %lu "
-                     "%lu %lu %ld %ld "
-                     "%ld %ld %ld %ld "
-                     "%lu %lu "
-                     "%lu %lu "
-                     "%p %p %p %p %p "
-                     "%lu %lx %lu %lu "
-                     "%d %d %d "
-                     "%lu %d %d %d",
-                     pid, program_invocation_short_name, state,
-                     ppid, pgrp, session, tty, tpgid,
-                     flags, min_flt, cmin_flt, maj_flt, cmaj_flt,
-                     utime, stime, cutime, cstime,
-                     priority, nice, nlwp, nextalarm,
-                     start_time, vsize,
-                     rss, rss_rlim,
-                     start_code, end_code, start_stack, kstk_esp, kstk_eip,
-                     pending, blocked, sigign, sigcatch,
-                     wchan, zero, zero,
-                     exit_signal, cpu, rt_priority, policy
-                );
+                        "%d %d %d %d %d "
+                        "%lu %lu %lu %lu %lu "
+                        "%lu %lu %ld %ld "
+                        "%ld %ld %ld %ld "
+                        "%lu %lu "
+                        "%lu %lu "
+                        "%p %p %p %p %p "
+                        "%lu %lx %lu %lu "
+                        "%d %d %d "
+                        "%lu %d %d %d",
+                        pid, program_invocation_short_name, state,
+                        ppid, pgrp, session, tty, tpgid,
+                        flags, min_flt, cmin_flt, maj_flt, cmaj_flt,
+                        utime, stime, cutime, cstime,
+                        priority, nice, nlwp, nextalarm,
+                        start_time, vsize,
+                        rss, rss_rlim,
+                        start_code, end_code, start_stack, kstk_esp, kstk_eip,
+                        pending, blocked, sigign, sigcatch,
+                        wchan, zero, zero,
+                        exit_signal, cpu, rt_priority, policy);
 }
 
 static std::string procfs_status()

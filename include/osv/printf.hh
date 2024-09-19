@@ -16,8 +16,8 @@
 
 namespace osv {
 
-template <typename... args>
-std::string sprintf(const char* fmt, args... as);
+std::string sprintf(const char* fmt...);
+std::string vsprintf(const char* fmt, va_list ap);
 
 // implementation
 
@@ -29,17 +29,6 @@ std::ostream& fprintf(std::ostream& os, const char* fmt, args... as)
     //return fprintf(os, f, as...);
     return os;
 }*/
-
-template <typename... args>
-std::string sprintf(const char* fmt, args... as)
-{
-    //TODO: Re-implement
-    /*boost::format f(fmt);
-    std::ostringstream os;
-    fprintf(os, f, as...);
-    return os.str();*/
-    return "";
-}
 
 } // namespace osv
 

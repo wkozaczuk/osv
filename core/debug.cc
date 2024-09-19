@@ -169,6 +169,14 @@ void debug(std::string str)
     }
 }
 
+void debugf(const char* fmt...)
+{
+    va_list ap;
+    va_start(ap, fmt);
+    debug(osv::vsprintf(fmt, ap));
+    va_end(ap);
+}
+
 void enable_verbose()
 {
     verbose = true;
@@ -186,7 +194,7 @@ void flush_debug_buffer()
 
 extern "C" {
 
-    void debugf(const char *fmt, ...)
+    void debugff(const char *fmt, ...)
     {
         char msg[512];
 

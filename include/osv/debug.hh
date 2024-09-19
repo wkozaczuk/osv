@@ -91,16 +91,9 @@ extern "C" {
 void flush_debug_buffer();
 void enable_verbose();
 void debug(std::string str);
-template <typename... args>
-void debug(const char* fmt, args... as);
+void debugf(const char* fmt...);
 
 extern "C" {void readln(char *msg, size_t size); }
-
-template <typename... args>
-void debug(const char* fmt, args... as)
-{
-    debug(osv::sprintf(fmt, as...));
-}
 
 extern bool opt_power_off_on_abort;
 void abort(const char *fmt, ...) __attribute__((noreturn));
