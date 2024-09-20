@@ -13,8 +13,39 @@
 //#include <fstream>
 #include <osv/debug.hh>
 
+#define BOOST_NO_STD_LOCALE 1
 #include <boost/config/warning_disable.hpp>
 //#include <boost/spirit/include/qi.hpp>
+//#include <boost/spirit/include/qi_core.hpp>
+//---
+#include <boost/spirit/home/qi/parser.hpp>
+#include <boost/spirit/home/qi/parse.hpp>
+#include <boost/spirit/home/qi/what.hpp>
+#include <boost/spirit/home/qi/action.hpp>
+#include <boost/spirit/home/qi/char.hpp>
+#include <boost/spirit/home/qi/directive.hpp>
+//#include <boost/spirit/home/qi/nonterminal.hpp>
+//---
+#include <boost/spirit/home/qi/nonterminal/rule.hpp>
+#include <boost/spirit/home/qi/nonterminal/grammar.hpp>
+#include <boost/spirit/home/qi/nonterminal/error_handler.hpp>
+//#include <boost/spirit/home/qi/nonterminal/debug_handler.hpp>
+//#include <boost/spirit/home/qi/nonterminal/simple_trace.hpp>
+#include <boost/spirit/include/qi_eoi.hpp>
+#include <boost/spirit/home/qi/nonterminal/success_handler.hpp>
+//---
+#include <boost/spirit/home/qi/numeric.hpp>
+#include <boost/spirit/home/qi/operator.hpp>
+#include <boost/spirit/home/qi/string.hpp>
+
+/*#include <boost/spirit/include/qi_char_class.hpp>
+#include <boost/spirit/include/qi_grammar.hpp>
+#include <boost/spirit/include/qi_symbols.hpp>
+#include <boost/spirit/include/qi_lexeme.hpp>
+#include <boost/spirit/include/qi_eoi.hpp>
+#include <boost/spirit/include/qi_no_skip.hpp>
+#include <boost/spirit/include/qi_parse.hpp>*/
+
 #include <osv/power.hh>
 #include <osv/commands.hh>
 #include <osv/align.hh>
@@ -22,14 +53,14 @@
 #include <sys/stat.h>
 #include <fcntl.h>
 
-//namespace qi = boost::spirit::qi;
-//namespace ascii = boost::spirit::ascii;
-//using boost::spirit::ascii::space;
+namespace qi = boost::spirit::qi;
+namespace ascii = boost::spirit::ascii;
+using boost::spirit::ascii::space;
 
 namespace osv {
 
 typedef std::string::const_iterator sciter;
-/*
+
 struct command : qi::grammar<sciter,
                              std::vector<std::string>(),
                              ascii::space_type>
@@ -68,18 +99,18 @@ struct commands : qi::grammar<sciter,
     qi::rule<sciter,
              std::vector<std::vector<std::string> >(),
              ascii::space_type> start;
-};*/
+};
 
 std::vector<std::vector<std::string> >
 parse_command_line_min(const std::string line, bool &ok)
 {
     //TODO
     //std::vector<std::vector<std::string> > result = { { strdup(line.c_str()), "" } };
-    std::vector<std::vector<std::string> > result = { { "/hello", "" } };
-    ok = true;
+    //std::vector<std::vector<std::string> > result = { { "/httpserver.so", "" } };
+    //ok = true;
+    std::vector<std::vector<std::string> > result;
 
     // Lines with only {blank char or ;} are ignored.
-    /*TODO
     if (std::string::npos == line.find_first_not_of(" \f\n\r\t\v;")) {
         ok = true;
         return result;
@@ -92,7 +123,7 @@ parse_command_line_min(const std::string line, bool &ok)
                       end,
                       g,
                       space,
-                      result);*/
+                      result);
 
     return result;
 }
@@ -109,7 +140,6 @@ void expand_environ_vars(std::string& word)
         std::string new_word = word.substr(0, pos);
         std::string key = word.substr(pos+1);
         auto tmp = getenv(key.c_str());
-        //debug("    new_word=%s, key=%s, tmp=%s\n", new_word.c_str(), key.c_str(), tmp);
         if (tmp) {
             new_word += tmp;
         }
