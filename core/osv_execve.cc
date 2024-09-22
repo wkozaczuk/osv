@@ -5,7 +5,6 @@
 #include <osv/wait_record.hh>
 #include <thread>
 #include <string>
-//#include <sstream>
 
 /* Record thread state changes (termination) by storing exit status into a map.
  * It is used to implement waitpid like functionality for threads (osv_waittid).
@@ -85,20 +84,23 @@ static std::vector<std::string> argv_to_array(const char *const argv[])
 
 static std::unordered_map<std::string, std::string> envp_to_map(char *const envp[])
 {
-    //char * const *env_kv;
+    char * const *env_kv;
     std::unordered_map<std::string, std::string> envp_map;
-    /*TODO
     for (env_kv = envp; env_kv != nullptr && *env_kv != nullptr && **env_kv != '\0'; env_kv++ ) {
+        //TODO: Test if works the same as if std::getline()
         std::string key, value;
-        std::stringstream key_value(*env_kv);
-        std::getline(key_value, key, '=');
-        std::getline(key_value, value); // value will be left unmodified if there is no = in key_value 
+        std::string key_value(*env_kv);
+        auto equal_pos = key_value.find('=');
+        if (equal_pos != std::string::npos) {
+            key = key_value.substr(0, equal_pos);
+            value = key_value.substr(equal_pos + 1, key_value.length() - equal_pos - 1);
+        }
         if (value == "") {
             fprintf(stderr, "ENVIRON ignoring ill-formated variable %s (not key=value)\n", key.c_str());
             continue;
         }
         envp_map[key] = value;
-    }*/
+    }
     return envp_map;
 }
 
