@@ -15,8 +15,6 @@
 #include <osv/debug.hh>
 #include <stdlib.h>
 #include <unistd.h>
-//#define BOOST_NO_STD_LOCALE 1 - this disables pulling std::locale but boost::replace_all() and boost::split() are heavy
-//#include <boost/algorithm/string.hpp>
 #include <boost/range/algorithm/find.hpp>
 #include <functional>
 #include <iterator>
@@ -52,6 +50,20 @@ extern char libvdso_start[];
 
 using namespace boost::range;
 
+namespace osv {
+extern void split(std::vector<std::string> &output, const std::string& to_split, const char *delimiters);
+
+void replace_all(std::string &str, const std::string &from, const std::string &to)
+{
+    size_t start_pos = 0, from_length = from.length(), to_length = to.length();
+    while ((start_pos = str.find(from, start_pos)) != std::string::npos)
+    {
+        str.replace(start_pos, from_length, to);
+        start_pos += to_length;
+    }
+}
+
+}
 namespace elf {
 
 const ulong program::core_module_index = 0;
@@ -1054,14 +1066,14 @@ bool object::contains_addr(const void* addr)
     return addr >= _base && addr < _end;
 }
 
-/*static std::string dirname(std::string path)
+static std::string dirname(std::string path)
 {
     auto pos = path.rfind('/');
     if (pos == path.npos) {
         return "/";
     }
     return path.substr(0, pos);
-}*/
+}
 
 void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
 {
@@ -1076,10 +1088,10 @@ void object::load_needed(std::vector<std::shared_ptr<object>>& loaded_objects)
         rpath_str = dynamic_str(DT_RPATH);
     }
 
-    /*if (!rpath_str.empty()) {
-        boost::replace_all(rpath_str, "$ORIGIN", dirname(_pathname));
-        boost::split(rpath, rpath_str, boost::is_any_of(":"));
-    }*/
+    if (!rpath_str.empty()) {
+        osv::replace_all(rpath_str, "$ORIGIN", dirname(_pathname));
+        osv::split(rpath, rpath_str, ":");
+    }
     auto needed = dynamic_str_array(DT_NEEDED);
     for (auto lib : needed) {
         elf_debug("Loading DT_NEEDED object: %s \n", lib);

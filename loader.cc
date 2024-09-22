@@ -9,7 +9,6 @@
 #include "fs/fs.hh"
 #include <bsd/init.hh>
 #include <bsd/net.hh>
-//#include <boost/algorithm/string.hpp>
 #include <cctype>
 #include <osv/elf.hh>
 #include "arch-tls.hh"
@@ -51,8 +50,6 @@
 #endif
 #include <osv/options.hh>
 #include <dirent.h>
-//#include <iostream>
-//#include <fstream>
 #include <mntent.h>
 
 #include "drivers/zfs.hh"
@@ -63,6 +60,21 @@
 #include "libc/network/__dns.hh"
 #include <processor.hh>
 #include <dlfcn.h>
+#include <vector>
+
+namespace osv {
+//TODO Handle compress (see https://cplusplus.com/faq/sequences/strings/split/#boost-split)
+    void split(std::vector<std::string> &output, const std::string& to_split, const char *delimiters)
+    {
+        size_t next = -1;
+        do
+        {
+            size_t current = next + 1;
+            next = to_split.find_first_of(delimiters, current);
+            output.push_back(to_split.substr(current, next - current));
+        } while (next != std::string::npos);
+    }
+}
 
 using namespace osv;
 using namespace osv::clock::literals;
@@ -284,14 +296,14 @@ static void parse_options(int loader_argc, char** loader_argv)
     }
 
     if (options::option_value_exists(options_values, "trace")) {
-        /*TODO: split -> auto tv = options::extract_option_values(options_values, "trace");
+        auto tv = options::extract_option_values(options_values, "trace");
         for (auto t : tv) {
             std::vector<std::string> tmp;
-            boost::split(tmp, t, boost::is_any_of(" ,"), boost::token_compress_on);
+            osv::split(tmp, t, " ,"); //boost::token_compress_on);
             for (auto t : tmp) {
                 enable_tracepoint(t);
             }
-        }*/
+        }
         if (extract_option_flag(options_values, "strace")) {
             opt_strace = true;
         }
@@ -319,12 +331,11 @@ static void parse_options(int loader_argc, char** loader_argv)
         opt_rootfs = v.front();
     }
 
-    /*TODO split
     if (options::option_value_exists(options_values, "mount-fs")) {
         auto mounts = options::extract_option_values(options_values, "mount-fs");
         for (auto m : mounts) {
             std::vector<std::string> tmp;
-            boost::split(tmp, m, boost::is_any_of(","), boost::token_compress_on);
+            osv::split(tmp, m, ",");// boost::token_compress_on);
             if (tmp.size() != 3 || tmp[0].empty() || tmp[1].empty() || tmp[2].empty()) {
                 printf("Ignoring value: '%s' for option mount-fs, expected in format: <fs_type,url,path>\n", m.c_str());
                 continue;
@@ -337,7 +348,7 @@ static void parse_options(int loader_argc, char** loader_argv)
             };
             opt_mount_fs.push_back(mount);
         }
-    }*/
+    }
 
     if (options::option_value_exists(options_values, "env")) {
         for (auto t : options::extract_option_values(options_values, "env")) {
@@ -413,10 +424,22 @@ std::vector<std::vector<std::string> > prepare_commands(char* app_cmdline)
 
 static std::string read_file(std::string fn)
 {
-  /*TODO std::ifstream in(fn, std::ios::in | std::ios::binary);
-  return std::string((std::istreambuf_iterator<char>(in)),
-          std::istreambuf_iterator<char>());*/
-  return "";
+    FILE *fp = fopen(fn.c_str(), "r");
+    if (!fp) {
+        return "";
+    }
+
+    size_t  line_length = 80;
+    char *line_buffer = (char*)malloc(line_length);
+    ssize_t read;
+    std::string content;
+    while ((read = getline(&line_buffer, &line_length, fp)) != -1) {
+        content += line_buffer;
+    }
+    free(line_buffer);
+    fclose(fp);
+
+    return content;
 }
 
 static void stop_all_remaining_app_threads()
@@ -539,10 +562,9 @@ void* do_main_thread(void *_main_args)
         if (opt_ip.size() == 0) {
             dhcp_start(true);
         } else {
-            /*TODO split
             for (auto t : opt_ip) {
                 std::vector<std::string> tmp;
-                boost::split(tmp, t, boost::is_any_of(" ,"), boost::token_compress_on);
+                osv::split(tmp, t, " ,");// boost::token_compress_on);
                 if (tmp.size() != 3)
                     abort("incorrect parameter on --ip");
 
@@ -550,7 +572,7 @@ void* do_main_thread(void *_main_args)
 
                 if (osv::start_if(tmp[0], tmp[1], tmp[2]) != 0)
                     debug("Could not initialize network interface.\n");
-            }*/
+            }
             if (opt_defaultgw.size() != 0) {
                 osv_route_add_network("0.0.0.0",
                                       "0.0.0.0",
@@ -639,9 +661,8 @@ void* do_main_thread(void *_main_args)
             fn += namelist[i]->d_name;
             auto cmdline = read_file(fn);
             debugf("Running from %s: %s\n", fn.c_str(), cmdline.c_str());
-            bool ok = false;
-            std::vector<std::vector<std::string> > new_commands;
-            //auto new_commands = osv::parse_command_line(cmdline, ok);
+            bool ok;
+            auto new_commands = osv::parse_command_line(cmdline, ok);
             free(namelist[i]);
             if (ok) {
                 init_commands.insert(init_commands.end(),
