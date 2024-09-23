@@ -549,8 +549,11 @@ trace::remove_symbol_callback(generator_id id) {
     }
 }
 
+//The code below will be compiled out with conf_hide_symbols=1 as create_trace_dump() is
+//not in the list of the symbols to be exported and is ONLY used
+//by full API httpservera module
+#include <fstream>
 // Helper type to build trace dump binary files
-/*TODO
 class trace_out: public std::ofstream {
 public:
     std::string path;
@@ -630,7 +633,7 @@ public:
 private:
     trace_out & _out;
     trace_out::pos_type _pos;
-};*/
+};
 
 /*
   Format (please keep in sync with doc/wiki)
@@ -727,7 +730,6 @@ dump = <chunk> {
 };
 
  */
-/*
 std::string
 trace::create_trace_dump()
 {
@@ -1033,4 +1035,4 @@ trace::create_trace_dump()
     out.close();
 
     return std::move(out.path);
-}*/
+}
