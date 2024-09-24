@@ -402,12 +402,20 @@ static void parse_options(int loader_argc, char** loader_argv)
 }
 
 // return the std::string and the commands_args poiting to them as a move
+#if HIDE_SYMBOLS < 1
+#include <iostream>
+#endif
 std::vector<std::vector<std::string> > prepare_commands(char* app_cmdline)
 {
     std::vector<std::vector<std::string> > commands;
     bool ok;
 
+//TODO: Add comment why we have to do it
+#if HIDE_SYMBOLS < 1
+    std::cout << "Cmdline: " << app_cmdline << "\n";
+#else
     printf("Cmdline: %s\n", app_cmdline);
+#endif
     commands = osv::parse_command_line(app_cmdline, ok);
 
     if (!ok) {
