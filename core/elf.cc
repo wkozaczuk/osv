@@ -51,7 +51,7 @@ extern char libvdso_start[];
 using namespace boost::range;
 
 namespace osv {
-extern void split(std::vector<std::string> &output, const std::string& to_split, const char *delimiters);
+extern void split(std::vector<std::string> &output, const std::string& to_split, const char *delimiters, bool compress = false);
 
 void replace_all(std::string &str, const std::string &from, const std::string &to)
 {

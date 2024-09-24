@@ -22,7 +22,7 @@ extern driver_t netfront_driver;
 extern driver_t blkfront_driver;
 
 namespace osv {
-    extern void split(std::vector<std::string> &output, const std::string& to_split, const char *delimiters);
+    extern void split(std::vector<std::string> &output, const std::string& to_split, const char *delimiters, bool compress = false);
 }
 
 namespace xenfront {

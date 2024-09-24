@@ -63,12 +63,18 @@
 #include <vector>
 
 namespace osv {
-//TODO Handle compress (see https://cplusplus.com/faq/sequences/strings/split/#boost-split)
-    void split(std::vector<std::string> &output, const std::string& to_split, const char *delimiters)
+    void split(std::vector<std::string> &output, const std::string& to_split, const char *delimiters, bool compress = false)
     {
         size_t next = -1;
         do
         {
+            if (compress) {
+                next = to_split.find_first_not_of(delimiters, next + 1);
+                if (next == std::string::npos) {
+                    break;
+                }
+                next -= 1;
+            }
             size_t current = next + 1;
             next = to_split.find_first_of(delimiters, current);
             output.push_back(to_split.substr(current, next - current));
@@ -299,7 +305,7 @@ static void parse_options(int loader_argc, char** loader_argv)
         auto tv = options::extract_option_values(options_values, "trace");
         for (auto t : tv) {
             std::vector<std::string> tmp;
-            osv::split(tmp, t, " ,"); //boost::token_compress_on);
+            osv::split(tmp, t, " ,", true);
             for (auto t : tmp) {
                 enable_tracepoint(t);
             }
@@ -335,7 +341,7 @@ static void parse_options(int loader_argc, char** loader_argv)
         auto mounts = options::extract_option_values(options_values, "mount-fs");
         for (auto m : mounts) {
             std::vector<std::string> tmp;
-            osv::split(tmp, m, ",");// boost::token_compress_on);
+            osv::split(tmp, m, ",", true);
             if (tmp.size() != 3 || tmp[0].empty() || tmp[1].empty() || tmp[2].empty()) {
                 printf("Ignoring value: '%s' for option mount-fs, expected in format: <fs_type,url,path>\n", m.c_str());
                 continue;
@@ -572,7 +578,7 @@ void* do_main_thread(void *_main_args)
         } else {
             for (auto t : opt_ip) {
                 std::vector<std::string> tmp;
-                osv::split(tmp, t, " ,");// boost::token_compress_on);
+                osv::split(tmp, t, " ,", true);
                 if (tmp.size() != 3)
                     abort("incorrect parameter on --ip");
 
