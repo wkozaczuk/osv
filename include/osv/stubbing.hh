@@ -23,7 +23,7 @@ static inline void debug_always(const char* fmt...)
 {
     va_list ap;
     va_start(ap, fmt);
-    debug_always(osv::sprintf(fmt, ap));
+    debug_always(osv::vsprintf(fmt, ap));
     va_end(ap);
 }
 
