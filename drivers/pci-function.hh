@@ -10,6 +10,7 @@
 
 #include <map>
 #include <ostream>
+#include <vector>
 
 #include <osv/mmio.hh>
 #include <osv/types.h>
