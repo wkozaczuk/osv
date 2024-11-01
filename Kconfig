@@ -1,0 +1,12 @@
+CONFIG_=CONF_ KCONFIG_CONFIG=build/release.x64/.config ../kbuild-standalone/build/kconfig/mconf conf/kconfig
+
+#Generates include header and kernel.conf
+KCONFIG_AUTOHEADER=build/release/gen/include/osv/kernel_donfig.h KCONFIG_AUTOCONFIG=build/release/gen/kernel.conf arch=x64 mode=release CONFIG_=CONF_ KCONFIG_CONFIG=build/release.x64/.config ../kbuild-standalone/build/kconfig/conf conf/kconfig/main --syncconfig
+#
+#Generates default include header and kernel.conf
+KCONFIG_AUTOHEADER=build/release/gen/include/osv/kernel_donfig.h KCONFIG_AUTOCONFIG=build/release/gen/kernel.conf arch=x64 mode=release CONFIG_=CONF_ KCONFIG_CONFIG=build/release.x64/.config ../kbuild-standalone/build/kconfig/conf conf/kconfig/main --alldefconfig 
+
+######### What to do after changing single conf value - tracepoints is good to test
+make build/release.x64/gen/config/kernel.conf
+sed 's/CONF/conf/' build/release.x64/gen/config/kernel.conf | sed 's/=y$/=1/' > build/release.x64/gen/config/kernel_conf.mk
+./scripts/gen-kernel-config-headers build/release/gen/include/osv/kernel_config.h build/release/gen/include/osv/kernel_yes_config.h

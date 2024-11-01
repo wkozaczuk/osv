@@ -379,7 +379,7 @@ build-so = $(CC) $(CFLAGS) -o $@ $^ $(EXTRA_LIBS)
 q-build-so = $(call quiet, $(build-so), LINK $@)
 
 
-$(out)/%.o: %.cc | generated-headers
+$(out)/%.o: %.cc $(out)/gen/include/osv/kernel_config_hide_symbols.h | generated-headers
 	$(makedir)
 	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX $*.cc)
 
@@ -387,11 +387,11 @@ $(out)/%.o: %.c | generated-headers
 	$(makedir)
 	$(call quiet, $(CC) $(CFLAGS) -c -o $@ $<, CC $*.c)
 
-$(out)/%.o: %.S
+$(out)/%.o: %.S $(out)/gen/include/osv/kernel_config_hide_symbols.h
 	$(makedir)
 	$(call quiet, $(CXX) $(CXXFLAGS) $(ASFLAGS) -c -o $@ $<, AS $*.S)
 
-$(out)/%.o: %.s
+$(out)/%.o: %.s $(out)/gen/include/osv/kernel_config_hide_symbols.h
 	$(makedir)
 	$(call quiet, $(CXX) $(CXXFLAGS) $(ASFLAGS) -c -o $@ $<, AS $*.s)
 
