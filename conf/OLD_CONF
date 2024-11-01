@@ -1,0 +1,22 @@
+Added to COMMON (will no trigger rebuild):
+----------
+conf-opt
+conf-tracing
+arch-cflags
+
+conf_cxx_level=gnu++11 - added to CXXFLAGS
+conf_linker_extra_options= added to linker when building loader.elf and zfs_builder.elf
+
+---
+conf_hide_symbols - drives special compiler flags for C++ files, some C files and linker, for some sources passes HIDE_SYMBOLS
+
+---
+- no change to drivers profile
+
+---------------
+conf-preempt - used in 1-3 places as CONF_
+conf-debug_memory - used in few places as CONF_
+conf-logger_debug - used in drivers/* as CONF_
+conf-debug_elf - used in few places as CONF_
+conf-lazy_stack, conf-lazy_stack_invariant - used in many places as CONF_
+conf-tracepoints - used many places as CONF and as if in Makefile

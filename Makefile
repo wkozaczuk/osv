@@ -118,6 +118,8 @@ out = build/$(mode).$(arch)
 outlink = build/$(mode)
 outlink2 = build/last
 
+include $(out)/gen/config/kernel_conf.mk
+
 ifneq ($(MAKECMDGOALS),clean)
 $(info Building into $(out))
 endif
@@ -334,13 +336,13 @@ COMMON = $(autodepend) -g -Wall -Wno-pointer-arith $(CFLAGS_WERROR) -Wformat=0 -
 	$(kernel-defines) \
 	-fno-omit-frame-pointer $(compiler-specific) \
 	-include compiler/include/intrinsics.hh \
-	$(arch-cflags) $(conf-opt) $(acpi-defines) $(tracing-flags) $(gcc-sysroot) \
-	$(configuration) -D__OSV__ -D__XEN_INTERFACE_VERSION__="0x00030207" -DARCH_STRING=$(ARCH_STR) $(EXTRA_FLAGS)
+	$(conf_compiler_cflags) $(conf_compiler_opt) $(acpi-defines) $(tracing-flags) $(gcc-sysroot) \
+	-D__OSV__ -D__XEN_INTERFACE_VERSION__="0x00030207" -DARCH_STRING=$(ARCH_STR) $(EXTRA_FLAGS)
 COMMON += $(standard-includes-flag)
 
 tracing-flags-0 =
 tracing-flags-1 = -finstrument-functions -finstrument-functions-exclude-file-list=c++,trace.cc,trace.hh,align.hh,mmintrin.h
-tracing-flags = $(tracing-flags-$(conf-tracing))
+tracing-flags = $(tracing-flags-$(conf_tracing))
 
 cc-hide-flags-0 =
 cc-hide-flags-1 = -fvisibility=hidden
@@ -371,14 +373,6 @@ $(out)/bsd/%.o: INCLUDES += -isystem bsd/sys
 $(out)/bsd/%.o: INCLUDES += -isystem bsd/
 # for machine/
 $(out)/bsd/%.o: INCLUDES += -isystem bsd/$(arch)
-
-configuration-defines = conf-preempt conf-debug_memory conf-logger_debug conf-debug_elf \
-			conf-lazy_stack conf-lazy_stack_invariant conf-tracepoints
-
-configuration = $(foreach cf,$(configuration-defines), \
-                      -D$(cf:conf-%=CONF_%)=$($(cf)))
-
-
 
 makedir = $(call very-quiet, mkdir -p $(dir $@))
 build-so = $(CC) $(CFLAGS) -o $@ $^ $(EXTRA_LIBS)
@@ -977,7 +971,7 @@ drivers += drivers/virtio-fs.o
 endif
 endif # aarch64
 
-ifeq ($(conf-tracepoints),1)
+ifeq ($(conf_tracepoints),1)
 objects += arch/$(arch)/arch-trace.o
 endif
 objects += arch/$(arch)/arch-setup.o
@@ -1057,7 +1051,7 @@ objects += core/pagecache.o
 objects += core/mempool.o
 objects += core/alloctracker.o
 objects += core/printf.o
-ifeq ($(conf-tracepoints),1)
+ifeq ($(conf_tracepoints),1)
 objects += core/sampler.o
 endif
 
@@ -1066,7 +1060,7 @@ objects += core/commands.o
 objects += core/sched.o
 objects += core/mmio.o
 objects += core/kprintf.o
-ifeq ($(conf-tracepoints),1)
+ifeq ($(conf_tracepoints),1)
 objects += core/trace.o
 objects += core/trace-count.o
 objects += core/strace.o
@@ -1451,12 +1445,12 @@ musl += math/truncl.o
 # None of the specific "-fno-*" options disable this buggy optimization,
 # unfortunately. The simplest workaround is to just disable optimization
 # for the affected files.
-$(out)/musl/src/math/lround.o: conf-opt := $(conf-opt) -O0
-$(out)/musl/src/math/lroundf.o: conf-opt := $(conf-opt) -O0
-$(out)/musl/src/math/lroundl.o: conf-opt := $(conf-opt) -O0
-$(out)/musl/src/math/llround.o: conf-opt := $(conf-opt) -O0
-$(out)/musl/src/math/llroundf.o: conf-opt := $(conf-opt) -O0
-$(out)/musl/src/math/llroundl.o: conf-opt := $(conf-opt) -O0
+$(out)/musl/src/math/lround.o: conf_compiler_opt := $(conf_compiler_opt) -O0
+$(out)/musl/src/math/lroundf.o: conf_compiler_opt := $(conf_compiler_opt) -O0
+$(out)/musl/src/math/lroundl.o: conf_compiler_opt := $(conf_compiler_opt) -O0
+$(out)/musl/src/math/llround.o: conf_compiler_opt := $(conf_compiler_opt) -O0
+$(out)/musl/src/math/llroundf.o: conf_compiler_opt := $(conf_compiler_opt) -O0
+$(out)/musl/src/math/llroundl.o: conf_compiler_opt := $(conf_compiler_opt) -O0
 
 musl += misc/a64l.o
 musl += misc/basename.o
@@ -2296,6 +2290,24 @@ perhaps-modify-drivers-config-h:
 $(out)/gen/include/bits/alltypes.h: include/api/$(arch)/bits/alltypes.h.sh
 	$(makedir)
 	$(call quiet, sh $^ > $@, GEN $@)
+
+$(out)/kbuild/kconfig/conf $(out)/kbuild/kconfig/mconf: $(wildcard kbuild/kconfig/*.c)
+	$(call quiet, mkdir -p $(out)/kbuild, MKDIR $(out)/kbuild)
+	$(call quiet, cd $(out)/kbuild && make -C ../../../kbuild -f Makefile.sample O=`pwd` -j, MAKE kbuild)
+
+CONF_FILES := conf/base.mk conf/$(mode).mk conf/$(arch).mk conf/profiles/$(arch)/kconfig $(wildcard conf/kconfig/*)
+
+$(out)/.config: $(CONF_FILES) $(out)/kbuild/kconfig/conf
+	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config/kernel.conf KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/conf -s conf/kconfig/main --alldefconfig, CONF_DEF $(out)/.config)
+	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_yes_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config_yes/kernel_yes.conf KCONFIG_CONFIG=$(out)/.config.yes $(out)/kbuild/kconfig/conf -s conf/kconfig/main --allyesconfig, CONF_YES $(out)/.config)
+	$(call quiet, scripts/gen-kernel-config-headers $(out)/gen/include/osv/kernel_config.h $(out)/gen/include/osv/kernel_yes_config.h, CONF_HEADERS $(out)/gen/include/osv/kernel_config_*)
+	$(call quiet, sed 's/CONF/conf/' $(out)/gen/config/kernel.conf | sed 's/=y$$/=1/' > $(out)/gen/config/kernel_conf.mk, CONF_MK $(out)/gen/config/kernel_conf.mk)
+
+$(out)/gen/include/osv/kernel_config.h $(out)/gen/config/kernel.conf: $(out)/.config
+	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config/kernel.conf KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/conf -s conf/kconfig/main --syncconfig, SYNC  $(out)/.config)
+
+menuconfig: $(out)/kbuild/kconfig/mconf
+	mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/mconf conf/kconfig/main
 
 # The generated header ctype-data.h is different in that it is only included
 # at one place (runtime.c), so instead of making it a dependency of

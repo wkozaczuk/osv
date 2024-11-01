@@ -1,0 +1,59 @@
+#!/bin/sh
+
+if [ "$#" -ne 2 ]; then
+  echo "usage: $(basename $0) conf_file yes_conf_file" >&2
+  exit 1
+fi
+
+conf_file=$1
+yes_conf_file=$2
+
+conf_directory=$(dirname $conf_file)
+#
+#Write a '#define CONF_...' line to a corresponding kernel_config_....h header file
+#ONLY if new configuration line is different from what is now
+write_or_update_conf_file() {
+  conf_line="$1"
+  conf_file_name=$(echo $conf_line | grep -o 'CONF\S\+' | sed 's/CONF/kernel_config/')
+  tmp=$(mktemp)
+
+  cat >$tmp <<EOL
+/* This file is generated automatically. */
+#ifndef OSV_${conf_file_name}_H
+#define OSV_${conf_file_name}_H
+
+EOL
+
+  echo $conf_line >> $tmp
+
+  cat >>$tmp <<EOL
+
+#endif
+EOL
+
+  full_file_name="$conf_directory/$conf_file_name.h"
+  if cmp -s $tmp $full_file_name
+  then
+      rm $tmp
+  else
+      mv $tmp $full_file_name
+  fi
+}
+
+sorted_conf_file=$(mktemp)
+sorted_yes_conf_file=$(mktemp)
+
+sort $conf_file > $sorted_conf_file
+sort $yes_conf_file > $sorted_yes_conf_file
+
+the_conf_file=$(mktemp)
+#Write the '#define CONF...' lines from the current config to the temp file 
+grep "^#define CONF" $conf_file > $the_conf_file
+#Append the '#define CONF...' lines from the 'yes' config file NOT in the main one and replace '1' with '0'
+comm -13 $sorted_conf_file $sorted_yes_conf_file | grep "^#define CONF" | sed 's/1$/0/' >> $the_conf_file
+#For each '#define CONF...' call write_or_update_conf_file() function to create or update individual header file
+while read line
+  do write_or_update_conf_file "$line"
+done < $the_conf_file
+
+rm -f $sorted_conf_file $sorted_yes_conf_file $the_conf_file
