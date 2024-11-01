@@ -51,13 +51,13 @@ config core_rcu_defer_queue_size
   int
   default 2000
 
-config core_kernel_stack_size
-  prompt "Kernel thread stack size"
+config core_default_kernel_stack_size
+  prompt "Kernel thread default stack size"
   int
   default 65536
 
-config core_pthread_stack_size
-  prompt "Pthread default thread stack size"
+config core_default_pthread_stack_size
+  prompt "Pthread thread default stack size"
   hex
   default 0x100000
 

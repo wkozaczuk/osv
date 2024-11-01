@@ -1,0 +1,32 @@
+kernel_config_core_commands_runscript.h
+kernel_config_core_c_wrappers.h
+kernel_config_core_debug_buffer_size.h
+kernel_config_core_epoll.h
+kernel_config_core_namespaces.h
+kernel_config_core_newpoll.h
+kernel_config_core_poll.h
+kernel_config_core_select.h
+kernel_config_fs_procfs.h
+kernel_config_fs_sysfs.h
+kernel_config_memory_jvm_baloon.h
+kernel_config_memory_optimize.h
+kernel_config_memory_tracker.h
+kernel_config_networking_dhcp.h
+kernel_config_networking_stack.h
+
+-> kernel_config_tracepoints.h
+kernel_config_tracepoints_callstack.h
+kernel_config_tracepoints_sampler.h
+kernel_config_tracepoints_strace.h
+
+-------------
+-> kernel_config_core_rcu_defer_queue_size.h
+kernel_config_core_dynamic_percpu_size.h
+kernel_config_core_kernel_stack_size.h
+kernel_config_core_pthread_stack_size.h
+kernel_config_fs_max_file_descriptors.h
+kernel_config_fs_buffer_cache_size.h
+kernel_config_drivers_profile_all.h
+
+kernel_config_memory_l1_pool_size.h
+kernel_config_memory_page_batch_size.h

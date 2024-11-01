@@ -1,0 +1,30 @@
+- core/percpu.cc:
+static constexpr size_t dynamic_percpu_max = 65536;
+
+- core/rcu.cc
+RCU defer queue depths = 2000 -> 200
+
+- include/osv/file.s
+#define FDMAX       (0x4000) -> 0x400
+
+- arch/<x64>/arch-switch.hh
+stack.size = 65536; - default stack size
+
+- core/mempool.cc
+l1::max = 512 - maximum l1 pool size in pages (w_lo = 1/4, w_hi = 3/4) - could be 16
+l1::page_batch_size = 32 pages (could be 4)
+
+- maybe make mempool::dbg compile out
+
+- fs/vfs/vfs_bio.c
+* number of buffer cache */
+#define NBUFS		256 - could be 16
+
+- debug buffer size
+
+- libc/pthread.cc - stack size default
+ thread_attr() : stack_begin{}, stack_size{1<<20}, guard_size{4096} - could be 48K
+
+- libc/signal.cc - disable itimer-real, itimer-virt
+
+- arch/x64/arch-cpu.hh - exception stack in 4K pages - 4 (could be 3)

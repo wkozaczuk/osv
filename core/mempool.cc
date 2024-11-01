@@ -34,6 +34,8 @@
 #include <osv/migration-lock.hh>
 #include <osv/export.h>
 #include <osv/kernel_config_memory_debug.h>
+#include <osv/kernel_config_memory_l1_pool_size.h>
+#include <osv/kernel_config_memory_page_batch_size.h>
 #include <osv/kernel_config_lazy_stack.h>
 #include <osv/kernel_config_lazy_stack_invariant.h>
 
@@ -1223,7 +1225,7 @@ struct l1 {
     }
     void push(void* page)
     {
-        assert(nr < 512);
+        assert(nr < CONF_memory_l1_pool_size);
         _pages[nr++] = page;
         l1_pool_stats[cpu_id]._nr = nr;
 
@@ -1234,7 +1236,7 @@ struct l1 {
     static void refill();
     static void unfill();
 
-    static constexpr size_t max = 512;
+    static constexpr size_t max = CONF_memory_l1_pool_size;
     static constexpr size_t watermark_lo = max * 1 / 4;
     static constexpr size_t watermark_hi = max * 3 / 4;
     size_t nr = 0;
@@ -1247,7 +1249,7 @@ private:
 
 struct page_batch {
     // Number of pages per batch
-    static constexpr size_t nr_pages = 32;
+    static constexpr size_t nr_pages = CONF_memory_page_batch_size;
     void* pages[nr_pages];
 };
 
