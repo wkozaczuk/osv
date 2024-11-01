@@ -14,6 +14,7 @@ conf_directory=$(dirname $conf_file)
 #ONLY if new configuration line is different from what is now
 write_or_update_conf_file() {
   conf_line="$1"
+  conf_variable=$(echo $conf_line | grep -o 'CONF\S\+')
   conf_file_name=$(echo $conf_line | grep -o 'CONF\S\+' | sed 's/CONF/kernel_config/')
   tmp=$(mktemp)
 
@@ -22,11 +23,9 @@ write_or_update_conf_file() {
 #ifndef OSV_${conf_file_name}_H
 #define OSV_${conf_file_name}_H
 
-EOL
-
-  echo $conf_line >> $tmp
-
-  cat >>$tmp <<EOL
+#ifndef $conf_variable
+$conf_line
+#endif
 
 #endif
 EOL

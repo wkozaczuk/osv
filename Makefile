@@ -118,7 +118,9 @@ out = build/$(mode).$(arch)
 outlink = build/$(mode)
 outlink2 = build/last
 
+ifneq ($(MAKECMDGOALS),menuconfig)
 include $(out)/gen/config/kernel_conf.mk
+endif
 
 ifneq ($(MAKECMDGOALS),clean)
 $(info Building into $(out))
@@ -154,6 +156,10 @@ ifeq ($(arch),aarch64)
 all: $(out)/zfs_builder.img
 endif
 .PHONY: all
+
+menuconfig:
+	$(call quiet, make -s -f conf/Makefile default_config -j1, GEN default $(out)/.config) 
+	mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/mconf conf/kconfig/main
 
 links:
 	$(call very-quiet, ln -nsf $(notdir $(out)) $(outlink))
@@ -2290,24 +2296,6 @@ perhaps-modify-drivers-config-h:
 $(out)/gen/include/bits/alltypes.h: include/api/$(arch)/bits/alltypes.h.sh
 	$(makedir)
 	$(call quiet, sh $^ > $@, GEN $@)
-
-$(out)/kbuild/kconfig/conf $(out)/kbuild/kconfig/mconf: $(wildcard kbuild/kconfig/*.c)
-	$(call quiet, mkdir -p $(out)/kbuild, MKDIR $(out)/kbuild)
-	$(call quiet, cd $(out)/kbuild && make -C ../../../kbuild -f Makefile.sample O=`pwd` -j, MAKE kbuild)
-
-CONF_FILES := conf/base.mk conf/$(mode).mk conf/$(arch).mk conf/profiles/$(arch)/kconfig $(wildcard conf/kconfig/*)
-
-$(out)/.config: $(CONF_FILES) $(out)/kbuild/kconfig/conf
-	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config/kernel.conf KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/conf -s conf/kconfig/main --alldefconfig, CONF_DEF $(out)/.config)
-	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_yes_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config_yes/kernel_yes.conf KCONFIG_CONFIG=$(out)/.config.yes $(out)/kbuild/kconfig/conf -s conf/kconfig/main --allyesconfig, CONF_YES $(out)/.config)
-	$(call quiet, scripts/gen-kernel-config-headers $(out)/gen/include/osv/kernel_config.h $(out)/gen/include/osv/kernel_yes_config.h, CONF_HEADERS $(out)/gen/include/osv/kernel_config_*)
-	$(call quiet, sed 's/CONF/conf/' $(out)/gen/config/kernel.conf | sed 's/=y$$/=1/' > $(out)/gen/config/kernel_conf.mk, CONF_MK $(out)/gen/config/kernel_conf.mk)
-
-$(out)/gen/include/osv/kernel_config.h $(out)/gen/config/kernel.conf: $(out)/.config
-	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config/kernel.conf KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/conf -s conf/kconfig/main --syncconfig, SYNC  $(out)/.config)
-
-menuconfig: $(out)/kbuild/kconfig/mconf
-	mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/mconf conf/kconfig/main
 
 # The generated header ctype-data.h is different in that it is only included
 # at one place (runtime.c), so instead of making it a dependency of
