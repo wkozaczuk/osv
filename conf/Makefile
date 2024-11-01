@@ -41,14 +41,14 @@ $(out)/kbuild/kconfig/conf $(out)/kbuild/kconfig/mconf: $(wildcard kbuild/kconfi
 CONF_FILES := conf/base.mk conf/$(mode).mk conf/$(arch).mk conf/profiles/$(arch)/kconfig $(wildcard conf/kconfig/*)
 
 $(out)/.config: $(CONF_FILES) $(out)/kbuild/kconfig/conf
-	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config/kernel.conf KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/conf -s conf/kconfig/main --alldefconfig, CONF_DEF $(out)/.config)
+	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config/kernel.conf KCONFIG_RUSTCCFG=$(out)/gen/include/osv/rustc_cfg KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/conf -s conf/kconfig/main --alldefconfig, CONF_DEF $(out)/.config)
 
 $(out)/.config.yes: $(CONF_FILES) $(out)/kbuild/kconfig/conf
-	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_yes_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config_yes/kernel_yes.conf KCONFIG_CONFIG=$(out)/.config.yes $(out)/kbuild/kconfig/conf -s conf/kconfig/main --allyesconfig, CONF_YES $(out)/.config)
+	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_yes_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config_yes/kernel_yes.conf KCONFIG_RUSTCCFG=$(out)/gen/include/osv/rustc_cfg KCONFIG_CONFIG=$(out)/.config.yes $(out)/kbuild/kconfig/conf -s conf/kconfig/main --allyesconfig, CONF_YES $(out)/.config)
 
 $(out)/gen/include/osv/kernel_config.h: $(out)/.config
-	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config/kernel.conf KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/conf -s conf/kconfig/main --syncconfig, SYNC $(out)/.config)
+	$(call quiet, mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config/kernel.conf KCONFIG_RUSTCCFG=$(out)/gen/include/osv/rustc_cfg KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/conf -s conf/kconfig/main --syncconfig, SYNC $(out)/.config)
 
 $(out)/gen/config/kernel_conf.mk: $(out)/gen/include/osv/kernel_config.h $(out)/.config.yes
-	$(call quiet, sed 's/CONF/conf/' $(out)/gen/config/kernel.conf | sed 's/=y$$/=1/' > $(out)/gen/config/kernel_conf.mk, CONF_MK $(out)/gen/config/kernel_conf.mk)
+	$(call quiet, sed 's/CONF/conf/' $(out)/gen/config/kernel.conf | sed 's/=y$$/=1/' | sed 's/\(conf_drivers_profile\)_\(.*\)=1/\1=\2/' > $(out)/gen/config/kernel_conf.mk, CONF_MK $(out)/gen/config/kernel_conf.mk)
 	$(call quiet, scripts/gen-kernel-config-headers $(out)/gen/include/osv/kernel_config.h $(out)/gen/include/osv/kernel_yes_config.h, CONF_HEADERS $(out)/gen/include/osv/kernel_config_*)

@@ -82,25 +82,6 @@ ifeq (,$(wildcard conf/$(arch).mk))
 endif
 include conf/$(arch).mk
 
-# This parameter can be passed in to the build command to specify name of
-# a drivers profile. The drivers profile allows to build custom kernel with
-# a specific set of drivers enabled in the corresponding makefile include
-# file - conf/profiles/$(arch)/$(drivers_profile).mk). The default profile is
-# 'all' which incorporates all drivers into kernel.
-# In general the profiles set variables named conf_drivers_*, which then in turn
-# are used in the rules below to decide which object files are linked into
-# kernel.
-drivers_profile?=all
-ifeq (,$(wildcard conf/profiles/$(arch)/$(drivers_profile).mk))
-    $(error unsupported drivers profile $(drivers_profile))
-endif
-include conf/profiles/$(arch)/$(drivers_profile).mk
-# The base profile disables all drivers unless they are explicitly enabled
-# by the profile file included in the line above. The base profile also enforces
-# certain dependencies between drivers, for example the ide driver needs pci support, etc.
-# For more details please read comments in the profile file.
-include conf/profiles/$(arch)/base.mk
-
 CROSS_PREFIX ?= $(if $(filter-out $(arch),$(host_arch)),$(arch)-linux-gnu-)
 CXX=$(CROSS_PREFIX)g++
 CC=$(CROSS_PREFIX)gcc
@@ -121,6 +102,25 @@ outlink2 = build/last
 ifneq ($(MAKECMDGOALS),menuconfig)
 include $(out)/gen/config/kernel_conf.mk
 endif
+#
+# This parameter can be passed in to the build command to specify name of
+# a drivers profile. The drivers profile allows to build custom kernel with
+# a specific set of drivers enabled in the corresponding makefile include
+# file - conf/profiles/$(arch)/$(conf_drivers_profile).mk). The default profile is
+# 'all' which incorporates all drivers into kernel.
+# In general the profiles set variables named conf_drivers_*, which then in turn
+# are used in the rules below to decide which object files are linked into
+# kernel.
+conf_drivers_profile?=all
+ifeq (,$(wildcard conf/profiles/$(arch)/$(conf_drivers_profile).mk))
+    $(error unsupported drivers profile $(conf_drivers_profile))
+endif
+include conf/profiles/$(arch)/$(conf_drivers_profile).mk
+# The base profile disables all drivers unless they are explicitly enabled
+# by the profile file included in the line above. The base profile also enforces
+# certain dependencies between drivers, for example the ide driver needs pci support, etc.
+# For more details please read comments in the profile file.
+include conf/profiles/$(arch)/base.mk
 
 ifneq ($(MAKECMDGOALS),clean)
 $(info Building into $(out))
