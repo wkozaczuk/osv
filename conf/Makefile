@@ -52,3 +52,6 @@ $(out)/gen/include/osv/kernel_config.h: $(out)/.config
 $(out)/gen/config/kernel_conf.mk: $(out)/gen/include/osv/kernel_config.h $(out)/.config.yes
 	$(call quiet, sed 's/CONF/conf/' $(out)/gen/config/kernel.conf | sed 's/=y$$/=1/' | sed 's/\(conf_drivers_profile\)_\(.*\)=1/\1=\2/' > $(out)/gen/config/kernel_conf.mk, CONF_MK $(out)/gen/config/kernel_conf.mk)
 	$(call quiet, scripts/gen-kernel-config-headers $(out)/gen/include/osv/kernel_config.h $(out)/gen/include/osv/kernel_yes_config.h, CONF_HEADERS $(out)/gen/include/osv/kernel_config_*)
+
+menuconfig:
+	mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_AUTOHEADER=$(out)/gen/include/osv/kernel_config.h KCONFIG_AUTOCONFIG=$(out)/gen/config/kernel.conf KCONFIG_RUSTCCFG=$(out)/gen/include/osv/rustc_cfg KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/mconf conf/kconfig/main

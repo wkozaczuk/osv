@@ -159,7 +159,7 @@ endif
 
 menuconfig:
 	$(call quiet, make -s -f conf/Makefile default_config -j1, GEN default $(out)/.config) 
-	mode=$(mode) arch=$(arch) CONFIG_=CONF_ KCONFIG_CONFIG=$(out)/.config $(out)/kbuild/kconfig/mconf conf/kconfig/main
+	make -s -f conf/Makefile menuconfig -j1
 
 links:
 	$(call very-quiet, ln -nsf $(notdir $(out)) $(outlink))
