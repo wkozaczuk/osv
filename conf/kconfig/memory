@@ -12,8 +12,8 @@ config memory_tracker
   bool
   default n
 
-config memory_jvm_baloon
-  prompt "Include JVM baloon"
+config memory_jvm_balloon
+  prompt "Include JVM balloon"
   bool
   default n
 

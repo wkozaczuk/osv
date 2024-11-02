@@ -8,7 +8,6 @@ kernel_config_core_poll.h
 kernel_config_core_select.h
 kernel_config_fs_procfs.h
 kernel_config_fs_sysfs.h
-kernel_config_memory_jvm_baloon.h
 kernel_config_memory_optimize.h
 kernel_config_memory_tracker.h
 kernel_config_networking_dhcp.h
@@ -30,3 +29,4 @@ kernel_config_drivers_profile_all.h
 
 kernel_config_memory_l1_pool_size.h
 kernel_config_memory_page_batch_size.h
+kernel_config_memory_jvm_baloon.h
