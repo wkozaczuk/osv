@@ -1006,7 +1006,9 @@ ifeq ($(conf_drivers_xen),1)
 objects += arch/$(arch)/xen.o
 endif
 
+ifeq ($(conf_memory_optimize),1)
 $(out)/arch/x64/string-ssse3.o: CXXFLAGS += -mssse3
+endif
 
 ifeq ($(arch),aarch64)
 objects += arch/$(arch)/psci.o
@@ -1018,7 +1020,9 @@ objects += arch/$(arch)/arch-dtb.o
 objects += arch/$(arch)/hypercall.o
 objects += arch/$(arch)/memset.o
 objects += arch/$(arch)/memcpy.o
+ifeq ($(conf_memory_optimize),1)
 objects += arch/$(arch)/memmove.o
+endif
 objects += arch/$(arch)/tlsdesc.o
 objects += arch/$(arch)/sched.o
 objects += $(libfdt)
@@ -1026,8 +1030,10 @@ endif
 
 ifeq ($(arch),x64)
 objects += arch/x64/dmi.o
+ifeq ($(conf_memory_optimize),1)
 objects += arch/x64/string.o
 objects += arch/x64/string-ssse3.o
+endif
 objects += arch/x64/ioapic.o
 objects += arch/x64/apic.o
 objects += arch/x64/apic-clock.o
@@ -1593,7 +1599,9 @@ libc += arch/$(arch)/ucontext/setcontext.o
 libc += arch/$(arch)/ucontext/start_context.o
 libc_to_hide += arch/$(arch)/ucontext/start_context.o
 libc += arch/$(arch)/ucontext/ucontext.o
+ifeq ($(conf_memory_optimize),1)
 libc += string/memmove.o
+endif
 endif
 
 musl += search/tfind.o
@@ -1766,8 +1774,14 @@ musl += string/index.o
 musl += string/memccpy.o
 musl += string/memchr.o
 musl += string/memcmp.o
+ifeq ($(conf_memory_optimize),1)
 libc += string/memcpy.o
 libc_to_hide += string/memcpy.o
+else
+musl += string/memcpy.o
+musl += string/memset.o
+musl += string/memmove.o
+endif
 musl += string/memmem.o
 musl += string/mempcpy.o
 musl += string/memrchr.o
