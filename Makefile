@@ -1075,7 +1075,9 @@ endif
 objects += core/poll.o
 objects += core/select.o
 objects += core/epoll.o
+ifeq ($(conf_core_newpoll),1)
 objects += core/newpoll.o
+endif
 objects += core/power.o
 objects += core/percpu.o
 objects += core/per-cpu-counter.o
