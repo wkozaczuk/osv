@@ -1103,7 +1103,9 @@ objects += core/net_trace.o
 objects += core/app.o
 objects += core/libaio.o
 objects += core/osv_execve.o
+ifeq ($(conf_core_c_wrappers),1)
 objects += core/osv_c_wrappers.o
+endif
 objects += core/options.o
 objects += core/string_utils.o
 
