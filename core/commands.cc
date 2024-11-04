@@ -140,6 +140,7 @@ void expand_environ_vars(std::vector<std::vector<std::string>>& result)
     }
 }
 
+#if CONF_core_commands_runscript
 /*
 In each runscript line, first N args starting with - are options.
 Parse options and remove them from result.
@@ -210,7 +211,6 @@ static void runscript_process_options(std::vector<std::vector<std::string> >& re
     }
 }
 
-#if CONF_core_commands_runscript
 /*
 If cmd starts with "runscript file", read content of file and
 return vector of all programs to be run.

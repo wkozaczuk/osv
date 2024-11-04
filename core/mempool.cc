@@ -2202,16 +2202,20 @@ void free_phys_contiguous_aligned(void* p)
     free_large(p);
 }
 
-#if CONF_memory_jvm_balloon
 bool throttling_needed()
 {
+#if CONF_memory_jvm_balloon
     if (!balloon_api) {
         return false;
     }
 
     return balloon_api->ballooning();
+#else
+    return false;
+#endif
 }
 
+#if CONF_memory_jvm_balloon
 jvm_balloon_api *balloon_api = nullptr;
 #endif
 }

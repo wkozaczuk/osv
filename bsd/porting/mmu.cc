@@ -44,13 +44,11 @@ int vm_paging_needed(void)
     return 0;
 }
 
-#if CONF_memory_jvm_balloon
 OSV_LIBSOLARIS_API
 int vm_throttling_needed(void)
 {
     return memory::throttling_needed();
 }
-#endif
 
 OSV_LIBSOLARIS_API
 void mmu_unmap(void* ab)
