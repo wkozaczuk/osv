@@ -1,0 +1,22 @@
+{
+  global:
+    clock_gettime;
+    gettimeofday;
+    time;
+    __errno_location;
+    fsgsbase_avail;
+
+    putchar;
+    __libc_start_main;
+    _ITM_deregisterTMCloneTable;
+    puts;
+    fclose;
+    fgetc;
+    __gmon_start__;
+    fopen;
+    exit;
+    _ITM_registerTMCloneTable;
+    __cxa_finalize;
+  local:
+    *;
+};
