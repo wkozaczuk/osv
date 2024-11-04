@@ -28,6 +28,7 @@
 #include "drivers/acpi.hh"
 #endif
 #include <osv/kernel_config_networking_stack.h>
+#include <osv/kernel_config_fs_virtiofs.h>
 
 osv_multiboot_info_type* osv_multiboot_info;
 
@@ -365,7 +366,9 @@ void arch_init_drivers()
     drvman->register_driver(virtio::rng::probe);
 #endif
 #if CONF_drivers_virtio_fs
+#if CONF_fs_virtiofs
     drvman->register_driver(virtio::fs::probe);
+#endif
 #endif
 #if CONF_drivers_xen
     drvman->register_driver(xenfront::xenplatform_pci::probe);

@@ -924,7 +924,9 @@ endif
 drivers += drivers/virtio-blk.o
 drivers += drivers/virtio-scsi.o
 drivers += drivers/virtio-rng.o
+ifeq ($(conf_fs_virtiofs),1)
 drivers += drivers/virtio-fs.o
+endif
 endif
 
 ifeq ($(conf_networking_stack),1)
@@ -2044,10 +2046,12 @@ fs_objs += rofs/rofs_vfsops.o \
 	rofs/rofs_cache.o \
 	rofs/rofs_common.o
 
+ifeq ($(conf_fs_virtiofs),1)
 ifeq ($(conf_drivers_virtio),1)
 fs_objs += virtiofs/virtiofs_vfsops.o \
 	virtiofs/virtiofs_vnops.o \
 	virtiofs/virtiofs_dax.o
+endif
 endif
 
 fs_objs += pseudofs/pseudofs.o

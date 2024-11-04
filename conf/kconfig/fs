@@ -8,6 +8,11 @@ config fs_sysfs
   bool
   default y
 
+config fs_virtiofs
+  prompt "Include virtiofs filesystem"
+  bool
+  default y
+
 config fs_max_file_descriptors
   prompt "Maximum file descriptors"
   hex

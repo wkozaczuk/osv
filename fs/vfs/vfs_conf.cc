@@ -42,6 +42,7 @@
 #include <osv/kernel_config_memory_tracker.h>
 #include <osv/kernel_config_fs_procfs.h>
 #include <osv/kernel_config_fs_sysfs.h>
+#include <osv/kernel_config_fs_virtiofs.h>
 #include <limits.h>
 #include <unistd.h>
 #include <string.h>
@@ -61,14 +62,18 @@ extern struct vfsops sysfs_vfsops;
 #endif
 extern struct vfsops zfs_vfsops;
 #if CONF_drivers_virtio_fs
+#if CONF_fs_virtiofs
 extern struct vfsops virtiofs_vfsops;
+#endif
 #endif
 extern struct vfsops ext_vfsops;
 
 extern int ramfs_init(void);
 extern int rofs_init(void);
 #if CONF_drivers_virtio_fs
+#if CONF_fs_virtiofs
 extern int virtiofs_init(void);
+#endif
 #endif
 extern int devfs_init(void);
 extern int nfs_init(void);
@@ -93,7 +98,9 @@ const struct vfssw vfssw[] = {
 	{"zfs",		zfs_init,	&zfs_vfsops},
 	{"rofs", 	rofs_init, 	&rofs_vfsops},
 #if CONF_drivers_virtio_fs
+#if CONF_fs_virtiofs
 	{"virtiofs", 	virtiofs_init, 	&virtiofs_vfsops},
+#endif
 #endif
 	{"ext",		ext_init,	&ext_vfsops},
 	{nullptr,	fs_noop,	nullptr},
