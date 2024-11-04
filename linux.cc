@@ -60,6 +60,7 @@
 
 #include <osv/kernel_config_core_epoll.h>
 #include <osv/kernel_config_networking_stack.h>
+#include <osv/kernel_config_core_syscall.h>
 
 extern "C" int eventfd2(unsigned int, int);
 
@@ -155,6 +156,7 @@ int futex(int *uaddr, int op, int val, const struct timespec *timeout,
     }
 }
 
+#if CONF_core_syscall
 // We're not supposed to export the get_mempolicy() function, as this
 // function is not part of glibc (which OSv emulates), but part of a
 // separate library libnuma, which the user can simply load. libnuma's
@@ -241,6 +243,7 @@ long long_mmap(void *addr, size_t length, int prot, int flags, int fd, off_t off
 long long_shmat(int shmid, const void *shmaddr, int shmflg) {
     return (long) shmat(shmid, shmaddr, shmflg);
 }
+#endif
 
 #define SYSCALL0(fn) case (__NR_##fn): do { long ret = fn(); trace_syscall_##fn(ret); return ret; } while (0)
 
@@ -346,6 +349,7 @@ long long_shmat(int shmid, const void *shmaddr, int shmflg) {
         return ret;                                                  \
         } while (0)
 
+#if CONF_core_syscall
 int rt_sigaction(int sig, const struct k_sigaction * act, struct k_sigaction * oact, size_t sigsetsize)
 {
     struct sigaction libc_act, libc_oact, *libc_act_p = nullptr;
@@ -666,7 +670,9 @@ TRACEPOINT(trace_syscall_write, "0x%x <= %d %p 0x%x", ssize_t, int, const void *
 TRACEPOINT(trace_syscall_gettid, "%d <=", pid_t);
 TRACEPOINT(trace_syscall_clock_gettime, "%d <= %d %p", int, clockid_t, struct timespec *);
 TRACEPOINT(trace_syscall_clock_getres, "%d <= %d %p", int, clockid_t, struct timespec *);
+#endif
 TRACEPOINT(trace_syscall_futex, "%d <= %p %d %d %p %p %d", int, int *, int, int, const struct timespec *, int *, uint32_t);
+#if CONF_core_syscall
 TRACEPOINT(trace_syscall_close, "%d <= %d", int, int);
 TRACEPOINT(trace_syscall_pipe2, "%d <= %p 0%0o", int, int *, int);
 #if CONF_core_epoll
@@ -830,6 +836,7 @@ TRACEPOINT(trace_syscall_getrlimit, "%d <= %d %p", int, int, struct rlimit *);
 TRACEPOINT(trace_syscall_getpriority, "%d <= %d %d", int, int, int);
 TRACEPOINT(trace_syscall_setpriority, "%d <= %d %d %d", int, int, int, int);
 TRACEPOINT(trace_syscall_ppoll, "%d <= %p %ld %p %p", int, struct pollfd *, nfds_t, const struct timespec *, const sigset_t *);
+#endif
 
 OSV_LIBC_API long syscall(long number, ...)
 {
@@ -838,6 +845,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SCOPE_LOCK(fpu);
 
     switch (number) {
+#if CONF_core_syscall
 #ifdef SYS_open
     SYSCALL2(open, const char *, int);
 #endif
@@ -847,7 +855,9 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL0(gettid);
     SYSCALL2(clock_gettime, clockid_t, struct timespec *);
     SYSCALL2(clock_getres, clockid_t, struct timespec *);
+#endif
     SYSCALL6(futex, int *, int, int, const struct timespec *, int *, uint32_t);
+#if CONF_core_syscall
     SYSCALL1(close, int);
     SYSCALL2(pipe2, int *, int);
 #if CONF_core_epoll
@@ -1011,6 +1021,7 @@ OSV_LIBC_API long syscall(long number, ...)
     SYSCALL2(getpriority, int, int);
     SYSCALL3(setpriority, int, int, int);
     SYSCALL4(ppoll, struct pollfd *, nfds_t, const struct timespec *, const sigset_t *);
+#endif
     }
 
     debug_always("syscall(): unimplemented system call %d\n", number);

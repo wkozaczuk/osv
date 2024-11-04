@@ -66,6 +66,11 @@ config core_debug_buffer_size
   hex
   default 0xc800
 
+config core_syscall
+  prompt "Include syscall support"
+  bool
+  default y
+
 config core_poll
   prompt "Include poll"
   bool
