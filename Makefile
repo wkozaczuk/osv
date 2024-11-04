@@ -1082,7 +1082,9 @@ objects += core/callstack.o
 endif
 objects += core/poll.o
 objects += core/select.o
+ifeq ($(conf_core_epoll),1)
 objects += core/epoll.o
+endif
 ifeq ($(conf_core_newpoll),1)
 objects += core/newpoll.o
 endif
