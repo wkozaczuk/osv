@@ -40,6 +40,8 @@
 
 #include <osv/drivers_config.h>
 #include <osv/kernel_config_memory_tracker.h>
+#include <osv/kernel_config_fs_procfs.h>
+#include <osv/kernel_config_fs_sysfs.h>
 #include <limits.h>
 #include <unistd.h>
 #include <string.h>
