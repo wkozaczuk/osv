@@ -381,7 +381,7 @@ bool dtb_get_gic_v2(u64 *dist, size_t *dist_len, u64 *cpu, size_t *cpu_len)
     return true;
 }
 
-bool dtb_get_gic_v3(u64 *dist, size_t *dist_len, u64 *redist, size_t *redist_len)
+bool dtb_get_gic_v3(u64 *dist, size_t *dist_len, u64 *redist, size_t *redist_len, u64 *its, size_t *its_len)
 {
     u64 addr[2], len[2];
     int node;
@@ -394,13 +394,27 @@ bool dtb_get_gic_v3(u64 *dist, size_t *dist_len, u64 *redist, size_t *redist_len
         return false;
     }
 
-    if (!dtb_get_reg_n(node, addr, len, 2))
+    if (!dtb_get_reg_n(node, addr, len, 2)) {
         return false;
+    }
 
     *dist = addr[0];
     *dist_len = len[0];
     *redist = addr[1];
     *redist_len = len[1];
+
+    //Fetch ITS configuration
+    int its_node = fdt_node_offset_by_compatible(dtb, -1, "arm,gic-v3-its");
+    if (its_node < 0) {
+        return false;
+    }
+
+    if (!dtb_get_reg_n(its_node, addr, len, 1)) {
+        return false;
+    }
+
+    *its = addr[0];
+    *its_len = len[0];
 
     return true;
 }

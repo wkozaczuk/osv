@@ -165,16 +165,65 @@ private:
     mmu::phys _base;
 };
 
+//See https://developer.arm.com/documentation/ddi0601/2024-09/External-Registers/GITS-BASER-n---ITS-Table-Descriptors
+#define GITS_PAGE_SIZE(baser)      (((baser) & 0x300) >> 8) //Capture bits [9:8]
+
+#define GITS_TABLE_TYPE(baser)     (((baser) & 0x700000000000000ull) >> 56) //Capture bits [58:56]
+#define GITS_TABLE_DEVICES_TYPE     0b001
+#define GITS_TABLE_COLLECTIONS_TYPE 0b100
+
+#define GITS_TABLE_PAGE_SIZE_4K     0b00
+#define GITS_TABLE_PAGE_SIZE_16K    0b01
+#define GITS_TABLE_PAGE_SIZE_64K    0b10
+
+#define GITS_TABLE_BASE_PA_MASK     0xfffffffff000
+#define GITS_BASER_VALID            0x8000000000000000ull
+
+#define GITS_TABLE_NUM_MAX          8
+
+#define GITS_CBASER_VALID           0x8000000000000000ull
+
+#define GITS_CTLR_ENABLED           0x1
+
+enum class gic_its_reg : unsigned int {
+    GICITS_CTLR    = 0x0000, /* Reg */
+    GICITS_TYPER   = 0x0008, /* Reg */
+    GICITS_CBASER  = 0x0080, /* Reg */
+    GICITS_CWRITER = 0x0088, /* Reg */
+    GICITS_CREADR  = 0x0090, /* Reg */
+    GICITS_BASER   = 0x0100, /* The base address and size of the ITS tables reg*/
+};
+
+//
+//Interrupt Translation Service interface
+class gic_v3_its {
+public:
+    gic_v3_its(mmu::phys b) : _base(b) {}
+
+    u64 read_reg64(gic_its_reg r);
+    u64 read_reg64_at_offset(gic_its_reg r, u32 offset);
+    void write_reg(gic_its_reg r, u32 v);
+    void write_reg64(gic_its_reg r, u64 v);
+    void write_reg64_at_offset(gic_its_reg r, u32 offset, u64 v);
+
+    void initialize_cmd_queue();
+
+private:
+    mmu::phys _base;
+    void *_cmd_queue;
+};
+
 constexpr int max_sgi_cpus = 16;
 
 class gic_v3_driver : public gic_driver {
 public:
-    gic_v3_driver(mmu::phys d, mmu::phys r) : _gicd(d), _gicr(r) {}
+    gic_v3_driver(mmu::phys d, mmu::phys r, mmu::phys i) : _gicd(d), _gicr(r), _gits(i) {}
 
     virtual void init_on_primary_cpu()
     {
         init_dist();
         init_redist(0);
+	init_its();
     }
 
     virtual void init_on_secondary_cpu(int smp_idx) { init_redist(smp_idx); }
@@ -191,9 +240,12 @@ public:
 private:
     void init_dist();
     void init_redist(int smp_idx);
+    void init_its_device_or_collection_table(int idx);
+    void init_its();
 
     gic_v3_dist _gicd;
     gic_v3_redist _gicr;
+    gic_v3_its _gits;
     u64 _mpids_by_smpid[max_sgi_cpus];
 };
 

@@ -47,6 +47,7 @@
 #include <osv/mmio.hh>
 #include <osv/irqlock.hh>
 #include <osv/sched.hh>
+#include <osv/contiguous_alloc.hh>
 
 #include "processor.hh"
 #include "gic-v3.hh"
@@ -107,6 +108,43 @@ static uint32_t get_cpu_affinity(void)
         (mpidr & MPIDR_AFF0_MASK);
 
     return (uint32_t)aff;
+}
+
+u64 gic_v3_its::read_reg64(gic_its_reg reg)
+{
+    return mmio_getq((mmioaddr_t)_base + (u32)reg);
+}
+
+u64 gic_v3_its::read_reg64_at_offset(gic_its_reg reg, u32 offset)
+{
+    return mmio_getq((mmioaddr_t)_base + (u32)reg + offset);
+}
+
+void gic_v3_its::write_reg(gic_its_reg reg, u32 value)
+{
+    mmio_setl((mmioaddr_t)_base + (u32)reg, value);
+}
+
+void gic_v3_its::write_reg64(gic_its_reg reg, u64 value)
+{
+    mmio_setq((mmioaddr_t)_base + (u32)reg, value);
+}
+
+void gic_v3_its::write_reg64_at_offset(gic_its_reg reg, u32 offset, u64 value)
+{
+    mmio_setq((mmioaddr_t)_base + (u32)reg + offset, value);
+}
+
+#define GIC_ITS_CMD_QUEUE_SIZE  0x10000 //64 KB
+//https://developer.arm.com/documentation/102923/0100/ITS/The-command-queue
+void gic_v3_its::initialize_cmd_queue()
+{
+    _cmd_queue = memory::alloc_phys_contiguous_aligned(GIC_ITS_CMD_QUEUE_SIZE, 0x10000); //Queue needs to be 64KB aligned
+    //Read https://developer.arm.com/documentation/ddi0601/2024-09/External-Registers/GITS-CBASER--ITS-Command-Queue-Descriptor
+    u64 cmd_queue_pa = mmu::virt_to_phys(_cmd_queue);
+    u64 queue_size_in_pages = GIC_ITS_CMD_QUEUE_SIZE / mmu::page_size;
+    write_reg64(gic_its_reg::GICITS_CBASER, GITS_CBASER_VALID | cmd_queue_pa | (queue_size_in_pages - 1));
+    write_reg64(gic_its_reg::GICITS_CWRITER, 0);
 }
 
 /* to be called only from the boot CPU */
@@ -231,6 +269,63 @@ void gic_v3_driver::init_redist(int smp_idx)
         u32 val = 1UL << (get_timer_irq_id() % GICR_I_PER_ISENABLERn);
         _gicr.write_at_offset(smp_idx, GICR_ISENABLER0, val);
     }
+}
+
+//https://developer.arm.com/documentation/102923/0100/ITS/The-sizes-and-layout-of-Collection-and-Device-tables
+//"The location and size of the Collection and Device tables is configured
+// using the GITS_BASERn registers. Software must allocate memory for
+// these tables and configure the GITS_BASERn registers before enabling the ITS."
+void gic_v3_driver::init_its_device_or_collection_table(int idx)
+{
+    //Read https://developer.arm.com/documentation/ddi0601/2024-09/External-Registers/GITS-BASER-n---ITS-Table-Descriptors
+    debug_early_u64("ITS table ", idx);
+    u32 offset = idx * 8;
+    u64 base = _gits.read_reg64_at_offset(gic_its_reg::GICITS_BASER, offset);
+
+    u64 type = GITS_TABLE_TYPE(base); //Bits [58:56]
+    if (type != GITS_TABLE_DEVICES_TYPE && type != GITS_TABLE_COLLECTIONS_TYPE) {
+        return;
+    }
+
+    debug_early_u64("-> base:", base);
+    debug_early_u64("-> type:", type);
+    //
+    //"Software can allocate a flat (single level) table or two-level tables."
+    //We allocate a flat table
+    u64 page_size_type = GITS_PAGE_SIZE(base); //Bits [9:8]
+    debug_early_u64("-> page_size_type:", page_size_type);
+    u64 table_size = page_size_type == GITS_TABLE_PAGE_SIZE_4K ? 0x1000 :
+	           (page_size_type == GITS_TABLE_PAGE_SIZE_16K ? 0x4000 : 0x10000);
+
+    if (type == GITS_TABLE_DEVICES_TYPE) {
+        //TODO: Calculate maximum devices count and save it somewhere
+    }
+
+    void *table = memory::alloc_phys_contiguous_aligned(table_size, table_size);
+    memset(table, 0, table_size);
+
+    u64 table_pa = mmu::virt_to_phys(table);
+    debug_early_u64("-> allocated at phys:", table_pa);
+    base = (base & ~GITS_TABLE_BASE_PA_MASK) | table_pa;
+    debug_early_u64("-> new base:", base);
+    _gits.write_reg64_at_offset(gic_its_reg::GICITS_BASER, offset, GITS_BASER_VALID | base);
+}
+
+//https://developer.arm.com/documentation/102923/0100/ITS/Initial-configuration-of-an-ITS
+void gic_v3_driver::init_its()
+{
+    //Initialize the Device and Collection tables
+    for (int table_idx = 0; table_idx < GITS_TABLE_NUM_MAX; table_idx++) {
+        init_its_device_or_collection_table(table_idx);
+    }
+
+    //Initialize command queue
+    _gits.initialize_cmd_queue();
+
+    // Enable ITS
+     _gits.write_reg(gic_its_reg::GICITS_CTLR, GITS_CTLR_ENABLED);
+
+    //TODO: Init per cpu
 }
 
 void gic_v3_driver::mask_irq(unsigned int irq)
