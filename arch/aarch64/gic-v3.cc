@@ -48,6 +48,9 @@
 #include <osv/irqlock.hh>
 #include <osv/sched.hh>
 #include <osv/contiguous_alloc.hh>
+#include <osv/ilog2.hh>
+
+#include <algorithm>
 
 #include "processor.hh"
 #include "gic-v3.hh"
@@ -79,14 +82,28 @@ void gic_v3_dist::enable()
     wait_for_write_complete();
 }
 
+//TODO: In real world the formula below = smp_idx * GICR_STRIDE - is too simple.
+//Look at https://github.com/zephyrproject-rtos/zephyr/issues/50330 and
+//https://github.com/zephyrproject-rtos/zephyr/commit/68b10e8572d9ad4633a8c9f71e9ebf48bb8019ee to
+//come up with a better one
 u32 gic_v3_redist::read_at_offset(int smp_idx, u32 offset)
 {
     return mmio_getl((mmioaddr_t)_base + smp_idx * GICR_STRIDE + offset);
 }
 
+u64 gic_v3_redist::read64_at_offset(int smp_idx, u32 offset)
+{
+    return mmio_getq((mmioaddr_t)_base + smp_idx * GICR_STRIDE + offset);
+}
+
 void gic_v3_redist::write_at_offset(int smp_idx, u32 offset, u32 value)
 {
     mmio_setl((mmioaddr_t)_base + smp_idx * GICR_STRIDE + offset, value);
+}
+
+void gic_v3_redist::write64_at_offset(int smp_idx, u32 offset, u64 value)
+{
+    mmio_setq((mmioaddr_t)_base + smp_idx * GICR_STRIDE + offset, value);
 }
 
 void gic_v3_redist::wait_for_write_complete()
@@ -96,6 +113,16 @@ void gic_v3_redist::wait_for_write_complete()
     do {
         val = mmio_getl((mmioaddr_t)_base);
     } while (val & GICD_CTLR_WRITE_COMPLETE);
+}
+
+mmu::phys gic_v3_redist::rdbase(int smp_idx, bool pta)
+{
+    if (pta) {
+        return (_base + smp_idx * GICR_STRIDE) >> 16;
+    } else {
+	u64 typer = read64_at_offset(smp_idx, GICR_TYPER);
+	return GICR_TYPER_PROC_NUM(typer);
+    }
 }
 
 static uint32_t get_cpu_affinity(void)
@@ -135,16 +162,152 @@ void gic_v3_its::write_reg64_at_offset(gic_its_reg reg, u32 offset, u64 value)
     mmio_setq((mmioaddr_t)_base + (u32)reg + offset, value);
 }
 
+void gic_v3_its::read_type_register()
+{
+    _typer = read_reg64(gic_its_reg::GICITS_TYPER);
+}
+
 #define GIC_ITS_CMD_QUEUE_SIZE  0x10000 //64 KB
 //https://developer.arm.com/documentation/102923/0100/ITS/The-command-queue
 void gic_v3_its::initialize_cmd_queue()
 {
     _cmd_queue = memory::alloc_phys_contiguous_aligned(GIC_ITS_CMD_QUEUE_SIZE, 0x10000); //Queue needs to be 64KB aligned
-    //Read https://developer.arm.com/documentation/ddi0601/2024-09/External-Registers/GITS-CBASER--ITS-Command-Queue-Descriptor
+    memset(_cmd_queue, 0, GIC_ITS_CMD_QUEUE_SIZE);
+
     u64 cmd_queue_pa = mmu::virt_to_phys(_cmd_queue);
     u64 queue_size_in_pages = GIC_ITS_CMD_QUEUE_SIZE / mmu::page_size;
+    //
+    //Read https://developer.arm.com/documentation/ddi0601/2024-09/External-Registers/GITS-CBASER--ITS-Command-Queue-Descriptor
     write_reg64(gic_its_reg::GICITS_CBASER, GITS_CBASER_VALID | cmd_queue_pa | (queue_size_in_pages - 1));
     write_reg64(gic_its_reg::GICITS_CWRITER, 0);
+}
+
+void gic_v3_its::enqueue_cmd(its_cmd *cmd)
+{
+    u64 cread = read_reg64(gic_its_reg::GICITS_CREADR);
+    u64 cwrite = read_reg64(gic_its_reg::GICITS_CWRITER);
+    //
+    //Wait until queue is not full
+    while (cread == cwrite + sizeof(*cmd)) {
+	__asm __volatile("isb sy"); //Hint it is in a busy loop
+        cread = read_reg64(gic_its_reg::GICITS_CREADR);
+    }
+
+    its_cmd *cmd_to_write = (its_cmd *)(_cmd_queue + cwrite);
+    *cmd_to_write = *cmd;
+
+    cwrite += sizeof(*cmd);
+    if (cwrite == GIC_ITS_CMD_QUEUE_SIZE) {
+        cwrite = 0;
+    }
+
+    write_reg64(gic_its_reg::GICITS_CWRITER, cwrite);
+}
+
+void gic_v3_its::cmd_mapd(u32 dev_id, u64 itt_pa, u64 itt_size)
+{
+    its_cmd cmd;
+    cmd.data[0] = ((u64)dev_id << 32) | (u32)gic_its_cmd::ITS_CMD_MAPD;
+    cmd.data[1] = itt_size;
+    cmd.data[2] = ITS_MAPD_V | itt_pa;
+    cmd.data[3] = 0;
+    enqueue_cmd(&cmd);
+}
+
+void gic_v3_its::cmd_mapti(u32 dev_id, int vector, int smp_idx)
+{
+    its_cmd cmd;
+    cmd.data[0] = ((u64)dev_id << 32) | (u32)gic_its_cmd::ITS_CMD_MAPTI;
+    u32 event_id = vector - GIC_LPI_INTS_START;
+    cmd.data[1] = ((u64)vector << 32) | event_id;
+    cmd.data[2] = smp_idx;
+    cmd.data[3] = 0;
+    enqueue_cmd(&cmd);
+}
+
+void gic_v3_its::cmd_inv(u32 dev_id, int vector)
+{
+    its_cmd cmd;
+    cmd.data[0] = ((u64)dev_id << 32) | (u32)gic_its_cmd::ITS_CMD_INV;
+    u32 event_id = vector - GIC_LPI_INTS_START;
+    cmd.data[1] = event_id;
+    cmd.data[2] = cmd.data[3] = 0;
+    enqueue_cmd(&cmd);
+}
+
+void gic_v3_its::cmd_discard(u32 dev_id, int vector)
+{
+    its_cmd cmd;
+    cmd.data[0] = ((u64)dev_id << 32) | (u32)gic_its_cmd::ITS_CMD_DISCARD;
+    u32 event_id = vector - GIC_LPI_INTS_START;
+    cmd.data[1] = event_id;
+    cmd.data[2] = cmd.data[3] = 0;
+    enqueue_cmd(&cmd);
+}
+
+void gic_v3_its::cmd_sync(mmu::phys rdbase)
+{
+    its_cmd cmd;
+    cmd.data[0] = (u64)gic_its_cmd::ITS_CMD_SYNC;
+    cmd.data[2] = rdbase << 16;
+    cmd.data[1] = cmd.data[3] = 0;
+    enqueue_cmd(&cmd);
+}
+
+void gic_v3_its::cmd_mapc(int smp_idx, mmu::phys rdbase)
+{
+    its_cmd cmd;
+    cmd.data[0] = (u32)gic_its_cmd::ITS_CMD_MAPC;
+    cmd.data[1] = 0;
+    cmd.data[2] = ITS_MAPC_V | (rdbase << 16) | smp_idx;
+    cmd.data[3] = 0;
+    enqueue_cmd(&cmd);
+}
+
+void gic_v3_driver::init_lpis(int smp_idx)
+{
+    if (smp_idx == 0) {
+        //Identify number of LPIs supported by GIC
+        //Read bits 15:11 (num_LPIs) of GICD_TYPER
+        u32 typer = _gicd.read_reg(gicd_reg::GICD_TYPER);
+        u32 num_lpis = (typer >> 11) & GICD_TYPER_LPI_NUM_MASK;
+        if (num_lpis) { //Not-zero
+            _msi_vector_num = 1UL << (num_lpis + 1);
+            debug_early_u64("Num_lpis ", num_lpis);
+        } else { //Determine using the IDBits field
+            u32 id_bits = (typer >> 19) & GICD_TYPER_IDBITS_MASK;
+            debug_early_u64("Id_bits ", id_bits);
+            _msi_vector_num = (1UL << (id_bits + 1)) - GIC_LPI_INTS_START;
+        }
+        //TODO: Investigate using smaller number of LPIs using GICR_PROPBASER.IDbits
+        //Read https://developer.arm.com/documentation/102923/0100/Redistributors/Initial-configuration-of-a-Redistributor
+        //and https://developer.arm.com/documentation/ddi0601/2024-09/External-Registers/GICR-PROPBASER--Redistributor-Properties-Base-Address-Register
+        //msi_vector_num = std::max(msi_vector_num, 4096);
+        debug_early_u64("Number of LPIs: ", _msi_vector_num);
+
+        //Set up LPI configuration table
+        void *config_table = memory::alloc_phys_contiguous_aligned(_msi_vector_num, 4096);
+        memset(config_table, 0, _msi_vector_num);
+        _lpi_config_table = (u8*)config_table;
+
+        u64 id_bits = ilog2_roundup<u64>(_msi_vector_num + GIC_LPI_INTS_START) - 1; //TODO: Double-check this
+        debug_early_u64("ID bits: ", id_bits);
+        _lpi_prop_base = mmu::virt_to_phys(config_table) | id_bits;
+
+        //Set up LPI pending table
+        size_t pending_table_size = (_msi_vector_num + GIC_LPI_INTS_START) / 8;
+        void *pending_table = memory::alloc_phys_contiguous_aligned(pending_table_size, 4096);
+        memset(pending_table, 0, pending_table_size);
+
+        //Read about PTZ here - https://developer.arm.com/documentation/ddi0601/2024-12/External-Registers/GICR-PENDBASER--Redistributor-LPI-Pending-Table-Base-Address-Register
+        _lpi_pend_base = mmu::virt_to_phys(pending_table) | GICR_PENDBASER_PTZ;
+    }
+
+    _gicr.write64_at_offset(smp_idx, GICR_PROPBASER, _lpi_prop_base);
+    _gicr.write64_at_offset(smp_idx, GICR_PENDBASER, _lpi_pend_base);
+
+    //Enable LPIs
+    _gicr.write_at_offset(smp_idx, GICR_CTLR, GICR_CTLR_EnableLPIs);
 }
 
 /* to be called only from the boot CPU */
@@ -156,6 +319,8 @@ void gic_v3_driver::init_dist()
     if (_nr_irqs > GIC_MAX_IRQ) {
         _nr_irqs = GIC_MAX_IRQ + 1;
     }
+
+    debug_early_u64("_nr_irqs: ", _nr_irqs);
 
     /* Configure all SPIs as non-secure Group 1 */
     for (unsigned int i = GIC_SPI_BASE; i < _nr_irqs; i += GICD_I_PER_IGROUPRn)
@@ -312,39 +477,52 @@ void gic_v3_driver::init_its_device_or_collection_table(int idx)
 }
 
 //https://developer.arm.com/documentation/102923/0100/ITS/Initial-configuration-of-an-ITS
-void gic_v3_driver::init_its()
+void gic_v3_driver::init_its(int smp_idx)
 {
-    //Initialize the Device and Collection tables
-    for (int table_idx = 0; table_idx < GITS_TABLE_NUM_MAX; table_idx++) {
-        init_its_device_or_collection_table(table_idx);
+    if (smp_idx == 0) {
+        _gits.read_type_register();
+
+        //Initialize the Device and Collection tables
+        for (int table_idx = 0; table_idx < GITS_TABLE_NUM_MAX; table_idx++) {
+            init_its_device_or_collection_table(table_idx);
+        }
+
+        //Initialize command queue
+        _gits.initialize_cmd_queue();
+
+        // Enable ITS
+        _gits.write_reg(gic_its_reg::GICITS_CTLR, GITS_CTLR_ENABLED);
     }
 
-    //Initialize command queue
-    _gits.initialize_cmd_queue();
-
-    // Enable ITS
-     _gits.write_reg(gic_its_reg::GICITS_CTLR, GITS_CTLR_ENABLED);
-
-    //TODO: Init per cpu
+    //Init per cpu
+    mmu::phys rdbase = _gicr.rdbase(smp_idx, _gits.is_typer_pta());
+    WITH_LOCK(gic_lock) {
+        _gits.cmd_mapc(smp_idx, rdbase);
+    }
 }
 
+#define GIC_LPI_ENABLE  0x01
 void gic_v3_driver::mask_irq(unsigned int irq)
 {
     WITH_LOCK(gic_lock) {
-        if (irq >= GIC_SPI_BASE) {
+        if (irq >= GIC_LPI_INTS_START) {
+            _lpi_config_table[irq - GIC_LPI_INTS_START] |= ~GIC_LPI_ENABLE;
+        } else if (irq >= GIC_SPI_BASE) {
             u32 val = 1UL << (irq % GICD_I_PER_ICENABLERn);
             _gicd.write_reg_at_offset((u32)gicd_reg_irq1::GICD_ICENABLER, 4 * (irq >> 5), val);
-         } else {
+        } else {
             u32 val = 1UL << (irq % GICR_I_PER_ICENABLERn);
             _gicr.write_at_offset(sched::cpu::current()->id, GICR_ICENABLER0, val);
-         }
+        }
     }
 }
 
 void gic_v3_driver::unmask_irq(unsigned int irq)
 {
     WITH_LOCK(gic_lock) {
-        if (irq >= GIC_SPI_BASE) {
+        if (irq >= GIC_LPI_INTS_START) {
+           _lpi_config_table[irq - GIC_LPI_INTS_START] |= GIC_LPI_ENABLE;
+        } else if (irq >= GIC_SPI_BASE) {
             u32 val = 1UL << (irq % GICD_I_PER_ISENABLERn);
             _gicd.write_reg_at_offset((u32)gicd_reg_irq1::GICD_ISENABLER, 4 * (irq >> 5), val);
         } else {
@@ -441,6 +619,57 @@ void gic_v3_driver::end_irq(unsigned int irq)
     /* Deactivate */
     WRITE_SYS_REG32(ICC_DIR_EL1, irq);
     isb();
+}
+
+u32 gic_v3_driver::pci_device_id(pci::function* dev)
+{
+    u8 bus, device, function;
+    dev->get_bdf(bus, device, function);
+    return (((u32)bus) << 8) | (((u32)device) << 3) | (u32)function;
+}
+
+void gic_v3_driver::map_msi_irq(unsigned int vector, pci::function* dev, u32 target_cpu)
+{
+    WITH_LOCK(gic_lock) {
+        u32 device_id = pci_device_id(dev);
+
+        //Read https://developer.arm.com/documentation/102923/0100/ITS/Mapping-an-interrupt-to-a-Redistributor
+
+        //Check if there is an Interrupt Translation Table (ITT) for this device
+        //If not create it and map it
+        auto dev_itt = _itt_by_device_id.find(device_id);
+        if (dev_itt == _itt_by_device_id.end()) {
+            u64 entries_num = 1ull << ilog2_roundup<u64>(_msi_vector_num); 
+            u64 itt_size = entries_num * (_gits.itt_entry_size() + 1);
+            itt_size = std::max(itt_size, (u64)256);
+
+            void *itt = memory::alloc_phys_contiguous_aligned(itt_size, 256);
+            memset(itt, 0, itt_size);
+            _itt_by_device_id.insert(std::make_pair(device_id, itt));
+
+            u64 itt_pa = mmu::virt_to_phys(itt);
+            _gits.cmd_mapd(device_id, itt_pa, ilog2_roundup<u64>(entries_num) - 1);
+        }
+
+        //Map event ID to collection ID
+        _gits.cmd_mapti(device_id, vector, target_cpu);
+        _gits.cmd_inv(device_id, vector);
+
+        //Sync redistributor
+        mmu::phys rdbase = _gicr.rdbase(target_cpu, _gits.is_typer_pta());
+        _gits.cmd_sync(rdbase);
+    }
+}
+
+void gic_v3_driver::unmap_msi_irq(unsigned int vector, pci::function* dev)
+{
+    WITH_LOCK(gic_lock) {
+        u32 device_id = pci_device_id(dev);
+
+        _gits.cmd_discard(device_id, vector);
+        _gits.cmd_inv(device_id, vector);
+        //TODO: Issue CMD_SYNC but needs to know rdbase which needs cpu
+    }
 }
 
 }
