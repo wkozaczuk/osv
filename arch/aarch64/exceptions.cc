@@ -16,6 +16,9 @@
 #include "exceptions.hh"
 #include "fault-fixup.hh"
 #include "dump.hh"
+#include "gic-v3.hh"
+
+#include <atomic>
 
 __thread exception_frame* current_interrupt_frame;
 class interrupt_table idt __attribute__((init_priority((int)init_prio::idt)));
@@ -58,9 +61,19 @@ void interrupt_table::disable_irq(int id)
     gic::gic->mask_irq(id);
 }
 
-unsigned interrupt_table::register_handler(std::function<void ()> post_eoi)
+static std::atomic<u32> next_msi_vector({GIC_LPI_INTS_START});
+static std::function<void ()> msi_handlers[256] = {};
+
+unsigned interrupt_table::register_handler(std::function<void ()> handler)
 {
-    return 0;
+    unsigned vector = next_msi_vector.fetch_add(1);
+    unsigned index = vector - GIC_LPI_INTS_START;
+    if (index >= 256) {
+        abort("The MSI vector %d too large\n", index);
+    }
+
+    msi_handlers[index] = handler;
+    return vector;
 }
 
 void interrupt_table::unregister_handler(unsigned vector)
@@ -172,9 +185,17 @@ void interrupt(exception_frame* frame)
     unsigned int iar = gic::gic->ack_irq();
     unsigned int irq = iar & 0x3ff;
 
+    if (irq >= GIC_LPI_INTS_START) { //MSI
+        unsigned index = irq - GIC_LPI_INTS_START;
+        if (index >= 256 || !msi_handlers[index]) {
+            debug_early_u64("unhandled MSI interruptID irq=", irq);
+        } else {
+            msi_handlers[index]();
+        }
+        gic::gic->end_irq(iar);
+    } else if (irq >= gic::gic->nr_of_irqs()) {
     /* note that special values 1022 and 1023 are used for
        group 1 and spurious interrupts respectively. */
-    if (irq >= gic::gic->nr_of_irqs()) {
         debug_early_u64("special InterruptID detected irq=", irq);
 
     } else {

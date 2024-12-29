@@ -50,7 +50,7 @@ public:
     void register_interrupt(interrupt *interrupt);
     void unregister_interrupt(interrupt *interrupt);
 
-    unsigned register_handler(std::function<void ()> post_eoi);
+    unsigned register_handler(std::function<void ()> handler);
     void unregister_handler(unsigned vector);
 
     /* invoke_interrupt returns false if unhandled */
