@@ -49,7 +49,6 @@
 
 #include "gic-common.hh"
 #include <unordered_map>
-#include <drivers/pci-function.hh>
 
 #define GICD_CTLR_WRITE_COMPLETE   (1UL << 31)
 #define GICD_CTLR_ARE_NS           (1U << 4)
@@ -258,6 +257,8 @@ public:
     bool is_typer_pta() { return _typer & GITS_TYPER_PTA; }
     u64 itt_entry_size() { return GITS_ITT_entry_size(_typer); }
 
+    mmu::phys base() { return _base; }
+
 private:
     mmu::phys _base;
     void *_cmd_queue;
@@ -295,8 +296,10 @@ public:
     virtual unsigned int ack_irq();
     virtual void end_irq(unsigned int iar);
 
-    void map_msi_irq(unsigned int vector, pci::function* dev, u32 target_cpu);
-    void unmap_msi_irq(unsigned int vector, pci::function* dev);
+    virtual void allocate_msi_dev_mapping(pci::function* dev);
+    virtual void map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu);
+    virtual void unmap_msi_vector(unsigned int vector, pci::function* dev);
+    virtual void msi_format(u64 *address, u32 *data, int vector);
 
 private:
     void init_lpis(int smp_idx);

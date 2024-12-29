@@ -1,46 +1,65 @@
 /*
- * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
+ * Copyright (C) 2013 Cloudius Systems, Ltd.
  *
  * This work is open source software, licensed under the terms of the
  * BSD license as described in the LICENSE file in the top-level directory.
  */
 
-/* skeleton of MSI, not functional. */
-
 #include <osv/msi.hh>
+#include <osv/sched.hh>
+#include "gic-common.hh"
 
-msix_vector::msix_vector(pci::function *dev) {}
-msix_vector::~msix_vector() {}
-pci::function *msix_vector::get_pci_function(void) { return nullptr; }
-unsigned msix_vector::get_vector(void) { return 0; }
-void msix_vector::msix_unmask_entries(void) {}
-void msix_vector::msix_mask_entries(void) {}
-void msix_vector::add_entryid(unsigned entry_id) {}
-void msix_vector::interrupt(void) {}
-void msix_vector::set_handler(std::function<void ()> handler) {}
-void msix_vector::set_affinity(unsigned apic_id) {}
+using namespace pci;
 
-interrupt_manager::interrupt_manager(pci::function *dev) {}
-interrupt_manager::~interrupt_manager() {}
-
-bool interrupt_manager::easy_register(std::initializer_list<msix_binding> b)
+void msix_vector::set_affinity(sched::cpu *cpu)
 {
-    return false;
-}
-void interrupt_manager::easy_unregister() {}
+    u64 msix_address;
+    u32 msix_data;
 
-std::vector<msix_vector *> interrupt_manager::request_vectors(unsigned n) {
-    return _easy_vectors;
+    gic::gic->msi_format(&msix_address, &msix_data, _vector);
+    for (auto entry_id : _entryids) {
+        _dev->msix_write_entry(entry_id, msix_address, msix_data);
+    }
+
+    gic::gic->map_msi_vector(_vector, _dev, cpu->id);
 }
-void interrupt_manager::free_vectors(const std::vector<msix_vector *> &v) {}
-bool interrupt_manager::assign_isr(msix_vector *, std::function<void ()> h)
+
+interrupt_manager::interrupt_manager(pci::function* dev)
+    : _dev(dev)
 {
-    return false;
+    gic::gic->allocate_msi_dev_mapping(dev);
 }
-bool interrupt_manager::setup_entry(unsigned entry_id, msix_vector *vector)
+
+interrupt_manager::~interrupt_manager()
 {
-    return false;
+
 }
-bool interrupt_manager::unmask_interrupts(const std::vector<msix_vector *> &v) {
-    return false;
+
+bool interrupt_manager::setup_entry(unsigned entry_id, msix_vector* msix)
+{
+    auto vector = msix->get_vector();
+
+    u64 msix_address;
+    u32 msix_data;
+
+    gic::gic->msi_format(&msix_address, &msix_data, vector);
+
+    if (msix_address == 0) {
+        return (false);
+    }
+
+    if (_dev->is_msix()) {
+        if (!_dev->msix_write_entry(entry_id, msix_address, msix_data)) {
+            return false;
+        }
+    } else {
+        if (!_dev->msi_write_entry(entry_id, msix_address, msix_data)) {
+            return false;
+        }
+    }
+
+    gic::gic->map_msi_vector(vector, _dev, 0);
+
+    msix->add_entryid(entry_id);
+    return (true);
 }

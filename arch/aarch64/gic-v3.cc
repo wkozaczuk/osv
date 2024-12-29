@@ -49,6 +49,7 @@
 #include <osv/sched.hh>
 #include <osv/contiguous_alloc.hh>
 #include <osv/ilog2.hh>
+#include <drivers/pci-function.hh>
 
 #include <algorithm>
 
@@ -628,7 +629,7 @@ u32 gic_v3_driver::pci_device_id(pci::function* dev)
     return (((u32)bus) << 8) | (((u32)device) << 3) | (u32)function;
 }
 
-void gic_v3_driver::map_msi_irq(unsigned int vector, pci::function* dev, u32 target_cpu)
+void gic_v3_driver::allocate_msi_dev_mapping(pci::function* dev)
 {
     WITH_LOCK(gic_lock) {
         u32 device_id = pci_device_id(dev);
@@ -650,6 +651,15 @@ void gic_v3_driver::map_msi_irq(unsigned int vector, pci::function* dev, u32 tar
             u64 itt_pa = mmu::virt_to_phys(itt);
             _gits.cmd_mapd(device_id, itt_pa, ilog2_roundup<u64>(entries_num) - 1);
         }
+    }
+}
+
+void gic_v3_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu)
+{
+    WITH_LOCK(gic_lock) {
+        u32 device_id = pci_device_id(dev);
+
+        //Read https://developer.arm.com/documentation/102923/0100/ITS/Mapping-an-interrupt-to-a-Redistributor
 
         //Map event ID to collection ID
         _gits.cmd_mapti(device_id, vector, target_cpu);
@@ -661,7 +671,7 @@ void gic_v3_driver::map_msi_irq(unsigned int vector, pci::function* dev, u32 tar
     }
 }
 
-void gic_v3_driver::unmap_msi_irq(unsigned int vector, pci::function* dev)
+void gic_v3_driver::unmap_msi_vector(unsigned int vector, pci::function* dev)
 {
     WITH_LOCK(gic_lock) {
         u32 device_id = pci_device_id(dev);
@@ -670,6 +680,13 @@ void gic_v3_driver::unmap_msi_irq(unsigned int vector, pci::function* dev)
         _gits.cmd_inv(device_id, vector);
         //TODO: Issue CMD_SYNC but needs to know rdbase which needs cpu
     }
+}
+
+#define GITS_TRANSLATER 0x10040
+void gic_v3_driver::msi_format(u64 *address, u32 *data, int vector)
+{
+    *address = _gits.base() + GITS_TRANSLATER;
+    *data = vector - GIC_LPI_INTS_START;
 }
 
 }
