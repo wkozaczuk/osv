@@ -136,9 +136,9 @@ blk::blk(virtio_device& virtio_dev)
 
     interrupt_factory int_factory;
 #if CONF_drivers_pci
-    int_factory.register_msi_bindings = [queue, t](interrupt_manager &msi) {
-        msi.easy_register( {{ 0, [=] { queue->disable_interrupts(); }, t }});
-    };
+    //int_factory.register_msi_bindings = [queue, t](interrupt_manager &msi) {
+    //    msi.easy_register( {{ 0, [=] { queue->disable_interrupts(); }, t }});
+    //};
 
     int_factory.create_pci_interrupt = [this,t](pci::device &pci_dev) {
         return new pci_interrupt(

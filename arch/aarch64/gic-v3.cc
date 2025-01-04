@@ -523,6 +523,7 @@ void gic_v3_driver::unmask_irq(unsigned int irq)
     WITH_LOCK(gic_lock) {
         if (irq >= GIC_LPI_INTS_START) {
            _lpi_config_table[irq - GIC_LPI_INTS_START] |= GIC_LPI_ENABLE;
+           debugf("gic_v3_driver::unmask_irq: irq=%u\n", irq);
         } else if (irq >= GIC_SPI_BASE) {
             u32 val = 1UL << (irq % GICD_I_PER_ISENABLERn);
             _gicd.write_reg_at_offset((u32)gicd_reg_irq1::GICD_ISENABLER, 4 * (irq >> 5), val);
@@ -631,6 +632,10 @@ u32 gic_v3_driver::pci_device_id(pci::function* dev)
 
 void gic_v3_driver::allocate_msi_dev_mapping(pci::function* dev)
 {
+    if (dev->get_device_id() != 4097) {
+        return;
+    }
+
     WITH_LOCK(gic_lock) {
         u32 device_id = pci_device_id(dev);
 
@@ -650,8 +655,10 @@ void gic_v3_driver::allocate_msi_dev_mapping(pci::function* dev)
 
             u64 itt_pa = mmu::virt_to_phys(itt);
             _gits.cmd_mapd(device_id, itt_pa, ilog2_roundup<u64>(entries_num) - 1);
+            debugf("gic_v3_driver::allocate_msi_dev_mapping: device_id=%d, created MAPPING\n", dev->get_device_id()); 
         }
     }
+    debugf("gic_v3_driver::allocate_msi_dev_mapping: device_id=%d\n", dev->get_device_id()); 
 }
 
 void gic_v3_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu)
@@ -669,6 +676,7 @@ void gic_v3_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 
         mmu::phys rdbase = _gicr.rdbase(target_cpu, _gits.is_typer_pta());
         _gits.cmd_sync(rdbase);
     }
+    debugf("gic_v3_driver::map_msi_vector: device_id=%d, vector:%u, cpu:%u\n", dev->get_device_id(), vector, target_cpu); 
 }
 
 void gic_v3_driver::unmap_msi_vector(unsigned int vector, pci::function* dev)
@@ -687,6 +695,7 @@ void gic_v3_driver::msi_format(u64 *address, u32 *data, int vector)
 {
     *address = _gits.base() + GITS_TRANSLATER;
     *data = vector - GIC_LPI_INTS_START;
+    debugf("gic_v3_driver::msi_format: address:%p, vector:%u\n", *address, vector);
 }
 
 }

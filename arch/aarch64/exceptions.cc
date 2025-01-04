@@ -71,8 +71,10 @@ unsigned interrupt_table::register_handler(std::function<void ()> handler)
     if (index >= 256) {
         abort("The MSI vector %d too large\n", index);
     }
-
+ 
+    debug_early_u64("Registered handler for MSI vector: ", vector);
     msi_handlers[index] = handler;
+    enable_irq(vector);
     return vector;
 }
 
@@ -184,6 +186,9 @@ void interrupt(exception_frame* frame)
 
     unsigned int iar = gic::gic->ack_irq();
     unsigned int irq = iar & 0x3ff;
+
+    if (irq != 0x1b)
+        debug_early_u64("-> interruptID irq=", irq);
 
     if (irq >= GIC_LPI_INTS_START) { //MSI
         unsigned index = irq - GIC_LPI_INTS_START;
