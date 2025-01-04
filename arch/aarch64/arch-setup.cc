@@ -257,7 +257,7 @@ void arch_init_drivers()
 #endif
 #if CONF_networking_stack
 #if CONF_drivers_virtio_net
-    //drvman->register_driver(virtio::net::probe);
+    drvman->register_driver(virtio::net::probe);
 #endif
 #endif
 #if CONF_drivers_virtio_fs

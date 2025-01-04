@@ -305,12 +305,12 @@ net::net(virtio_device& dev)
 
     interrupt_factory int_factory;
 #if CONF_drivers_pci
-    //int_factory.register_msi_bindings = [this,poll_task](interrupt_manager &msi) {
-    //   msi.easy_register({
-    //       { 0, [&] { this->_rxq.vqueue->disable_interrupts(); }, poll_task },
-    //       { 1, [&] { this->_txq.vqueue->disable_interrupts(); }, nullptr }
-    //   });
-    //};
+    int_factory.register_msi_bindings = [this,poll_task](interrupt_manager &msi) {
+       msi.easy_register({
+           { 0, [&] { this->_rxq.vqueue->disable_interrupts(); }, poll_task },
+           { 1, [&] { this->_txq.vqueue->disable_interrupts(); }, nullptr }
+       });
+    };
 
     int_factory.create_pci_interrupt = [this,poll_task](pci::device &pci_dev) {
         return new pci_interrupt(

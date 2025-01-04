@@ -632,10 +632,6 @@ u32 gic_v3_driver::pci_device_id(pci::function* dev)
 
 void gic_v3_driver::allocate_msi_dev_mapping(pci::function* dev)
 {
-    if (dev->get_device_id() != 4097) {
-        return;
-    }
-
     WITH_LOCK(gic_lock) {
         u32 device_id = pci_device_id(dev);
 
@@ -658,7 +654,6 @@ void gic_v3_driver::allocate_msi_dev_mapping(pci::function* dev)
             debugf("gic_v3_driver::allocate_msi_dev_mapping: device_id=%d, created MAPPING\n", dev->get_device_id()); 
         }
     }
-    debugf("gic_v3_driver::allocate_msi_dev_mapping: device_id=%d\n", dev->get_device_id()); 
 }
 
 void gic_v3_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu)

@@ -37,10 +37,12 @@ virtio_driver::virtio_driver(virtio_device& dev)
 
     // Steps 2 & 3 - acknowledge device
     add_dev_status(VIRTIO_CONFIG_S_ACKNOWLEDGE);
-    debugf("dev_status: %u\n", get_dev_status());
-    assert (get_dev_status() == VIRTIO_CONFIG_S_ACKNOWLEDGE);
+    //debugf("dev_status: %u\n", get_dev_status());
+    //TODO: Asserting on from what is read from the I/O (not memory-mapped) may not work
+    //(only with modern because the conf is read from mmio bar?
+    //assert (get_dev_status() == VIRTIO_CONFIG_S_ACKNOWLEDGE);
     add_dev_status(VIRTIO_CONFIG_S_DRIVER);
-    assert (get_dev_status() == (VIRTIO_CONFIG_S_ACKNOWLEDGE | VIRTIO_CONFIG_S_DRIVER));
+    //assert (get_dev_status() == (VIRTIO_CONFIG_S_ACKNOWLEDGE | VIRTIO_CONFIG_S_DRIVER));
 }
 
 virtio_driver::~virtio_driver()
@@ -59,9 +61,13 @@ void virtio_driver::setup_features()
 
     //notify the host about the features in used according
     //to the virtio spec
+    int found_feat = 0;
     for (int i = 0; i < 64; i++)
-        if (subset & (1 << i))
-            virtio_e("%s: found feature intersec of bit %d\n", __FUNCTION__,  i);
+        if (subset & (1 << i)) {
+            virtio_d("%s: found feature intersec of bit %d\n", __FUNCTION__,  i);
+            found_feat++;
+        }
+    virtio_e("%s: found %d features\n", __FUNCTION__, found_feat);
 
     if (subset & (1 << VIRTIO_RING_F_INDIRECT_DESC))
         set_indirect_buf_cap(true);

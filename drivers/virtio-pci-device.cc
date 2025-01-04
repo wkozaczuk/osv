@@ -40,7 +40,7 @@ void virtio_pci_device::init()
 
     _dev->set_bus_master(true);
 
-    //_dev->msix_enable();
+    _dev->msix_enable();
 }
 
 void virtio_pci_device::register_interrupt(interrupt_factory irq_factory)
@@ -71,20 +71,20 @@ void virtio_legacy_pci_device::kick_queue(int queue)
 
 void virtio_legacy_pci_device::setup_queue(vring *queue)
 {
-#ifndef AARCH64_PORT_STUB
+//#ifndef AARCH64_PORT_STUB
     if (_dev->is_msix()) {
         // Setup queue_id:entry_id 1:1 correlation...
-        //virtio_conf_writew(VIRTIO_MSI_QUEUE_VECTOR, queue->index() + 0x2000);
+        //It looks like the VIRTIO_MSI_QUEUE_VECTOR is actualy entry_id
+        //not vector itself
         virtio_conf_writew(VIRTIO_MSI_QUEUE_VECTOR, queue->index());
         u16 vector = virtio_conf_readw(VIRTIO_MSI_QUEUE_VECTOR);
-        //if (vector != (queue->index() +0x2000)) {
         if (vector != queue->index()) {
             virtio_e("device_id:%d, Setting MSIx entry for queue %d failed, vector=%u.", _dev->get_device_id(), queue->index(), vector);
             return;
         }
         virtio_e("device_id:%d, Set MSIx entry for queue %d with vector=%u.", _dev->get_device_id(), queue->index(), vector);
     }
-#endif
+//#endif
     // Tell host about pfn
     // TODO: Yak, this is a bug in the design, on large memory we'll have PFNs > 32 bit
     // Dor to notify Rusty
@@ -191,6 +191,8 @@ void virtio_modern_pci_device::setup_queue(vring *queue)
 //#ifndef AARCH64_PORT_STUB
     if (_dev->is_msix()) {
         // Setup queue_id:entry_id 1:1 correlation...
+        //It looks like the VIRTIO_MSI_QUEUE_VECTOR is actualy entry_id
+        //not vector itself
         _common_cfg->virtio_conf_writew(COMMON_CFG_OFFSET_OF(queue_msix_vector), queue_index);
         if (_common_cfg->virtio_conf_readw(COMMON_CFG_OFFSET_OF(queue_msix_vector)) != queue_index) {
             virtio_e("modern: Setting MSIx entry for queue %d failed.", queue_index);
@@ -223,6 +225,7 @@ void virtio_modern_pci_device::activate_queue(int queue)
 
 void virtio_modern_pci_device::select_queue(int queue)
 {
+    virtio_e("device_id:%d, Selecting queue %d.", _dev->get_device_id(), queue);
     _common_cfg->virtio_conf_writew(COMMON_CFG_OFFSET_OF(queue_select), queue);
 }
 

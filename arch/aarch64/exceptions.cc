@@ -184,16 +184,18 @@ void interrupt(exception_frame* frame)
     /* remember frame in a global, need to change if going to nested */
     current_interrupt_frame = frame;
 
+    //TODO: Maybe somehow change it to not mask irq with 0x3ff
+    //to account for MSIs (>= GIC_LPI_INTS_START)
     unsigned int iar = gic::gic->ack_irq();
     unsigned int irq = iar & 0x3ff;
 
-    if (irq != 0x1b)
-        debug_early_u64("-> interruptID irq=", irq);
+    //if (irq != 0x1b)
+    //    debug_early_u64("-> interruptID irq=", iar);
 
-    if (irq >= GIC_LPI_INTS_START) { //MSI
-        unsigned index = irq - GIC_LPI_INTS_START;
+    if (iar >= GIC_LPI_INTS_START) { //MSI */
+        unsigned index = iar - GIC_LPI_INTS_START;
         if (index >= 256 || !msi_handlers[index]) {
-            debug_early_u64("unhandled MSI interruptID irq=", irq);
+            debug_early_u64("unhandled MSI interruptID irq=", iar);
         } else {
             msi_handlers[index]();
         }

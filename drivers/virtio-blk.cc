@@ -136,9 +136,9 @@ blk::blk(virtio_device& virtio_dev)
 
     interrupt_factory int_factory;
 #if CONF_drivers_pci
-    //int_factory.register_msi_bindings = [queue, t](interrupt_manager &msi) {
-    //    msi.easy_register( {{ 0, [=] { queue->disable_interrupts(); }, t }});
-    //};
+    int_factory.register_msi_bindings = [queue, t](interrupt_manager &msi) {
+        msi.easy_register( {{ 0, [=] { queue->disable_interrupts(); }, t }});
+    };
 
     int_factory.create_pci_interrupt = [this,t](pci::device &pci_dev) {
         return new pci_interrupt(
@@ -185,6 +185,7 @@ blk::blk(virtio_device& virtio_dev)
     prv->drv = this;
     dev->size = prv->drv->size();
     dev->max_io_size = _config.seg_max ? (_config.seg_max - 1) * mmu::page_size : UINT_MAX;
+    debugf("virtio-blk: About to read partition table %s\n", dev_name.c_str());
     read_partition_table(dev);
 
     debugf("virtio-blk: Add blk device instances %d as %s, devsize=%lld\n", _id, dev_name.c_str(), dev->size);
