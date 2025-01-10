@@ -495,10 +495,26 @@ void gic_v3_driver::init_its(int smp_idx)
         _gits.write_reg(gic_its_reg::GICITS_CTLR, GITS_CTLR_ENABLED);
     }
 
-    //Init per cpu
+    //Init on each cpu
     mmu::phys rdbase = _gicr.rdbase(smp_idx, _gits.is_typer_pta());
-    WITH_LOCK(gic_lock) {
+
+    if (smp_idx == 0) {
+	// Init on primary CPU
         _gits.cmd_mapc(smp_idx, rdbase);
+    } else {
+        //Init on secondary cpu
+        //We may experience race between many secondary CPUs
+        //during early SMP boot so let us protect with simple spin lock
+        while (__sync_lock_test_and_set(&_smp_init_its_lock, 1)) {
+            while (_smp_init_its_lock) {
+                __asm __volatile("isb sy");
+            }
+        }
+
+        _gits.cmd_mapc(smp_idx, rdbase);
+
+	//Unlock
+        __sync_lock_release(&_smp_init_its_lock, 0);
     }
 }
 

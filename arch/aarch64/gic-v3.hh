@@ -322,6 +322,7 @@ private:
     u16 _msi_vector_num;
 
     std::unordered_map<u32, void*> _itt_by_device_id;
+    bool _smp_init_its_lock = false;
 };
 
 }
