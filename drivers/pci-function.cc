@@ -38,12 +38,14 @@ namespace pci {
             _addr_lo = val & PCI_BAR_MEM_ADDR_LO_MASK;
             if (_is_64) {
                 _addr_hi = _dev->pci_readl(_pos + 4);
+	        debugf("bar::bar() _addr_hi=%018p,\n           _addr_lo=%018p\n", _addr_hi, _addr_lo);
             }
         } else {
             _addr_lo = val & PCI_BAR_PIO_ADDR_MASK;
         }
 
-        _addr_64 = ((u64)_addr_hi << 32) | (u64)(_addr_lo);
+        _addr_64 = (((u64)_addr_hi) << 32) | (u64)(_addr_lo);
+	debugf("bar::bar() _addr_64=%018p\n", _addr_64);
     }
 
     bar::~bar()
@@ -743,6 +745,7 @@ namespace pci {
         // Unmask the main block
         ctrl &= ~PCIM_MSIXCTRL_FUNCTION_MASK;
         msix_set_control(ctrl);
+	assert(msix_get_control() == ctrl);
 
 	pci_i("[%x:%x.%x] vid:id = %x:%x, MSI-X bar:%d ENABLED!",
             (u16)_bus, (u16)_device, (u16)_func, _vendor_id, _device_id, _msix.msix_table_bar + 1);

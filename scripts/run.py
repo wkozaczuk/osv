@@ -154,8 +154,13 @@ def start_osv_qemu(options):
             args += ["-machine", "gic-version=max", "-cpu", "cortex-a57"]
         args += [
         "-machine", "virt",
-        "-device", "virtio-blk-pci,id=blk0,drive=hd0%s%s" % (boot_index, options.virtio_device_suffix),
-        "-drive", "file=%s,if=none,id=hd0,%s" % (options.image_file, aio)]
+        #"-machine", "highmem=on",
+        #"-machine", "compact-highmem=off",
+        "-D", "/tmp/qemu-debug-log",
+        #"-device", "virtio-blk-pci,id=blk0,drive=hd0%s%s" % (boot_index, options.virtio_device_suffix),
+        #"-drive", "file=%s,if=none,id=hd0,%s" % (options.image_file, aio)]
+        "-device", "nvme,serial=deadbeef,drive=nvm%s" % (boot_index),
+        "-drive", "file=%s,if=none,id=nvm,%s" % (options.image_file, aio)]
     elif options.hypervisor == 'qemu_microvm':
         args += [
         "-M", "microvm,x-option-roms=off,pit=off,pic=off,rtc=off,auto-kernel-cmdline=on,acpi=off",

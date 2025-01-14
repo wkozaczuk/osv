@@ -527,12 +527,15 @@ bool dtb_get_pci_ranges(u64 *addr, size_t *len, int n)
 
     if (!dtb_getprop_u32(node, "#address-cells", &addr_cells_pci))
         return false;
+    debug_early_u64("addr_cells_pci: ", addr_cells_pci);
 
     if (!dtb_getprop_u32_cascade(node, "#address-cells", &addr_cells))
         return false;
+    debug_early_u64("addr_cells:     ", addr_cells);
 
     if (!dtb_getprop_u32_cascade(node, "#size-cells", &size_cells))
         return false;
+    debug_early_u64("size_cells:     ", size_cells);
 
     int size;
     u32 *ranges = (u32 *)fdt_getprop(dtb, node, "ranges", &size);
@@ -542,10 +545,12 @@ bool dtb_get_pci_ranges(u64 *addr, size_t *len, int n)
         return false;
 
     for (int x = 0; x < n; x++) {
+	debug_early_u64("x: ", x);
         for (u32 i = 0; i < addr_cells_pci; i++, ranges++) {
             /* ignore the PCI address */
         }
         for (u32 i = 0; i < addr_cells; i++, ranges++) {
+	    debug_early_u64("addr: ", fdt32_to_cpu(*ranges));
             addr[x] = addr[x] << 32 | fdt32_to_cpu(*ranges);
         }
         for (u32 i = 0; i < size_cells; i++, ranges++) {

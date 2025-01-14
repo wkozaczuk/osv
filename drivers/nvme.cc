@@ -128,12 +128,14 @@ driver::driver(pci::device &pci_dev)
     _doorbell_stride = 1 << (2 + _control_reg->cap.dstrd);
 
     //Wait for controller to become ready
-    assert(wait_for_controller_ready_change(1) == 0);
+    //assert(wait_for_controller_ready_change(1) == 0);
 
     //Disable controller
-    assert(enable_disable_controller(false) == 0);
+    //assert(enable_disable_controller(false) == 0);
+    debug("Disabled controller\n");
 
     init_controller_config();
+    debug("Inited controller config\n");
 
     create_admin_queue();
 
@@ -258,7 +260,7 @@ enum NVME_CONTROLLER_EN {
 
 int driver::enable_disable_controller(bool enable)
 {
-    nvme_controller_config_t cc;
+    nvme_controller_config_t cc = {};
     cc.val = mmio_getl(&_control_reg->cc);
 
     u32 expected_en = enable ? CTRL_EN_DISABLE : CTRL_EN_ENABLE;
@@ -268,18 +270,23 @@ int driver::enable_disable_controller(bool enable)
     cc.en = new_en;
 
     mmio_setl(&_control_reg->cc, cc.val);
-    return wait_for_controller_ready_change(new_en);
+    return 0;//wait_for_controller_ready_change(new_en);
 }
 
 int driver::wait_for_controller_ready_change(int ready)
 {
-    int timeout = mmio_getb(&_control_reg->cap.to) * 10000; // timeout in 0.05ms steps
-    nvme_controller_status_t csts;
+    debugf("wait_for_controller_ready_change, &_control_reg->cap.to=%p, &_control_reg->csts=%p\n", &_control_reg->cap.to, &_control_reg->csts);
+    nvme_controller_cap_t cap = {};
+    cap.val = mmio_getq(&_control_reg->cap);
+    int timeout = cap.to * 10000; // timeout in 0.05ms steps
+    debugf("wait_for_controller_ready_change, timeout=%ld\n", timeout);
+    nvme_controller_status_t csts = {};
     for (int i = 0; i < timeout; i++) {
         csts.val = mmio_getl(&_control_reg->csts);
         if (csts.rdy == ready) return 0;
         usleep(50);
     }
+    debugf("wait_for_controller_ready_change, csts.rdy:%lu, csts.cfs:%lu\n", csts.rdy, csts.cfs);
     NVME_ERROR("timeout=%d waiting for ready %d", timeout, ready);
     return ETIME;
 }
@@ -482,7 +489,7 @@ bool driver::msix_register(unsigned iv,
     }
 
     if (assign_affinity && t) {
-        vec->set_affinity(t->get_cpu()->arch.apic_id);
+        vec->set_affinity(t->get_cpu());
     }
 
     if (iv < _msix_vectors.size()) {
@@ -543,6 +550,7 @@ void driver::dump_config(void)
 
 bool driver::parse_pci_config()
 {
+    debug("NVME::parse_pci_config() start\n");
     _bar0 = _dev.get_bar(1);
     if (_bar0 == nullptr) {
         return false;
@@ -552,6 +560,7 @@ bool driver::parse_pci_config()
         return false;
     }
     _control_reg = (nvme_controller_reg_t*) _bar0->get_mmio();
+    debugf("NVME::parse_pci_config() end, _control_reg=%p\n", _control_reg);
     return true;
 }
 

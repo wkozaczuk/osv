@@ -34,6 +34,9 @@
 #include <osv/pci.hh>
 #endif
 #include "drivers/mmio-isa-serial.hh"
+#if CONF_drivers_nvme
+#include "drivers/nvme.hh"
+#endif
 
 #include <alloca.h>
 
@@ -78,8 +81,8 @@ void arch_setup_pci()
     ranges[1] = pci::get_pci_mem(&ranges_len[1]);
     mmu::linear_map((void *)ranges[0], (mmu::phys)ranges[0], ranges_len[0],
                     "pci_io", mmu::page_size, mmu::mattr::dev);
-    mmu::linear_map((void *)ranges[1], (mmu::phys)ranges[1], ranges_len[1],
-                    "pci_mem", mmu::page_size, mmu::mattr::dev);
+    /*mmu::linear_map((void *)ranges[1], (mmu::phys)ranges[1], ranges_len[1],
+                    "pci_mem", mmu::page_size, mmu::mattr::dev);*/
 }
 #endif
 
@@ -262,6 +265,9 @@ void arch_init_drivers()
 #endif
 #if CONF_drivers_virtio_fs
     drvman->register_driver(virtio::fs::probe);
+#endif
+#if CONF_drivers_nvme
+    drvman->register_driver(nvme::driver::probe);
 #endif
     boot_time.event("drivers probe");
     drvman->load_all();

@@ -129,31 +129,31 @@ static int get_pci_irq_from_bdfp(u32 bdfp)
 u32 pci::bar::arch_add_bar(u32 val)
 {
     if (val) {
-    u32 old_val = val;
-    u64 *off = _is_mmio ? &pci_mem_off : &pci_io_off;
-    u64 addr = _is_mmio ? (u64)pci_mem_base + pci_mem_off : *off;
+        u32 old_val = val;
+        u64 *off = _is_mmio ? &pci_mem_off : &pci_io_off;
+        u64 addr = _is_mmio ? (u64)pci_mem_base + pci_mem_off : *off;
 
-    *off += _addr_size;
-    *off = align_up(*off, (size_t)16);
+        *off += _addr_size;
+        *off = align_up(*off, (size_t)16);
 
-    val &= _is_mmio ? ~pci::bar::PCI_BAR_MEM_ADDR_LO_MASK : ~pci::bar::PCI_BAR_PIO_ADDR_MASK;
-    u32 val_before_down = val;
-    val |= align_down(addr, (size_t)16);
+        val &= _is_mmio ? ~pci::bar::PCI_BAR_MEM_ADDR_LO_MASK : ~pci::bar::PCI_BAR_PIO_ADDR_MASK;
+        u32 val_before_down = val;
+        val |= align_down(addr, (size_t)16);
 
-    _dev->pci_writel(_pos, val);
+        _dev->pci_writel(_pos, val);
 
-    if (_is_64) {
-        _dev->pci_writel(_pos + 4, addr >> 32);
-    }
+        if (_is_64) {
+            _dev->pci_writel(_pos + 4, addr >> 32);
+        }
 
-    debugf("arch_add_bar: mmio=%d, old_val=%lx, val_before_down=%lx, val=%lx, _pos:%lx, 64=%d, addr=%lx, _addr_size=%x\n",
-        _is_mmio, old_val, val_before_down, val, _pos, _is_64, addr, _addr_size);
+        debugf("arch_add_bar: mmio=%d, old_val=%lx, val_before_down=%lx, val=%lx, _pos:%lx, 64=%d, addr=%lx, _addr_size=%x\n",
+            _is_mmio, old_val, val_before_down, val, _pos, _is_64, addr, _addr_size);
     } else {
         u8 bus, device, func;
         _dev->get_bdf(bus, device, func);
         val = (u64)pci_mem_base + ((bus + 1) << 18) + (device << 12) + (func << 8);
         _dev->pci_writel(_pos, val);
-    debugf("arch_add_bar: val=%lx, _addr_size=%x\n", val, _addr_size);
+        debugf("arch_add_bar: val=%lx, _addr_size=%x\n", val, _addr_size);
     }
 
     return val;
