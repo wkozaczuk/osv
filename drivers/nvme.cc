@@ -242,7 +242,9 @@ void driver::create_io_queues()
     }
     assert(ret >= 1);
 
-    int qsize = (NVME_IO_QUEUE_SIZE < _control_reg->cap.mqes) ? NVME_IO_QUEUE_SIZE : _control_reg->cap.mqes + 1;
+    nvme_controller_cap_t cap = {};
+    cap.val = mmio_getq(&_control_reg->cap);
+    int qsize = (NVME_IO_QUEUE_SIZE < cap.mqes) ? NVME_IO_QUEUE_SIZE : cap.mqes + 1;
     if (NVME_QUEUE_PER_CPU_ENABLED) {
         for(sched::cpu* cpu : sched::cpus) {
             int qid = cpu->id + 1;
