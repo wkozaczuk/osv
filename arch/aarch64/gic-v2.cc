@@ -7,12 +7,16 @@
  */
 
 #include <osv/mmio.hh>
+#include <osv/mmu.hh>
 #include <osv/irqlock.hh>
 #include <osv/kernel_config_logger_debug.h>
+#include <drivers/pci-function.hh>
 
 #include "processor.hh"
 #include "gic-v2.hh"
 #include "arm-clock.hh"
+
+extern class interrupt_table idt;
 
 namespace gic {
 
@@ -84,6 +88,7 @@ void gic_v2_driver::init_dist()
     if (_nr_irqs > GIC_MAX_IRQ) {
         _nr_irqs = GIC_MAX_IRQ + 1;
     }
+    debug_early_u64("Number of interrupts: ", _nr_irqs);
 
     // Send all SPIs to the cpu 0
     u32 cpu_0_mask = 1U;
@@ -110,6 +115,19 @@ void gic_v2_driver::init_dist()
 
     _gicd.enable();
 }
+
+//TODO Take it from DTB
+/*
+ *                 v2m@8020000 {
+                        phandle = <0x8003>;
+                        reg = <0x00 0x8020000 0x00 0x1000>;
+                        msi-controller;
+                        compatible = "arm,gic-v2m-frame";
+                };
+*/
+
+//Should come from the above
+#define DEV_BASE_GIC_V2M      0x08020000
 
 void gic_v2_driver::init_cpuif(int smp_idx)
 {
@@ -139,6 +157,17 @@ void gic_v2_driver::init_cpuif(int smp_idx)
         _gicd.write_reg_grp(gicd_reg_irq1::GICD_ISENABLER, get_timer_irq_id(), 1);
     }
 
+    if (!smp_idx) {
+	//GICv2m is somewhat documented in https://documentation-service.arm.com/static/5fae4f00ca04df4095c1c988?token=
+	//chapter 9 (Appendix E) - GICV2M ARCHITECTURE)
+        mmu::linear_map((void *)DEV_BASE_GIC_V2M, (mmu::phys)DEV_BASE_GIC_V2M, 0x1000,
+		    "v2m", mmu::page_size, mmu::mattr::dev);
+        u64 typer = mmio_getl((mmioaddr_t)(DEV_BASE_GIC_V2M + 0x8));
+	u64 msi_base = (typer >> 16) & 0b11111111111ul; //Mask with 11bits or 12
+	debug_early_u64("msi_base: ", msi_base);
+	idt.init_msi_vector(msi_base);
+    }
+
 #if CONF_logger_debug
     debug_early("CPU interface enabled.\n");
 #endif
@@ -153,6 +182,7 @@ void gic_v2_driver::mask_irq(unsigned int id)
 
 void gic_v2_driver::unmask_irq(unsigned int id)
 {
+    debug_early_u64("gic_v2_driver::unmask_irq() id: ", id);
     WITH_LOCK(gic_lock) {
         _gicd.write_reg_grp(gicd_reg_irq1::GICD_ISENABLER, id, 1);
     }
@@ -210,4 +240,24 @@ void gic_v2_driver::end_irq(unsigned int iar)
     _gicc.write_reg(gicc_reg::GICC_EOIR, iar);
 }
 
+void gic_v2_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu)
+{
+    WITH_LOCK(gic_lock) {
+        //u32 device_id = pci_device_id(dev);
+	//TODO: Not necesarily best place but the SPI actint as MSIs need to be of type EDGE
+        _gicd.write_reg_grp(gicd_reg_irq2::GICD_ICFGR, vector, (u32)(irq_type::IRQ_TYPE_EDGE) << 1);
+    }
+    //TODO: If kept switch to debug early because interrupts maybe enabled
+    //debugf("gic_v2_driver::map_msi_vector: device_id=%d, vector:%u, cpu:%u\n", dev->get_device_id(), vector, target_cpu); 
+}
+
+//Not sure about the below
+#define GIC_V2M_MSI_SETSPI_NS        0x40
+
+void gic_v2_driver::msi_format(u64 *address, u32 *data, int vector)
+{
+    *address = DEV_BASE_GIC_V2M + GIC_V2M_MSI_SETSPI_NS;
+    *data = vector;
+    debugf("gic_v2_driver::msi_format: address:%p, vector:%u\n", *address, vector);
+}
 }

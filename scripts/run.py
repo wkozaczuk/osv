@@ -151,17 +151,14 @@ def start_osv_qemu(options):
 
     if options.arch == 'aarch64':
         if options.hypervisor == 'qemu':
-            args += ["-machine", "gic-version=max", "-cpu", "cortex-a57"]
+            args += ["-machine", "gic-version=%s" % options.gic_version, "-cpu", "cortex-a57"]
         args += [
         "-machine", "virt",
         #"-machine", "highmem=on",
         #"-machine", "compact-highmem=off",
-        "-D", "/tmp/qemu-debug-log",
-        #"-device", "virtio-blk-pci,id=blk0,drive=hd0%s%s" % (boot_index, options.virtio_device_suffix),
-        #"-drive", "file=%s,if=none,id=hd0,%s" % (options.image_file, aio)]
-        "-device", "nvme,serial=deadbeef,drive=nvm%s" % (boot_index),
-        "-drive", "file=%s,if=none,id=nvm,%s" % (options.image_file, aio)]
-    elif options.hypervisor == 'qemu_microvm':
+        "-D", "/tmp/qemu-debug-log"]
+
+    if options.hypervisor == 'qemu_microvm':
         args += [
         "-M", "microvm,x-option-roms=off,pit=off,pic=off,rtc=off,auto-kernel-cmdline=on,acpi=off",
         "-nodefaults", "-no-user-config", "-no-reboot", "-global", "virtio-mmio.force-legacy=off",
@@ -271,7 +268,7 @@ def start_osv_qemu(options):
 
     if options.hypervisor == "kvm" or options.hypervisor == 'qemu_microvm':
         if options.arch == 'aarch64':
-            args += ["-enable-kvm", "-cpu", "host", "-machine", "gic-version=max"]
+            args += ["-enable-kvm", "-cpu", "host", "-machine", "gic-version=%s" % options.gic_version]
         else:
             args += ["-enable-kvm", "-cpu", "host,+x2apic"]
     elif options.hypervisor == "none" or options.hypervisor == "qemu":
@@ -656,6 +653,8 @@ if __name__ == "__main__":
                         help="Path to an optional disk image that should be attached to the instance as NVMe device")
     parser.add_argument("--pass-pci", action="store",
                         help="passthrough a pci device in given slot if bound to vfio driver")
+    parser.add_argument("--gic-version", action="store", default="max",
+                        help="specify gic version")
     cmdargs = parser.parse_args()
 
     cmdargs.opt_path = "debug" if cmdargs.debug else "release" if cmdargs.release else "last"

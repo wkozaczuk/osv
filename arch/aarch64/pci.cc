@@ -179,6 +179,9 @@ unsigned get_pci_irq_line(pci::device &dev)
     return irq_id;
 }
 
+//DOC - possibly the above is documented in chapter 8 (Appendix D)
+//PCI Express Integration of https://documentation-service.arm.com/static/5fae4f00ca04df4095c1c988?token=
+// I think it only documents ECAM
 static inline volatile
 u32 build_config_address(u8 bus, u8 slot, u8 func, u8 offset)
 {

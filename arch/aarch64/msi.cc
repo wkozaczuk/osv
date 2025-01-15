@@ -11,6 +11,8 @@
 
 using namespace pci;
 
+//TODO: Maybe eliminate any msi logic because it would not be supported
+//But maybe it is OK
 void msix_vector::set_affinity(sched::cpu *cpu)
 {
     u64 msix_address;

@@ -57,6 +57,8 @@
 #include "gic-v3.hh"
 #include "arm-clock.hh"
 
+extern class interrupt_table idt;
+
 #define isb() ({ asm volatile ("isb"); })
 
 namespace gic {
@@ -435,6 +437,10 @@ void gic_v3_driver::init_redist(int smp_idx)
         u32 val = 1UL << (get_timer_irq_id() % GICR_I_PER_ISENABLERn);
         _gicr.write_at_offset(smp_idx, GICR_ISENABLER0, val);
     }
+
+    if (!smp_idx) {
+	idt.init_msi_vector(GIC_LPI_INTS_START);
+    }
 }
 
 //https://developer.arm.com/documentation/102923/0100/ITS/The-sizes-and-layout-of-Collection-and-Device-tables
@@ -536,10 +542,10 @@ void gic_v3_driver::mask_irq(unsigned int irq)
 
 void gic_v3_driver::unmask_irq(unsigned int irq)
 {
+    debug_early_u64("gic_v3_driver::unmask_irq() id: ", irq);
     WITH_LOCK(gic_lock) {
         if (irq >= GIC_LPI_INTS_START) {
            _lpi_config_table[irq - GIC_LPI_INTS_START] |= GIC_LPI_ENABLE;
-           debugf("gic_v3_driver::unmask_irq: irq=%u\n", irq);
         } else if (irq >= GIC_SPI_BASE) {
             u32 val = 1UL << (irq % GICD_I_PER_ISENABLERn);
             _gicd.write_reg_at_offset((u32)gicd_reg_irq1::GICD_ISENABLER, 4 * (irq >> 5), val);
