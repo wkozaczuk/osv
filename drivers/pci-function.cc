@@ -585,7 +585,7 @@ namespace pci {
         ctrl_data |= (1 << MSIX_ENTRY_CONTROL_MASK_BIT);
         mmio_setl(ctrl, ctrl_data);
 
-        debugf("msix_mask_entry() id:%d at ctrl:%p\n", entry_id, ctrl);
+        //debugf("msix_mask_entry() id:%d at ctrl:%p\n", entry_id, ctrl);
         return true;
     }
 
@@ -634,7 +634,7 @@ namespace pci {
         u32 ctrl_data = mmio_getl(ctrl);
         ctrl_data &= ~(1 << MSIX_ENTRY_CONTROL_MASK_BIT);
         mmio_setl(ctrl, ctrl_data);
-        debugf("msix_unmask_entry() id:%d at ctrl=%p\n", entry_id, ctrl);
+        //debugf("msix_unmask_entry() id:%d at ctrl=%p\n", entry_id, ctrl);
 
         return true;
     }
@@ -682,7 +682,7 @@ namespace pci {
 
         mmio_setq(entryaddr + (u8)MSIX_ENTRY_ADDR, address);
         mmio_setl(entryaddr + (u8)MSIX_ENTRY_DATA, data);
-        debugf("msix_write_entry() id:%d at addr:%p\n", entry_id, entryaddr);
+        //debugf("msix_write_entry() id:%d at addr:%p\n", entry_id, entryaddr);
 
         return true;
     }
