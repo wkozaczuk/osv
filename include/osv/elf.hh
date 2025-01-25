@@ -444,6 +444,7 @@ private:
     symbol_module symbol_other(unsigned idx);
     Elf64_Xword symbol_tls_module(unsigned idx);
     void relocate_rela();
+    void relocate_relr();
     void relocate_pltgot();
     unsigned symtab_len();
     void collect_dependencies(std::unordered_set<elf::object*>& ds);

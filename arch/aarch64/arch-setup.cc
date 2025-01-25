@@ -98,7 +98,8 @@ void arch_setup_free_memory()
     /* linear_map [TTBR1] */
     for (auto&& area : mmu::identity_mapped_areas) {
         auto base = reinterpret_cast<void*>(get_mem_area_base(area));
-        mmu::linear_map(base + addr, addr, memory::phys_mem_size,
+        mmu::linear_map(base + addr, addr, memory::phys_mem_size + 10 * 0x200000,
+        //mmu::linear_map(base + mmu::mem_addr, mmu::mem_addr, memory::phys_mem_size,
             area == mmu::mem_area::main ? "main" :
             area == mmu::mem_area::page ? "page" : "mempool");
     }
@@ -108,8 +109,12 @@ void arch_setup_free_memory()
        PA +     0x0 - PA + 0x80000: boot
        PA + 0x80000 - PA + 0x90000: DTB copy
        PA + 0x90000 -       [addr]: kernel ELF */
-    mmu::linear_map((void *)(OSV_KERNEL_VM_BASE - 0x80000), (mmu::phys)mmu::mem_addr,
-                    addr - mmu::mem_addr, "kernel");
+    //mmu::linear_map((void *)(OSV_KERNEL_VM_BASE - 0x80000), (mmu::phys)mmu::mem_addr,
+    //                addr - mmu::mem_addr, "kernel");
+    debug_early_u64("OSV_KERNEL_VM_BASE - 0x80000 :", OSV_KERNEL_VM_BASE - 0x80000);
+    debug_early_u64("elf_header - 0x90000         :", ((mmu::phys)elf_header) - 0x90000);
+    mmu::linear_map((void *)(OSV_KERNEL_VM_BASE - 0x80000), ((mmu::phys)elf_header) - 0x90000,
+                    elf_size + 0x90000, "kernel");
 
     if (console::PL011_Console::active) {
         /* linear_map [TTBR0 - UART] */
@@ -136,11 +141,13 @@ void arch_setup_free_memory()
         /* linear_map [TTBR0 - GIC REDIST] */
         mmu::linear_map((void *)redist, (mmu::phys)redist, redist_len, "gic_redist", mmu::page_size,
                         mmu::mattr::dev);
+	debug_early("Enabled GIC3\n");
     } else if (dtb_get_gic_v2(&dist, &dist_len, &cpuif, &cpuif_len)) {
         gic::gic = new gic::gic_v2_driver(dist, cpuif);
         /* linear_map [TTBR0 - GIC CPUIF] */
         mmu::linear_map((void *)cpuif, (mmu::phys)cpuif, cpuif_len, "gic_cpuif", mmu::page_size,
                         mmu::mattr::dev);
+	debug_early("Enabled GIC2\n");
     } else {
         abort("arch-setup: failed to get GICv3 nor GiCv2 information from dtb.\n");
     }
@@ -223,9 +230,9 @@ void arch_init_drivers()
             pci::set_pci_irqmap(bdfs, irqs, irqmap_count, mask);
         }
 
-#if CONF_logger_debug
+//#if CONF_logger_debug
         pci::dump_pci_irqmap();
-#endif
+//#endif
 
         // Enumerate PCI devices
         size_t pci_cfg_len;

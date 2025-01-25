@@ -764,6 +764,34 @@ void object::relocate_rela()
     elf_debug("Relocated %d symbols in DT_RELA\n", nb);
 }
 
+void object::relocate_relr()
+{
+    //if(has_non_writable_text_relocations()) {
+    //    make_text_writable(true);
+    //}
+
+    size_t *relr = dynamic_ptr<size_t>(DT_RELR);
+    //assert(dynamic_val(DT_RELRENT) == sizeof(Elf64_Rela));
+    unsigned size = dynamic_val(DT_RELRSZ);
+    //auto size_2 = size;
+    size_t *reloc_addr = 0;
+    for (; size; relr++, size -= sizeof(size_t)) {
+        if ((relr[0]&1) == 0) {
+            reloc_addr = (size_t*)(_base + relr[0]);
+            *reloc_addr++ += (size_t)_base;
+        } else {
+            int i = 0;
+            for (size_t bitmap=relr[0]; (bitmap>>=1); i++) {
+                if (bitmap&1) {
+                    reloc_addr[i] += (size_t)_base;
+                }
+            }
+            reloc_addr += 8*sizeof(size_t)-1; 
+        }
+    }
+    elf_debug("Relocated %d symbols in DT_RELR\n", size_2/sizeof(size_t));
+}
+
 extern "C" { void __elf_resolve_pltgot(void); }
 
 void object::relocate_pltgot()
@@ -863,6 +891,9 @@ void object::relocate()
     }
     if (dynamic_exists(DT_RELA)) {
         relocate_rela();
+    }
+    if (dynamic_exists(DT_RELR)) {
+        relocate_relr();
     }
 }
 
@@ -1173,7 +1204,7 @@ void object::run_init_funcs(int argc, char** argv)
     if (dynamic_exists(DT_INIT)) {
         auto func = dynamic_ptr<void>(DT_INIT);
         if (func) {
-            elf_debug("Executing DT_INIT function\n");
+            elf_debug("Executing DT_INIT function:%p\n", func);
             reinterpret_cast<void(*)(int, char**)>(func)(argc, argv);
             elf_debug("Finished executing DT_INIT function\n");
         }
@@ -1184,6 +1215,14 @@ void object::run_init_funcs(int argc, char** argv)
         elf_debug("Executing %d DT_INIT_ARRAYSZ functions\n", nr);
         for (auto i = 0u; i < nr; ++i) {
             funcs[i](argc, argv);
+            /*if (contains_addr((const void*)funcs[i])) {
+                elf_debug("Executing normal DT_INIT_ARRAYSZ function:%p\n", funcs[i]);
+                funcs[i](argc, argv);
+            } else {
+                auto func = _base + (u64)(funcs[i]);
+                elf_debug("Executing fixed DT_INIT_ARRAYSZ function:%p\n", func);
+                ((void(*)(int, char**))func)(argc, argv);
+            }*/
         }
         elf_debug("Finished executing %d DT_INIT_ARRAYSZ functions\n", nr);
     }

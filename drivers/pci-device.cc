@@ -48,6 +48,9 @@ namespace pci {
 
             bar * pbar = new bar(this, pos);
             add_bar(idx++, pbar);
+                pci_i("    bar[%d]: %sbits addr=%p size=%x, mmio=%d",
+                    idx, (pbar->is_64() ? "64" : "32"),
+                    pbar->get_addr64(), pbar->get_size(), pbar->is_mmio());
 
             pos += pbar->is_64() ? idx++, 8 : 4;
         }

@@ -756,11 +756,13 @@ void  __attribute__((constructor(init_prio::dtb))) dtb_setup()
     if (fdt_check_header(dtb) != 0) {
         abort("dtb_setup: device tree blob invalid.\n");
     }
+    debug_early_u64("dtb address: ", (u64)dtb);
 
     memory::phys_mem_size = dtb_get_phys_memory(&mmu::mem_addr);
     if (!memory::phys_mem_size) {
         abort("dtb_setup: failed to parse memory information.\n");
     }
+    debug_early_u64("mem address: ", mmu::mem_addr);
 
     /* command line will be overwritten with DTB: move it inside DTB */
 
@@ -830,6 +832,8 @@ void  __attribute__((constructor(init_prio::dtb))) dtb_setup()
     extern u64 kernel_vm_shift;
 
     mmu::elf_phys_start = reinterpret_cast<void *>(elf_header);
+    debug_early_u64("elf phys   : ", (u64)mmu::elf_phys_start);
+    debug_early_u64("vm_shift   : ", kernel_vm_shift);
     elf_start = mmu::elf_phys_start + kernel_vm_shift;
     elf_size = (u64)edata - (u64)elf_start;
 
