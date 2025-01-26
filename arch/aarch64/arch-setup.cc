@@ -92,14 +92,28 @@ void arch_setup_free_memory()
     extern size_t elf_size;
     extern elf::Elf64_Ehdr* elf_header;
 
+    mmu::phys before_range_start = mmu::mem_addr;
+    size_t before_range_size = (mmu::phys)elf_header -mmu::mem_addr - 0x10000;
+    debug_early_u64("before_range_start: ", before_range_start);
+    debug_early_u64("before_range_size:  ", before_range_size);
+    //mmu::free_initial_memory_range(before_range_start, before_range_size);
+
+    mmu::phys after_range_start = (mmu::phys)elf_header + elf_size;
+    mmu::phys start;
+    size_t phys_memory_size = dtb_get_phys_memory(&start);
+    size_t after_range_size = phys_memory_size - before_range_size - elf_size;
+    debug_early_u64("after_range_start : ", after_range_start);
+    debug_early_u64("after_range_size:   ", after_range_size);
+
     mmu::phys addr = (mmu::phys)elf_header + elf_size;
-    mmu::free_initial_memory_range(addr, memory::phys_mem_size);
+    debug_early_u64("addr              : ", addr);
+    debug_early_u64("phys_mem_size:      ", memory::phys_mem_size);
+    mmu::free_initial_memory_range(after_range_start, memory::phys_mem_size);
 
     /* linear_map [TTBR1] */
     for (auto&& area : mmu::identity_mapped_areas) {
         auto base = reinterpret_cast<void*>(get_mem_area_base(area));
-        mmu::linear_map(base + addr, addr, memory::phys_mem_size + 10 * 0x200000,
-        //mmu::linear_map(base + mmu::mem_addr, mmu::mem_addr, memory::phys_mem_size,
+        mmu::linear_map(base + mmu::mem_addr, mmu::mem_addr, phys_memory_size,
             area == mmu::mem_area::main ? "main" :
             area == mmu::mem_area::page ? "page" : "mempool");
     }
@@ -110,11 +124,12 @@ void arch_setup_free_memory()
        PA + 0x80000 - PA + 0x90000: DTB copy
        PA + 0x90000 -       [addr]: kernel ELF */
     //mmu::linear_map((void *)(OSV_KERNEL_VM_BASE - 0x80000), (mmu::phys)mmu::mem_addr,
-    //                addr - mmu::mem_addr, "kernel");
-    debug_early_u64("OSV_KERNEL_VM_BASE - 0x80000 :", OSV_KERNEL_VM_BASE - 0x80000);
-    debug_early_u64("elf_header - 0x90000         :", ((mmu::phys)elf_header) - 0x90000);
-    mmu::linear_map((void *)(OSV_KERNEL_VM_BASE - 0x80000), ((mmu::phys)elf_header) - 0x90000,
+    //                addr - mmu::mem_addr, "kernel"); //Direct QEMU works
+    debug_early_u64("OSV_KERNEL_VM_BASE   :", OSV_KERNEL_VM_BASE);
+    debug_early_u64("elf_header - 0x10000 :", ((mmu::phys)elf_header) - 0x10000);
+    mmu::linear_map((void *)(OSV_KERNEL_VM_BASE - 0x80000), ((mmu::phys)elf_header) - 0x90000, //Both direct QEMU and efi works
                     elf_size + 0x90000, "kernel");
+    debug_early_u64("OSV_KERNEL_VM_BASE + size :", OSV_KERNEL_VM_BASE + elf_size + 0x10000);
 
     if (console::PL011_Console::active) {
         /* linear_map [TTBR0 - UART] */
@@ -169,9 +184,11 @@ void arch_setup_free_memory()
     dtb_collect_parsed_mmio_virtio_devices();
 #endif
 
+    mmu::free_initial_memory_range(before_range_start, before_range_size);
     mmu::switch_to_runtime_page_tables();
 
     console::mmio_isa_serial_console::memory_map();
+    debug_early("arch_setup_free_memory: end\n");
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)

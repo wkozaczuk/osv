@@ -163,11 +163,13 @@ void interrupt(exception_frame* frame)
     unsigned int iar = gic::gic->ack_irq();
     unsigned int irq = iar & 0x3ff;
 
+    //if (irq != 0x1b)
+    //   debug_early_u64("Received interruptID=", irq);
+
     /* note that special values 1022 and 1023 are used for
        group 1 and spurious interrupts respectively. */
     if (irq >= gic::gic->nr_of_irqs()) {
         debug_early_u64("special InterruptID detected irq=", irq);
-
     } else {
         if (!idt.invoke_interrupt(irq))
             debug_early_u64("unhandled InterruptID irq=", irq);
