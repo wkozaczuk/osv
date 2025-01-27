@@ -1,0 +1,17 @@
+#qemu-system-aarch64 -M virt,acpi=off -m 1G -smp 1 --nographic -machine gic-version=2 \
+#qemu-system-aarch64 -M virt,acpi=off -enable-kvm -cpu host -m 1G -smp 1 --nographic -machine gic-version=max \
+/home/wkozaczuk/projects/qemu/build/qemu-system-aarch64 -M virt,acpi=off -enable-kvm -cpu host -m 1G -smp 2 --nographic -machine gic-version=max \
+	-drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/aarch64/QEMU_EFI-silent-pflash.raw \
+	-drive if=pflash,format=raw,file=build/release/efi/QEMU_VARS_efi_loader.fd \
+	-drive file=build/release/efi/efi_loader.img,format=raw,id=hd0,if=none \
+        -device virtio-blk-pci,id=blk0,drive=hd0 \
+        -device virtio-rng-pci \
+        -netdev user,id=un0,net=192.168.122.0/24,host=192.168.122.1 \
+        -device virtio-net-pci,netdev=un0 \
+	-gdb tcp::1234,server,nowait \
+        -D /tmp/qemu-debug-log
+
+#        -netdev user,id=un0,net=192.168.122.0/24,host=192.168.122.1 \
+#        -device virtio-net-pci,netdev=un0 \
+#        -device virtio-blk-device,id=blk0,drive=hd0 \
+#        -net none \

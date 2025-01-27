@@ -21,3 +21,6 @@
 [submodule "kbuild"]
 	path = kbuild
 	url = https://github.com/osvunikernel/kbuild-standalone.git
+[submodule "efi"]
+	path = efi
+	url = https://github.com/krinkinmu/efi.git
