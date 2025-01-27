@@ -24,3 +24,6 @@
 [submodule "efi"]
 	path = efi
 	url = https://github.com/krinkinmu/efi.git
+[submodule "external/acpica"]
+	path = external/acpica
+	url = https://github.com/acpica/acpica.git

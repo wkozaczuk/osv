@@ -262,9 +262,7 @@ else
   standard-includes-flag =
 endif
 
-ifeq ($(arch),x64)
-INCLUDES += -isystem external/$(arch)/acpica/source/include
-endif
+INCLUDES += -isystem external/acpica/source/include
 
 ifeq ($(arch),aarch64)
 libfdt_base = external/$(arch)/libfdt
@@ -502,16 +500,16 @@ $(out)/lzloader.elf: $(out)/loader-stripped.elf.lz.o $(out)/fastlz/lzloader.o ar
 		$(filter %.o, $^), LINK lzloader.elf)
 	$(call quiet, truncate -s %32768 $@, ALIGN lzloader.elf)
 
-acpi-defines = -DACPI_MACHINE_WIDTH=64 -DACPI_USE_LOCAL_CACHE
-
-acpi-source := $(shell find external/$(arch)/acpica/source/components -type f -name '*.c')
-acpi = $(patsubst %.c, %.o, $(acpi-source))
-
-$(acpi:%=$(out)/%): CFLAGS += -fno-strict-aliasing -Wno-stringop-truncation
-
 kernel_vm_shift := $(shell printf "0x%X" $(shell expr $$(( $(kernel_vm_base) - $(kernel_base) )) ))
 
 endif # x64
+
+acpi-defines = -DACPI_MACHINE_WIDTH=64 -DACPI_USE_LOCAL_CACHE
+
+acpi-source := $(shell find external/acpica/source/components -type f -name '*.c' | grep -v 'components/debugger' | grep -v 'components/disassembler' | grep -v rsdump.c | grep -v utprint.c)
+acpi = $(patsubst %.c, %.o, $(acpi-source))
+
+$(acpi:%=$(out)/%): CFLAGS += -fno-strict-aliasing -Wno-stringop-truncation
 
 ifeq ($(arch),aarch64)
 
@@ -999,6 +997,9 @@ drivers += drivers/virtio-blk.o
 drivers += drivers/virtio-net.o
 drivers += drivers/virtio-fs.o
 endif
+#ifeq ($(conf_drivers_acpi),1)
+drivers += drivers/acpi.o
+#endif
 endif # aarch64
 
 ifeq ($(conf_tracepoints),1)
@@ -1067,10 +1068,9 @@ objects += arch/x64/vmlinux.o
 objects += arch/x64/vmlinux-boot64.o
 objects += arch/x64/pvh-boot.o
 objects += arch/x64/syscall.o
-ifeq ($(conf_drivers_acpi),1)
-objects += $(acpi)
-endif
 endif # x64
+
+objects += $(acpi)
 
 ifeq ($(conf_drivers_xen),1)
 objects += core/xen_intr.o

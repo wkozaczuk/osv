@@ -18,7 +18,6 @@ extern "C" {
 #include <osv/mmu.hh>
 #include <osv/sched.hh>
 #include <osv/shutdown.hh>
-#include "processor.hh"
 #include <osv/align.hh>
 #if CONF_drivers_xen
 #include <osv/xen.hh>
@@ -234,7 +233,12 @@ public:
         , _stopped(false)
         , _counter(0)
         , _thread(sched::thread::make([this] { process_interrupts(); }))
+#ifdef __aarch64__
+        , _intr(gic::irq_type::IRQ_TYPE_EDGE, gsi, [this] { _counter.fetch_add(1); return true; },//return this->ack_irq(); },
+                                                   [this] { _thread->wake_with_irq_disabled(); })
+#else
         , _intr(gsi, [this] { _counter.fetch_add(1); _thread->wake_with_irq_disabled(); })
+#endif
     {
         _thread->start();
     }
@@ -262,7 +266,11 @@ private:
     std::atomic<bool> _stopped;
     std::atomic<uint64_t> _counter;
     std::unique_ptr<sched::thread> _thread;
+#ifdef __aarch64__
+    spi_interrupt _intr;
+#else
     gsi_edge_interrupt _intr;
+#endif
 };
 
 std::map<UINT32, std::unique_ptr<acpi_interrupt>> acpi_interrupts;
@@ -328,11 +336,24 @@ void AcpiOsSleep(UINT64 Milliseconds)
     sched::thread::sleep(std::chrono::milliseconds(Milliseconds));
 }
 
+ACPI_STATUS AcpiOsEnterSleep(UINT8 sleep_state, UINT32 rega_value, UINT32 regb_value)
+{
+    return AE_OK;
+}
+
 void AcpiOsStall(UINT32 Microseconds)
 {
     // spec says to spin, but...
     sched::thread::sleep(std::chrono::microseconds(Microseconds));
 }
+
+#ifdef __x86_64__
+#include "processor.hh"
+using namespace processor;
+#else
+#include "arch-pci.hh"
+using namespace pci; 
+#endif
 
 ACPI_STATUS AcpiOsReadPort(
     ACPI_IO_ADDRESS         Address,
@@ -341,13 +362,13 @@ ACPI_STATUS AcpiOsReadPort(
 {
     switch (Width) {
     case 8:
-        *Value = processor::inb(Address);
+        *Value = inb(Address);
         break;
     case 16:
-        *Value = processor::inw(Address);
+        *Value = inw(Address);
         break;
     case 32:
-        *Value = processor::inl(Address);
+        *Value = inl(Address);
         break;
     default:
         return AE_BAD_PARAMETER;
@@ -362,13 +383,13 @@ ACPI_STATUS AcpiOsWritePort(
 {
     switch (Width) {
     case 8:
-        processor::outb(Value, Address);
+        outb(Value, Address);
         break;
     case 16:
-        processor::outw(Value, Address);
+        outw(Value, Address);
         break;
     case 32:
-        processor::outl(Value, Address);
+        outl(Value, Address);
         break;
     default:
         return AE_BAD_PARAMETER;
@@ -638,9 +659,9 @@ void init()
 
 void __attribute__((constructor(init_prio::acpi))) acpi_init_early()
 {
-#if CONF_drivers_xen
-    XENPV_ALTERNATIVE({ acpi::early_init(); }, {});
-#else
+/*#if CONF_drivers_xen
+    XENPV_ALTERNATIVE({ acpi::early_init(); }, {}); //xen_start_info not available in aarch64
+#else*/
     acpi::early_init();
-#endif
+//#endif
 }
