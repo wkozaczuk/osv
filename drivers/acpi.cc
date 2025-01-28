@@ -715,6 +715,21 @@ void early_init()
 	    }
 	}
     });
+
+    //TODO: Based on https://www.kernel.org/doc/html/v5.6/PCI/acpi-info.html the PCI interrupt
+    //number mappings can be somehow retrieved from _PRT (Pci Routing Table)
+    //Hopefully we can figure out on how QEMU exposes this in ACPI
+    //See acpi_dsdt_add_pci_route_table() in hw/pci-host/gpex-acpi.c
+    //called from acpi_dsdt_add_pci() in hw/arm/virt-acpi-build.c
+    //
+    //For now however we can assume we only need to support legacy (SPI-based) PCI
+    //interrupts on QEMU with artificially disabled DTB and somehow ITS/LPIs not available
+    //Otherwise we would be running on ACPI platforms where we would use ITS/LPIs anyway
+    //
+    //There are only 4 PCI interrupts - A, B, C, D and on arm64 qemu virt
+    //these map to 32 (SPI base) + 3, 4, 5, 6 = 35, 36, 37, 38
+    //The device id (aka slot) determines which one to use -
+    //Maybe (slot % 4) could be an index to a 4 elements table [35, 36, 37, 38]
 }
 
 UINT32 acpi_poweroff(void *unused)
