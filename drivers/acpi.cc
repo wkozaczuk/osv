@@ -578,6 +578,7 @@ bool is_enabled() {
 
 void early_init()
 {
+    debug_early_u64("In ACPI early_init, acpi::pvh_rsdp_paddr:", acpi::pvh_rsdp_paddr);
     if (!acpi::pvh_rsdp_paddr) {
         ACPI_SIZE rsdp;
         auto st = AcpiFindRootPointer(&rsdp);
@@ -616,6 +617,7 @@ void early_init()
         return;
     }
 
+    debug_early("ACPI early_init complete\n");
     enabled = true;
 }
 

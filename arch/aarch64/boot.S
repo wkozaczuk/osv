@@ -13,7 +13,8 @@
 .type start_elf , "function"
 start_elf:
         /* elf program start address */
-        /* input: x3=elf header x4=cmdline x5=dtb */
+        /* input: x2=acpi x3=elf header x4=cmdline x5=dtb */
+        mov     x20, x2
         bl      calculate_virt_offset
         /* x6 contains virt-phys offset */
         adrp    x0, exception_vectors
@@ -40,6 +41,8 @@ start_elf:
         str     x4, [x1, #:lo12:cmdline]
         adrp    x1, dtb                     // store dtb (arch-setup.cc)
         str     x5, [x1, #:lo12:dtb]
+        adrp    x1, _ZN4acpi14pvh_rsdp_paddrE    // store dtb (arch-setup.cc)
+        str     x20, [x1, #:lo12:_ZN4acpi14pvh_rsdp_paddrE]
 
 #if CONF_drivers_xen
         mov     x29, xzr

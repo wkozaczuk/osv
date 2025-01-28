@@ -16,11 +16,11 @@ ld -shared -Bsymbolic -Tefi_build/elf_aarch64_efi.lds $OUT/efi_loader.o $OUT/cli
 objcopy -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym  -j .rel \
 	-j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-aarch64 --subsystem=10 $OUT/efi_loader.so $OUT/efi_loader.efi
 
-dd if=/dev/zero of=$OUT/efi_loader.img bs=1k count=7000
-mformat -i $OUT/efi_loader.img -h 1 -t 100 -s 128 ::
+dd if=/dev/zero of=$OUT/efi_loader.img bs=1k count=10000
+mformat -i $OUT/efi_loader.img -h 2 -t 100 -s 128 ::
 mmd -i $OUT/efi_loader.img ::/EFI
 mmd -i $OUT/efi_loader.img ::/EFI/BOOT
 mcopy -i $OUT/efi_loader.img $OUT/efi_loader.efi ::/efi/boot/bootx64.efi
 mcopy -i $OUT/efi_loader.img build/release/loader-stripped.elf ::/efi/boot/loader.elf
 
-cp /home/wkozaczuk/projects/efi-blog/QEMU_VARS_example_kernel.fd $OUT/QEMU_VARS_efi_loader.fd
+cp /home/wkozaczuk/projects/osv/QEMU_VARS_efi_loader.fd $OUT/QEMU_VARS_efi_loader.fd

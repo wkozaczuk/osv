@@ -36,6 +36,7 @@
 #include "drivers/mmio-isa-serial.hh"
 
 #include <alloca.h>
+#include "drivers/acpi.hh"
 
 #include <osv/kernel_config_networking_stack.h>
 
