@@ -576,6 +576,63 @@ bool is_enabled() {
     return enabled;
 }
 
+#define ACPI_MADT_GEN_INT   11
+#define ACPI_MADT_GEN_DIST  12
+#define ACPI_MADT_GEN_RDIST 14
+#define ACPI_MADT_GEN_TRANS 15
+
+#define MADT_GENINT_ENABLED 0x1ul
+
+struct acpi_gen_dist {  /* Generic Distributor */
+    u8 type;
+    u8 length;
+    u16 res;
+    u32 gic_id;
+    u64 base_address;
+    u32 global_irq_base;
+    u8 version;
+    u8 res2[3];
+} __attribute__((packed));
+
+struct acpi_gen_redist {    /* Generic Redistributor */
+    u8 type;
+    u8 length;
+    u16 res;
+    u64 base_address;
+    u32 len;
+} __attribute__((packed));
+
+struct acpi_gen_trans { /* Generic Translator */
+    u8 type;
+    u8 length;
+    u16 res;
+    u32 translation_id;
+    u64 base_address;
+    u32 res2;
+} __attribute__((packed));
+
+struct acpi_gen_int
+{
+    u8 type;
+    u8 length;
+    u16 res;
+    u32 cpu_iface_num;
+    u32 acpi_proc_uid;
+    u32 flags;
+    u32 parking_proto_ver;
+    u32 perf_int_gsiv;
+    u64 parked_addr;
+    u64 base_addr;
+    u64 gicv_base_addr;
+    u64 gich_base_addr;
+    u32 vgic_int;
+    u64 gicr_base_addr;
+    u64 mpidr;
+    u8 efficiency_class;
+    u8 res2;
+    u16 spe_int;
+}  __attribute__((packed));
+
 void early_init()
 {
     debug_early_u64("In ACPI early_init, acpi::pvh_rsdp_paddr:", acpi::pvh_rsdp_paddr);
@@ -619,6 +676,45 @@ void early_init()
 
     debug_early("ACPI early_init complete\n");
     enabled = true;
+
+    debug_early_u64("From ACPI - timer irq: ", get_timer_irq());
+
+    u8 console_type = 0;
+    u64 console_addr = get_spcr_addr(console_type);
+    debug_early_u64("From ACPI - console type: ", console_type);
+    debug_early_u64("From ACPI - console addr: ", console_addr);
+
+    u64 pci_ecam_addr = 0;
+    find_mcfg([& pci_ecam_addr](u64 addr, u16 segment, u8 bus_start, u8 bus_end) {
+        if (segment == 0 && bus_start == 0) {
+	    pci_ecam_addr = addr;
+	    return true;
+	} else {
+	    return false;
+	}
+    });
+    debug_early_u64("From ACPI - PCI ecam addr: ", pci_ecam_addr);
+
+    //Parse GIC settings
+    parse_madt([](u8 type, void *p) {
+        if (type == ACPI_MADT_GEN_DIST)
+	    debug_early_u64("From ACPI - GIC dist base: ", ((acpi_gen_dist *)p)->base_address);
+	else if (type == ACPI_MADT_GEN_RDIST)
+	    debug_early_u64("From ACPI - GIC rdist base: ", ((acpi_gen_redist *)p)->base_address);
+	else if (type == ACPI_MADT_GEN_TRANS)
+	    debug_early_u64("From ACPI - GIC trans base: ", ((acpi_gen_trans *)p)->base_address);
+    });
+
+    //Parse CPUs
+    parse_madt([](u8 type, void *p) {
+        if (type == ACPI_MADT_GEN_INT) {
+	    acpi_gen_int *agi = (acpi_gen_int*)p;
+	    if (agi->flags & MADT_GENINT_ENABLED) {
+	        u64 mpidr = agi->mpidr;
+	        debug_early_u64("From ACPI - CPU mpidr: ", mpidr);
+	    }
+	}
+    });
 }
 
 UINT32 acpi_poweroff(void *unused)
@@ -655,6 +751,59 @@ void init()
 
     AcpiInstallFixedEventHandler(ACPI_EVENT_POWER_BUTTON, acpi_poweroff, nullptr);
     AcpiEnableEvent(ACPI_EVENT_POWER_BUTTON, 0);
+}
+
+u32 get_timer_irq()
+{
+    ACPI_TABLE_HEADER *t;
+    ACPI_STATUS rv = AcpiGetTable(ACPI_SIG_GTDT, 1, &t);
+    if (ACPI_FAILURE(rv))
+        return 0;
+    ACPI_TABLE_GTDT *gtdt = (ACPI_TABLE_GTDT *)t;
+    u32 irq = gtdt->VirtualTimerInterrupt;
+    AcpiPutTable(t);
+    return irq;
+}
+
+u64 get_spcr_addr(u8 &type)
+{
+    ACPI_TABLE_HEADER *t;
+    ACPI_STATUS rv = AcpiGetTable(ACPI_SIG_SPCR, 1, &t);
+    if (ACPI_FAILURE(rv))
+        return 0;
+    ACPI_TABLE_SPCR *spcr = (ACPI_TABLE_SPCR *)t;
+    u64 addr = spcr->SerialPort.Address;
+    type = spcr->InterfaceType;
+    AcpiPutTable(t);
+    return addr;
+}
+
+void find_mcfg(std::function<bool(u64 addr, u16 segment, u8 bus_start, u8 bus_end)> mcfg_fun)
+{
+    ACPI_TABLE_HEADER *mcfg;
+    ACPI_STATUS rv = AcpiGetTable(ACPI_SIG_MCFG, 1, &mcfg);
+    if (ACPI_FAILURE(rv))
+        return;
+    ACPI_MCFG_ALLOCATION *a = (ACPI_MCFG_ALLOCATION *)(((ACPI_TABLE_MCFG *)mcfg) + 1);
+    int n = (mcfg->Length - sizeof(ACPI_TABLE_MCFG)) / sizeof(ACPI_MCFG_ALLOCATION);
+    for (int i = 0; i < n; i++) {
+        if (mcfg_fun(a->Address, a->PciSegment, a->StartBusNumber, a->EndBusNumber))
+            break;
+    }
+    AcpiPutTable(mcfg);
+}
+
+void parse_madt(std::function<void(u8 type, void *p)> consume_fun)
+{
+    ACPI_TABLE_HEADER *madt;
+    ACPI_STATUS rv = AcpiGetTable(ACPI_SIG_MADT, 1, &madt);
+    if (ACPI_FAILURE(rv))
+        return;
+    u8 *p = (u8 *)madt + sizeof(ACPI_TABLE_MADT);
+    u8 *pe = (u8 *)madt + madt->Length;
+    for (; p < pe; p += p[1])
+        consume_fun(p[0], p);
+    AcpiPutTable(madt);
 }
 
 }
