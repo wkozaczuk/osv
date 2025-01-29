@@ -48,7 +48,7 @@ static __attribute__ ((noinline)) int invoke_smc(u64 fid, u64 arg0, u64 arg1, u6
 /* __attribute__((constructor(init_prio::psci))) */
 void psci::init()
 {
-    const char * method = dtb_get_psci_method();
+    const char * method = "hvc";//dtb_get_psci_method(); //TODO - figure out default
     if (strcmp("hvc", method) == 0) {
         psci::invoke_method = invoke_hvc;
     } else if (strcmp("smc", method) == 0) {

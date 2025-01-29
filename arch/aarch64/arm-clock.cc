@@ -18,6 +18,7 @@
 #include <osv/kernel_config_logger_debug.h>
 
 #include "arch-dtb.hh"
+#include "drivers/acpi.hh"
 
 using namespace processor;
 
@@ -51,13 +52,15 @@ arm_clock::arm_clock() {
 #if CONF_logger_debug
     debug_early_u64("arm_clock(): frequency read as ", freq_hz);
 #endif
-    u64 rtc_address = dtb_get_rtc();
+    //TODO?
+    /*u64 rtc_address = dtb_get_rtc();
     if (rtc_address) {
         pl031 rtc(rtc_address);
 	_boot_time_in_ns = rtc.wallclock_ns();
     } else {
 	_boot_time_in_ns = 0;
-    }
+    }*/
+    _boot_time_in_ns = 0;
 }
 
 static __attribute__((constructor(init_prio::clock))) void setup_arm_clock()
@@ -117,7 +120,8 @@ public:
 
 int get_timer_irq_id()
 {
-    auto _irq_id = dtb_get_timer_irq();
+    //auto _irq_id = dtb_get_timer_irq();
+    auto _irq_id = acpi::get_timer_irq();
     if (!_irq_id) {
         _irq_id = DEFAULT_TIMER_IRQ_ID;
     }

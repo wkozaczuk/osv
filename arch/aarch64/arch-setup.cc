@@ -29,6 +29,7 @@
 
 #include "drivers/console.hh"
 #include "drivers/pl011.hh"
+#include "drivers/acpi.hh"
 #include "early-console.hh"
 #if CONF_drivers_pci
 #include <osv/pci.hh>
@@ -39,6 +40,8 @@
 #include "drivers/acpi.hh"
 
 #include <osv/kernel_config_networking_stack.h>
+
+char *cmdline;
 
 void setup_temporary_phys_map()
 {
@@ -52,16 +55,21 @@ void setup_temporary_phys_map()
 }
 
 #if CONF_drivers_pci
+#define DEV_BASE_PCIE_MMIO_ADDR    0x10000000
+#define DEV_BASE_PCIE_MMIO_SIZE    0x2eff0000
+#define DEV_BASE_PCIE_PIO_ADDR     0x3eff0000
+#define DEV_BASE_PCIE_PIO_SIZE     0x10000
 void arch_setup_pci()
 {
-    pci::set_pci_ecam(dtb_get_pci_is_ecam());
+    u64 ecam_addr = acpi::get_pci_ecam();
+    pci::set_pci_ecam(ecam_addr != 0);
 
     /* linear_map [TTBR0 - PCI config space] */
-    u64 pci_cfg;
-    size_t pci_cfg_len;
-    if (!dtb_get_pci_cfg(&pci_cfg, &pci_cfg_len)) {
+    u64 pci_cfg = ecam_addr;
+    size_t pci_cfg_len = 0x01000000; //TODO: This is what is in QEMU, where exactly can we get it from ACPI or is it a default?
+    /*if (!dtb_get_pci_cfg(&pci_cfg, &pci_cfg_len)) {
         return;
-    }
+    }*/
 
     pci::set_pci_cfg(pci_cfg, pci_cfg_len);
     pci_cfg = pci::get_pci_cfg(&pci_cfg_len);
@@ -70,9 +78,16 @@ void arch_setup_pci()
 
     /* linear_map [TTBR0 - PCI I/O and memory ranges] */
     u64 ranges[2]; size_t ranges_len[2];
-    if (!dtb_get_pci_ranges(ranges, ranges_len, 2)) {
+    /*if (!dtb_get_pci_ranges(ranges, ranges_len, 2)) {
         abort("arch-setup: failed to get PCI ranges.\n");
-    }
+    }*/
+
+    ranges[0] = DEV_BASE_PCIE_PIO_ADDR; //See if that is a standard place or maybe it is in the same place as 
+    ranges_len[0] = DEV_BASE_PCIE_PIO_SIZE;
+
+    ranges[1] = DEV_BASE_PCIE_MMIO_ADDR;
+    ranges_len[1] = DEV_BASE_PCIE_MMIO_SIZE;
+
     pci::set_pci_io(ranges[0], ranges_len[0]);
     pci::set_pci_mem(ranges[1], ranges_len[1]);
     ranges[0] = pci::get_pci_io(&ranges_len[0]);
@@ -84,10 +99,36 @@ void arch_setup_pci()
 }
 #endif
 
+static void acpi_discover_memory()
+{
+    mmu::mem_addr = 0x40000000;
+    memory::phys_mem_size = 0x80000000;
+
+    register u64 edata;
+    asm volatile ("adrp %0, .edata" : "=r"(edata));
+
+    /* import from loader.cc and core/mmu.cc */
+    extern elf::Elf64_Ehdr *elf_header;
+    extern size_t elf_size;
+    extern void *elf_start;
+    extern u64 kernel_vm_shift;
+
+    mmu::elf_phys_start = reinterpret_cast<void *>(elf_header);
+    debug_early_u64("elf phys   : ", (u64)mmu::elf_phys_start);
+    debug_early_u64("vm_shift   : ", kernel_vm_shift);
+    elf_start = mmu::elf_phys_start + kernel_vm_shift;
+    elf_size = (u64)edata - (u64)elf_start;
+
+    /* remove amount of memory used for ELF from avail memory */
+    mmu::phys addr = (mmu::phys)mmu::elf_phys_start + elf_size;
+    memory::phys_mem_size -= addr - mmu::mem_addr;
+}
+
 extern bool opt_pci_disabled;
 void arch_setup_free_memory()
 {
     setup_temporary_phys_map();
+    acpi_discover_memory();
 
     /* import from loader.cc */
     extern size_t elf_size;
@@ -100,8 +141,8 @@ void arch_setup_free_memory()
     //mmu::free_initial_memory_range(before_range_start, before_range_size);
 
     mmu::phys after_range_start = (mmu::phys)elf_header + elf_size;
-    mmu::phys start;
-    size_t phys_memory_size = dtb_get_phys_memory(&start);
+    //mmu::phys start;
+    size_t phys_memory_size = 0x80000000;//dtb_get_phys_memory(&start);
     size_t after_range_size = phys_memory_size - before_range_size - elf_size;
     debug_early_u64("after_range_start : ", after_range_start);
     debug_early_u64("after_range_size:   ", after_range_size);
@@ -133,32 +174,32 @@ void arch_setup_free_memory()
     debug_early_u64("OSV_KERNEL_VM_BASE + size :", OSV_KERNEL_VM_BASE + elf_size + 0x10000);
 
     if (console::PL011_Console::active) {
-        /* linear_map [TTBR0 - UART] */
+        // linear_map [TTBR0 - UART]
         addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
         mmu::linear_map((void *)addr, addr, 0x1000, "pl011", mmu::page_size,
                         mmu::mattr::dev);
     }
 
 #if CONF_drivers_cadence
-    if (console::Cadence_Console::active) {
-        // linear_map [TTBR0 - UART]
-        addr = (mmu::phys)console::aarch64_console.cadence.get_base_addr();
-        mmu::linear_map((void *)addr, addr, 0x1000, "cadence", mmu::page_size,
-                        mmu::mattr::dev);
-    }
+//    if (console::Cadence_Console::active) {
+//        // linear_map [TTBR0 - UART]
+//        addr = (mmu::phys)console::aarch64_console.cadence.get_base_addr();
+//        mmu::linear_map((void *)addr, addr, 0x1000, "cadence", mmu::page_size,
+//                        mmu::mattr::dev);
+//    }
 #endif
 
     //Locate GICv2 or GICv3 information in DTB and construct corresponding GIC driver
     //and map relevant physical memory
     u64 dist, redist, cpuif;
     size_t dist_len, redist_len, cpuif_len;
-    if (dtb_get_gic_v3(&dist, &dist_len, &redist, &redist_len)) {
+    if (acpi::get_gic_v3(&dist, &dist_len, &redist, &redist_len)) {
         gic::gic = new gic::gic_v3_driver(dist, redist);
         /* linear_map [TTBR0 - GIC REDIST] */
         mmu::linear_map((void *)redist, (mmu::phys)redist, redist_len, "gic_redist", mmu::page_size,
                         mmu::mattr::dev);
 	debug_early("Enabled GIC3\n");
-    } else if (dtb_get_gic_v2(&dist, &dist_len, &cpuif, &cpuif_len)) {
+    } else if (acpi::get_gic_v2(&dist, &dist_len, &cpuif, &cpuif_len)) {
         gic::gic = new gic::gic_v2_driver(dist, cpuif);
         /* linear_map [TTBR0 - GIC CPUIF] */
         mmu::linear_map((void *)cpuif, (mmu::phys)cpuif, cpuif_len, "gic_cpuif", mmu::page_size,
@@ -182,7 +223,7 @@ void arch_setup_free_memory()
     osv::parse_cmdline(cmdline);
 
 #if CONF_drivers_mmio
-    dtb_collect_parsed_mmio_virtio_devices();
+    //dtb_collect_parsed_mmio_virtio_devices(); //TODO
 #endif
 
     mmu::free_initial_memory_range(before_range_start, before_range_size);
@@ -237,7 +278,7 @@ void arch_init_drivers()
 
 #if CONF_drivers_pci
     if (!opt_pci_disabled) {
-        int irqmap_count = dtb_get_pci_irqmap_count();
+        /*int irqmap_count = dtb_get_pci_irqmap_count(); //With acpi (only) when on QEMU with ACPI and MSI off
         if (irqmap_count > 0) {
             u32 mask = dtb_get_pci_irqmask();
             u32 *bdfs = (u32 *)alloca(sizeof(u32) * irqmap_count);
@@ -246,10 +287,10 @@ void arch_init_drivers()
                 abort("arch-setup: failed to get PCI irqmap.\n");
             }
             pci::set_pci_irqmap(bdfs, irqs, irqmap_count, mask);
-        }
+        }*/
 
 //#if CONF_logger_debug
-        pci::dump_pci_irqmap();
+        //pci::dump_pci_irqmap();
 //#endif
 
         // Enumerate PCI devices
@@ -299,19 +340,23 @@ void arch_init_early_console()
     }
 #endif
 
-    int irqid;
-    u64 mmio_serial_address = dtb_get_mmio_serial_console(&irqid);
-    if (mmio_serial_address) {
-        console::mmio_isa_serial_console::early_init(mmio_serial_address);
+    u8 spcr_type = 0;
+    u64 spsc_addr = acpi::get_spcr_addr(spcr_type);
+
+    //int irqid;
+    //u64 mmio_serial_address = dtb_get_mmio_serial_console(&irqid);
+    //if (mmio_serial_address) {
+    if (acpi::is_serial_16550(spcr_type) && spsc_addr) {
+        console::mmio_isa_serial_console::early_init(spsc_addr);
 
         new (&console::aarch64_console.isa_serial) console::mmio_isa_serial_console();
-        console::aarch64_console.isa_serial.set_irqid(irqid);
+        //console::aarch64_console.isa_serial.set_irqid(irqid);
         console::arch_early_console = console::aarch64_console.isa_serial;
         return;
     }
 
 #if CONF_drivers_cadence
-    mmio_serial_address = dtb_get_cadence_uart(&irqid);
+/*    mmio_serial_address = dtb_get_cadence_uart(&irqid);
     if (mmio_serial_address) {
         new (&console::aarch64_console.cadence) console::Cadence_Console();
         console::arch_early_console = console::aarch64_console.cadence;
@@ -319,20 +364,21 @@ void arch_init_early_console()
         console::aarch64_console.cadence.set_irqid(irqid);
         console::Cadence_Console::active = true;
         return;
-    }
+    }*/
 #endif
 
     new (&console::aarch64_console.pl011) console::PL011_Console();
     console::arch_early_console = console::aarch64_console.pl011;
     console::PL011_Console::active = true;
-    u64 addr = dtb_get_uart(&irqid);
-    if (!addr) {
-        /* keep using default addresses */
-        return;
-    }
+    //u64 addr = dtb_get_uart(&irqid);
+    //if (!addr) {
+        // keep using default addresses
+    //    return;
+    //}
 
-    console::aarch64_console.pl011.set_base_addr(addr);
-    console::aarch64_console.pl011.set_irqid(irqid);
+    if (spsc_addr)
+        console::aarch64_console.pl011.set_base_addr(spsc_addr);
+    //console::aarch64_console.pl011.set_irqid(irqid);
 }
 
 bool arch_setup_console(std::string opt_console)

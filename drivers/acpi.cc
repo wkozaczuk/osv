@@ -622,7 +622,7 @@ struct acpi_gen_int
     u32 parking_proto_ver;
     u32 perf_int_gsiv;
     u64 parked_addr;
-    u64 base_addr;
+    u64 base_address;
     u64 gicv_base_addr;
     u64 gich_base_addr;
     u32 vgic_int;
@@ -632,6 +632,36 @@ struct acpi_gen_int
     u8 res2;
     u16 spe_int;
 }  __attribute__((packed));
+
+#define MAX_CPU_COUNT 32
+static int cpu_count = 0;
+static u64 cpus_mpids[MAX_CPU_COUNT];
+/*
+static ACPI_STATUS acpi_device_handler(ACPI_HANDLE object, u32 nesting_level, void *context,
+                                       void **return_value)
+{
+    ACPI_DEVICE_INFO *dev_info;
+    ACPI_STATUS rv = AcpiGetObjectInfo(object, &dev_info);
+    if (ACPI_SUCCESS(rv)) {
+        if (dev_info->Flags & ACPI_PCI_ROOT_BRIDGE) {
+            acpi_debug("retrieving PCI root bridge resources for %p", object);
+            id_heap iomem = allocate_id_heap(acpi_heap, acpi_heap, PAGESIZE, true);
+            assert(iomem != INVALID_ADDRESS);
+            struct acpi_pci_res_ctx ctx = {
+                    .bridge_window = irange(0, 0),
+                    .iomem = iomem,
+            };
+            rv = AcpiWalkResources(object, METHOD_NAME__CRS, acpi_pci_res_handler, &ctx);
+            if (ACPI_SUCCESS(rv))
+                pci_bridge_set_iomem(ctx.bridge_window, iomem);
+            else
+                msg_err("ACPI: cannot retrieve PCI root bridge resources: %d", rv);
+        }
+        ACPI_FREE(dev_info);
+    }
+
+    return rv;
+}*/
 
 void early_init()
 {
@@ -684,21 +714,14 @@ void early_init()
     debug_early_u64("From ACPI - console type: ", console_type);
     debug_early_u64("From ACPI - console addr: ", console_addr);
 
-    u64 pci_ecam_addr = 0;
-    find_mcfg([& pci_ecam_addr](u64 addr, u16 segment, u8 bus_start, u8 bus_end) {
-        if (segment == 0 && bus_start == 0) {
-	    pci_ecam_addr = addr;
-	    return true;
-	} else {
-	    return false;
-	}
-    });
-    debug_early_u64("From ACPI - PCI ecam addr: ", pci_ecam_addr);
+    debug_early_u64("From ACPI - PCI ecam addr: ", get_pci_ecam());
 
     //Parse GIC settings
     parse_madt([](u8 type, void *p) {
         if (type == ACPI_MADT_GEN_DIST)
 	    debug_early_u64("From ACPI - GIC dist base: ", ((acpi_gen_dist *)p)->base_address);
+	else if (type == ACPI_MADT_GEN_INT)
+	    debug_early_u64("From ACPI - GIC cpuinf base: ", ((acpi_gen_int *)p)->base_address);
 	else if (type == ACPI_MADT_GEN_RDIST)
 	    debug_early_u64("From ACPI - GIC rdist base: ", ((acpi_gen_redist *)p)->base_address);
 	else if (type == ACPI_MADT_GEN_TRANS)
@@ -712,9 +735,12 @@ void early_init()
 	    if (agi->flags & MADT_GENINT_ENABLED) {
 	        u64 mpidr = agi->mpidr;
 	        debug_early_u64("From ACPI - CPU mpidr: ", mpidr);
+		cpus_mpids[cpu_count++] = mpidr;
 	    }
 	}
     });
+
+    //AcpiGetDevices(0, acpi_device_handler, 0, 0);
 
     //TODO: Based on https://www.kernel.org/doc/html/v5.6/PCI/acpi-info.html the PCI interrupt
     //number mappings can be somehow retrieved from _PRT (Pci Routing Table)
@@ -793,6 +819,14 @@ u64 get_spcr_addr(u8 &type)
     return addr;
 }
 
+bool is_serial_16550(u8 spcr_type)
+{
+    return 
+	spcr_type == SERIAL_16550_COMPATIBLE ||
+	spcr_type == SERIAL_16550_SUBSET ||
+	spcr_type == SERIAL_16550_WITH_GAS;
+}
+
 void find_mcfg(std::function<bool(u64 addr, u16 segment, u8 bus_start, u8 bus_end)> mcfg_fun)
 {
     ACPI_TABLE_HEADER *mcfg;
@@ -821,6 +855,91 @@ void parse_madt(std::function<void(u8 type, void *p)> consume_fun)
     AcpiPutTable(madt);
 }
 
+#define GICC_MEM_SZ	0x2000
+
+#define ACPI_MADT_GICD_VERSION_2   0x2
+#define ACPI_MADT_GICD_VERSION_3   0x3
+
+#define GICD_V2_MEM_SZ             0x01000
+#define GICD_V3_MEM_SZ             0x10000
+
+static void parse_gic_dist(void *p, u64 *dist, size_t *dist_len)
+{
+    *dist = 0;
+    *dist_len = 0;
+
+    acpi_gen_dist *entry = (acpi_gen_dist *)p;
+    if (entry->base_address) {
+         *dist = entry->base_address;
+         debug_early_u64("From ACPI - GIC dist base: ", *dist);
+         if (entry->version == ACPI_MADT_GICD_VERSION_2)
+             *dist_len = GICD_V2_MEM_SZ;
+         else if (entry->version == ACPI_MADT_GICD_VERSION_3)
+             *dist_len = GICD_V2_MEM_SZ;
+    }
+}
+
+bool get_gic_v2(u64 *dist, size_t *dist_len, u64 *cpu, size_t *cpu_len)
+{
+    *cpu = 0;
+
+    parse_madt([dist, dist_len, cpu, cpu_len](u8 type, void *p) {
+        if (type == ACPI_MADT_GEN_INT && ((acpi_gen_int *)p)->base_address) {//GICC
+	    *cpu = ((acpi_gen_int *)p)->base_address;
+	    *cpu_len = GICC_MEM_SZ; //Which doc is it specified?
+	    debug_early_u64("From ACPI - GIC cpuif base: ", *cpu);
+	} else if (type == ACPI_MADT_GEN_DIST) {
+	    parse_gic_dist(p, dist, dist_len);
+	}
+    });
+
+    return *dist && *cpu && *dist_len;
+}
+
+bool get_gic_v3(u64 *dist, size_t *dist_len, u64 *redist, size_t *redist_len)
+{
+    *redist = 0;
+    *redist_len = 0;
+
+    parse_madt([dist, dist_len, redist, redist_len](u8 type, void *p) {
+	if (type == ACPI_MADT_GEN_RDIST && ((acpi_gen_redist *)p)->base_address) {
+	    acpi_gen_redist *entry = (acpi_gen_redist *)p;
+	    debug_early_u64("From ACPI - GIC rdist base: ", entry->base_address);
+	    *redist = entry->base_address;
+	    *redist_len = entry->len;
+	} else if (type == ACPI_MADT_GEN_DIST) {
+	    parse_gic_dist(p, dist, dist_len);
+	}
+    });
+
+    return *dist && *redist && *dist_len  && *redist_len;
+}
+
+int get_cpus_count()
+{
+    return cpu_count;
+}
+
+void get_cpus_mpids(u64 *mpids, int n) {
+    for (auto i = 0; i < n; i++) {
+        mpids[i] = cpus_mpids[i];
+    }
+}
+
+u64 get_pci_ecam()
+{
+    u64 pci_ecam_addr = 0;
+    find_mcfg([& pci_ecam_addr](u64 addr, u16 segment, u8 bus_start, u8 bus_end) {
+        if (segment == 0 && bus_start == 0) {
+	    pci_ecam_addr = addr;
+	    return true;
+	} else {
+	    return false;
+	}
+    });
+    debug_early_u64("From ACPI - PCI ecam addr: ", pci_ecam_addr);
+    return pci_ecam_addr;
+}
 }
 
 void __attribute__((constructor(init_prio::acpi))) acpi_init_early()

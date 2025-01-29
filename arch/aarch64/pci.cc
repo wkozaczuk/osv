@@ -101,7 +101,7 @@ void dump_pci_irqmap()
         debugf("B,D,F irqmap-mask   0x%08x\n", pci_irqmask);
     }
 }
-
+/*
 static int get_pci_irq_from_bdfp(u32 bdfp)
 {
     int irq_id = -1;
@@ -113,12 +113,12 @@ static int get_pci_irq_from_bdfp(u32 bdfp)
         if (irq_id < 0) {
             irq_id = (*it).second;
         } else {
-            /* we do not support multiple irqs per slot (yet?) */
+            // we do not support multiple irqs per slot (yet?)
             abort();
         }
     }
     return irq_id;
-}
+}*/
 
 u32 pci::bar::arch_add_bar(u32 val)
 {
@@ -142,21 +142,28 @@ u32 pci::bar::arch_add_bar(u32 val)
 
 unsigned get_pci_irq_line(pci::device &dev)
 {
-    u32 bdfp;
-    u8 b, d, f, p; /* BEWARE, bdf written by get_bdf using references */
-    dev.get_bdf(b, d, f);  /* arguments written to (not good.) */
+    u8 b, d, f; // BEWARE, bdf written by get_bdf using references
+    dev.get_bdf(b, d, f);  // arguments written to (not good.)
 
-    p = dev.get_interrupt_pin();
+    /*Only with DTB
+    u8 p = dev.get_interrupt_pin();
+    u32 bdfp;
     bdfp = b << DTB_PHYSHI_B_SH | d << DTB_PHYSHI_D_SH | f << DTB_PHYSHI_F_SH;
     bdfp |= p & DTB_PIN_MASK;
 
     int irq_id = pci::get_pci_irq_from_bdfp(bdfp);
     assert(irq_id > 0);
-    /* add the SPI base number 32 to the irq id */
+    // add the SPI base number 32 to the irq id 
     irq_id += 32;
-#if CONF_logger_debug
-    debugf("get_pci_irq_line: bdfp  = %u, irqid = %d\n", bdfp, irq_id);
-#endif
+//#if CONF_logger_debug
+    debugf("get_pci_irq_line: [%x:%x.%x], irqid = %d\n", b, d, f, irq_id);
+//#endif
+    return irq_id;*/
+    
+    //This could be a good default with no DTB (ACPI) and no MSI
+    //However it would be good to populate the irq map using this scheme
+    int irq_id = 35 + (d % 4); //(INTC (a, b, c, d) - 35, 36, 37, 38
+    debugf("get_pci_irq_line: [%x:%x.%x], irqid = %d\n", b, d, f, irq_id);
     return irq_id;
 }
 

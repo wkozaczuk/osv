@@ -1041,7 +1041,7 @@ objects += arch/$(arch)/arm-clock.o
 objects += arch/$(arch)/gic-common.o
 objects += arch/$(arch)/gic-v2.o
 objects += arch/$(arch)/gic-v3.o
-objects += arch/$(arch)/arch-dtb.o
+#objects += arch/$(arch)/arch-dtb.o
 objects += arch/$(arch)/hypercall.o
 ifeq ($(conf_memory_optimize),1)
 objects += arch/$(arch)/memset.o

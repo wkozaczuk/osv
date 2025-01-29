@@ -16,6 +16,7 @@
 #include "psci.hh"
 #include "arch-dtb.hh"
 #include <alloca.h>
+#include "drivers/acpi.hh"
 
 extern "C" { /* see boot.S */
     extern init_stack *smp_stack_free;
@@ -43,15 +44,13 @@ void secondary_bringup(sched::cpu* c)
 
 void smp_init()
 {
-    int nr_cpus = dtb_get_cpus_count();
+    int nr_cpus = acpi::get_cpus_count();
     if (nr_cpus < 1) {
         abort("smp_init: could not get cpus from device tree.\n");
     }
     debugf("%d CPUs detected\n", nr_cpus);
     u64 *mpids = (u64 *)alloca(sizeof(u64) * nr_cpus);
-    if (!dtb_get_cpus_mpid(mpids, nr_cpus)) {
-        abort("smp_init: failed to get cpus mpids from device tree.\n");
-    }
+    acpi::get_cpus_mpids(mpids, nr_cpus);
 
     for (int i = 0; i < nr_cpus; i++) {
         auto c = new sched::cpu(i);
