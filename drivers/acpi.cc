@@ -875,7 +875,7 @@ static void parse_gic_dist(void *p, u64 *dist, size_t *dist_len)
          if (entry->version == ACPI_MADT_GICD_VERSION_2)
              *dist_len = GICD_V2_MEM_SZ;
          else if (entry->version == ACPI_MADT_GICD_VERSION_3)
-             *dist_len = GICD_V2_MEM_SZ;
+             *dist_len = GICD_V3_MEM_SZ;
     }
 }
 
@@ -942,11 +942,11 @@ u64 get_pci_ecam()
 }
 }
 
-void __attribute__((constructor(init_prio::acpi))) acpi_init_early()
-{
+//void __attribute__((constructor(init_prio::acpi))) acpi_init_early()
+//{
 /*#if CONF_drivers_xen
     XENPV_ALTERNATIVE({ acpi::early_init(); }, {}); //xen_start_info not available in aarch64
 #else*/
-    acpi::early_init();
+//    acpi::early_init();
 //#endif
-}
+//}

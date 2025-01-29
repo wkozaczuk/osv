@@ -13,6 +13,7 @@ namespace acpi {
 
 extern uint64_t pvh_rsdp_paddr;
 
+void early_init();
 void init();
 bool is_enabled();
 

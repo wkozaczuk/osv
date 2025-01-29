@@ -189,6 +189,22 @@ void arch_setup_free_memory()
 //    }
 #endif
 
+    // get rid of the command line, before memory is unmapped
+    console::mmio_isa_serial_console::clean_cmdline(cmdline);
+    osv::parse_cmdline(cmdline);
+
+#if CONF_drivers_mmio
+    //dtb_collect_parsed_mmio_virtio_devices(); //TODO
+#endif
+
+    mmu::free_initial_memory_range(before_range_start, before_range_size);
+    mmu::switch_to_runtime_page_tables();
+
+    console::mmio_isa_serial_console::memory_map();
+    debug_early("arch_setup_free_memory: end\n");
+
+    acpi::early_init();
+    //
     //Locate GICv2 or GICv3 information in DTB and construct corresponding GIC driver
     //and map relevant physical memory
     u64 dist, redist, cpuif;
@@ -217,20 +233,6 @@ void arch_setup_free_memory()
         arch_setup_pci();
     }
 #endif
-
-    // get rid of the command line, before memory is unmapped
-    console::mmio_isa_serial_console::clean_cmdline(cmdline);
-    osv::parse_cmdline(cmdline);
-
-#if CONF_drivers_mmio
-    //dtb_collect_parsed_mmio_virtio_devices(); //TODO
-#endif
-
-    mmu::free_initial_memory_range(before_range_start, before_range_size);
-    mmu::switch_to_runtime_page_tables();
-
-    console::mmio_isa_serial_console::memory_map();
-    debug_early("arch_setup_free_memory: end\n");
 }
 
 void arch_setup_tls(void *tls, const elf::tls_data& info)
@@ -341,7 +343,7 @@ void arch_init_early_console()
 #endif
 
     u8 spcr_type = 0;
-    u64 spsc_addr = acpi::get_spcr_addr(spcr_type);
+    u64 spsc_addr = 0;//acpi::get_spcr_addr(spcr_type);
 
     //int irqid;
     //u64 mmio_serial_address = dtb_get_mmio_serial_console(&irqid);
@@ -376,8 +378,8 @@ void arch_init_early_console()
     //    return;
     //}
 
-    if (spsc_addr)
-        console::aarch64_console.pl011.set_base_addr(spsc_addr);
+    //if (spsc_addr)
+    //    console::aarch64_console.pl011.set_base_addr(spsc_addr);
     //console::aarch64_console.pl011.set_irqid(irqid);
 }
 

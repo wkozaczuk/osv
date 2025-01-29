@@ -118,13 +118,19 @@ public:
     std::unique_ptr<ppi_interrupt> _irq;
 };
 
+static u32 timer_irq_id = 0;
 int get_timer_irq_id()
 {
     //auto _irq_id = dtb_get_timer_irq();
-    auto _irq_id = acpi::get_timer_irq();
+    //debug_early("In get_timer_irq_id\n");
+    if (timer_irq_id) 
+	return timer_irq_id;
+
+    auto _irq_id = acpi::get_timer_irq(); //Gets called on each CPU
     if (!_irq_id) {
         _irq_id = DEFAULT_TIMER_IRQ_ID;
     }
+    timer_irq_id = _irq_id;
     return _irq_id;
 }
 
