@@ -131,6 +131,9 @@ void *memory_map = 0;
 size_t mmap_size;
 size_t mmap_descriptor_size = 0;
 
+u64 phys_start = 0;
+size_t phys_size = 0;
+
 static void acpi_discover_memory()
 {
     debug_early_u64("memory map      : ", (u64)memory_map);
@@ -140,12 +143,14 @@ static void acpi_discover_memory()
     u32 i = 0;
     u32 desc_num = mmap_size / mmap_descriptor_size;
 
-    u64 phys_start = 0, phys_end = 0;
     u64 range_start = 0;
     size_t range_size = 0;
     size_t total_size = 0;
     u64 last_phys = 0;
+    u64 phys_end = 0;
 
+    //TODO: Should we sort or assume sorted?
+    //TODO: Truncate kernel ELF from any memory range 
     for (; i < desc_num; i++) {
         struct efi_memory_descriptor* desc = (struct efi_memory_descriptor*)(memory_map + i * mmap_descriptor_size);
         u32 type = desc->type;
@@ -163,6 +168,7 @@ static void acpi_discover_memory()
 		}
                 debug_early_u64("Range start: ", range_start);
                 debug_early_u64("Range size:  ", range_size);
+                mmu::free_initial_memory_range(range_start, range_size);
 
                 range_start = desc->physical_start;
 	        range_size = desc->pages * 4096;
@@ -173,11 +179,13 @@ static void acpi_discover_memory()
 	total_size += (desc->pages * 4096);
     }
 
+    //phys_size = (phys_end - phys_start) + 0x40000000;
+    phys_size = phys_end - phys_start;
     debug_early_u64("Last range start: ", range_start);
     debug_early_u64("Last range size:  ", range_size);
     debug_early_u64("Total size:       ", total_size);
     debug_early_u64("Phys start:       ", phys_start);
-    debug_early_u64("Phys end:         ", phys_end);
+    debug_early_u64("Phys size:        ", phys_size);
 }
 
 static void detect_kernel_elf()
@@ -224,7 +232,7 @@ void arch_setup_free_memory()
 
     mmu::phys after_range_start = (mmu::phys)elf_header + elf_size;
     //mmu::phys start;
-    size_t phys_memory_size = 0x80000000;//dtb_get_phys_memory(&start);
+    size_t phys_memory_size = 0x40000000;//dtb_get_phys_memory(&start);
     size_t after_range_size = phys_memory_size - before_range_size - elf_size;
     debug_early_u64("after_range_start : ", after_range_start);
     debug_early_u64("after_range_size:   ", after_range_size);
@@ -232,12 +240,12 @@ void arch_setup_free_memory()
     mmu::phys addr = (mmu::phys)elf_header + elf_size;
     debug_early_u64("addr              : ", addr);
     debug_early_u64("phys_mem_size:      ", memory::phys_mem_size);
-    mmu::free_initial_memory_range(after_range_start, memory::phys_mem_size);
+    //mmu::free_initial_memory_range(after_range_start, after_range_size);
 
     /* linear_map [TTBR1] */
     for (auto&& area : mmu::identity_mapped_areas) {
         auto base = reinterpret_cast<void*>(get_mem_area_base(area));
-        mmu::linear_map(base + mmu::mem_addr, mmu::mem_addr, phys_memory_size,
+        mmu::linear_map(base + phys_start, phys_start, phys_size,
             area == mmu::mem_area::main ? "main" :
             area == mmu::mem_area::page ? "page" : "mempool");
     }
@@ -279,7 +287,8 @@ void arch_setup_free_memory()
     //dtb_collect_parsed_mmio_virtio_devices(); //TODO
 #endif
 
-    mmu::free_initial_memory_range(before_range_start, before_range_size);
+    //mmu::free_initial_memory_range(before_range_start, before_range_size);
+    //mmu::free_initial_memory_range(after_range_start, after_range_size);
     mmu::switch_to_runtime_page_tables();
 
     console::mmio_isa_serial_console::memory_map();
