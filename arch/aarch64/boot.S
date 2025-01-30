@@ -15,6 +15,9 @@ start_elf:
         /* elf program start address */
         /* input: x2=acpi x3=elf header x4=cmdline x5=dtb */
         mov     x20, x2
+        mov     x21, x6
+        mov     x22, x7
+        mov     x23, x1
         bl      calculate_virt_offset
         /* x6 contains virt-phys offset */
         adrp    x0, exception_vectors
@@ -39,10 +42,16 @@ start_elf:
         str     x3, [x1, #:lo12:elf_header]
         adrp    x1, cmdline                 // store cmdline (arch-setup.cc)
         str     x4, [x1, #:lo12:cmdline]
-        adrp    x1, dtb                     // store dtb (arch-setup.cc)
-        str     x5, [x1, #:lo12:dtb]
+        //adrp    x1, dtb                     // store dtb (arch-setup.cc)
+        //str     x5, [x1, #:lo12:dtb]
         adrp    x1, _ZN4acpi14pvh_rsdp_paddrE    // store dtb (arch-setup.cc)
         str     x20, [x1, #:lo12:_ZN4acpi14pvh_rsdp_paddrE]
+        adrp    x1, memory_map// store dtb (arch-setup.cc)
+        str     x21, [x1, #:lo12:memory_map]
+        adrp    x1, mmap_descriptor_size    // store dtb (arch-setup.cc)
+        str     x22, [x1, #:lo12:mmap_descriptor_size]
+        adrp    x1, mmap_size    // store dtb (arch-setup.cc)
+        str     x23, [x1, #:lo12:mmap_size]
 
 #if CONF_drivers_xen
         mov     x29, xzr

@@ -159,7 +159,7 @@ static efi_status_t load_kernel(struct efi_system_table *system,
 	return EFI_SUCCESS;
 }
 
-static efi_status_t exit_efi_boot_services(struct efi_boot_table *boot, efi_handle_t handle, struct efi_simple_text_output_protocol* out)
+static efi_status_t exit_efi_boot_services(struct efi_boot_table *boot, efi_handle_t handle, struct efi_simple_text_output_protocol* out, void **memory_map, size_t *descriptor_size, size_t *map_size)
 {
 	struct efi_memory_descriptor *mmap = 0;
 	efi_uint_t mmap_size = 4096;
@@ -220,11 +220,18 @@ static efi_status_t exit_efi_boot_services(struct efi_boot_table *boot, efi_hand
 	uint16_t msg[] = u"-------------------------\n";
 	out->output_string(out, msg);
 
+	*memory_map = mmap;
+        *descriptor_size = desc_size;
+	*map_size = mmap_size;
+
 	status = boot->exit_boot_services(
 		handle,
 		mmap_key);
-	if (status != EFI_SUCCESS)
+	if (status != EFI_SUCCESS) {
 		boot->free_pool(mmap);
+		uint16_t msg2[] = u"Last exit_boot_services() FAILED\n";
+		out->output_string(out, msg2);
+	}
 
 	return status;
 }
@@ -292,17 +299,19 @@ efi_status_t efi_main(
         uint64_t entry_point = kernel_phys_start + 0x30000; //TODO do not hardcode 0x30000
 	err(system, "Entry point:%p\n", entry_point);
 
-	exit_efi_boot_services(system->boot, my_handle, system->out);
+	void *memory_map;
+	size_t descriptor_size, mmap_size;
+	exit_efi_boot_services(system->boot, my_handle, system->out, &memory_map, &descriptor_size, &mmap_size);
 
-	void (ELFABI *entry)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) ;
-	entry = (void (ELFABI *)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t)) entry_point;
+	void (ELFABI *entry)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) ;
+	entry = (void (ELFABI *)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t)) entry_point;
 	const char* cmdline = "--nomount --bootchart --rootfs=rofs /hello";
 
 	/* disable MMU */
         uint64_t sctlr = 0;
         asm volatile ("msr SCTLR_EL1, %0;"
                       "isb":: "r" (sctlr));
-	(*entry)(0, 0, acpi_rsdp, kernel_phys_start, (uint64_t)cmdline, 0x40000000);
+	(*entry)(0, mmap_size, acpi_rsdp, kernel_phys_start, (uint64_t)cmdline, 0x40000000, (uint64_t)memory_map, descriptor_size);
 
 	//while (1) {}
 

@@ -99,7 +99,88 @@ void arch_setup_pci()
 }
 #endif
 
+struct efi_memory_descriptor {
+        u32 type;
+        u32 pad;
+        u64 physical_start;
+        u64 virtual_start;
+        u64 pages;
+        u64 attributes;
+};
+
+enum efi_memory_type {
+        EFI_RESERVED_MEMORY_TYPE,
+        EFI_LOADER_CODE,
+        EFI_LOADER_DATA,
+        EFI_BOOT_SERVICES_CODE,
+        EFI_BOOT_SERVICES_DATA,
+        EFI_RUNTIME_SERVICES_CODE,
+        EFI_RUNTIME_SERVICES_DATA,
+        EFI_CONVENTIAL_MEMORY,
+        EFI_UNUSABLE_MEMORY,
+        EFI_ACPI_RECLAIM_MEMORY,
+        EFI_ACPI_MEMORY_NVS,
+        EFI_MEMORY_MAPPED_IO,
+        EFI_MEMORY_MAPPED_IO_PORT_SPACE,
+        EFI_PAL_CODE,
+        EFI_PERSISTENT_MEMORY,
+        EFI_MAX_MEMORY_TYPE,
+};
+
+void *memory_map = 0;
+size_t mmap_size;
+size_t mmap_descriptor_size = 0;
+
 static void acpi_discover_memory()
+{
+    debug_early_u64("memory map      : ", (u64)memory_map);
+    debug_early_u64("memory map size : ", mmap_size);
+    debug_early_u64("desc size       : ", mmap_descriptor_size);
+
+    u32 i = 0;
+    u32 desc_num = mmap_size / mmap_descriptor_size;
+
+    u64 phys_start = 0, phys_end = 0;
+    u64 range_start = 0;
+    size_t range_size = 0;
+    size_t total_size = 0;
+    u64 last_phys = 0;
+
+    for (; i < desc_num; i++) {
+        struct efi_memory_descriptor* desc = (struct efi_memory_descriptor*)(memory_map + i * mmap_descriptor_size);
+        u32 type = desc->type;
+	if (type != EFI_LOADER_CODE && type != EFI_LOADER_DATA && type != EFI_BOOT_SERVICES_CODE && type != EFI_BOOT_SERVICES_DATA && type != EFI_CONVENTIAL_MEMORY) continue;
+	
+	if (!range_start) {
+            phys_start = range_start = desc->physical_start;
+	    range_size = desc->pages * 4096;
+	} else {
+	    if ((range_start + range_size) == desc->physical_start) {
+		range_size += (desc->pages * 4096);
+            } else {
+		if (desc->physical_start <= last_phys) {
+			debug_early("UNSORTED range\n");
+		}
+                debug_early_u64("Range start: ", range_start);
+                debug_early_u64("Range size:  ", range_size);
+
+                range_start = desc->physical_start;
+	        range_size = desc->pages * 4096;
+	    }
+        }
+	last_phys = desc->physical_start;
+	phys_end = desc->physical_start + (desc->pages * 4096);
+	total_size += (desc->pages * 4096);
+    }
+
+    debug_early_u64("Last range start: ", range_start);
+    debug_early_u64("Last range size:  ", range_size);
+    debug_early_u64("Total size:       ", total_size);
+    debug_early_u64("Phys start:       ", phys_start);
+    debug_early_u64("Phys end:         ", phys_end);
+}
+
+static void detect_kernel_elf()
 {
     mmu::mem_addr = 0x40000000;
     memory::phys_mem_size = 0x80000000;
@@ -128,6 +209,7 @@ extern bool opt_pci_disabled;
 void arch_setup_free_memory()
 {
     setup_temporary_phys_map();
+    detect_kernel_elf();
     acpi_discover_memory();
 
     /* import from loader.cc */
