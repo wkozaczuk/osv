@@ -134,65 +134,100 @@ size_t mmap_descriptor_size = 0;
 u64 phys_start = 0;
 size_t phys_size = 0;
 
-static void acpi_discover_memory()
+struct mem_range {
+    mem_range(u64 _start, size_t _size): start(_start), size(_size) {}
+    u64 start;
+    size_t size;
+
+    inline u64 end() { return start + size; }
+    inline bool overlaps(mem_range& range, bool left)
+    {
+	u64 edge = left ? range.start : range.end();
+	return edge >= start && edge < end();
+    }
+};
+
+static void efi_discover_memory()
 {
     debug_early_u64("memory map      : ", (u64)memory_map);
     debug_early_u64("memory map size : ", mmap_size);
     debug_early_u64("desc size       : ", mmap_descriptor_size);
 
-    u32 i = 0;
+    //Iterate over the EFI descriptors to sort and merge the regions
+    //Take into account they may overlap
     u32 desc_num = mmap_size / mmap_descriptor_size;
-
-    u64 range_start = 0;
-    size_t range_size = 0;
-    size_t total_size = 0;
-    u64 last_phys = 0;
-    u64 phys_end = 0;
+    mem_range *ranges = (mem_range *)alloca(desc_num * sizeof(mem_range));
 
     //TODO: Should we sort or assume sorted?
     //TODO: Truncate kernel ELF from any memory range 
-    for (; i < desc_num; i++) {
-        struct efi_memory_descriptor* desc = (struct efi_memory_descriptor*)(memory_map + i * mmap_descriptor_size);
+    u32 ranges_num = 0;
+    for (u32 i = 0; i < desc_num; i++) {
+        efi_memory_descriptor* desc = (efi_memory_descriptor*)(memory_map + i * mmap_descriptor_size);
+	//Skip memory we should not use
         u32 type = desc->type;
-	if (type != EFI_LOADER_CODE && type != EFI_LOADER_DATA && type != EFI_BOOT_SERVICES_CODE && type != EFI_BOOT_SERVICES_DATA && type != EFI_CONVENTIAL_MEMORY) continue;
-	
-	if (!range_start) {
-            phys_start = range_start = desc->physical_start;
-	    range_size = desc->pages * 4096;
-	} else {
-	    if ((range_start + range_size) == desc->physical_start) {
-		range_size += (desc->pages * 4096);
-            } else {
-		if (desc->physical_start <= last_phys) {
-			debug_early("UNSORTED range\n");
-		}
-                debug_early_u64("Range start: ", range_start);
-                debug_early_u64("Range size:  ", range_size);
-                mmu::free_initial_memory_range(range_start, range_size);
+	if (type != EFI_LOADER_CODE &&
+            type != EFI_LOADER_DATA &&
+	    type != EFI_BOOT_SERVICES_CODE &&
+	    type != EFI_BOOT_SERVICES_DATA &&
+	    type != EFI_CONVENTIAL_MEMORY) continue;
 
-                range_start = desc->physical_start;
-	        range_size = desc->pages * 4096;
-	    }
-        }
-	last_phys = desc->physical_start;
-	phys_end = desc->physical_start + (desc->pages * 4096);
-	total_size += (desc->pages * 4096);
+        if (!ranges_num ) { //1st range
+	    ranges->start = desc->physical_start;
+	    ranges->size = desc->pages * 4096;
+	    ranges_num++;
+	} else {
+	    //Append if start beyond end of the last range
+	    if (ranges[ranges_num - 1].end() < desc->physical_start) {
+	        ranges[ranges_num].start = desc->physical_start;
+		ranges[ranges_num++].size = desc->pages * 4096;
+	    } //Merge with the last range if adjacent
+	    else if (ranges[ranges_num - 1].end() == desc->physical_start) {
+		ranges[ranges_num - 1].size += (desc->pages * 4096);
+            } else {
+	        //Identify all ranges that overlap with it and merge it with them
+	        //or find a spot between two or in the beginning it fits
+	        //Eliminate any merged ranges and move stuff around
+		//
+		//Find the left-most range the new one overlaps with
+	        mem_range range(desc->physical_start, desc->pages * 4096);
+		int range_idx = ranges_num - 1;
+		//bool left_within = false;
+                for (; range_idx >= 0; range_idx--) {
+		    if (ranges[range_idx].overlaps(range, true)) { //Left edge within
+			//left_within = true;
+		        break; 
+		    } else if (!range_idx) { //In front
+			break;
+		    } else if (range.start >= ranges[range_idx - 1].end() && range.start <= ranges[range_idx].start) {
+		        //The left edge is between the current range and the one on the left
+			break;
+		    }
+		}
+		//TODO:
+		//We are either in the front OR have the left edge of the new range
+		//within the current range (range_idx) OR between the right edge of
+		//previous one and left edge of this one
+            }
+	}
     }
 
-    //phys_size = (phys_end - phys_start) + 0x40000000;
-    phys_size = phys_end - phys_start;
-    debug_early_u64("Last range start: ", range_start);
-    debug_early_u64("Last range size:  ", range_size);
-    debug_early_u64("Total size:       ", total_size);
+    for (u32 i = 0; i < ranges_num; i++ ) {
+       //debug_early_u64("Found range start: ", ranges[i].start);
+       //debug_early_u64("Found range size:  ", ranges[i].size);
+       mmu::free_initial_memory_range(ranges[i].start, ranges[i].size);
+    }
+
+    phys_start = ranges[0].start;
+    phys_size = (ranges[ranges_num - 1].end() - phys_start);
+
     debug_early_u64("Phys start:       ", phys_start);
     debug_early_u64("Phys size:        ", phys_size);
+
+    mmu::mem_addr = phys_start;
 }
 
 static void detect_kernel_elf()
 {
-    mmu::mem_addr = 0x40000000;
-    memory::phys_mem_size = 0x80000000;
-
     register u64 edata;
     asm volatile ("adrp %0, .edata" : "=r"(edata));
 
@@ -207,10 +242,6 @@ static void detect_kernel_elf()
     debug_early_u64("vm_shift   : ", kernel_vm_shift);
     elf_start = mmu::elf_phys_start + kernel_vm_shift;
     elf_size = (u64)edata - (u64)elf_start;
-
-    /* remove amount of memory used for ELF from avail memory */
-    mmu::phys addr = (mmu::phys)mmu::elf_phys_start + elf_size;
-    memory::phys_mem_size -= addr - mmu::mem_addr;
 }
 
 extern bool opt_pci_disabled;
@@ -218,29 +249,11 @@ void arch_setup_free_memory()
 {
     setup_temporary_phys_map();
     detect_kernel_elf();
-    acpi_discover_memory();
+    efi_discover_memory();
 
     /* import from loader.cc */
     extern size_t elf_size;
     extern elf::Elf64_Ehdr* elf_header;
-
-    mmu::phys before_range_start = mmu::mem_addr;
-    size_t before_range_size = (mmu::phys)elf_header -mmu::mem_addr - 0x10000;
-    debug_early_u64("before_range_start: ", before_range_start);
-    debug_early_u64("before_range_size:  ", before_range_size);
-    //mmu::free_initial_memory_range(before_range_start, before_range_size);
-
-    mmu::phys after_range_start = (mmu::phys)elf_header + elf_size;
-    //mmu::phys start;
-    size_t phys_memory_size = 0x40000000;//dtb_get_phys_memory(&start);
-    size_t after_range_size = phys_memory_size - before_range_size - elf_size;
-    debug_early_u64("after_range_start : ", after_range_start);
-    debug_early_u64("after_range_size:   ", after_range_size);
-
-    mmu::phys addr = (mmu::phys)elf_header + elf_size;
-    debug_early_u64("addr              : ", addr);
-    debug_early_u64("phys_mem_size:      ", memory::phys_mem_size);
-    //mmu::free_initial_memory_range(after_range_start, after_range_size);
 
     /* linear_map [TTBR1] */
     for (auto&& area : mmu::identity_mapped_areas) {
@@ -255,8 +268,6 @@ void arch_setup_free_memory()
        PA +     0x0 - PA + 0x80000: boot
        PA + 0x80000 - PA + 0x90000: DTB copy
        PA + 0x90000 -       [addr]: kernel ELF */
-    //mmu::linear_map((void *)(OSV_KERNEL_VM_BASE - 0x80000), (mmu::phys)mmu::mem_addr,
-    //                addr - mmu::mem_addr, "kernel"); //Direct QEMU works
     debug_early_u64("OSV_KERNEL_VM_BASE   :", OSV_KERNEL_VM_BASE);
     debug_early_u64("elf_header - 0x10000 :", ((mmu::phys)elf_header) - 0x10000);
     mmu::linear_map((void *)(OSV_KERNEL_VM_BASE - 0x80000), ((mmu::phys)elf_header) - 0x90000, //Both direct QEMU and efi works
@@ -265,7 +276,7 @@ void arch_setup_free_memory()
 
     if (console::PL011_Console::active) {
         // linear_map [TTBR0 - UART]
-        addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
+        u64 addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
         mmu::linear_map((void *)addr, addr, 0x1000, "pl011", mmu::page_size,
                         mmu::mattr::dev);
     }
@@ -287,8 +298,6 @@ void arch_setup_free_memory()
     //dtb_collect_parsed_mmio_virtio_devices(); //TODO
 #endif
 
-    //mmu::free_initial_memory_range(before_range_start, before_range_size);
-    //mmu::free_initial_memory_range(after_range_start, after_range_size);
     mmu::switch_to_runtime_page_tables();
 
     console::mmio_isa_serial_console::memory_map();
