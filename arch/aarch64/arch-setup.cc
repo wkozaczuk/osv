@@ -147,6 +147,24 @@ struct mem_range {
     }
 };
 
+bool intersects(const mem_range& ent, u64 a)
+{
+    return a > ent.start && a < ent.start + ent.size;
+}
+
+void truncate_below(mem_range& ent, u64 a)
+{
+    u64 delta = a - ent.start;
+    ent.start += delta;
+    ent.size -= delta;
+}
+
+void truncate_above(mem_range& ent, u64 a)
+{
+    u64 delta = ent.start + ent.size - a;
+    ent.size -= delta;
+}
+
 static void efi_discover_memory()
 {
     debug_early_u64("memory map      : ", (u64)memory_map);
@@ -159,7 +177,6 @@ static void efi_discover_memory()
     mem_range *ranges = (mem_range *)alloca(desc_num * sizeof(mem_range));
 
     //TODO: Should we sort or assume sorted?
-    //TODO: Truncate kernel ELF from any memory range 
     u32 ranges_num = 0;
     for (u32 i = 0; i < desc_num; i++) {
         efi_memory_descriptor* desc = (efi_memory_descriptor*)(memory_map + i * mmap_descriptor_size);
@@ -211,10 +228,23 @@ static void efi_discover_memory()
 	}
     }
 
+    extern size_t elf_size;
+    void *elf_phys_end = align_up(mmu::elf_phys_start + elf_size, 4096);
     for (u32 i = 0; i < ranges_num; i++ ) {
        //debug_early_u64("Found range start: ", ranges[i].start);
        //debug_early_u64("Found range size:  ", ranges[i].size);
-       mmu::free_initial_memory_range(ranges[i].start, ranges[i].size);
+       bool above = intersects(ranges[i], (u64)mmu::elf_phys_start);
+       bool below = intersects(ranges[i], (u64)elf_phys_end);
+       if (above && below) {
+           mmu::free_initial_memory_range(ranges[i].start, (u64)mmu::elf_phys_start - ranges[i].start);
+           mmu::free_initial_memory_range((u64)elf_phys_end, ranges[i].end() - (u64)elf_phys_end);
+       } else {
+           if (above)
+	      truncate_above(ranges[i], (u64)mmu::elf_phys_start);
+           if (below)
+	      truncate_below(ranges[i], (u64)elf_phys_end);
+           mmu::free_initial_memory_range(ranges[i].start, ranges[i].size);
+       }
     }
 
     phys_start = ranges[0].start;
@@ -238,10 +268,12 @@ static void detect_kernel_elf()
     extern u64 kernel_vm_shift;
 
     mmu::elf_phys_start = reinterpret_cast<void *>(elf_header);
-    debug_early_u64("elf phys   : ", (u64)mmu::elf_phys_start);
-    debug_early_u64("vm_shift   : ", kernel_vm_shift);
+    debug_early_u64("elf phys start: ", (u64)mmu::elf_phys_start);
     elf_start = mmu::elf_phys_start + kernel_vm_shift;
     elf_size = (u64)edata - (u64)elf_start;
+    void *elf_phys_end = align_up(mmu::elf_phys_start + elf_size, 4096);
+    debug_early_u64("elf phys end  : ", (u64)elf_phys_end);
+    debug_early_u64("vm_shift      : ", kernel_vm_shift);
 }
 
 extern bool opt_pci_disabled;
