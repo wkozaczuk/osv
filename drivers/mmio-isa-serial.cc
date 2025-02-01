@@ -25,6 +25,8 @@ void mmio_isa_serial_console::early_init(u64 mmio_phys_address)
     _phys_mmio_address = mmio_phys_address;
     _addr_mmio = reinterpret_cast<char*>(mmio_phys_address);
 
+    memory_map();
+
     common_early_init();
 }
 

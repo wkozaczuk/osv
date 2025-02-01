@@ -665,7 +665,7 @@ static ACPI_STATUS acpi_device_handler(ACPI_HANDLE object, u32 nesting_level, vo
 
 void early_init()
 {
-    debug_early_u64("In ACPI early_init, acpi::pvh_rsdp_paddr:", acpi::pvh_rsdp_paddr);
+    //debug_early_u64("In ACPI early_init, acpi::pvh_rsdp_paddr:", acpi::pvh_rsdp_paddr);
     if (!acpi::pvh_rsdp_paddr) {
         ACPI_SIZE rsdp;
         auto st = AcpiFindRootPointer(&rsdp);
@@ -704,19 +704,20 @@ void early_init()
         return;
     }
 
-    debug_early("ACPI early_init complete\n");
+    //debug_early("ACPI early_init complete\n");
     enabled = true;
 
-    debug_early_u64("From ACPI - timer irq: ", get_timer_irq());
+    //debug_early_u64("From ACPI - timer irq: ", get_timer_irq());
 
-    u8 console_type = 0;
-    u64 console_addr = get_spcr_addr(console_type);
-    debug_early_u64("From ACPI - console type: ", console_type);
-    debug_early_u64("From ACPI - console addr: ", console_addr);
+    //u8 console_type = 0;
+    //u64 console_addr = get_spcr_addr(console_type);
+    //debug_early_u64("From ACPI - console type: ", console_type);
+    //debug_early_u64("From ACPI - console addr: ", console_addr);
 
-    debug_early_u64("From ACPI - PCI ecam addr: ", get_pci_ecam());
+    //debug_early_u64("From ACPI - PCI ecam addr: ", get_pci_ecam());
 
     //Parse GIC settings
+    /*
     parse_madt([](u8 type, void *p) {
         if (type == ACPI_MADT_GEN_DIST)
 	    debug_early_u64("From ACPI - GIC dist base: ", ((acpi_gen_dist *)p)->base_address);
@@ -726,7 +727,7 @@ void early_init()
 	    debug_early_u64("From ACPI - GIC rdist base: ", ((acpi_gen_redist *)p)->base_address);
 	else if (type == ACPI_MADT_GEN_TRANS)
 	    debug_early_u64("From ACPI - GIC trans base: ", ((acpi_gen_trans *)p)->base_address);
-    });
+    });*/
 
     //Parse CPUs
     parse_madt([](u8 type, void *p) {
@@ -734,7 +735,7 @@ void early_init()
 	    acpi_gen_int *agi = (acpi_gen_int*)p;
 	    if (agi->flags & MADT_GENINT_ENABLED) {
 	        u64 mpidr = agi->mpidr;
-	        debug_early_u64("From ACPI - CPU mpidr: ", mpidr);
+	 //       debug_early_u64("From ACPI - CPU mpidr: ", mpidr);
 		cpus_mpids[cpu_count++] = mpidr;
 	    }
 	}
@@ -813,7 +814,7 @@ u64 get_spcr_addr(u8 &type)
     if (ACPI_FAILURE(rv))
         return 0;
     ACPI_TABLE_SPCR *spcr = (ACPI_TABLE_SPCR *)t;
-    u64 addr = spcr->SerialPort.Address;
+    u64 addr = spcr->SerialPort.Address & (0x40000000ull - 1);
     type = spcr->InterfaceType;
     AcpiPutTable(t);
     return addr;
@@ -871,7 +872,7 @@ static void parse_gic_dist(void *p, u64 *dist, size_t *dist_len)
     acpi_gen_dist *entry = (acpi_gen_dist *)p;
     if (entry->base_address) {
          *dist = entry->base_address;
-         debug_early_u64("From ACPI - GIC dist base: ", *dist);
+         //debug_early_u64("From ACPI - GIC dist base: ", *dist);
          if (entry->version == ACPI_MADT_GICD_VERSION_2)
              *dist_len = GICD_V2_MEM_SZ;
          else if (entry->version == ACPI_MADT_GICD_VERSION_3)
@@ -887,7 +888,7 @@ bool get_gic_v2(u64 *dist, size_t *dist_len, u64 *cpu, size_t *cpu_len)
         if (type == ACPI_MADT_GEN_INT && ((acpi_gen_int *)p)->base_address) {//GICC
 	    *cpu = ((acpi_gen_int *)p)->base_address;
 	    *cpu_len = GICC_MEM_SZ; //Which doc is it specified?
-	    debug_early_u64("From ACPI - GIC cpuif base: ", *cpu);
+	    //debug_early_u64("From ACPI - GIC cpuif base: ", *cpu);
 	} else if (type == ACPI_MADT_GEN_DIST) {
 	    parse_gic_dist(p, dist, dist_len);
 	}
@@ -904,7 +905,7 @@ bool get_gic_v3(u64 *dist, size_t *dist_len, u64 *redist, size_t *redist_len)
     parse_madt([dist, dist_len, redist, redist_len](u8 type, void *p) {
 	if (type == ACPI_MADT_GEN_RDIST && ((acpi_gen_redist *)p)->base_address) {
 	    acpi_gen_redist *entry = (acpi_gen_redist *)p;
-	    debug_early_u64("From ACPI - GIC rdist base: ", entry->base_address);
+	    //debug_early_u64("From ACPI - GIC rdist base: ", entry->base_address);
 	    *redist = entry->base_address;
 	    *redist_len = entry->len;
 	} else if (type == ACPI_MADT_GEN_DIST) {
@@ -937,7 +938,7 @@ u64 get_pci_ecam()
 	    return false;
 	}
     });
-    debug_early_u64("From ACPI - PCI ecam addr: ", pci_ecam_addr);
+    //debug_early_u64("From ACPI - PCI ecam addr: ", pci_ecam_addr);
     return pci_ecam_addr;
 }
 }

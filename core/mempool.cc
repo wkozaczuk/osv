@@ -1821,8 +1821,8 @@ void free_huge_page(void* v, size_t N)
 
 void free_initial_memory_range(void* addr, size_t size)
 {
-    debug_early_u64("free_initial_memory_range: addr ", (u64)addr);
-    debug_early_u64("free_initial_memory_range: size ", size);
+    //debug_early_u64("free_initial_memory_range: addr ", (u64)addr);
+    //debug_early_u64("free_initial_memory_range: size ", size);
     if (!size) {
         return;
     }

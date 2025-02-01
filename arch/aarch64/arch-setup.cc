@@ -167,9 +167,9 @@ void truncate_above(mem_range& ent, u64 a)
 
 static void efi_discover_memory()
 {
-    debug_early_u64("memory map      : ", (u64)memory_map);
-    debug_early_u64("memory map size : ", mmap_size);
-    debug_early_u64("desc size       : ", mmap_descriptor_size);
+    //debug_early_u64("memory map      : ", (u64)memory_map);
+    //debug_early_u64("memory map size : ", mmap_size);
+    //debug_early_u64("desc size       : ", mmap_descriptor_size);
 
     //Iterate over the EFI descriptors to sort and merge the regions
     //Take into account they may overlap
@@ -250,8 +250,8 @@ static void efi_discover_memory()
     phys_start = ranges[0].start;
     phys_size = (ranges[ranges_num - 1].end() - phys_start);
 
-    debug_early_u64("Phys start:       ", phys_start);
-    debug_early_u64("Phys size:        ", phys_size);
+    //debug_early_u64("Phys start:       ", phys_start);
+    //debug_early_u64("Phys size:        ", phys_size);
 
     mmu::mem_addr = phys_start;
 }
@@ -268,14 +268,15 @@ static void detect_kernel_elf()
     extern u64 kernel_vm_shift;
 
     mmu::elf_phys_start = reinterpret_cast<void *>(elf_header);
-    debug_early_u64("elf phys start: ", (u64)mmu::elf_phys_start);
+    //debug_early_u64("elf phys start: ", (u64)mmu::elf_phys_start);
     elf_start = mmu::elf_phys_start + kernel_vm_shift;
     elf_size = (u64)edata - (u64)elf_start;
-    void *elf_phys_end = align_up(mmu::elf_phys_start + elf_size, 4096);
-    debug_early_u64("elf phys end  : ", (u64)elf_phys_end);
-    debug_early_u64("vm_shift      : ", kernel_vm_shift);
+    //void *elf_phys_end = align_up(mmu::elf_phys_start + elf_size, 4096);
+    //debug_early_u64("elf phys end  : ", (u64)elf_phys_end);
+    //debug_early_u64("vm_shift      : ", kernel_vm_shift);
 }
 
+#include <osv/version.h>
 extern bool opt_pci_disabled;
 void arch_setup_free_memory()
 {
@@ -300,18 +301,18 @@ void arch_setup_free_memory()
        PA +     0x0 - PA + 0x80000: boot
        PA + 0x80000 - PA + 0x90000: DTB copy
        PA + 0x90000 -       [addr]: kernel ELF */
-    debug_early_u64("OSV_KERNEL_VM_BASE   :", OSV_KERNEL_VM_BASE);
-    debug_early_u64("elf_header - 0x10000 :", ((mmu::phys)elf_header) - 0x10000);
+    //debug_early_u64("OSV_KERNEL_VM_BASE   :", OSV_KERNEL_VM_BASE);
+    //debug_early_u64("elf_header - 0x10000 :", ((mmu::phys)elf_header) - 0x10000);
     mmu::linear_map((void *)(OSV_KERNEL_VM_BASE - 0x80000), ((mmu::phys)elf_header) - 0x90000, //Both direct QEMU and efi works
                     elf_size + 0x90000, "kernel");
-    debug_early_u64("OSV_KERNEL_VM_BASE + size :", OSV_KERNEL_VM_BASE + elf_size + 0x10000);
-
+    //debug_early_u64("OSV_KERNEL_VM_BASE + size :", OSV_KERNEL_VM_BASE + elf_size + 0x10000);
+/*
     if (console::PL011_Console::active) {
         // linear_map [TTBR0 - UART]
         u64 addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
         mmu::linear_map((void *)addr, addr, 0x1000, "pl011", mmu::page_size,
                         mmu::mattr::dev);
-    }
+    }*/
 
 #if CONF_drivers_cadence
 //    if (console::Cadence_Console::active) {
@@ -332,10 +333,32 @@ void arch_setup_free_memory()
 
     mmu::switch_to_runtime_page_tables();
 
-    console::mmio_isa_serial_console::memory_map();
-    debug_early("arch_setup_free_memory: end\n");
+    //console::mmio_isa_serial_console::memory_map();
+    //debug_early("arch_setup_free_memory: end\n");
 
     acpi::early_init();
+
+    u8 spcr_type = 0;
+    u64 spsc_addr = acpi::get_spcr_addr(spcr_type);
+
+    if (acpi::is_serial_16550(spcr_type) && spsc_addr) {
+        new (&console::aarch64_console.isa_serial) console::mmio_isa_serial_console();
+        console::arch_early_console = console::aarch64_console.isa_serial;
+        console::mmio_isa_serial_console::early_init(spsc_addr);
+    }
+
+    /*arch_init_early_console();
+    if (console::PL011_Console::active) {
+        // linear_map [TTBR0 - UART]
+        u64 addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
+        mmu::linear_map((void *)addr, addr, 0x1000, "pl011", mmu::page_size,
+                        mmu::mattr::dev);
+    } else {
+        console::mmio_isa_serial_console::memory_map();
+    }*/
+    debug_early("OSv " OSV_VERSION "\n");
+    //while (true) {}
+
     //
     //Locate GICv2 or GICv3 information in DTB and construct corresponding GIC driver
     //and map relevant physical memory
@@ -475,7 +498,7 @@ void arch_init_early_console()
 #endif
 
     u8 spcr_type = 0;
-    u64 spsc_addr = 0;//acpi::get_spcr_addr(spcr_type);
+    u64 spsc_addr = acpi::get_spcr_addr(spcr_type);
 
     //int irqid;
     //u64 mmio_serial_address = dtb_get_mmio_serial_console(&irqid);

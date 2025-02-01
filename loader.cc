@@ -99,14 +99,16 @@ extern "C" {
     int mount_virtiofs_rootfs(bool);
 }
 
+u64 ticks = 0;
 void premain()
 {
-    arch_init_early_console();
+    ticks = processor::ticks();
+    //arch_init_early_console();
 
     /* besides reporting the OSV version, this string has the function
        to check if the early console really works early enough,
        without depending on prior initialization. */
-    debug_early("OSv " OSV_VERSION "\n");
+    //debug_early("OSv " OSV_VERSION "\n");
 
     arch_init_premain();
 
@@ -132,6 +134,7 @@ void premain()
     for (auto init = inittab.start; init < inittab.start + inittab.count; ++init) {
         (*init)();
     }
+    debug_early("After init functions\n");
     boot_time.event(".init functions");
 }
 
@@ -148,7 +151,7 @@ static bool opt_disable_rofs_cache = false;
 #if CONF_memory_tracker
 static bool opt_leak = false;
 #endif
-static bool opt_noshutdown = false;
+static bool opt_noshutdown = true;
 bool opt_power_off_on_abort = false;
 #if CONF_tracepoints
 static bool opt_log_backtrace = false;
@@ -294,6 +297,8 @@ static void parse_options(int loader_argc, char** loader_argv)
         opt_verbose = true;
         enable_verbose();
     }
+    opt_verbose = true;
+    enable_verbose();
 
 #if CONF_tracepoints_sampler
     if (options::option_value_exists(options_values, "sampler")) {
@@ -657,6 +662,7 @@ void* do_main_thread(void *_main_args)
 #endif /* __x86_64__ */
 
     if (opt_bootchart) {
+        printf("start in ms: %.2fms\n", (double)::clock::get()->processor_to_nano(ticks) / 1000000);
         boot_time.print_chart();
     } else {
         boot_time.print_total_time();
