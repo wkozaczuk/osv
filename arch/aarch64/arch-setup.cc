@@ -306,13 +306,6 @@ void arch_setup_free_memory()
     mmu::linear_map((void *)(OSV_KERNEL_VM_BASE - 0x80000), ((mmu::phys)elf_header) - 0x90000, //Both direct QEMU and efi works
                     elf_size + 0x90000, "kernel");
     //debug_early_u64("OSV_KERNEL_VM_BASE + size :", OSV_KERNEL_VM_BASE + elf_size + 0x10000);
-/*
-    if (console::PL011_Console::active) {
-        // linear_map [TTBR0 - UART]
-        u64 addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
-        mmu::linear_map((void *)addr, addr, 0x1000, "pl011", mmu::page_size,
-                        mmu::mattr::dev);
-    }*/
 
 #if CONF_drivers_cadence
 //    if (console::Cadence_Console::active) {
@@ -324,7 +317,7 @@ void arch_setup_free_memory()
 #endif
 
     // get rid of the command line, before memory is unmapped
-    console::mmio_isa_serial_console::clean_cmdline(cmdline);
+    //console::mmio_isa_serial_console::clean_cmdline(cmdline);
     osv::parse_cmdline(cmdline);
 
 #if CONF_drivers_mmio
@@ -338,24 +331,8 @@ void arch_setup_free_memory()
 
     acpi::early_init();
 
-    u8 spcr_type = 0;
-    u64 spsc_addr = acpi::get_spcr_addr(spcr_type);
+    arch_init_early_console();
 
-    if (acpi::is_serial_16550(spcr_type) && spsc_addr) {
-        new (&console::aarch64_console.isa_serial) console::mmio_isa_serial_console();
-        console::arch_early_console = console::aarch64_console.isa_serial;
-        console::mmio_isa_serial_console::early_init(spsc_addr);
-    }
-
-    /*arch_init_early_console();
-    if (console::PL011_Console::active) {
-        // linear_map [TTBR0 - UART]
-        u64 addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
-        mmu::linear_map((void *)addr, addr, 0x1000, "pl011", mmu::page_size,
-                        mmu::mattr::dev);
-    } else {
-        console::mmio_isa_serial_console::memory_map();
-    }*/
     debug_early("OSv " OSV_VERSION "\n");
     //while (true) {}
 
@@ -504,12 +481,10 @@ void arch_init_early_console()
     //u64 mmio_serial_address = dtb_get_mmio_serial_console(&irqid);
     //if (mmio_serial_address) {
     if (acpi::is_serial_16550(spcr_type) && spsc_addr) {
-        console::mmio_isa_serial_console::early_init(spsc_addr);
-
         new (&console::aarch64_console.isa_serial) console::mmio_isa_serial_console();
-        //console::aarch64_console.isa_serial.set_irqid(irqid);
         console::arch_early_console = console::aarch64_console.isa_serial;
-        return;
+        console::mmio_isa_serial_console::early_init(spsc_addr);
+	return;
     }
 
 #if CONF_drivers_cadence
@@ -533,8 +508,11 @@ void arch_init_early_console()
     //    return;
     //}
 
-    //if (spsc_addr)
-    //    console::aarch64_console.pl011.set_base_addr(spsc_addr);
+    if (spsc_addr)
+        console::aarch64_console.pl011.set_base_addr(spsc_addr);
+    u64 addr = (mmu::phys)console::aarch64_console.pl011.get_base_addr();
+    mmu::linear_map((void *)addr, addr, 0x1000, "pl011", mmu::page_size,
+                     mmu::mattr::dev);
     //console::aarch64_console.pl011.set_irqid(irqid);
 }
 
