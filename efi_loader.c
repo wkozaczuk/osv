@@ -208,7 +208,7 @@ static efi_status_t exit_efi_boot_services(struct efi_boot_table *boot, efi_hand
 	u16snprintf(buffer, 512, "Max memory type:%lu, loop:%u, handle:%p\n", EFI_MAX_MEMORY_TYPE, loop, handle);
 	out->output_string(out, buffer);
 
-	efi_uint_t i = 0;
+	/*efi_uint_t i = 0;
 	uint64_t desc_num = ((uint64_t)mmap_size) / desc_size;
         for (; i < desc_num; i++) {
 	    struct efi_memory_descriptor* desc = (struct efi_memory_descriptor*)((void*)mmap + i * desc_size);
@@ -216,7 +216,7 @@ static efi_status_t exit_efi_boot_services(struct efi_boot_table *boot, efi_hand
 	    if (type != EFI_LOADER_CODE && type != EFI_LOADER_DATA && type != EFI_BOOT_SERVICES_CODE && type != EFI_BOOT_SERVICES_DATA && type != EFI_CONVENTIAL_MEMORY) continue;
 	    u16snprintf(buffer, 512, "Memory descriptor: type:%u, start:%p, pages:%u\n", type, desc->physical_start, desc->pages);
 	    out->output_string(out, buffer);
-	}
+	}*/
 	uint16_t msg[] = u"-------------------------\n";
 	out->output_string(out, msg);
 

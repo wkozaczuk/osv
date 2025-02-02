@@ -911,7 +911,7 @@ bool get_gic_v3(u64 *dist, size_t *dist_len, u64 *redist, size_t *redist_len, u6
 	} else if (type == ACPI_MADT_GEN_TRANS) {
 	    acpi_gen_trans *entry = (acpi_gen_trans *)p;
 	    *its = entry->base_address;
-	    *its_len = 0x10000; //TODO: How do I figure it out?
+	    *its_len = 0x20000; //TODO: This is what I see in DTS, How do I figure it out?
             //debug_early_u64("From ACPI - GIC trans base: ", ((acpi_gen_trans *)p)->base_address);
 	} else if (type == ACPI_MADT_GEN_DIST) {
 	    parse_gic_dist(p, dist, dist_len);

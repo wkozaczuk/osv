@@ -131,7 +131,7 @@ driver::driver(pci::device &pci_dev)
     //assert(wait_for_controller_ready_change(1) == 0);
 
     //Disable controller
-    //assert(enable_disable_controller(false) == 0);
+    assert(enable_disable_controller(false) == 0);
     debug("Disabled controller\n");
 
     init_controller_config();

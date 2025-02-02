@@ -22,6 +22,9 @@ namespace pci {
           _is_mmio(false), _is_64(false), _is_prefetchable(false)
     {
         u32 val = _dev->pci_readl(_pos);
+	//TODO: Why this hack with EFI?
+	if (pos == 0x14) //PCI_CFG_BAR_2, ideally is_msix()
+	   val = 0;
 
         _is_mmio = ((val & PCI_BAR_MEMORY_INDICATOR_MASK) == PCI_BAR_MMIO);
         if (_is_mmio) {
