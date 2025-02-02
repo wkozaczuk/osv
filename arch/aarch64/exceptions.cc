@@ -16,6 +16,7 @@
 #include "exceptions.hh"
 #include "fault-fixup.hh"
 #include "dump.hh"
+#include "gic-v3.hh"
 
 __thread exception_frame* current_interrupt_frame;
 class interrupt_table idt __attribute__((init_priority((int)init_prio::idt)));
@@ -56,6 +57,24 @@ void interrupt_table::enable_irq(int id)
 void interrupt_table::disable_irq(int id)
 {
     gic::gic->mask_irq(id);
+}
+
+unsigned interrupt_table::register_handler(std::function<void ()> handler)
+{
+    unsigned vector = next_msi_vector.fetch_add(1);
+    unsigned index = vector - msi_vector_base;
+    if (index >= 256) {
+        abort("The MSI vector %d too large\n", index);
+    }
+ 
+    debug_early_u64("Registered handler for MSI vector: ", vector);
+    msi_handlers[index] = handler;
+    enable_irq(vector);
+    return vector;
+}
+
+void interrupt_table::unregister_handler(unsigned vector)
+{
 }
 
 void interrupt_table::register_interrupt(interrupt *interrupt)
@@ -160,15 +179,26 @@ void interrupt(exception_frame* frame)
     /* remember frame in a global, need to change if going to nested */
     current_interrupt_frame = frame;
 
+    //TODO: Maybe somehow change it to not mask irq with 0x3ff
+    //to account for MSIs (>= GIC_LPI_INTS_START)
     unsigned int iar = gic::gic->ack_irq();
     unsigned int irq = iar & 0x3ff;
 
     //if (irq != 0x1b)
-    //   debug_early_u64("Received interruptID=", irq);
+    //    debug_early_u64("-> interruptID irq=", iar);
 
+    if (iar >= idt.msi_vector_base) { //MSI
+        unsigned index = iar - idt.msi_vector_base;
+        if (index >= 256 || !idt.msi_handlers[index]) {
+            debug_early_u64("unhandled MSI interruptID irq=", iar);
+        } else {
+            //debug_early_u64("Received MSI interruptID irq=", iar);
+            idt.msi_handlers[index]();
+        }
+        gic::gic->end_irq(iar);
+    } else if (irq >= gic::gic->nr_of_irqs()) {
     /* note that special values 1022 and 1023 are used for
        group 1 and spurious interrupts respectively. */
-    if (irq >= gic::gic->nr_of_irqs()) {
         debug_early_u64("special InterruptID detected irq=", irq);
     } else {
         if (!idt.invoke_interrupt(irq))

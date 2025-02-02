@@ -897,23 +897,28 @@ bool get_gic_v2(u64 *dist, size_t *dist_len, u64 *cpu, size_t *cpu_len)
     return *dist && *cpu && *dist_len;
 }
 
-bool get_gic_v3(u64 *dist, size_t *dist_len, u64 *redist, size_t *redist_len)
+bool get_gic_v3(u64 *dist, size_t *dist_len, u64 *redist, size_t *redist_len, u64 *its, size_t *its_len)
 {
     *redist = 0;
     *redist_len = 0;
 
-    parse_madt([dist, dist_len, redist, redist_len](u8 type, void *p) {
+    parse_madt([dist, dist_len, redist, redist_len, its, its_len](u8 type, void *p) {
 	if (type == ACPI_MADT_GEN_RDIST && ((acpi_gen_redist *)p)->base_address) {
 	    acpi_gen_redist *entry = (acpi_gen_redist *)p;
 	    //debug_early_u64("From ACPI - GIC rdist base: ", entry->base_address);
 	    *redist = entry->base_address;
 	    *redist_len = entry->len;
+	} else if (type == ACPI_MADT_GEN_TRANS) {
+	    acpi_gen_trans *entry = (acpi_gen_trans *)p;
+	    *its = entry->base_address;
+	    *its_len = 0x10000; //TODO: How do I figure it out?
+            //debug_early_u64("From ACPI - GIC trans base: ", ((acpi_gen_trans *)p)->base_address);
 	} else if (type == ACPI_MADT_GEN_DIST) {
 	    parse_gic_dist(p, dist, dist_len);
 	}
     });
 
-    return *dist && *redist && *dist_len  && *redist_len;
+    return *dist && *redist && *its && *dist_len && *redist_len && *its_len;
 }
 
 int get_cpus_count()

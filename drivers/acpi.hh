@@ -34,7 +34,7 @@ void find_mcfg(std::function<bool(u64 addr, u16 segment, u8 bus_start, u8 bus_en
 void parse_madt(std::function<void(u8 type, void *p)> consume_fun);
 
 bool get_gic_v2(u64 *dist, size_t *dist_len, u64 *cpu, size_t *cpu_len);
-bool get_gic_v3(u64 *dist, size_t *dist_len, u64 *redist, size_t *redist_len);
+bool get_gic_v3(u64 *dist, size_t *dist_len, u64 *redist, size_t *redist_len, u64 *its, size_t *its_len);
 
 u64 get_pci_ecam();
 }

@@ -35,6 +35,9 @@
 #include <osv/pci.hh>
 #endif
 #include "drivers/mmio-isa-serial.hh"
+#if CONF_drivers_nvme
+#include "drivers/nvme.hh"
+#endif
 
 #include <alloca.h>
 #include "drivers/acpi.hh"
@@ -94,8 +97,8 @@ void arch_setup_pci()
     ranges[1] = pci::get_pci_mem(&ranges_len[1]);
     mmu::linear_map((void *)ranges[0], (mmu::phys)ranges[0], ranges_len[0],
                     "pci_io", mmu::page_size, mmu::mattr::dev);
-    mmu::linear_map((void *)ranges[1], (mmu::phys)ranges[1], ranges_len[1],
-                    "pci_mem", mmu::page_size, mmu::mattr::dev);
+    /*mmu::linear_map((void *)ranges[1], (mmu::phys)ranges[1], ranges_len[1],
+                    "pci_mem", mmu::page_size, mmu::mattr::dev);*/
 }
 #endif
 
@@ -339,20 +342,24 @@ void arch_setup_free_memory()
     //
     //Locate GICv2 or GICv3 information in DTB and construct corresponding GIC driver
     //and map relevant physical memory
-    u64 dist, redist, cpuif;
-    size_t dist_len, redist_len, cpuif_len;
-    if (acpi::get_gic_v3(&dist, &dist_len, &redist, &redist_len)) {
-        gic::gic = new gic::gic_v3_driver(dist, redist);
+    u64 dist, redist, cpuif, its;
+    size_t dist_len, redist_len, cpuif_len, its_len;
+    if (acpi::get_gic_v3(&dist, &dist_len, &redist, &redist_len, &its, &its_len)) {
+	debug_early_u64("arch-setup: GICv3 its:", its);
+        gic::gic = new gic::gic_v3_driver(dist, redist, its);
         /* linear_map [TTBR0 - GIC REDIST] */
         mmu::linear_map((void *)redist, (mmu::phys)redist, redist_len, "gic_redist", mmu::page_size,
                         mmu::mattr::dev);
-	debug_early("Enabled GIC3\n");
+        /* linear_map [TTBR0 - GIC ITS] */
+        mmu::linear_map((void *)its, (mmu::phys)its, its_len, "gic_its", mmu::page_size,
+                        mmu::mattr::dev);
+	debug_early("arch-setup: enabled GICv3.\n");
     } else if (acpi::get_gic_v2(&dist, &dist_len, &cpuif, &cpuif_len)) {
         gic::gic = new gic::gic_v2_driver(dist, cpuif);
         /* linear_map [TTBR0 - GIC CPUIF] */
         mmu::linear_map((void *)cpuif, (mmu::phys)cpuif, cpuif_len, "gic_cpuif", mmu::page_size,
                         mmu::mattr::dev);
-	debug_early("Enabled GIC2\n");
+	debug_early("arch-setup: enabled GICv2.\n");
     } else {
         abort("arch-setup: failed to get GICv3 nor GiCv2 information from dtb.\n");
     }
@@ -456,6 +463,9 @@ void arch_init_drivers()
 #endif
 #if CONF_drivers_virtio_fs
     drvman->register_driver(virtio::fs::probe);
+#endif
+#if CONF_drivers_nvme
+    drvman->register_driver(nvme::driver::probe);
 #endif
     boot_time.event("drivers probe");
     drvman->load_all();

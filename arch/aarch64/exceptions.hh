@@ -17,6 +17,7 @@
 #include <osv/mutex.h>
 #include <osv/interrupt.hh>
 #include <vector>
+#include <atomic>
 
 #include "gic-common.hh"
 
@@ -50,9 +51,18 @@ public:
     void register_interrupt(interrupt *interrupt);
     void unregister_interrupt(interrupt *interrupt);
 
+    unsigned register_handler(std::function<void ()> handler);
+    void unregister_handler(unsigned vector);
+
     /* invoke_interrupt returns false if unhandled */
     bool invoke_interrupt(unsigned int id);
 
+    void init_msi_vector(u32 initial) { next_msi_vector.store(initial); msi_vector_base = initial; }
+
+    //TODO: Should not really be public
+    std::atomic<u32> next_msi_vector;
+    u32 msi_vector_base;
+    std::function<void ()> msi_handlers[256] = {};
 protected:
     void enable_irq(int id);
     void disable_irq(int id);
