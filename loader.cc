@@ -151,7 +151,7 @@ static bool opt_disable_rofs_cache = false;
 #if CONF_memory_tracker
 static bool opt_leak = false;
 #endif
-static bool opt_noshutdown = true;
+static bool opt_noshutdown = false;
 bool opt_power_off_on_abort = false;
 #if CONF_tracepoints
 static bool opt_log_backtrace = false;
@@ -667,6 +667,8 @@ void* do_main_thread(void *_main_args)
     } else {
         boot_time.print_total_time();
     }
+
+    //while(true) {}
 
     if (!opt_redirect.empty()) {
         // redirect stdout and stdin to the given file, instead of the console

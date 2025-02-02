@@ -305,7 +305,7 @@ efi_status_t efi_main(
 
 	void (ELFABI *entry)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) ;
 	entry = (void (ELFABI *)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t)) entry_point;
-	const char* cmdline = "--nomount --bootchart --rootfs=rofs /hello";
+	const char* cmdline = "--bootchart --rootfs=rofs /hello";
 
 	/* disable MMU */
         uint64_t sctlr = 0;
