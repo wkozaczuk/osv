@@ -30,7 +30,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-//#define ENA_LOG_ENABLE 1
+#define ENA_LOG_ENABLE 1
 //#define ENA_LOG_IO_ENABLE 1
 
 #include "ena.h"
@@ -42,6 +42,7 @@ __FBSDID("$FreeBSD$");
 static inline void critical_enter()  { sched::preempt_disable(); }
 static inline void critical_exit() { sched::preempt_enable(); }
 
+#include <atomic>
 #include <sys/buf_ring.h>
 
 //#include <netinet6/ip6_var.h>

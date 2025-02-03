@@ -330,7 +330,11 @@ buf_ring_peek_clear_sc(struct buf_ring *br)
 	 * conditional check will be true, so we will return previously fetched
 	 * (and invalid) buffer.
 	 */
+#ifdef __cplusplus
+	std::atomic_thread_fence(std::memory_order::memory_order_acquire);
+#else
 	atomic_thread_fence_acq();
+#endif
 #endif
 
 #ifdef DEBUG_BUFRING

@@ -38,6 +38,7 @@
 #if CONF_drivers_nvme
 #include "drivers/nvme.hh"
 #endif
+#include "drivers/ena.hh"
 
 #include <alloca.h>
 #include "drivers/acpi.hh"
@@ -464,6 +465,7 @@ void arch_init_drivers()
 #if CONF_drivers_virtio_fs
     drvman->register_driver(virtio::fs::probe);
 #endif
+    drvman->register_driver(aws::ena::probe);
 #if CONF_drivers_nvme
     drvman->register_driver(nvme::driver::probe);
 #endif

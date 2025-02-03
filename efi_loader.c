@@ -241,8 +241,10 @@ static efi_status_t exit_efi_boot_services(struct efi_boot_table *boot, efi_hand
 //  LOAD           0x000000 0x0000000fc0090000 0x0000000fc0090000 0x6220a4 0x6b0e78 RWE 0x10000
 //  LOAD           0x000000 0x0000000fc0090000 0x0000000fc0090000 0x6720a4 0x701578 RWE 0x10000 (Newer with ACPI)
 //  LOAD           0x000000 0x0000000fc0090000 0x0000000fc0090000 0x6820a4 0x714178 RWE 0x10000 (Newest with ACPI and ITS)
-#define KERNEL_MEMORY_SIZE 0x720000 //0x714178 Rounded up to the align 0x10000
-#define KERNEL_FILE_SIZE   0x6820a4
+//  LOAD           0x000000 0x0000000fc0090000 0x0000000fc0090000 0x6920a4 0x724178 RWE 0x10000 (with ENA)
+//  LOAD           0x000000 0x0000000fc0090000 0x0000000fc0090000 0x6a20a4 0x734178 RWE 0x10000
+#define KERNEL_MEMORY_SIZE 0x740000 //0x734178 Rounded up to the align 0x10000
+#define KERNEL_FILE_SIZE   0x6a20a4
 
 static int memcmp( const void *ptr1, const void *ptr2, size_t num)
 {

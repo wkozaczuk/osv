@@ -701,6 +701,14 @@ endif
 endif
 endif
 
+ifeq ($(arch),aarch64)
+bsd += bsd/sys/contrib/ena_com/ena_eth_com.o
+bsd += bsd/sys/contrib/ena_com/ena_com.o
+bsd += bsd/sys/dev/ena/ena_datapath.o
+bsd += bsd/sys/dev/ena/ena.o
+$(out)/bsd/sys/dev/ena/%.o: CXXFLAGS += -Ibsd/sys/contrib
+endif
+
 bsd += bsd/sys/dev/random/hash.o
 bsd += bsd/sys/dev/random/randomdev_soft.o
 bsd += bsd/sys/dev/random/yarrow.o
@@ -1005,6 +1013,7 @@ endif
 #ifeq ($(conf_drivers_acpi),1)
 drivers += drivers/acpi.o
 #endif
+drivers += drivers/ena.o
 endif # aarch64
 
 ifeq ($(conf_tracepoints),1)

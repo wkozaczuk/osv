@@ -72,7 +72,7 @@ __FBSDID("$FreeBSD$");
 #include <bsd/sys/netinet/tcp.h>
 #include <bsd/sys/netinet/udp.h>
 
-//#define ENA_LOG_ENABLE 1
+#define ENA_LOG_ENABLE 1
 //#define ENA_LOG_IO_ENABLE 1
 
 #include "ena.h"
@@ -85,7 +85,7 @@ __FBSDID("$FreeBSD$");
 #include <osv/sched.hh>
 #include <osv/trace.hh>
 
-int ena_log_level = ENA_INFO;
+int ena_log_level = ENA_DBG;
 
 static inline void critical_enter()  { sched::preempt_disable(); }
 static inline void critical_exit() { sched::preempt_enable(); }
@@ -1251,7 +1251,7 @@ ena_request_io_irq(struct ena_adapter *adapter)
 		//to re-pin the interrupt vector
 		auto cpu = idx % sched::cpus.size();
 		std::atomic_thread_fence(std::memory_order_seq_cst);
-		vec->set_affinity(sched::cpus[cpu]->arch.apic_id);
+		vec->set_affinity(sched::cpus[cpu]);
 		std::atomic_thread_fence(std::memory_order_seq_cst);
 
 		ena_log(pdev, INFO, "pinned MSIX vector on queue %d - cpu %d\n", idx, cpu);

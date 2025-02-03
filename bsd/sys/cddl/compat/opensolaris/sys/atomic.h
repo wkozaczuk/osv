@@ -52,7 +52,7 @@ extern uint64_t atomic_cas_64(volatile uint64_t *target, uint64_t cmp,
 extern uint64_t atomic_add_64_nv(volatile uint64_t *target, int64_t delta);
 extern uint8_t atomic_or_8_nv(volatile uint8_t *target, uint8_t value);
 extern void membar_producer(void);
-
+/*
 #if defined(__sparc64__) || defined(__powerpc__) || defined(__arm__) || \
     defined(__mips__)
 extern void atomic_or_8(volatile uint8_t *target, uint8_t value);
@@ -63,6 +63,7 @@ atomic_or_8(volatile uint8_t *target, uint8_t value)
 	atomic_set_8(target, value);
 }
 #endif
+*/
 
 static __inline uint32_t
 atomic_add_32_nv(volatile uint32_t *target, int32_t delta)
