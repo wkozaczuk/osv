@@ -30,8 +30,8 @@ static bool ecam;
  * QEMU silently discards programming the BARs to address zero.
  * Linux seems to skip the whole first page on ARM, so we do the same.
  */
-static u64 pci_io_off = 0x1000;
-static u64 pci_mem_off = 0;
+//static u64 pci_io_off = 0x1000;
+//static u64 pci_mem_off = 0;
 
 /* this maps PCI addresses as returned by build_config_address
  * to platform IRQ numbers. */
@@ -128,8 +128,16 @@ static int get_pci_irq_from_bdfp(u32 bdfp)
 
 u32 pci::bar::arch_add_bar(u32 val)
 {
+    //TODO: This logic needs to be refined
+    //1st, sometimes val may be 0 (we saw it on QEMU maybe with EFI or even without)
+    //Then on Graviton the values may be quite high like so:
+    //arch_add_bar: old val non-0, val=80004000, _addr_size=4000
+    //arch_add_bar: old val non-0, val=80008000, _addr_size=1000
+    //So maybe we should look at non-zero _addr_size to detect if bar is there
+    //and also use pci_mem_base and pci_mem_off only if value <= 15 (?) aka last bits set
+    //like on QEMU?
     if (val) {
-        u32 old_val = val;
+        /*u32 old_val = val;
         u64 *off = _is_mmio ? &pci_mem_off : &pci_io_off;
         u64 addr = _is_mmio ? (u64)pci_mem_base + pci_mem_off : *off;
 
@@ -147,13 +155,15 @@ u32 pci::bar::arch_add_bar(u32 val)
         }
 
         debugf("arch_add_bar: mmio=%d, old_val=%lx, val_before_down=%lx, val=%lx, _pos:%lx, 64=%d, addr=%lx, _addr_size=%x\n",
-            _is_mmio, old_val, val_before_down, val, _pos, _is_64, addr, _addr_size);
+            _is_mmio, old_val, val_before_down, val, _pos, _is_64, addr, _addr_size);*/
+
+        debugf("arch_add_bar: old val non-0, val=%lx, _addr_size=%x\n", val, _addr_size);
     } else {
         u8 bus, device, func;
         _dev->get_bdf(bus, device, func);
         val = (u64)pci_mem_base + ((bus + 1) << 18) + (device << 12) + (func << 8);
         _dev->pci_writel(_pos, val);
-        debugf("arch_add_bar: val=%lx, _addr_size=%x\n", val, _addr_size);
+        debugf("arch_add_bar: old val ZERO, val=%lx, _addr_size=%x\n", val, _addr_size);
     }
 
     return val;
