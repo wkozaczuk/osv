@@ -30,7 +30,7 @@
 #include <sys/cdefs.h>
 __FBSDID("$FreeBSD$");
 
-#define ENA_LOG_ENABLE 1
+//#define ENA_LOG_ENABLE 1
 //#define ENA_LOG_IO_ENABLE 1
 
 #include "ena.h"

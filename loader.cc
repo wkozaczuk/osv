@@ -297,8 +297,8 @@ static void parse_options(int loader_argc, char** loader_argv)
         opt_verbose = true;
         enable_verbose();
     }
-    opt_verbose = true;
-    enable_verbose();
+    //opt_verbose = true;
+    //enable_verbose();
 
 #if CONF_tracepoints_sampler
     if (options::option_value_exists(options_values, "sampler")) {

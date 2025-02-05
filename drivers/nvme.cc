@@ -272,7 +272,7 @@ int driver::enable_disable_controller(bool enable)
     cc.en = new_en;
 
     mmio_setl(&_control_reg->cc, cc.val);
-    return 0;//wait_for_controller_ready_change(new_en);
+    return wait_for_controller_ready_change(new_en);
 }
 
 int driver::wait_for_controller_ready_change(int ready)

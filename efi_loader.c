@@ -308,7 +308,9 @@ efi_status_t efi_main(
 
 	void (ELFABI *entry)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) ;
 	entry = (void (ELFABI *)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t)) entry_point;
-	const char* cmdline = "--bootchart --rootfs=rofs /hello";
+	//const char* cmdline = "--bootchart --rootfs=rofs /hello";
+	//const char* cmdline = "--bootchart --noshutdown --rootfs=rofs /httpserver.so";
+	const char* cmdline = "--bootchart --noshutdown --rootfs=rofs /libhttpserver-api.so --access-allow=true";
 
 	/* disable MMU */
         uint64_t sctlr = 0;
