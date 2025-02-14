@@ -376,6 +376,12 @@ struct thread_switch_data {
    thread_state* new_thread_state = nullptr;
 };
 #endif
+
+struct dtv {
+   u64 max_index;
+   char **first;
+};
+
 /**
  * OSv thread
  */
@@ -832,6 +838,7 @@ private:
     std::atomic<bool> _interrupted;
     std::function<void ()> _cleanup;
     std::vector<char*> _tls;
+    dtv _dtv;
     bool _app;
     std::shared_ptr<osv::application_runtime> _app_runtime;
 public:
@@ -840,6 +847,7 @@ public:
     unsigned long get_app_tcb() { return _tcb->app_tcb; }
     void set_app_tcb(unsigned long tcb) { _tcb->app_tcb = tcb; }
 #endif
+    inline void *get_dtv() { return _tcb->privat; }
 private:
 #ifdef __aarch64__
     friend void ::destroy_current_cpu_terminating_thread();

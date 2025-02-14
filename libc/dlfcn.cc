@@ -46,12 +46,13 @@ void* dlopen(const char* filename, int flags)
     }
 
     std::shared_ptr<elf::object> obj =
-            elf::get_program()->get_library(filename);
+            elf::get_program()->get_library(filename, {}, false, true);
     // FIXME: handle flags etc.
     if (!obj) {
         dlerror_fmt("dlopen: failed to open %s", filename);
         return nullptr;
     }
+    debugf("dlopen-ed: %s\n", filename);
     return new std::shared_ptr<elf::object> (std::move(obj));
 }
 

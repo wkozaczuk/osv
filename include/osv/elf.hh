@@ -152,6 +152,8 @@ public:
     Elf64_Word n_type;
 };
 
+typedef Elf64_Xword Elf64_Relr;
+
 enum {
     DT_NULL = 0, // ignored Marks the end of the dynamic array
     DT_NEEDED = 1, // d_val The string table offset of the name of a needed library.Dynamic table 15
@@ -196,6 +198,9 @@ enum {
     DT_FINI_ARRAYSZ = 28, // d_val Size, in bytes, of the array of termination functions.
     DT_RUNPATH = 29, // d_val The string table offset of a shared library search path string.
     DT_FLAGS = 30, // value is various flags, bits from DF_*.
+    DT_RELRSZ = 35,
+    DT_RELR = 36,
+    DT_RELRENT = 37,
     DT_FLAGS_1 = 0x6ffffffb, // value is various flags, bits from DF_1_*.
     DT_VERSYM = 0x6ffffff0, // d_ptr Address of the version symbol table.
     DT_LOOS = 0x60000000, // Defines a range of dynamic table tags that are reserved for
@@ -354,7 +359,7 @@ public:
     virtual ~object();
     void load_needed(std::vector<std::shared_ptr<object>>& loaded_objects);
     void unload_needed();
-    void relocate();
+    void relocate(bool dlopen = false);
     void set_base(void* base);
     void set_dynamic_table(Elf64_Dyn* dynamic_table);
     void* base() const;
@@ -444,7 +449,8 @@ private:
     symbol_module symbol_other(unsigned idx);
     Elf64_Xword symbol_tls_module(unsigned idx);
     void relocate_rela();
-    void relocate_pltgot();
+    void relocate_relr();
+    void relocate_pltgot(bool dlopen = false);
     unsigned symtab_len();
     void collect_dependencies(std::unordered_set<elf::object*>& ds);
     std::deque<elf::object*> collect_dependencies_bfs();
@@ -498,7 +504,7 @@ protected:
     bool arch_relocate_rela(u32 type, u32 sym, void *addr,
                             Elf64_Sxword addend);
     bool arch_relocate_jump_slot(symbol_module& sym, void *addr, Elf64_Sxword addend);
-    void arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend);
+    void arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend, bool dynamic);
     size_t static_tls_end() {
         if (is_core() || _is_dynamically_linked_executable) {
             return 0;
@@ -611,7 +617,7 @@ public:
      *                        the init functions are executed right away.
      */
     std::shared_ptr<elf::object>
-    get_library(std::string lib, std::vector<std::string> extra_path = {}, bool delay_init = false);
+    get_library(std::string lib, std::vector<std::string> extra_path = {}, bool delay_init = false, bool dlopen = false);
 
     /**
      * Execute init functions of the library itself and its dependencies.
@@ -665,7 +671,8 @@ private:
     void free_dtv(object* obj);
     std::shared_ptr<object> load_object(std::string name,
             std::vector<std::string> extra_path,
-            std::vector<std::shared_ptr<object>> &loaded_objects);
+            std::vector<std::shared_ptr<object>> &loaded_objects,
+	    bool dlopen = false);
     void initialize_libvdso();
 private:
     mutex _mutex;

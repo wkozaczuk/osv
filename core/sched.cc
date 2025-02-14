@@ -1111,6 +1111,9 @@ thread::thread(std::function<void ()> func, attr attr, bool main, bool app)
             }
         }
     }
+    _dtv.max_index = _tls.size() - 1;
+    _dtv.first = &_tls[0];
+    _tcb->privat = &_dtv;
 
     WITH_LOCK(thread_map_mutex) {
         if (!main) {
@@ -1132,6 +1135,7 @@ thread::thread(std::function<void ()> func, attr attr, bool main, bool app)
             }
         }
     }
+    //printf("tid:%d, max_index=%d\n", _id, _dtv.max_index);
     // setup s_current before switching to the thread, so interrupts
     // can call thread::current()
     // remote_thread_local_var() doesn't work when there is no current
@@ -1611,7 +1615,9 @@ void* thread::setup_tls(ulong module, const void* tls_template,
         size_t init_size, size_t uninit_size)
 {
     _tls.resize(std::max(module + 1, _tls.size()));
-    _tls[module]  = new char[init_size + uninit_size];
+    _tls[module] = new char[init_size + uninit_size];
+    _dtv.max_index = _tls.size() - 1;
+    _dtv.first = &_tls[0];
     auto p = _tls[module];
     memcpy(p, tls_template, init_size);
     memset(p + init_size, 0, uninit_size);

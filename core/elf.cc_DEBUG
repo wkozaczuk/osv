@@ -36,6 +36,8 @@
 #include "arch-elf.hh"
 #include "cpuid.hh"
 
+#undef CONF_elf_debug
+#define CONF_elf_debug 1
 #if CONF_elf_debug
 #define elf_debug(format,...) kprintf("ELF [tid:%d, mod:%d, %s]: " format, sched::thread::current()->id(), _module_index, _pathname.c_str(), ##__VA_ARGS__)
 #else
@@ -769,35 +771,60 @@ void object::relocate_relr()
     //SHT_RELR: The section holds an array of relocation entries, used to encode
     //relative relocations that do not require explicit addends or other information.
     auto relr = dynamic_ptr<Elf64_Relr>(DT_RELR);
+    /*
     unsigned nb = dynamic_val(DT_RELRSZ) / sizeof(Elf64_Relr);
+    elf_debug("relocate_relr base: %018p, relr: %018p, entries:%u\n", _base, relr, nb);
     void **reloc_addr = 0;
     for (auto p = relr; p < relr + nb; ++p) {
         // - An even entry indicates a location which needs a relocation
-        //   and sets up where for subsequent odd entries.
+	//   and sets up where for subsequent odd entries.
         // - An odd entry indicates a bitmap encoding up to 63 locations following where.
         // - Odd entries can be chained.
-        auto entry = *p;
-        if ((entry & 1) == 0) {
-            reloc_addr = static_cast<void**>(_base + entry);
-            u64 val = *reinterpret_cast<u64*>(reloc_addr);
+	Elf64_Addr entry = static_cast<Elf64_Addr>(*p);
+	if ((entry & 1) == 0) {
+	    reloc_addr = static_cast<void**>(_base + entry);
+	    u64 val = *reinterpret_cast<u64*>(reloc_addr);
             *reloc_addr++ = _base + val;
-        } else {
-            int bit_idx = 0;
+            elf_debug("relocate_relr relocated %018p from %lx to %lx\n", reloc_addr, val, _base + val);
+	} else {
+	    int bit_idx = 0;
             for (size_t bitmap = entry; (bitmap >>= 1); bit_idx++) {
                 if (bitmap & 1) {
-                    u64 val = *reinterpret_cast<u64*>(reloc_addr + bit_idx);
+	            u64 val = *reinterpret_cast<u64*>(reloc_addr + bit_idx);
                     *(reloc_addr + bit_idx) = _base + val;
+                    elf_debug("relocate_relr relocated %018p from %lx to %lx\n", reloc_addr + bit_idx, val, _base + val);
                 }
             }
             reloc_addr += (8 * sizeof(Elf64_Addr) - 1);
 	}
     }
-    elf_debug("Relocated %d symbols in DT_RELR\n", nb);
+    elf_debug("Relocated %d symbols in DT_RELR\n", nb);*/
+
+    unsigned size = dynamic_val(DT_RELRSZ);
+    elf_debug("relocate_relr base: %018p, relr: %018p, entries:%u\n", _base, relr, size / sizeof(Elf64_Relr));
+    size_t *reloc_addr = 0;
+    for (; size; relr++, size -= sizeof(size_t)) {
+        if ((relr[0]&1) == 0) {
+            reloc_addr = (size_t*)(_base + relr[0]);
+            *reloc_addr++ += (size_t)_base;
+            elf_debug("relocate_relr relocated %018p to %lx\n", reloc_addr, *(reloc_addr-1));
+        } else {
+            int i = 0;
+            for (size_t bitmap=relr[0]; (bitmap>>=1); i++) {
+                if (bitmap&1) {
+                    reloc_addr[i] += (size_t)_base;
+                    elf_debug("relocate_relr relocated %018p to %lx\n", reloc_addr, reloc_addr[i]);
+                }
+            }
+            reloc_addr += 8*sizeof(size_t)-1; 
+        }
+    }
+    //elf_debug("Relocated %d symbols in DT_RELR\n", size_2/sizeof(size_t));
 }
 
 extern "C" { void __elf_resolve_pltgot(void); }
 
-void object::relocate_pltgot(bool dlopen)
+void object::relocate_pltgot()
 {
     auto pltgot = dynamic_ptr<void*>(DT_PLTGOT);
     void *original_plt = nullptr;
@@ -854,8 +881,7 @@ void object::relocate_pltgot(bool dlopen)
             *static_cast<void**>(addr) = reinterpret_cast<void *(*)()>(_base + p->r_addend)();
         } else {
             u32 sym = info >> 32;
-            arch_relocate_tls_desc(sym, addr, p->r_addend, dlopen);
-            //arch_relocate_tls_desc(sym, addr, p->r_addend, false);
+            arch_relocate_tls_desc(sym, addr, p->r_addend);
         }
     }
     elf_debug("Relocated %d PLT symbols\n", nrel);
@@ -887,11 +913,11 @@ void* object::resolve_pltgot(unsigned index)
     return *static_cast<void**>(addr);
 }
 
-void object::relocate(bool dlopen)
+void object::relocate()
 {
     assert(!dynamic_exists(DT_REL));
     if (dynamic_exists(DT_JMPREL)) {
-        relocate_pltgot(dlopen);
+        relocate_pltgot();
     }
     if (dynamic_exists(DT_RELA)) {
         relocate_rela();
@@ -1208,7 +1234,7 @@ void object::run_init_funcs(int argc, char** argv)
     if (dynamic_exists(DT_INIT)) {
         auto func = dynamic_ptr<void>(DT_INIT);
         if (func) {
-            elf_debug("Executing DT_INIT function\n");
+            elf_debug("Executing DT_INIT function:%p\n", func);
             reinterpret_cast<void(*)(int, char**)>(func)(argc, argv);
             elf_debug("Finished executing DT_INIT function\n");
         }
@@ -1219,6 +1245,14 @@ void object::run_init_funcs(int argc, char** argv)
         elf_debug("Executing %d DT_INIT_ARRAYSZ functions\n", nr);
         for (auto i = 0u; i < nr; ++i) {
             funcs[i](argc, argv);
+            /*if (contains_addr((const void*)funcs[i])) {
+                elf_debug("Executing normal DT_INIT_ARRAYSZ function:%p\n", funcs[i]);
+                funcs[i](argc, argv);
+            } else {
+                auto func = _base + (u64)(funcs[i]);
+                elf_debug("Executing fixed DT_INIT_ARRAYSZ function:%p\n", func);
+                ((void(*)(int, char**))func)(argc, argv);
+            }*/
         }
         elf_debug("Finished executing %d DT_INIT_ARRAYSZ functions\n", nr);
     }
@@ -1446,7 +1480,7 @@ static std::string canonicalize(std::string p)
 // get_library() will run the init functions later.
 std::shared_ptr<elf::object>
 program::load_object(std::string name, std::vector<std::string> extra_path,
-        std::vector<std::shared_ptr<object>> &loaded_objects, bool dlopen)
+        std::vector<std::shared_ptr<object>> &loaded_objects)
 {
     fileref f;
     if (_files.count(name)) {
@@ -1510,7 +1544,7 @@ program::load_object(std::string name, std::vector<std::string> extra_path,
         //as they do not apply to statically linked executables.
         if (!ef->is_statically_linked_executable() && !ef->is_linux_dl()) {
             ef->load_needed(loaded_objects);
-            ef->relocate(dlopen);
+            ef->relocate();
             ef->fix_permissions();
         }
         _files[name] = ef;
@@ -1522,7 +1556,7 @@ program::load_object(std::string name, std::vector<std::string> extra_path,
 }
 
 std::shared_ptr<object>
-program::get_library(std::string name, std::vector<std::string> extra_path, bool delay_init, bool dlopen)
+program::get_library(std::string name, std::vector<std::string> extra_path, bool delay_init)
 {
     SCOPE_LOCK(_mutex);
     //
@@ -1538,7 +1572,7 @@ program::get_library(std::string name, std::vector<std::string> extra_path, bool
     // structure so each init_library call gets it's corresponding list of objects to operate on.
     //
     std::vector<std::shared_ptr<object>> loaded_objects;
-    auto ret = load_object(name, extra_path, loaded_objects, dlopen);
+    auto ret = load_object(name, extra_path, loaded_objects);
     _loaded_objects_stack.push(loaded_objects);
 
     if (ret) {
@@ -1971,32 +2005,13 @@ char *object::setup_tls()
             _module_index, _tls_segment, _tls_init_size, _tls_uninit_size);
 }
 
-
-extern "C" OSV_LD_LINUX_x86_64_API
-void* __tls_setup(module_and_offset* mao)
-{
-    object *obj = get_program()->tls_object(mao->module);
-    assert(mao->module == obj->module_index());
-    return obj->setup_tls();
-}
-
-extern "C" OSV_LD_LINUX_x86_64_API
-void* __tls_desc_dynamic(module_and_offset* mao)
-{
-    u64 *dtv = (u64*)sched::thread::current()->get_dtv();
-    void *tls = (void*)dtv[mao->module];
-    if (!tls) {
-        tls = __tls_setup(mao);
-    }
-    return (void*)(tls + mao->offset);
-}
-
 extern "C" OSV_LD_LINUX_x86_64_API
 void* __tls_get_addr(module_and_offset* mao)
 {
-    //debugf("__tls_get_addr: module:%u, offset:%u\n", mao->module, mao->offset);
-    //sched::fpu_lock fpu;
-    //WITH_LOCK(fpu) {
+#ifdef AARCH64_PORT_STUB
+    abort();
+#endif /* AARCH64_PORT_STUB */
+
     auto tls = sched::thread::current()->get_tls(mao->module);
     if (tls) {
         return tls + mao->offset;
@@ -2004,11 +2019,8 @@ void* __tls_get_addr(module_and_offset* mao)
         // This module's TLS block hasn't yet been allocated for this thread:
         object *obj = get_program()->tls_object(mao->module);
         assert(mao->module == obj->module_index());
-        auto tls = obj->setup_tls();
-        //debugf("__tls_get_addr: tls:%p\n", tls);
-        debugf("[tid:%d] __tls_get_addr: module:%u, offset:%u, tls:%p\n", sched::thread::current()->id(), mao->module, mao->offset, tls);
-        return tls + mao->offset;
-    }//}
+        return obj->setup_tls() + mao->offset;
+    }
 }
 
 
