@@ -98,6 +98,13 @@ void* symbol_module::relocated_addr() const
         break;
     case STT_IFUNC:
         return reinterpret_cast<void *(*)()>(base + symbol->st_value)();
+    case STT_TLS:
+        {
+            void *tls = obj->tls_addr();
+            printf("relocated_addr(): STT_TLS, tls:%p, st_value:%d\n", tls, symbol->st_value);
+            return tls + symbol->st_value;
+        }
+        break;
     default:
         abort("Unknown symbol type %d\n", symbol_type(*symbol));
     }

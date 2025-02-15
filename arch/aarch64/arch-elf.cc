@@ -129,17 +129,27 @@ void object::arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend, bo
 
     if (dynamic) {
         auto *mo = new module_and_offset;
+        *(static_cast<size_t*>(addr) + 1) = reinterpret_cast<size_t>(mo);
         if (sym) {
             auto sm = symbol(sym);
 	    mo->module = sm.obj->module_index();
-	    mo->offset = 0;
-            elf_debug("arch_relocate_rela dynamic other executable, R_AARCH64_TLSDESC for sym:%d and addend:%lu\n", sym, addend);
+	    mo->offset = (size_t)sm.symbol->st_value + addend;
+            /*if (sm.obj->module_index() != _module_index) {
+               *static_cast<size_t*>(addr) = (size_t)__tlsdesc_static;
+               *(static_cast<size_t*>(addr) + 1) = (size_t)sm.symbol->st_value;
+               elf_debug("arch_relocate_tls_desc STATIC other executable:this mod:%d from dlopen-ed, sym mod:%d, R_AARCH64_TLSDESC for sym:%d and offset:%lu\n",
+                    _module_index, sm.obj->module_index(), sym, sm.symbol->st_value);
+            } else {
+               elf_debug("arch_relocate_tls_desc DYNAMIC self this mod:%d, R_AARCH64_TLSDESC for sym:%d and addend:%lu\n",
+                    _module_index, sym, addend);
+            }*/
+            elf_debug("arch_relocate_tls_desc DYNAMIC other executable:this mod:%d, sym mod:%d, R_AARCH64_TLSDESC for sym:%d and offset:%lu\n",
+                 _module_index, sm.obj->module_index(), sym, sm.symbol->st_value);
 	} else {
 	    mo->module = _module_index;
-            elf_debug("arch_relocate_rela dynamic self, R_AARCH64_TLSDESC addend:%lu\n", addend);
+            elf_debug("arch_relocate_tls_desc DYNAMIC self, this mod:%d, R_AARCH64_TLSDESC addend:%lu\n", _module_index, addend);
 	    mo->offset = addend;
 	}
-        *(static_cast<size_t*>(addr) + 1) = reinterpret_cast<size_t>(mo);
 	return;
     }
 
@@ -153,7 +163,7 @@ void object::arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend, bo
             // right where the kernel TLS lives
             // So the offset is 0 right at the start of the static TLS
             tls_offset = 0;
-            elf_debug("arch_relocate_rela DYN other executable, R_AARCH64_TLSDESC for sym:%d, TP offset:%ld\n", sym, *(static_cast<size_t*>(addr) + 1));
+            elf_debug("arch_relocate_tls_desc STATIC other executable, R_AARCH64_TLSDESC for sym:%d, TP offset:%ld\n", sym, *(static_cast<size_t*>(addr) + 1));
         } else {
             // If shared library, the variable is located in one of TLS
             // blocks that are part of the static TLS after kernel part
@@ -161,7 +171,7 @@ void object::arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend, bo
             // TLS so far
             sm.obj->alloc_static_tls();
             tls_offset = sm.obj->static_tls_offset() + sched::kernel_tls_size();
-            elf_debug("arch_relocate_rela DYN other shared lib, R_AARCH64_TLSDESC for sym:%d, TP offset:%ld\n", sym, *(static_cast<size_t*>(addr) + 1));
+            elf_debug("arch_relocate_tls_desc STATIC other shared lib, R_AARCH64_TLSDESC for sym:%d, TP offset:%ld\n", sym, *(static_cast<size_t*>(addr) + 1));
         }
         auto offset = (size_t)sm.symbol->st_value + addend + tls_offset + sizeof(thread_control_block);
         *(static_cast<size_t*>(addr) + 1) = offset;
@@ -171,7 +181,7 @@ void object::arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend, bo
         alloc_static_tls();
         auto offset = _static_tls_offset + sched::kernel_tls_size() + addend + sizeof(thread_control_block);
         *(static_cast<size_t*>(addr) + 1) = offset;
-        elf_debug("arch_relocate_rela DYN self, R_AARCH64_TLSDESC TP offset:%ld\n", sym, *(static_cast<size_t*>(addr) + 1));
+        elf_debug("arch_relocate_tls_desc STATIC self, R_AARCH64_TLSDESC TP offset:%ld\n", sym, *(static_cast<size_t*>(addr) + 1));
     }
 }
 

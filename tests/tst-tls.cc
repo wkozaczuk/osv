@@ -11,6 +11,7 @@
 
 #include <iostream>
 #include <thread>
+#include <dlfcn.h>
 
 static int tests = 0, fails = 0;
 
@@ -20,8 +21,10 @@ static int tests = 0, fails = 0;
 __thread int v1 = 123;
 __thread int v2 = 234;
 
+#ifndef __DLOPEN__
 extern __thread int ex1;
 extern __thread int ex2;
+#endif
 
 // If the compiler knows the thread-local variable must be defined in the same
 // shared object, it can use the "Local Dynamic" TLS model.
@@ -35,7 +38,9 @@ static __thread int v4 = 456;
 __thread int v5 __attribute__ ((tls_model ("initial-exec"))) = 567;
 static __thread int v6 __attribute__ ((tls_model ("initial-exec"))) = 678;
 
+#ifndef __DLOPEN__
 extern __thread int ex3 __attribute__ ((tls_model ("initial-exec")));
+#endif
 
 #ifndef __SHARED_OBJECT__
 // We can also try to force the "Local Exec" TLS model, but OSv's makefile
@@ -48,7 +53,9 @@ __thread int v9 __attribute__ ((tls_model ("local-exec")));
 __thread int v10 __attribute__ ((tls_model ("local-exec"))) = 1111;
 #endif
 
+#ifndef __DLOPEN__
 extern void external_library();
+#endif
 
 static void report(bool ok, std::string msg, bool use_printf = false)
 {
@@ -65,23 +72,43 @@ int main(int argc, char** argv)
 {
     report(v1 == 123, "v1");
     report(v2 == 234, "v2");
+#ifdef __DLOPEN__
+    auto handle = dlopen("/tests/libtls.so", RTLD_NOW);
+    int *ex1_ptr = reinterpret_cast<int*>(dlsym(handle, "ex1"));
+    int *ex2_ptr = reinterpret_cast<int*>(dlsym(handle, "ex2"));
+    int *ex3_ptr = reinterpret_cast<int*>(dlsym(handle, "ex3"));
+    printf("ex1:%d, ex2:%d, ex3:%d\n", *ex1_ptr, *ex2_ptr, *ex3_ptr);
+    report(*ex1_ptr == 321, "ex1");
+    report(*ex2_ptr == 432, "ex2");
+    report(*ex3_ptr == 765, "ex3");
+#else
     report(ex1 == 321, "ex1");
     report(ex2 == 432, "ex2");
+    report(ex3 == 765, "ex3");
+#endif
     report(v3 == 345, "v3");
     report(v4 == 456, "v4");
     report(v5 == 567, "v5");
     report(v6 == 678, "v6");
-    report(ex3 == 765, "ex3");
 #ifndef __SHARED_OBJECT__
     report(v7 == 987UL, "v7");
     report(v8 == 789, "v8");
     report(v10 == 1111, "v10");
 #endif
-
+#ifdef __DLOPEN__
+    void (*external_library)() = reinterpret_cast<void(*)()>(dlsym(handle, "_Z16external_libraryv")); 
+#endif
     external_library();
+
+#ifdef __DLOPEN__
+    report(*ex1_ptr == 322, "ex1 modified");
+    report(*ex2_ptr == 433, "ex2 modified");
+    report(*ex3_ptr == 766, "ex3 modified");
+#else
     report(ex1 == 322, "ex1 modified");
     report(ex2 == 433, "ex2 modified");
     report(ex3 == 766, "ex3 modified");
+#endif
     report(v1 == 124, "v1 modified");
     report(v5 == 568, "v5 modified");
 
@@ -98,28 +125,39 @@ int main(int argc, char** argv)
 #endif
 
     // Try the same in a new thread
+#ifdef __DLOPEN__
+    std::thread t1([external_library] {
+#else
     std::thread t1([] {
+#endif
             report(v1 == 123, "v1 in new thread");
             report(v2 == 234, "v2 in new thread");
+#ifndef __DLOPEN__
             report(ex1 == 321, "ex1 in new thread");
             report(ex2 == 432, "ex2 in new thread");
+            report(ex3 == 765, "ex3 in new thread");
+#endif
             report(v3 == 345, "v3 in new thread");
             report(v4 == 456, "v4 in new thread");
             report(v5 == 567, "v5 in new thread");
             report(v6 == 678, "v6 in new thread");
-            report(ex3 == 765, "ex3 in new thread");
 #ifndef __SHARED_OBJECT__
             report(v7 == 987UL, "v7 in new thread");
 #endif
 
             external_library();
+#ifndef __DLOPEN__
             report(ex1 == 322, "ex1 modified in new thread");
             report(ex2 == 433, "ex2 modified in new thread");
             report(ex3 == 766, "ex3 modified in new thread");
+#endif
             report(v1 == 124, "v1 modified in new thread");
             report(v5 == 568, "v5 modified");
     });
     t1.join();
+#ifdef __DLOPEN__
+    dlclose(handle);
+#endif
 
     std::cout << "SUMMARY: " << tests << " tests, " << fails << " failures\n";
 }

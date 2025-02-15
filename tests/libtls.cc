@@ -8,6 +8,7 @@
 // ex2 and ex3 have different attributes defined here than in tst-tls.cc
 // That's on purpose, no matter what TLS access model is used in the end
 // the same part of memory should be accessed.
+#include <cstdio>
 __thread int ex1 = 321;
 __thread int ex2 __attribute__ ((tls_model ("initial-exec"))) = 432;
 __thread int ex3 = 765;
@@ -24,4 +25,5 @@ void external_library()
     // These 2 below get handled by get _tls_get_addr() function in core/elf.cc
     v1++;
     v5++;
+    printf("external_library: ex1:%d, ex2:%d, ex3:%d, v1:%d, v5:%d\n", ex1, ex2, ex3, v1, v5);
 }
