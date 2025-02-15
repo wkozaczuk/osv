@@ -862,7 +862,6 @@ void object::relocate_pltgot(bool dlopen)
         } else {
             u32 sym = info >> 32;
             arch_relocate_tls_desc(sym, addr, p->r_addend, dlopen);
-            //arch_relocate_tls_desc(sym, addr, p->r_addend, false);
         }
     }
     elf_debug("Relocated %d PLT symbols\n", nrel);

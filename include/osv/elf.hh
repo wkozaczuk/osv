@@ -505,7 +505,7 @@ protected:
     bool arch_relocate_rela(u32 type, u32 sym, void *addr,
                             Elf64_Sxword addend);
     bool arch_relocate_jump_slot(symbol_module& sym, void *addr, Elf64_Sxword addend);
-    void arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend, bool dynamic);
+    void arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend, bool dlopen);
     size_t static_tls_end() {
         if (is_core() || _is_dynamically_linked_executable) {
             return 0;

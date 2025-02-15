@@ -115,11 +115,18 @@ struct module_and_offset {
     ulong offset;
 };
 
-void object::arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend, bool dynamic)
+void object::arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend, bool dlopen)
 {
-    //TODO: Differentiate between DL_NEEDED (static TLS, initial-exec) and dynamic TLS (dlopen)
-    //For now assume it is always static TLS case
-    //assert(!dynamic);
+    //Determin static or dynamic TSL desc
+    bool dynamic = false;
+    symbol_module sm;
+    if (sym) {
+        sm = symbol(sym);
+        if (dlopen && sm.obj->module_index() == _module_index)
+            dynamic = true;
+    } else {
+        dynamic = dlopen;
+    }
     //
     // First place the address of the resolver function - __tlsdesc_static
     if (dynamic)
@@ -134,22 +141,8 @@ void object::arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend, bo
             auto sm = symbol(sym);
 	    mo->module = sm.obj->module_index();
 	    mo->offset = (size_t)sm.symbol->st_value + addend;
-            //TODO: Refactor this
-            if (sm.obj->module_index() != _module_index) {
-               *static_cast<size_t*>(addr) = (size_t)__tlsdesc_static;
-               sm.obj->alloc_static_tls();
-               //ulong tls_offset = sm.obj->static_tls_offset() + sched::kernel_tls_size();
-               ulong tls_offset = 0;
-               auto offset = (size_t)sm.symbol->st_value + addend + tls_offset + sizeof(thread_control_block);
-               *(static_cast<size_t*>(addr) + 1) = offset;
-               elf_debug("arch_relocate_tls_desc STATIC other executable:this mod:%d from dlopen-ed, sym mod:%d, R_AARCH64_TLSDESC for sym:%d and offset:%lu\n",
-                    _module_index, sm.obj->module_index(), sym, offset);
-            } else {
-               elf_debug("arch_relocate_tls_desc DYNAMIC self this mod:%d, R_AARCH64_TLSDESC for sym:%d and addend:%lu\n",
-                    _module_index, sym, addend);
-            }
-            //elf_debug("arch_relocate_tls_desc DYNAMIC other executable:this mod:%d, sym mod:%d, R_AARCH64_TLSDESC for sym:%d and offset:%lu\n",
-            //     _module_index, sm.obj->module_index(), sym, sm.symbol->st_value);
+            elf_debug("arch_relocate_tls_desc DYNAMIC self, this mod:%d, R_AARCH64_TLSDESC with sym:%d and addend:%lu\n",
+                  _module_index, sym, addend);
 	} else {
 	    mo->module = _module_index;
             elf_debug("arch_relocate_tls_desc DYNAMIC self, this mod:%d, R_AARCH64_TLSDESC addend:%lu\n", _module_index, addend);
