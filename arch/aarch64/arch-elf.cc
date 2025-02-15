@@ -134,17 +134,22 @@ void object::arch_relocate_tls_desc(u32 sym, void *addr, Elf64_Sxword addend, bo
             auto sm = symbol(sym);
 	    mo->module = sm.obj->module_index();
 	    mo->offset = (size_t)sm.symbol->st_value + addend;
-            /*if (sm.obj->module_index() != _module_index) {
+            //TODO: Refactor this
+            if (sm.obj->module_index() != _module_index) {
                *static_cast<size_t*>(addr) = (size_t)__tlsdesc_static;
-               *(static_cast<size_t*>(addr) + 1) = (size_t)sm.symbol->st_value;
+               sm.obj->alloc_static_tls();
+               //ulong tls_offset = sm.obj->static_tls_offset() + sched::kernel_tls_size();
+               ulong tls_offset = 0;
+               auto offset = (size_t)sm.symbol->st_value + addend + tls_offset + sizeof(thread_control_block);
+               *(static_cast<size_t*>(addr) + 1) = offset;
                elf_debug("arch_relocate_tls_desc STATIC other executable:this mod:%d from dlopen-ed, sym mod:%d, R_AARCH64_TLSDESC for sym:%d and offset:%lu\n",
-                    _module_index, sm.obj->module_index(), sym, sm.symbol->st_value);
+                    _module_index, sm.obj->module_index(), sym, offset);
             } else {
                elf_debug("arch_relocate_tls_desc DYNAMIC self this mod:%d, R_AARCH64_TLSDESC for sym:%d and addend:%lu\n",
                     _module_index, sym, addend);
-            }*/
-            elf_debug("arch_relocate_tls_desc DYNAMIC other executable:this mod:%d, sym mod:%d, R_AARCH64_TLSDESC for sym:%d and offset:%lu\n",
-                 _module_index, sm.obj->module_index(), sym, sm.symbol->st_value);
+            }
+            //elf_debug("arch_relocate_tls_desc DYNAMIC other executable:this mod:%d, sym mod:%d, R_AARCH64_TLSDESC for sym:%d and offset:%lu\n",
+            //     _module_index, sm.obj->module_index(), sym, sm.symbol->st_value);
 	} else {
 	    mo->module = _module_index;
             elf_debug("arch_relocate_tls_desc DYNAMIC self, this mod:%d, R_AARCH64_TLSDESC addend:%lu\n", _module_index, addend);

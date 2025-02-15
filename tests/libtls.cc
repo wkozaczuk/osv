@@ -10,7 +10,7 @@
 // the same part of memory should be accessed.
 #include <cstdio>
 __thread int ex1 = 321;
-__thread int ex2 __attribute__ ((tls_model ("initial-exec"))) = 432;
+__thread int ex2 __attribute__ ((tls_model ("initial-exec"))) = 432; //This will not work if this ELF is dlopen-ed
 __thread int ex3 = 765;
 
 extern __thread int v1;

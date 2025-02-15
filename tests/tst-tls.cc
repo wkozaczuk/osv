@@ -126,13 +126,21 @@ int main(int argc, char** argv)
 
     // Try the same in a new thread
 #ifdef __DLOPEN__
-    std::thread t1([external_library] {
+    std::thread t1([external_library,handle] {
 #else
     std::thread t1([] {
 #endif
             report(v1 == 123, "v1 in new thread");
             report(v2 == 234, "v2 in new thread");
-#ifndef __DLOPEN__
+#ifdef __DLOPEN__
+            int *ex1_ptr2 = reinterpret_cast<int*>(dlsym(handle, "ex1"));
+            int *ex2_ptr2 = reinterpret_cast<int*>(dlsym(handle, "ex2"));
+            int *ex3_ptr2 = reinterpret_cast<int*>(dlsym(handle, "ex3"));
+            printf("ex1:%d, ex2:%d, ex3:%d\n", *ex1_ptr2, *ex2_ptr2, *ex3_ptr2);
+            report(*ex1_ptr2 == 321, "ex1 in new thread");
+            report(*ex2_ptr2 == 432, "ex2 in new thread");
+            report(*ex3_ptr2 == 765, "ex3 in new thread");
+#else
             report(ex1 == 321, "ex1 in new thread");
             report(ex2 == 432, "ex2 in new thread");
             report(ex3 == 765, "ex3 in new thread");
@@ -146,7 +154,11 @@ int main(int argc, char** argv)
 #endif
 
             external_library();
-#ifndef __DLOPEN__
+#ifdef __DLOPEN__
+            report(*ex1_ptr2 == 322, "ex1 modified in new thread");
+            report(*ex2_ptr2 == 433, "ex2 modified in new thread");
+            report(*ex3_ptr2 == 766, "ex3 modified in new thread");
+#else
             report(ex1 == 322, "ex1 modified in new thread");
             report(ex2 == 433, "ex2 modified in new thread");
             report(ex3 == 766, "ex3 modified in new thread");
