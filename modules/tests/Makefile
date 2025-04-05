@@ -56,13 +56,13 @@ $(out)/tests/tst-non-pie.so: $(src)/tests/tst-non-pie.cc
 
 $(out)/tests/options.o: $(src)/core/options.cc
 	$(makedir)
-	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX $*.cc)
+	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX core/options.cc => tests/options.o)
 $(out)/tests/tst-options.so: $(out)/tests/tst-options.o $(out)/tests/options.o
 	$(call quiet, $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $< $(out)/tests/options.o $(LIBS), LD tests/tst-options.so)
 
 $(out)/tests/string_utils.o: $(src)/core/string_utils.cc
 	$(makedir)
-	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX $*.cc)
+	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX core/string_utils.cc => tests/string_utils.o)
 $(out)/tests/tst-string-utils.so: $(out)/tests/tst-string-utils.o $(out)/tests/string_utils.o
 	$(call quiet, $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $< $(out)/tests/string_utils.o $(LIBS), LD tests/tst-string-utils.so)
 
@@ -72,16 +72,16 @@ $(out)/tests/tst-reloc.so: $(src)/tests/tst-reloc.c
 
 $(out)/tests/commands.o: $(src)/core/commands.cc
 	$(makedir)
-	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX $*.cc)
+	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX core/commands.cc => tests/commands.o)
 $(out)/tests/printf.o: $(src)/core/printf.cc
 	$(makedir)
-	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX $*.cc)
+	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX core/printf.cc => tests/printf.o)
 $(out)/tests/debug.o: $(src)/core/debug.cc
 	$(makedir)
-	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX $*.cc)
+	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX core/debug.cc => tests/debug.o)
 $(out)/tests/stresep.o: $(src)/libc/string/stresep.c
 	$(makedir)
-	$(call quiet, $(CC) $(CFLAGS) -c -o $@ $<, CC $*.c)
+	$(call quiet, $(CC) $(CFLAGS) -c -o $@ $<, CC libc/string/stresep.c => tests/stresep.o)
 $(out)/tests/tst-commands.so: $(out)/tests/tst-commands.o $(out)/tests/commands.o $(out)/tests/stresep.o $(out)/tests/printf.o $(out)/tests/debug.o
 	$(call quiet, $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $< $(out)/tests/commands.o $(out)/tests/stresep.o $(out)/tests/printf.o $(out)/tests/debug.o $(LIBS), LD tests/tst-commands.so)
 
@@ -142,12 +142,12 @@ tests := tst-pthread.so misc-ramdisk.so tst-vblk.so tst-bsd-evh.so \
 	tst-calloc.so tst-crypt.so tst-non-fpic.so tst-small-malloc.so \
 	tst-getopt.so tst-getopt-pie.so tst-non-pie.so tst-semaphore.so \
 	tst-elf-init.so tst-realloc.so tst-setjmp.so \
-	libtls.so libtls_gold.so tst-tls.so tst-tls-gold.so tst-tls-pie.so \
+	libtls.so libtls_gold.so lib-misc-tls.so tst-tls.so \
+	tst-tls-gold.so tst-tls-pie.so tst-tls-pie-dlopen.so \
 	tst-sigaction.so tst-syscall.so tst-ifaddrs.so tst-getdents.so \
 	tst-netlink.so misc-zfs-io.so misc-zfs-arc.so tst-pthread-create.so \
 	misc-futex-perf.so misc-syscall-perf.so tst-brk.so tst-reloc.so \
 	misc-vdso-perf.so tst-string-utils.so
-#	libstatic-thread-variable.so tst-static-thread-variable.so \
 #	tst-f128.so \
 
 
@@ -165,7 +165,7 @@ internal-api-tests := tst-app.so tst-async.so tst-bsd-evh.so \
 	tst-vfs.so tst-wait-for.so tst-without-namespace.so
 
 ifeq ($(arch),x64)
-tests += tst-mmx-fpu.so
+tests += tst-mmx-fpu.so tst-tls-desc.so tst-tls-pie-desc.so libtls_desc.so
 endif
 
 tests += testrunner.so
@@ -183,6 +183,9 @@ $(out)/tests/tst-mmap.so: COMMON += -fuse-ld=bfd
 $(out)/tests/tst-elf-permissions.so: COMMON += -fuse-ld=bfd
 $(out)/tests/tst-tls.so: COMMON += -fuse-ld=bfd
 $(out)/tests/tst-tls-pie.so: COMMON += -fuse-ld=bfd
+$(out)/tests/tst-tls-desc.so: COMMON += -fuse-ld=bfd
+$(out)/tests/tst-tls-pie-desc.so: COMMON += -fuse-ld=bfd
+$(out)/tests/tst-tls-pie-dlopen.so: COMMON += -fuse-ld=bfd
 
 $(out)/tests/tst-dlfcn.so: COMMON += -rdynamic -ldl
 
@@ -195,12 +198,46 @@ $(out)/tests/tst-tls.so: \
 $(out)/tests/tst-tls-pie.o: CXXFLAGS:=$(subst -fPIC,-fpie,$(CXXFLAGS))
 $(out)/tests/tst-tls-pie.o: $(src)/tests/tst-tls.cc
 	$(makedir)
-	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX tests/tst-tls-pie.cc)
+	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX tests/tst-tls.cc => tests/tst-tls-pie.o)
 $(out)/tests/tst-tls-pie.so: \
 		$(out)/tests/tst-tls-pie.o \
 		$(out)/tests/libtls.so
 	$(makedir)
 	$(call quiet, cd $(out); $(CXX) $(CXXFLAGS) $(LDFLAGS) -pthread -fpie -o $@ $< $(LIBS) tests/libtls.so, LD tests/tst-tls-pie.so)
+
+$(out)/tests/tst-tls-desc.o: CXXFLAGS += -mtls-dialect=gnu2 -fPIC -D__SHARED_OBJECT__=1
+$(out)/tests/tst-tls-desc.o: $(src)/tests/tst-tls.cc
+	$(makedir)
+	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX tests/tst-tls.cc => tests/tst-tls-desc.0)
+$(out)/tests/tst-tls-desc.so: \
+		$(out)/tests/tst-tls-desc.o \
+		$(out)/tests/libtls_desc.so
+	$(makedir)
+	$(call quiet, cd $(out); $(CXX) $(CXXFLAGS) $(LDFLAGS) -pthread -shared -o $@ $< $(LIBS) tests/libtls_desc.so, LD tests/tst-tls-desc.so)
+
+$(out)/tests/tst-tls-pie-desc.o: CXXFLAGS += -mtls-dialect=gnu2 -fPIC -D__SHARED_OBJECT__=1
+$(out)/tests/tst-tls-pie-desc.o: $(src)/tests/tst-tls.cc
+	$(makedir)
+	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX tests/tst-tls.cc => tests/tst-tls-pie-desc.o)
+$(out)/tests/tst-tls-pie-desc.so: \
+		$(out)/tests/tst-tls-pie-desc.o \
+		$(out)/tests/libtls_desc.so
+	$(makedir)
+	$(call quiet, cd $(out); $(CXX) $(CXXFLAGS) $(LDFLAGS) -pthread -fpie -o $@ $< $(LIBS) tests/libtls_desc.so, LD tests/tst-tls-pie-desc.so)
+
+$(out)/tests/libtls_desc.so: CXXFLAGS += -mtls-dialect=gnu2
+$(out)/tests/libtls_desc.so: $(src)/tests/libtls.cc
+	$(makedir)
+	$(call quiet, $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $< $(LIBS), LD tests/libtls_desc.so)
+
+$(out)/tests/tst-tls-pie-dlopen.o: CXXFLAGS:=$(subst -fPIC,-fpie,$(CXXFLAGS)) -D__DLOPEN__=1
+$(out)/tests/tst-tls-pie-dlopen.o: $(src)/tests/tst-tls.cc
+	$(makedir)
+	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX tests/tst-tls.cc => tests/tst-tls-pie-dlopen.o)
+$(out)/tests/tst-tls-pie-dlopen.so: \
+		$(out)/tests/tst-tls-pie-dlopen.o
+	$(makedir)
+	$(call quiet, cd $(out); $(CXX) $(CXXFLAGS) $(LDFLAGS) -export-dynamic -pthread -fpie -o $@ $< $(LIBS), LD tests/tst-tls-pie-dlopen.so)
 
 $(out)/tests/libtls_gold.so: COMMON += -fuse-ld=gold
 $(out)/tests/libtls_gold.so: $(out)/tests/libtls.o

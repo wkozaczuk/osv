@@ -52,7 +52,7 @@ class TestRunnerTest(SingleCommandTest):
 # (e.g., some may have actually remain there from old builds) - so lets take
 # the list of tests actually in the image form the image's manifest file.
 test_files = []
-is_comment = re.compile("^[ \t]*(|#.*|\[manifest])$")
+is_comment = re.compile("^[ \t]*(|#.*|\\[manifest])$")
 is_test = re.compile("^/tests/tst-.*")
 
 def running_with_kvm_on(arch, hypervisor):
@@ -156,18 +156,22 @@ def run_tests():
 def main():
     collect_java_tests()
     collect_tests()
+    count = 0
     while True:
         run_tests()
-        if not cmdargs.repeat:
+        count = count + 1
+        if not (cmdargs.repeat or (cmdargs.count and count < cmdargs.count)):
             break
 
 if __name__ == "__main__":
     parser = argparse.ArgumentParser(prog='test')
     parser.add_argument("-v", "--verbose", action="store_true", help="verbose test output")
     parser.add_argument("-r", "--repeat", action="store_true", help="repeat until test fails")
+    parser.add_argument("-c", "--count", action="store", type=int, help="run tests specified number of times")
     parser.add_argument("-s", "--single", action="store_true", help="run as much tests as possible in a single OSv instance")
     parser.add_argument("-p", "--hypervisor", action="store", default="qemu", help="choose hypervisor to run: qemu, firecracker")
     parser.add_argument("-n", "--name", action="store", help="run all tests whose names match given regular expression")
+
     parser.add_argument("--run_options", action="store", help="pass extra options to run.py")
     parser.add_argument("-m", "--manifest", action="store", default="modules/tests/usr.manifest", help="test manifest")
     parser.add_argument("-d", "--disabled_list", action="append", help="test to be disabled", default=[])
@@ -192,11 +196,6 @@ if __name__ == "__main__":
 
     if cmdargs.linux_ld:
         disabled_list.extend(linux_ld_disabled_list)
-
-    if cmdargs.arch == 'aarch64':
-        if host_arch != cmdargs.arch:
-            #Until the issue #1143 is resolved, we need to force running with 2 CPUs in TCG mode
-            run_py_args = run_py_args + ['-c', '2']
 
     if running_with_kvm_on(cmdargs.arch, cmdargs.hypervisor) and cmdargs.arch != 'aarch64':
         disabled_list.remove("tst-feexcept.so")
