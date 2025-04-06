@@ -1210,7 +1210,7 @@ void object::run_init_funcs(int argc, char** argv)
     if (dynamic_exists(DT_INIT)) {
         auto func = dynamic_ptr<void>(DT_INIT);
         if (func) {
-            elf_debug("Executing DT_INIT function:%p\n", func);
+            elf_debug("Executing DT_INIT function\n");
             reinterpret_cast<void(*)(int, char**)>(func)(argc, argv);
             elf_debug("Finished executing DT_INIT function\n");
         }
@@ -1221,14 +1221,6 @@ void object::run_init_funcs(int argc, char** argv)
         elf_debug("Executing %d DT_INIT_ARRAYSZ functions\n", nr);
         for (auto i = 0u; i < nr; ++i) {
             funcs[i](argc, argv);
-            /*if (contains_addr((const void*)funcs[i])) {
-                elf_debug("Executing normal DT_INIT_ARRAYSZ function:%p\n", funcs[i]);
-                funcs[i](argc, argv);
-            } else {
-                auto func = _base + (u64)(funcs[i]);
-                elf_debug("Executing fixed DT_INIT_ARRAYSZ function:%p\n", func);
-                ((void(*)(int, char**))func)(argc, argv);
-            }*/
         }
         elf_debug("Finished executing %d DT_INIT_ARRAYSZ functions\n", nr);
     }
