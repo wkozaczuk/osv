@@ -37,10 +37,12 @@ namespace pci {
 
         function::enable_bars_decode(true, true);
 
+	pci_i("device::parse_pci_config() vid:id = %x:%x -> collecting bars", _vendor_id, _device_id);
         while (pos <= PCI_CFG_BAR_6) {
             u32 bar_v = pci_readl(pos);
 
-            if (bar_v == 0) {
+            //if (bar_v == 0 && !(pos == PCI_CFG_BAR_2 && is_msix())) { //THIS is what breaks !
+            if (bar_v == 0) { //On Graviton MSIX is non-zero and not PCI_CFG_BAR_2 (maybe)
                 pos += 4;
                 idx++;
                 continue;
@@ -48,6 +50,9 @@ namespace pci {
 
             bar * pbar = new bar(this, pos);
             add_bar(idx++, pbar);
+            pci_i("    bar[%d]: %sbits addr=%p size=%x, mmio=%d",
+                idx, (pbar->is_64() ? "64" : "32"),
+                pbar->get_addr64(), pbar->get_size(), pbar->is_mmio());
 
             pos += pbar->is_64() ? idx++, 8 : 4;
         }

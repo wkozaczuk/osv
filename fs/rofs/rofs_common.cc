@@ -71,6 +71,7 @@ rofs_read_blocks(struct device *device, uint64_t starting_block, uint64_t blocks
     bio->bio_offset = starting_block << 9;
     bio->bio_bcount = blocks_count * BSIZE;
 
+    //printf("rofs_read_blocks: bio_offset:%lu, bio_bcount:%lu\n", bio->bio_offset, bio->bio_bcount);
     bio->bio_dev->driver->devops->strategy(bio);
     int error = bio_wait(bio);
 

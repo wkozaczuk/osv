@@ -185,6 +185,7 @@ blk::blk(virtio_device& virtio_dev)
     prv->drv = this;
     dev->size = prv->drv->size();
     dev->max_io_size = _config.seg_max ? (_config.seg_max - 1) * mmu::page_size : UINT_MAX;
+    debugf("virtio-blk: About to read partition table %s\n", dev_name.c_str());
     read_partition_table(dev);
 
     debugf("virtio-blk: Add blk device instances %d as %s, devsize=%lld\n", _id, dev_name.c_str(), dev->size);

@@ -22,6 +22,9 @@ namespace pci {
           _is_mmio(false), _is_64(false), _is_prefetchable(false)
     {
         u32 val = _dev->pci_readl(_pos);
+	//TODO: Why this hack with EFI?
+	//if (pos == 0x14) //PCI_CFG_BAR_2, ideally is_msix()
+	//   val = 0;
 
         _is_mmio = ((val & PCI_BAR_MEMORY_INDICATOR_MASK) == PCI_BAR_MMIO);
         if (_is_mmio) {
@@ -38,12 +41,14 @@ namespace pci {
             _addr_lo = val & PCI_BAR_MEM_ADDR_LO_MASK;
             if (_is_64) {
                 _addr_hi = _dev->pci_readl(_pos + 4);
+	        debugf("bar::bar() _addr_hi=%018p,\n           _addr_lo=%018p\n", _addr_hi, _addr_lo);
             }
         } else {
             _addr_lo = val & PCI_BAR_PIO_ADDR_MASK;
         }
 
-        _addr_64 = ((u64)_addr_hi << 32) | (u64)(_addr_lo);
+        _addr_64 = (((u64)_addr_hi) << 32) | (u64)(_addr_lo);
+	debugf("bar::bar() _addr_64=%018p\n", _addr_64);
     }
 
     bar::~bar()
@@ -90,13 +95,18 @@ namespace pci {
     void bar::map()
     {
         if (_is_mmio) {
+            //TODO: Is mmaping necessary on aarch64 since it is already in the mmapped
+            //area
             _addr_mmio = mmio_map(get_addr64(), get_size(), "pci_bar");
+            //_addr_mmio = (mmioaddr_t)get_addr64();
+            debugf("bar::map() - _addr_mmio:%p\n", _addr_mmio);
         }
     }
 
     void bar::unmap()
     {
         if ((_is_mmio) && (_addr_mmio != mmio_nullptr)) {
+	    debug_early_u64("mmio_unmap: ", (u64)_addr_mmio);
             mmio_unmap(_addr_mmio, get_size());
         }
     }
@@ -114,6 +124,7 @@ namespace pci {
     u64 bar::readq(u64 offset)
     {
         if (_is_mmio) {
+            //debugf("bar::readq() at offset: %lu\n", offset);
             return mmio_getq(_addr_mmio + offset);
         } else {
             abort("64 bit read attempt from PIO area");
@@ -123,6 +134,7 @@ namespace pci {
     u32 bar::readl(u64 offset)
     {
         if (_is_mmio) {
+            //debugf("bar::readl() at offset: %lu\n", offset);
             return mmio_getl(_addr_mmio + offset);
         } else {
             return inl(_addr_lo + offset);
@@ -132,6 +144,7 @@ namespace pci {
     u16 bar::readw(u64 offset)
     {
         if (_is_mmio) {
+            //debugf("bar::readw() at offset: %lu\n", offset);
             return mmio_getw(_addr_mmio + offset);
         } else {
             return inw(_addr_lo + offset);
@@ -141,6 +154,7 @@ namespace pci {
     u8 bar::readb(u64 offset)
     {
         if (_is_mmio) {
+            //debugf("bar::readb() at offset: %lu\n", offset);
             return mmio_getb(_addr_mmio + offset);
         } else {
             return inb(_addr_lo + offset);
@@ -150,6 +164,7 @@ namespace pci {
     void bar::writeq(u64 offset, u64 val)
     {
         if (_is_mmio) {
+            //debugf("bar::writeq() %lu at offset: %lu\n", val, offset);
             mmio_setq(_addr_mmio + offset, val);
         } else {
             abort("64 bit write attempt to PIO area");
@@ -159,6 +174,7 @@ namespace pci {
     void bar::writel(u64 offset, u32 val)
     {
         if (_is_mmio) {
+            //debugf("bar::writel() %u at offset: %lu\n", val, offset);
             mmio_setl(_addr_mmio + offset, val);
         } else {
             outl(val, _addr_lo + offset);
@@ -168,6 +184,7 @@ namespace pci {
     void bar::writew(u64 offset, u16 val)
     {
         if (_is_mmio) {
+            //debugf("bar::writew() %u at offset: %lu\n", val, offset);
             mmio_setw(_addr_mmio + offset, val);
         } else {
             outw(val, _addr_lo + offset);
@@ -177,6 +194,7 @@ namespace pci {
     void bar::writeb(u64 offset, u8 val)
     {
         if (_is_mmio) {
+            //debugf("bar::writeb() %u at offset: %lu\n", val, offset);
             mmio_setb(_addr_mmio + offset, val);
         } else {
             outb(val, _addr_lo + offset);
@@ -223,6 +241,7 @@ namespace pci {
 
         // Parse capabilities
         bool parse_ok = parse_pci_capabilities();
+        dump_config();
 
         return parse_ok;
     }
@@ -232,6 +251,15 @@ namespace pci {
         // Parse MSI-X
         u8 off = find_capability(PCI_CAP_MSIX);
         if (off != 0xFF) {
+            /*debug_early_u64("PCI_CAP_MSIX offset: ", off);
+            u32 msix_table = pci_readl(off);
+            debug_early_u64("PCI_CAP_MSIX table: ", msix_table);
+            int msix_bar = msix_table & 0x7;
+            debug_early_u64("PCI_CAP_MSIX bar: ", msix_bar);
+            u64 offset = msix_table & ~0x7;
+            debug_early_u64("PCI_CAP_MSIX table offset: ", offset);
+            u32 base = pci_readl(0x10 + msix_bar * 4);
+            debug_early_u64("PCI_CAP_MSIX table base: ", base);*/
             bool msi_ok = parse_pci_msix(off);
             return msi_ok;
         }
@@ -278,10 +306,13 @@ namespace pci {
 
         // Location within the configuration space
         _msix.msix_location = off;
+        //debug_early_u64("__> MSIX off: ", off);
         _msix.msix_ctrl = pci_readw(off + PCIR_MSIX_CTRL);
         _msix.msix_msgnum = (_msix.msix_ctrl & PCIM_MSIXCTRL_TABLE_SIZE) + 1;
         val = pci_readl(off + PCIR_MSIX_TABLE);
+        //debug_early_u64("__> MSIX table val: ", val);
         _msix.msix_table_bar = val & PCIM_MSIX_BIR_MASK;
+        //debug_early_u64("__> MSIX table bar: ", _msix.msix_table_bar);
         _msix.msix_table_offset = val & ~PCIM_MSIX_BIR_MASK;
         val = pci_readl(off + PCIR_MSIX_PBA);
         _msix.msix_pba_bar = val & PCIM_MSIX_BIR_MASK;
@@ -289,6 +320,9 @@ namespace pci {
 
         // We've found an MSI-x capability
         _have_msix = true;
+
+	 pci_i("[%x:%x.%x] vid:id = %x:%x parsed MSI/X",
+             (u16)_bus, (u16)_device, (u16)_func, _vendor_id, _device_id);
 
         return true;
     }
@@ -391,7 +425,7 @@ namespace pci {
 
     void function::set_status(u16 status)
     {
-        pci_writew(PCI_CFG_COMMAND, status);
+        pci_writew(PCI_CFG_STATUS, status);
     }
 
     bool function::get_bus_master()
@@ -506,6 +540,7 @@ namespace pci {
         u16 ctrl = msix_get_control();
         ctrl |= PCIM_MSIXCTRL_FUNCTION_MASK;
         msix_set_control(ctrl);
+        debug("msix_mask_all()\n");
     }
 
     void function::msi_mask_all()
@@ -527,6 +562,7 @@ namespace pci {
         u16 ctrl = msix_get_control();
         ctrl &= ~PCIM_MSIXCTRL_FUNCTION_MASK;
         msix_set_control(ctrl);
+        debug("msix_unmask_all()\n");
     }
 
     void function::msi_unmask_all()
@@ -556,6 +592,7 @@ namespace pci {
         ctrl_data |= (1 << MSIX_ENTRY_CONTROL_MASK_BIT);
         mmio_setl(ctrl, ctrl_data);
 
+        //debugf("msix_mask_entry() id:%d at ctrl:%p\n", entry_id, ctrl);
         return true;
     }
 
@@ -604,6 +641,7 @@ namespace pci {
         u32 ctrl_data = mmio_getl(ctrl);
         ctrl_data &= ~(1 << MSIX_ENTRY_CONTROL_MASK_BIT);
         mmio_setl(ctrl, ctrl_data);
+        //debugf("msix_unmask_entry() id:%d at ctrl=%p\n", entry_id, ctrl);
 
         return true;
     }
@@ -651,6 +689,7 @@ namespace pci {
 
         mmio_setq(entryaddr + (u8)MSIX_ENTRY_ADDR, address);
         mmio_setl(entryaddr + (u8)MSIX_ENTRY_DATA, data);
+        //debugf("msix_write_entry() id:%d at addr:%p\n", entry_id, entryaddr);
 
         return true;
     }
@@ -680,6 +719,8 @@ namespace pci {
 
     void function::msix_enable()
     {
+        //return; //TODO: Check why enabling msix (when on efi) crashes even though msix is not supported
+		//Maybe we should not enable msix unless it is supported (through GIC?)
         if (!is_msix() || _msix_enabled) {
             return;
         }
@@ -687,6 +728,8 @@ namespace pci {
         // mmap the msix bar into memory
         bar* msix_bar = get_bar(_msix.msix_table_bar + 1);
         if (msix_bar == nullptr) {
+	    pci_i("[%x:%x.%x] vid:id = %x:%x, null MSI-X bar",
+               (u16)_bus, (u16)_device, (u16)_func, _vendor_id, _device_id);
             return;
         }
 
@@ -711,6 +754,10 @@ namespace pci {
         // Unmask the main block
         ctrl &= ~PCIM_MSIXCTRL_FUNCTION_MASK;
         msix_set_control(ctrl);
+	assert(msix_get_control() == ctrl);
+
+	pci_i("[%x:%x.%x] vid:id = %x:%x, MSI-X bar:%d ENABLED!",
+            (u16)_bus, (u16)_device, (u16)_func, _vendor_id, _device_id, _msix.msix_table_bar + 1);
 
         _msix_enabled = true;
     }
@@ -857,6 +904,8 @@ namespace pci {
         while (off != 0) {
             // Read capability
             u8 capability = pci_readb(off + PCI_CAP_OFF_ID);
+	    pci_i("[%x:%x.%x] vid:id = %x:%x, capability:%d",
+               (u16)_bus, (u16)_device, (u16)_func, _vendor_id, _device_id, capability);
             if (capability == cap_id) {
                 cap_offs.push_back(off);
                 if (all) {
@@ -891,35 +940,41 @@ namespace pci {
     void function::add_bar(int idx, bar * bar)
     {
         _bars.insert(std::make_pair(idx, bar));
+        pci_i("[%x:%x.%x] vid:id = %x:%x add bar idx:%d, 64:%d",
+            (u16)_bus, (u16)_device, (u16)_func, _vendor_id, _device_id, idx, bar->is_64());
     }
 
     void function::dump_config()
     {
-        pci_d("[%x:%x.%x] vid:id = %x:%x",
+        pci_i("[%x:%x.%x] vid:id = %x:%x",
             (u16)_bus, (u16)_device, (u16)_func, _vendor_id, _device_id);
 
         // PCI BARs
         for (int bar_idx = 1; bar_idx <= 6; bar_idx++) {
             bar *bar = get_bar(bar_idx);
             if (bar) {
-                pci_d("    bar[%d]: %sbits addr=%p size=%x, mmio=%d",
+                pci_i("    bar[%d]: %sbits addr=%p size=%x, mmio=%d",
                     bar_idx, (bar->is_64() ? "64" : "32"),
                     bar->get_addr64(), bar->get_size(), bar->is_mmio());
             }
         }
 
-        pci_d("    IRQ = %d", (u16)get_interrupt_line());
+        pci_i("    IRQ = %d", (u16)get_interrupt_line());
 
+        // MSI
+        if (_have_msi) {
+            pci_i("    Have MSI!");
+        }
         // MSI-x
         if (_have_msix) {
-            pci_d("    Have MSI-X!");
-            pci_d("        msix_location: %d", (u16)_msix.msix_location);
-            pci_d("        msix_ctrl: %d", _msix.msix_ctrl);
-            pci_d("        msix_msgnum: %d", _msix.msix_msgnum);
-            pci_d("        msix_table_bar: %d", (u16)_msix.msix_table_bar);
-            pci_d("        msix_table_offset: %d", _msix.msix_table_offset);
-            pci_d("        msix_pba_bar: %d", (u16)_msix.msix_pba_bar);
-            pci_d("        msix_pba_offset: %d", _msix.msix_pba_offset);
+            pci_i("    Have MSI-X!");
+            pci_i("        msix_location: %d", (u16)_msix.msix_location);
+            pci_i("        msix_ctrl: %d", _msix.msix_ctrl);
+            pci_i("        msix_msgnum: %d", _msix.msix_msgnum);
+            pci_i("        msix_table_bar: %d", (u16)_msix.msix_table_bar);
+            pci_i("        msix_table_offset: %d", _msix.msix_table_offset);
+            pci_i("        msix_pba_bar: %d", (u16)_msix.msix_pba_bar);
+            pci_i("        msix_pba_offset: %d", _msix.msix_pba_offset);
         }
     }
 }

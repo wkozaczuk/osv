@@ -25,6 +25,8 @@ void mmio_isa_serial_console::early_init(u64 mmio_phys_address)
     _phys_mmio_address = mmio_phys_address;
     _addr_mmio = reinterpret_cast<char*>(mmio_phys_address);
 
+    memory_map();
+
     common_early_init();
 }
 
@@ -72,6 +74,9 @@ void mmio_isa_serial_console::clean_cmdline(char *cmdline)
 }
 
 void mmio_isa_serial_console::dev_start() {
+    if (!irqid) //TODO: Fix it better when no IRQ
+	  return;
+
     _irq.reset(new spi_interrupt(gic::irq_type::IRQ_TYPE_EDGE, irqid,
                                  [&] { return true; },
                                  [&] { _thread->wake_with_irq_disabled(); }));

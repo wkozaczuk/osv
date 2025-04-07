@@ -901,6 +901,11 @@ drivers += drivers/pci-generic.o
 drivers += drivers/pci-device.o
 drivers += drivers/pci-function.o
 drivers += drivers/pci-bridge.o
+drivers += drivers/msi.o
+ifeq ($(conf_drivers_nvme),1)
+drivers += drivers/nvme.o
+drivers += drivers/nvme-queue.o
+endif
 endif
 drivers += drivers/driver.o
 
@@ -920,10 +925,6 @@ endif
 drivers += drivers/virtio-vring.o
 ifeq ($(conf_drivers_mmio),1)
 drivers += drivers/virtio-mmio.o
-endif
-ifeq ($(conf_drivers_nvme),1)
-drivers += drivers/nvme.o
-drivers += drivers/nvme-queue.o
 endif
 ifeq ($(conf_networking_stack),1)
 drivers += drivers/virtio-net.o

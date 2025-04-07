@@ -103,6 +103,8 @@ u16 queue_pair::submit_cmd(nvme_sq_entry_t* cmd)
 {
     _sq._addr[_sq._tail] = *cmd;
     advance_sq_tail();
+    //TODO: Add write barrier
+    //asm volatile("dmb st" ::: "memory");
     mmio_setl(_sq._doorbell, _sq._tail);
     return _sq._tail;
 }
