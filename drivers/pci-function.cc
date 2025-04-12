@@ -310,9 +310,9 @@ namespace pci {
         _msix.msix_ctrl = pci_readw(off + PCIR_MSIX_CTRL);
         _msix.msix_msgnum = (_msix.msix_ctrl & PCIM_MSIXCTRL_TABLE_SIZE) + 1;
         val = pci_readl(off + PCIR_MSIX_TABLE);
-        //debug_early_u64("__> MSIX table val: ", val);
+        debug_early_u64("__> MSIX table val: ", val);
         _msix.msix_table_bar = val & PCIM_MSIX_BIR_MASK;
-        //debug_early_u64("__> MSIX table bar: ", _msix.msix_table_bar);
+        debug_early_u64("__> MSIX table bar: ", _msix.msix_table_bar);
         _msix.msix_table_offset = val & ~PCIM_MSIX_BIR_MASK;
         val = pci_readl(off + PCIR_MSIX_PBA);
         _msix.msix_pba_bar = val & PCIM_MSIX_BIR_MASK;
@@ -686,6 +686,7 @@ namespace pci {
         }
 
         mmioaddr_t entryaddr = msix_get_table() + (entry_id * MSIX_ENTRY_SIZE);
+        debugf("msix_write_entry() id:%d, msix_get_table():%p\n", entry_id, msix_get_table());
 
         mmio_setq(entryaddr + (u8)MSIX_ENTRY_ADDR, address);
         mmio_setl(entryaddr + (u8)MSIX_ENTRY_DATA, data);

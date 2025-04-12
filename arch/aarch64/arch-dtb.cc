@@ -527,15 +527,15 @@ bool dtb_get_pci_ranges(u64 *addr, size_t *len, int n)
 
     if (!dtb_getprop_u32(node, "#address-cells", &addr_cells_pci))
         return false;
-    debug_early_u64("addr_cells_pci: ", addr_cells_pci);
+    //debug_early_u64("addr_cells_pci: ", addr_cells_pci);
 
     if (!dtb_getprop_u32_cascade(node, "#address-cells", &addr_cells))
         return false;
-    debug_early_u64("addr_cells:     ", addr_cells);
+    //debug_early_u64("addr_cells:     ", addr_cells);
 
     if (!dtb_getprop_u32_cascade(node, "#size-cells", &size_cells))
         return false;
-    debug_early_u64("size_cells:     ", size_cells);
+    //debug_early_u64("size_cells:     ", size_cells);
 
     int size;
     u32 *ranges = (u32 *)fdt_getprop(dtb, node, "ranges", &size);
@@ -545,12 +545,12 @@ bool dtb_get_pci_ranges(u64 *addr, size_t *len, int n)
         return false;
 
     for (int x = 0; x < n; x++) {
-	debug_early_u64("x: ", x);
+	//debug_early_u64("x: ", x);
         for (u32 i = 0; i < addr_cells_pci; i++, ranges++) {
             /* ignore the PCI address */
         }
         for (u32 i = 0; i < addr_cells; i++, ranges++) {
-	    debug_early_u64("addr: ", fdt32_to_cpu(*ranges));
+	    //debug_early_u64("addr: ", fdt32_to_cpu(*ranges));
             addr[x] = addr[x] << 32 | fdt32_to_cpu(*ranges);
         }
         for (u32 i = 0; i < size_cells; i++, ranges++) {
@@ -851,8 +851,8 @@ void  __attribute__((constructor(init_prio::dtb))) dtb_setup()
     extern u64 kernel_vm_shift;
 
     mmu::elf_phys_start = reinterpret_cast<void *>(elf_header);
-    debug_early_u64("elf phys   : ", (u64)mmu::elf_phys_start);
-    debug_early_u64("vm_shift   : ", kernel_vm_shift);
+    //debug_early_u64("elf phys   : ", (u64)mmu::elf_phys_start);
+    //debug_early_u64("vm_shift   : ", kernel_vm_shift);
     elf_start = mmu::elf_phys_start + kernel_vm_shift;
     elf_size = (u64)edata - (u64)elf_start;
 

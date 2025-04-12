@@ -41,8 +41,10 @@ namespace pci {
         while (pos <= PCI_CFG_BAR_6) {
             u32 bar_v = pci_readl(pos);
 
-            //if (bar_v == 0 && !(pos == PCI_CFG_BAR_2 && is_msix())) { //THIS is what breaks !
-            if (bar_v == 0) { //On Graviton MSIX is non-zero and not PCI_CFG_BAR_2 (maybe)
+            //TODO: Which logic should be to accomodate all cases?
+            //Which of the 2 lines works on QEMU with EFI (same as Graviton - 2nd)
+            if (bar_v == 0 && !(pos == PCI_CFG_BAR_2 && is_msix())) { //THIS is what breaks ! -> work on QEMU without EFI
+            //if (bar_v == 0) { //On Graviton MSIX is non-zero and not PCI_CFG_BAR_2 (maybe) -> this is for Graviton
                 pos += 4;
                 idx++;
                 continue;

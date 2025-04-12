@@ -261,6 +261,9 @@ def start_osv_qemu(options):
 
         args += ["-device", net_device_options_str]
 
+    if int(options.nics) == 0:
+        args += ["-nic", "none"]
+
     if options.hypervisor != 'qemu_microvm':
         args += ["-device", "virtio-rng-pci%s" % options.virtio_device_suffix]
 

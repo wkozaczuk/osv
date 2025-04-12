@@ -48,6 +48,7 @@ bool interrupt_manager::setup_entry(unsigned entry_id, msix_vector* msix)
     u32 msix_data;
 
     gic::gic->msi_format(&msix_address, &msix_data, vector);
+    debugf("interrupt_manager::setup_entry(): entry_id:%u ... AFTER msi format\n", entry_id);
 
     if (msix_address == 0) {
         return (false);
