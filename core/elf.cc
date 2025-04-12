@@ -98,6 +98,8 @@ void* symbol_module::relocated_addr() const
         break;
     case STT_IFUNC:
         return reinterpret_cast<void *(*)()>(base + symbol->st_value)();
+    case STT_TLS:
+        return obj->tls_addr() + symbol->st_value;
     default:
         abort("Unknown symbol type %d\n", symbol_type(*symbol));
     }
@@ -126,6 +128,7 @@ object::object(program& prog, std::string pathname)
     , _eh_frame(0)
     , _visibility_thread(nullptr)
     , _visibility_level(VisibilityLevel::Public)
+    , _dlopen_ed(false)
 {
     elf_debug("Instantiated\n");
 }
@@ -764,6 +767,37 @@ void object::relocate_rela()
     elf_debug("Relocated %d symbols in DT_RELA\n", nb);
 }
 
+void object::relocate_relr()
+{
+    //SHT_RELR: The section holds an array of relocation entries, used to encode
+    //relative relocations that do not require explicit addends or other information.
+    auto relr = dynamic_ptr<Elf64_Relr>(DT_RELR);
+    unsigned nb = dynamic_val(DT_RELRSZ) / sizeof(Elf64_Relr);
+    void **reloc_addr = 0;
+    for (auto p = relr; p < relr + nb; ++p) {
+        // - An even entry indicates a location which needs a relocation
+        //   and sets up where for subsequent odd entries.
+        // - An odd entry indicates a bitmap encoding up to 63 locations following where.
+        // - Odd entries can be chained.
+        auto entry = *p;
+        if ((entry & 1) == 0) {
+            reloc_addr = static_cast<void**>(_base + entry);
+            u64 val = *reinterpret_cast<u64*>(reloc_addr);
+            *reloc_addr++ = _base + val;
+        } else {
+            int bit_idx = 0;
+            for (size_t bitmap = entry; (bitmap >>= 1); bit_idx++) {
+                if (bitmap & 1) {
+                    u64 val = *reinterpret_cast<u64*>(reloc_addr + bit_idx);
+                    *(reloc_addr + bit_idx) = _base + val;
+                }
+            }
+            reloc_addr += (8 * sizeof(Elf64_Addr) - 1);
+	}
+    }
+    elf_debug("Relocated %d symbols in DT_RELR\n", nb);
+}
+
 extern "C" { void __elf_resolve_pltgot(void); }
 
 void object::relocate_pltgot()
@@ -863,6 +897,9 @@ void object::relocate()
     }
     if (dynamic_exists(DT_RELA)) {
         relocate_rela();
+    }
+    if (dynamic_exists(DT_RELR)) {
+        relocate_relr();
     }
 }
 
@@ -1230,11 +1267,19 @@ void* object::tls_addr()
 
 void object::alloc_static_tls()
 {
+    if (is_core()) {
+        return;
+    }
+
     auto tls_size = get_tls_size();
     if (!_static_tls && tls_size) {
         _static_tls = true;
-        _static_tls_offset = _static_tls_alloc.fetch_add(tls_size, std::memory_order_relaxed);
-        elf_debug("Allocated static TLS at offset: 0x%x of size: 0x%x\n", _static_tls_offset, tls_size);
+        if (_is_dynamically_linked_executable) {
+            elf_debug("Marked static TLS for a PIE of size: 0x%x\n", tls_size);
+        } else {
+            _static_tls_offset = _static_tls_alloc.fetch_add(tls_size, std::memory_order_relaxed);
+            elf_debug("Allocated static TLS at offset: 0x%x of size: 0x%x\n", _static_tls_offset, tls_size);
+        }
     }
 }
 
@@ -1262,8 +1307,9 @@ void object::init_static_tls()
         _initial_tls_size = 0;
         return;
     }
-    assert(_initial_tls_size);
-    _initial_tls.reset(new char[_initial_tls_size]);
+    if (_initial_tls_size) {
+        _initial_tls.reset(new char[_initial_tls_size]);
+    }
     for (auto&& obj : deps) {
         if (obj->is_core()) {
             continue;
@@ -1272,7 +1318,7 @@ void object::init_static_tls()
             obj->prepare_local_tls(_initial_tls_offsets);
             elf_debug("Initialized local-exec static TLS for %s\n", obj->pathname().c_str());
         }
-        else {
+        else if (_initial_tls_size) {
             obj->prepare_initial_tls(_initial_tls.get(), _initial_tls_size,
                                      _initial_tls_offsets);
             elf_debug("Initialized initial-exec static TLS for %s of size: 0x%x\n", obj->pathname().c_str(), _initial_tls_size);
@@ -1411,7 +1457,7 @@ static std::string canonicalize(std::string p)
 // get_library() will run the init functions later.
 std::shared_ptr<elf::object>
 program::load_object(std::string name, std::vector<std::string> extra_path,
-        std::vector<std::shared_ptr<object>> &loaded_objects)
+        std::vector<std::shared_ptr<object>> &loaded_objects, bool dlopen)
 {
     fileref f;
     if (_files.count(name)) {
@@ -1452,6 +1498,7 @@ program::load_object(std::string name, std::vector<std::string> extra_path,
                 [=](object *obj) { remove_object(obj); });
         ef->set_base(_next_alloc);
         ef->set_visibility(ThreadOnly);
+        ef->set_dlopen_ed(dlopen);
         // We need to push the object at the end of the list (so that the main
         // shared object gets searched before the shared libraries it uses),
         // with one exception: the kernel needs to remain at the end of the
@@ -1487,7 +1534,7 @@ program::load_object(std::string name, std::vector<std::string> extra_path,
 }
 
 std::shared_ptr<object>
-program::get_library(std::string name, std::vector<std::string> extra_path, bool delay_init)
+program::get_library(std::string name, std::vector<std::string> extra_path, bool delay_init, bool dlopen)
 {
     SCOPE_LOCK(_mutex);
     //
@@ -1503,7 +1550,7 @@ program::get_library(std::string name, std::vector<std::string> extra_path, bool
     // structure so each init_library call gets it's corresponding list of objects to operate on.
     //
     std::vector<std::shared_ptr<object>> loaded_objects;
-    auto ret = load_object(name, extra_path, loaded_objects);
+    auto ret = load_object(name, extra_path, loaded_objects, dlopen);
     _loaded_objects_stack.push(loaded_objects);
 
     if (ret) {
@@ -1924,16 +1971,24 @@ void* elf_resolve_pltgot(unsigned long index, elf::object* obj)
     }
 }
 
-struct module_and_offset {
-    ulong module;
-    ulong offset;
-};
-
 char *object::setup_tls()
 {
     elf_debug("Setting up dynamic TLS of %d bytes\n", _tls_init_size + _tls_uninit_size);
     return (char *) sched::thread::current()->setup_tls(
             _module_index, _tls_segment, _tls_init_size, _tls_uninit_size);
+}
+
+
+extern "C" OSV_LD_LINUX_x86_64_API
+void* __tls_dynamic_setup(module_and_offset* mao)
+{
+    // Invocation of dynamic TLS descriptor can happen with a dirty fpu
+    sched::fpu_lock fpu;
+    WITH_LOCK(fpu) {
+        object *obj = get_program()->tls_object(mao->module);
+        assert(mao->module == obj->module_index());
+        return obj->setup_tls();
+    }
 }
 
 extern "C" OSV_LD_LINUX_x86_64_API
