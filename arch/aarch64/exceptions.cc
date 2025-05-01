@@ -16,6 +16,7 @@
 #include "exceptions.hh"
 #include "fault-fixup.hh"
 #include "dump.hh"
+#include "gic-v3.hh"
 
 __thread exception_frame* current_interrupt_frame;
 class interrupt_table idt __attribute__((init_priority((int)init_prio::idt)));
@@ -60,13 +61,26 @@ void interrupt_table::disable_irq(int id)
 
 unsigned interrupt_table::register_handler(std::function<void ()> handler)
 {
-    //TODO: Implement it
-    return 0;
+    unsigned vector = next_msi_vector.fetch_add(1);
+    unsigned index = vector - msi_vector_base;
+    if (index >= max_msi_vectors) {
+        abort("The MSI vector %d too large\n", index);
+    }
+
+    debug_early_u64("Registered handler for MSI vector: ", vector);
+    msi_handlers[index] = handler;
+    enable_irq(vector);
+    return vector;
 }
 
 void interrupt_table::unregister_handler(unsigned vector)
 {
-    //TODO: Implement it
+    unsigned index = vector - msi_vector_base;
+    if (index >= max_msi_vectors) {
+        abort("The MSI vector %d too large\n", index);
+    }
+    msi_handlers[index] = 0;
+    disable_irq(vector);
 }
 
 void interrupt_table::register_interrupt(interrupt *interrupt)
@@ -133,32 +147,61 @@ void interrupt_table::unregister_interrupt(interrupt *interrupt)
     }
 }
 
-bool interrupt_table::invoke_interrupt(unsigned int id)
+void interrupt_table::init_msi_vector_base(u32 initial)
+{
+    msi_vector_base = initial;
+    next_msi_vector.store(initial);
+}
+
+bool interrupt_table::invoke_interrupt(unsigned int iar)
 {
 #if CONF_lazy_stack_invariant
     assert(!arch::irq_enabled());
 #endif
     WITH_LOCK(osv::rcu_read_lock) {
-        assert(id < this->nr_irqs);
-        interrupt_desc *desc = this->irq_desc[id].read();
-
-        if (!desc || desc->handlers.empty()) {
-            return false;
-        }
-
-        int i, nr_shared = desc->handlers.size();
-        for (i = 0 ; i < nr_shared; i++) {
-            if (desc->acks[i]()) {
-                break;
+        // First see if it is an MSI vector and handle it
+        if (iar >= msi_vector_base) {
+            unsigned handler_idx = iar - msi_vector_base;
+            if (handler_idx >= max_msi_vectors || !msi_handlers[handler_idx]) {
+                // This should never happen unless there is some bug
+                // in the MSI configuration code
+                debug_early_u64("unhandled MSI interruptID iar=", iar);
+                assert(0);
+            } else {
+                msi_handlers[handler_idx]();
             }
-        }
-
-        if (i < nr_shared) {
-            desc->handlers[i]();
             return true;
         }
 
-        return false;
+        unsigned int irq = iar & 0x3ff;
+        if (irq >= gic::gic->nr_of_irqs()) {
+            // Note that special values 1022 and 1023 are used for
+            // group 1 and spurious interrupts respectively.
+            debug_early_u64("special InterruptID detected irq=", irq);
+            return false;
+        } else {
+            interrupt_desc *desc = this->irq_desc[irq].read();
+
+            if (!desc || desc->handlers.empty()) {
+                debug_early_u64("unhandled InterruptID irq=", irq);
+                return true;
+            }
+
+            int i, nr_shared = desc->handlers.size();
+            for (i = 0 ; i < nr_shared; i++) {
+                if (desc->acks[i]()) {
+                    break;
+                }
+            }
+
+            if (i < nr_shared) {
+                desc->handlers[i]();
+                return true;
+            }
+
+            debug_early_u64("unhandled InterruptID irq=", irq);
+            return true;
+        }
     }
 }
 
@@ -168,20 +211,14 @@ void interrupt(exception_frame* frame)
 {
     sched::fpu_lock fpu;
     SCOPE_LOCK(fpu);
-    /* remember frame in a global, need to change if going to nested */
+
+    // Rather that force the exception frame down the call stack,
+    // remember it in a global here. This works because our interrupts
+    // don't nest.
     current_interrupt_frame = frame;
 
     unsigned int iar = gic::gic->ack_irq();
-    unsigned int irq = iar & 0x3ff;
-
-    /* note that special values 1022 and 1023 are used for
-       group 1 and spurious interrupts respectively. */
-    if (irq >= gic::gic->nr_of_irqs()) {
-        debug_early_u64("special InterruptID detected irq=", irq);
-
-    } else {
-        if (!idt.invoke_interrupt(irq))
-            debug_early_u64("unhandled InterruptID irq=", irq);
+    if (idt.invoke_interrupt(iar)) {
         gic::gic->end_irq(iar);
     }
 

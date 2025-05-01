@@ -254,7 +254,7 @@ void interrupt(exception_frame* frame)
     sched::fpu_lock fpu;
     SCOPE_LOCK(fpu);
     // Rather that force the exception frame down the call stack,
-    // remember it in a global here.  This works because our interrupts
+    // remember it in a global here. This works because our interrupts
     // don't nest.
     current_interrupt_frame = frame;
     unsigned vector = frame->error_code;

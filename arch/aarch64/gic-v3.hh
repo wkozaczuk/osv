@@ -324,7 +324,7 @@ private:
 
     std::unordered_map<u32, void*> _itt_by_device_id;
     std::unordered_map<unsigned int, u32> _cpu_by_vector;
-    spinlock _smp_init_its_lock;
+    irq_spinlock_t _smp_init_its_lock;
 };
 
 }

@@ -174,8 +174,8 @@ void gic_v3_its::read_type_register()
     _typer = read_reg64(gic_its_reg::GICITS_TYPER);
 }
 
-//TODO: Maybe can be smaller but has to be a multiple of 4K
-#define GIC_ITS_CMD_QUEUE_SIZE  0x10000 //64 KB
+//The 4K queue is enough for 128 commands before it circulates back
+#define GIC_ITS_CMD_QUEUE_SIZE  0x1000 //4 KB
 //https://developer.arm.com/documentation/102923/0100/ITS/The-command-queue
 void gic_v3_its::initialize_cmd_queue()
 {
@@ -465,7 +465,7 @@ void gic_v3_driver::init_redist(int smp_idx)
     }
 
     if (!smp_idx) {
-        //idt.init_msi_vector(GIC_LPI_INTS_START); TODO
+        idt.init_msi_vector_base(GIC_LPI_INTS_START);
     }
 }
 
