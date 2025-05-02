@@ -403,14 +403,16 @@ bool dtb_get_gic_v3(u64 *dist, size_t *dist_len, u64 *redist, size_t *redist_len
     *redist = addr[1];
     *redist_len = len[1];
 
-    //Fetch ITS configuration
+    //Fetch optional ITS configuration
     int its_node = fdt_node_offset_by_compatible(dtb, -1, "arm,gic-v3-its");
     if (its_node < 0) {
-        return false;
+        *its = 0;
+        return true;
     }
 
     if (!dtb_get_reg_n(its_node, addr, len, 1)) {
-        return false;
+        *its = 0;
+        return true;
     }
 
     *its = addr[0];

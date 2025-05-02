@@ -138,8 +138,10 @@ void arch_setup_free_memory()
         mmu::linear_map((void *)redist, (mmu::phys)redist, redist_len, "gic_redist", mmu::page_size,
                         mmu::mattr::dev);
         /* linear_map [TTBR0 - GIC ITS] */
-        mmu::linear_map((void *)its, (mmu::phys)its, its_len, "gic_its", mmu::page_size,
-                        mmu::mattr::dev);
+        if (its) {
+            mmu::linear_map((void *)its, (mmu::phys)its, its_len, "gic_its", mmu::page_size,
+                            mmu::mattr::dev);
+        }
 	debug_early("arch-setup: enabled GICv3.\n");
     } else if (dtb_get_gic_v2(&dist, &dist_len, &cpuif, &cpuif_len)) {
         gic::gic = new gic::gic_v2_driver(dist, cpuif);

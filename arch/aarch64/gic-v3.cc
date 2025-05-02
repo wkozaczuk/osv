@@ -295,6 +295,11 @@ void gic_v3_its::cmd_mapc(int smp_idx, mmu::phys rdbase)
 
 void gic_v3_driver::init_lpis(int smp_idx)
 {
+    //Check if ITS is supported which is for example not a case on Firecracker
+    if (!_gits.base()) {
+        return;
+    }
+
     if (smp_idx == 0) {
         //Identify number of LPIs supported by GIC
         //See https://developer.arm.com/documentation/ddi0601/2022-06/External-Registers/GICD-TYPER--Interrupt-Controller-Type-Register?lang=en
@@ -509,6 +514,11 @@ void gic_v3_driver::init_its_device_or_collection_table(int idx)
 //https://developer.arm.com/documentation/102923/0100/ITS/Initial-configuration-of-an-ITS
 void gic_v3_driver::init_its(int smp_idx)
 {
+    //Check if ITS is supported which is for example not a case on Firecracker
+    if (!_gits.base()) {
+        return;
+    }
+
     if (smp_idx == 0) {
         _gits.read_type_register();
 
