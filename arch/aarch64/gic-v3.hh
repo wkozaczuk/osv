@@ -154,7 +154,7 @@ namespace gic {
 
 class gic_v3_dist : public gic_dist {
 public:
-    gic_v3_dist(mmu::phys b) : gic_dist(b) {}
+    gic_v3_dist(mmu::phys b, size_t l) : gic_dist(b, l) {}
 
     void enable();
     void disable();
@@ -165,7 +165,7 @@ public:
 //Redistributor interface
 class gic_v3_redist {
 public:
-    gic_v3_redist(mmu::phys b) : _base(b) {}
+    gic_v3_redist(mmu::phys b, size_t l);
 
     u32 read_at_offset(int smp_idx, u32 offset);
     u64 read64_at_offset(int smp_idx, u32 offset);
@@ -236,7 +236,7 @@ struct its_cmd {
 //Interrupt Translation Service interface
 class gic_v3_its {
 public:
-    gic_v3_its(mmu::phys b) : _base(b) {}
+    gic_v3_its(mmu::phys b, size_t l);
 
     u64 read_reg64(gic_its_reg r);
     u64 read_reg64_at_offset(gic_its_reg r, u32 offset);
@@ -270,7 +270,10 @@ constexpr int max_sgi_cpus = 16;
 
 class gic_v3_driver : public gic_driver {
 public:
-    gic_v3_driver(mmu::phys d, mmu::phys r, mmu::phys i) : _gicd(d), _gicr(r), _gits(i) {}
+    gic_v3_driver(mmu::phys d, size_t d_len,
+                  mmu::phys r, size_t r_len,
+                  mmu::phys i, size_t i_len) :
+        _gicd(d, d_len), _gicr(r, r_len), _gits(i, i_len) {}
 
     virtual void init_on_primary_cpu()
     {

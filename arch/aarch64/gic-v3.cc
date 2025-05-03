@@ -49,6 +49,7 @@
 #include <osv/sched.hh>
 #include <osv/contiguous_alloc.hh>
 #include <osv/ilog2.hh>
+#include <osv/mmu.hh>
 #include <drivers/pci-function.hh>
 
 #include <algorithm>
@@ -83,6 +84,11 @@ void gic_v3_dist::enable()
     write_reg(gicd_reg::GICD_CTLR, GICD_CTLR_ARE_NS |
                         GICD_CTLR_ENABLE_G0 | GICD_CTLR_ENABLE_G1NS);
     wait_for_write_complete();
+}
+
+gic_v3_redist::gic_v3_redist(mmu::phys b, size_t l) : _base(b)
+{
+    mmu::linear_map((void *)_base, _base, l, "gic_redist", mmu::page_size, mmu::mattr::dev);
 }
 
 //TODO: These 4 below assume the CPU redistributors are consecutive - the 0 is first, the 1 is 2nd, etc
@@ -142,6 +148,14 @@ static uint32_t get_cpu_affinity(void)
         (mpidr & MPIDR_AFF0_MASK);
 
     return (uint32_t)aff;
+}
+
+gic_v3_its::gic_v3_its(mmu::phys b, size_t l) : _base(b)
+{
+    if (b && l) {
+        mmu::linear_map((void *)_base, _base, l, "gic_its", mmu::page_size,
+                        mmu::mattr::dev);
+    }
 }
 
 u64 gic_v3_its::read_reg64(gic_its_reg reg)
@@ -323,7 +337,7 @@ void gic_v3_driver::init_lpis(int smp_idx)
         memset(config_table, 0, _msi_vector_num);
         _lpi_config_table = (u8*)config_table;
 
-        u64 id_bits = ilog2_roundup<u64>(_msi_vector_num + GIC_LPI_INTS_START) - 1; //TODO: Double-check this
+        u64 id_bits = ilog2_roundup<u64>(_msi_vector_num + GIC_LPI_INTS_START) - 1;
         debug_early_u64("gic_v3::init_lpis() ID bits: ", id_bits);
         _lpi_prop_base = mmu::virt_to_phys(config_table) | id_bits;
 

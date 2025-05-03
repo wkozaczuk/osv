@@ -94,7 +94,7 @@ enum class irq_type : unsigned int {
 /* GIC Distributor Interface */
 class gic_dist {
 protected:
-    gic_dist(mmu::phys b) : _base(b) {}
+    gic_dist(mmu::phys b, size_t l);
 
 public:
     u32 read_reg(gicd_reg r);

@@ -128,33 +128,17 @@ void arch_setup_free_memory()
 #endif
 
     //Locate GICv2 or GICv3 information in DTB and construct corresponding GIC driver
-    //and map relevant physical memory
-    u64 dist, redist, cpuif, its;
-    size_t dist_len, redist_len, cpuif_len, its_len;
+    u64 dist, redist, cpuif, its, v2m;
+    size_t dist_len, redist_len, cpuif_len, its_len, v2m_len;
     if (dtb_get_gic_v3(&dist, &dist_len, &redist, &redist_len, &its, &its_len)) {
-	debug_early_u64("arch-setup: GICv3 its:", its);
-        gic::gic = new gic::gic_v3_driver(dist, redist, its);
-        /* linear_map [TTBR0 - GIC REDIST] */
-        mmu::linear_map((void *)redist, (mmu::phys)redist, redist_len, "gic_redist", mmu::page_size,
-                        mmu::mattr::dev);
-        /* linear_map [TTBR0 - GIC ITS] */
-        if (its) {
-            mmu::linear_map((void *)its, (mmu::phys)its, its_len, "gic_its", mmu::page_size,
-                            mmu::mattr::dev);
-        }
+        gic::gic = new gic::gic_v3_driver(dist, dist_len, redist, redist_len, its, its_len);
 	debug_early("arch-setup: enabled GICv3.\n");
-    } else if (dtb_get_gic_v2(&dist, &dist_len, &cpuif, &cpuif_len)) {
-        gic::gic = new gic::gic_v2_driver(dist, cpuif);
-        /* linear_map [TTBR0 - GIC CPUIF] */
-        mmu::linear_map((void *)cpuif, (mmu::phys)cpuif, cpuif_len, "gic_cpuif", mmu::page_size,
-                        mmu::mattr::dev);
-	debug_early("arch-setup: enabled GICv2.\n");
+    } else if (dtb_get_gic_v2(&dist, &dist_len, &cpuif, &cpuif_len, &v2m, &v2m_len)) {
+        gic::gic = new gic::gic_v2_driver(dist, dist_len, cpuif, cpuif_len, v2m, v2m_len);
+	debug_early_u64("arch-setup: enabled GICv2.\n", v2m_len);
     } else {
         abort("arch-setup: failed to get GICv3 nor GiCv2 information from dtb.\n");
     }
-    /* linear_map [TTBR0 - GIC DIST] */
-    mmu::linear_map((void *)dist, (mmu::phys)dist, dist_len, "gic_dist", mmu::page_size,
-                    mmu::mattr::dev);
 
 #if CONF_drivers_pci
     if (!opt_pci_disabled) {

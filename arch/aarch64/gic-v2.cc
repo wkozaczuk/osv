@@ -62,6 +62,11 @@ void gic_v2_dist::write_reg_grp(gicd_reg_irq2 reg, unsigned int irq, u8 value)
     mmio_setl((mmioaddr_t)_base + offset, old);
 }
 
+gic_v2_cpu::gic_v2_cpu(mmu::phys b, size_t l) : _base(b)
+{
+    mmu::linear_map((void *)_base, _base, l, "gic_cpuif", mmu::page_size, mmu::mattr::dev);
+}
+
 u32 gic_v2_cpu::read_reg(gicc_reg reg)
 {
     return mmio_getl((mmioaddr_t)_base + (u32)reg);
@@ -115,19 +120,6 @@ void gic_v2_driver::init_dist()
     _gicd.enable();
 }
 
-//TODO Take it from DTB
-/*
- *                 v2m@8020000 {
-                        phandle = <0x8003>;
-                        reg = <0x00 0x8020000 0x00 0x1000>;
-                        msi-controller;
-                        compatible = "arm,gic-v2m-frame";
-                };
-*/
-
-//Should come from the above
-#define DEV_BASE_GIC_V2M      0x08020000
-
 void gic_v2_driver::init_cpuif(int smp_idx)
 {
 #if CONF_logger_debug
@@ -156,20 +148,24 @@ void gic_v2_driver::init_cpuif(int smp_idx)
         _gicd.write_reg_grp(gicd_reg_irq1::GICD_ISENABLER, get_timer_irq_id(), 1);
     }
 
-    if (!smp_idx) {
-	//GICv2m is somewhat documented in https://documentation-service.arm.com/static/5fae4f00ca04df4095c1c988?token=
-	//chapter 9 (Appendix E) - GICV2M ARCHITECTURE)
-        mmu::linear_map((void *)DEV_BASE_GIC_V2M, (mmu::phys)DEV_BASE_GIC_V2M, 0x1000,
-		    "v2m", mmu::page_size, mmu::mattr::dev);
-        u64 typer = mmio_getl((mmioaddr_t)(DEV_BASE_GIC_V2M + 0x8));
-	u64 msi_base = (typer >> 16) & 0b11111111111ul; //Mask with 11bits or 12
-	debug_early_u64("msi_base: ", msi_base);
-	//idt.init_msi_vector(msi_base); TODO
-    }
-
 #if CONF_logger_debug
     debug_early("CPU interface enabled.\n");
 #endif
+}
+
+#define GIC2_V2M_TYPER_REG 0x8
+#define GIC2_V2M_MSI_BASE_MASK 0b11111111111ul //Mask with 11bits or 12
+void gic_v2_driver::init_v2m()
+{
+    if (!_v2m_base) {
+        return;
+    }
+    //GICv2m is somewhat documented in https://documentation-service.arm.com/static/5fae4f00ca04df4095c1c988?token=
+    //chapter 9 (Appendix E) - GICV2M ARCHITECTURE)
+    u64 typer = mmio_getl((mmioaddr_t)(_v2m_base + GIC2_V2M_TYPER_REG));
+    u64 msi_base = (typer >> 16) & GIC2_V2M_MSI_BASE_MASK;
+    debug_early_u64("msi_base: ", msi_base);
+    idt.init_msi_vector_base(msi_base);
 }
 
 void gic_v2_driver::mask_irq(unsigned int id)
@@ -242,12 +238,13 @@ void gic_v2_driver::end_irq(unsigned int iar)
 void gic_v2_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu)
 {
     WITH_LOCK(gic_lock) {
-        //u32 device_id = pci_device_id(dev);
 	//TODO: Not necesarily best place but the SPI actint as MSIs need to be of type EDGE
+        //Normally the irq type is passed from the driver
+        //Is irq type in general not passed when msi?
         _gicd.write_reg_grp(gicd_reg_irq2::GICD_ICFGR, vector, (u32)(irq_type::IRQ_TYPE_EDGE) << 1);
     }
-    //TODO: If kept switch to debug early because interrupts maybe enabled
-    //debugf("gic_v2_driver::map_msi_vector: device_id=%d, vector:%u, cpu:%u\n", dev->get_device_id(), vector, target_cpu); 
+    //TODO: If kept switch to debug early because interrupts may be disabled
+    //debugf("gic_v2_driver::map_msi_vector: device_id=%d, vector:%u, cpu:%u\n", dev->get_device_id(), vector, target_cpu);
 }
 
 //Not sure about the below
@@ -255,7 +252,7 @@ void gic_v2_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 
 
 void gic_v2_driver::msi_format(u64 *address, u32 *data, int vector)
 {
-    *address = DEV_BASE_GIC_V2M + GIC_V2M_MSI_SETSPI_NS;
+    *address = _v2m_base + GIC_V2M_MSI_SETSPI_NS;
     *data = vector;
     debugf("gic_v2_driver::msi_format: address:%p, vector:%u\n", *address, vector);
 }
