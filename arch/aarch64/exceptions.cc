@@ -63,7 +63,7 @@ unsigned interrupt_table::register_handler(std::function<void ()> handler)
 {
     unsigned vector = next_msi_vector.fetch_add(1);
     unsigned index = vector - msi_vector_base;
-    if (index >= max_msi_vectors) {
+    if (index >= max_msi_handlers) {
         abort("The MSI vector %d too large\n", index);
     }
 
@@ -76,7 +76,7 @@ unsigned interrupt_table::register_handler(std::function<void ()> handler)
 void interrupt_table::unregister_handler(unsigned vector)
 {
     unsigned index = vector - msi_vector_base;
-    if (index >= max_msi_vectors) {
+    if (index >= max_msi_handlers) {
         abort("The MSI vector %d too large\n", index);
     }
     msi_handlers[index] = 0;
@@ -160,9 +160,9 @@ bool interrupt_table::invoke_interrupt(unsigned int iar)
 #endif
     WITH_LOCK(osv::rcu_read_lock) {
         // First see if it is an MSI vector and handle it
-        if (iar >= msi_vector_base) {
+        if (iar >= msi_vector_base && iar <= max_msi_vector) {
             unsigned handler_idx = iar - msi_vector_base;
-            if (handler_idx >= max_msi_vectors || !msi_handlers[handler_idx]) {
+            if (handler_idx >= max_msi_handlers || !msi_handlers[handler_idx]) {
                 // This should never happen unless there is some bug
                 // in the MSI configuration code
                 debug_early_u64("unhandled MSI interruptID iar=", iar);

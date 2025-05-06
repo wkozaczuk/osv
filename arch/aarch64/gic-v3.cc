@@ -511,6 +511,9 @@ void gic_v3_driver::init_redist(int smp_idx)
 
     if (!smp_idx) {
         idt.init_msi_vector_base(GIC_LPI_INTS_START);
+        debug_early_u64("msi_vector_base: ", GIC_LPI_INTS_START);
+        idt.set_max_msi_vector(GIC_LPI_INTS_START + _msi_vector_num - 1);
+        debug_early_u64("max_msi_vector: ", GIC_LPI_INTS_START + _msi_vector_num - 1);
     }
 }
 

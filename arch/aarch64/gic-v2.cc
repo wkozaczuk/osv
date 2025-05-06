@@ -166,6 +166,9 @@ void gic_v2_driver::init_v2m()
     u64 msi_base = (typer >> 16) & GIC2_V2M_MSI_BASE_MASK;
     debug_early_u64("msi_base: ", msi_base);
     idt.init_msi_vector_base(msi_base);
+    u64 msi_vector_num = typer & GIC2_V2M_MSI_BASE_MASK;
+    idt.set_max_msi_vector(msi_base + msi_vector_num - 1);
+    debug_early_u64("max_msi_vector: ", msi_base + msi_vector_num - 1);
 }
 
 void gic_v2_driver::mask_irq(unsigned int id)
