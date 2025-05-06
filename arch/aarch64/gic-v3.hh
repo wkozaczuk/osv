@@ -103,6 +103,8 @@
 #define GICR_INVLPIR               (0x00A0)
 #define GICR_INVALLR               (0x00B0)
 #define GICR_SYNCR                 (0x00C0)
+#define GICR_TYPER_LAST            (0b10000)
+#define GICR_TYPER_VLPIS           (0b10)
 
 #define GICR_WAKER_ProcessorSleep  (1U << 1)
 #define GICR_WAKER_ChildrenAsleep  (1U << 2)
@@ -124,6 +126,11 @@
 #define GICR_ICFGR1                (GICR_SGI_BASE + 0x0C04)
 #define GICR_IGRPMODR0             (GICR_SGI_BASE + 0x0D00)
 #define GICR_NSACR                 (GICR_SGI_BASE + 0x0E00)
+
+#define GICR_TYPER_AFF3(type)      (((type) & 0xff00000000000000) >> 56)
+#define GICR_TYPER_AFF2(type)      (((type) & 0x00ff000000000000) >> 48)
+#define GICR_TYPER_AFF1(type)      (((type) & 0x0000ff0000000000) >> 40)
+#define GICR_TYPER_AFF0(type)      (((type) & 0x000000ff00000000) >> 32)
 
 #define GICD_DEF_PPI_ICENABLERn	   0xffff0000
 #define GICD_DEF_SGI_ISENABLERn    0xffff
@@ -167,16 +174,21 @@ class gic_v3_redist {
 public:
     gic_v3_redist(mmu::phys b, size_t l);
 
+    void init_cpu_base(int smp_idx);
+
     u32 read_at_offset(int smp_idx, u32 offset);
     u64 read64_at_offset(int smp_idx, u32 offset);
     void write_at_offset(int smp_idx, u32 offset, u32 value);
     void write64_at_offset(int smp_idx, u32 offset, u64 value);
 
-    mmu::phys rdbase(int smp_idx, bool pta);
+    void init_rdbase(int smp_idx, bool pta);
+    inline mmu::phys rdbase(int smp_idx) { return _rdbases[smp_idx]; }
 
     void wait_for_write_complete();
 private:
     mmu::phys _base;
+    mmu::phys *_cpu_bases;
+    mmu::phys *_rdbases;
 };
 
 //See https://developer.arm.com/documentation/ddi0601/2024-09/External-Registers/GITS-BASER-n---ITS-Table-Descriptors
@@ -273,10 +285,11 @@ public:
     gic_v3_driver(mmu::phys d, size_t d_len,
                   mmu::phys r, size_t r_len,
                   mmu::phys i, size_t i_len) :
-        _gicd(d, d_len), _gicr(r, r_len), _gits(i, i_len) {}
+        _gicd(d, d_len), _gicrd(r, r_len), _gits(i, i_len) {}
 
     virtual void init_on_primary_cpu()
     {
+        _gicrd.init_cpu_base(0);
         init_lpis(0);
         init_dist();
         init_redist(0);
@@ -285,6 +298,7 @@ public:
 
     virtual void init_on_secondary_cpu(int smp_idx)
     {
+        _gicrd.init_cpu_base(smp_idx);
         init_lpis(smp_idx);
         init_redist(smp_idx);
         init_its(smp_idx);
@@ -315,7 +329,7 @@ private:
     u32 pci_device_id(pci::function* dev);
 
     gic_v3_dist _gicd;
-    gic_v3_redist _gicr;
+    gic_v3_redist _gicrd;
     gic_v3_its _gits;
     u64 _mpids_by_smpid[max_sgi_cpus];
 

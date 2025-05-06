@@ -91,31 +91,54 @@ gic_v3_redist::gic_v3_redist(mmu::phys b, size_t l) : _base(b)
     mmu::linear_map((void *)_base, _base, l, "gic_redist", mmu::page_size, mmu::mattr::dev);
 }
 
-//TODO: These 4 below assume the CPU redistributors are consecutive - the 0 is first, the 1 is 2nd, etc
-//In reality these need to be matched using the MPIDR_AFFx == GICR_TYPER_AFFx using the GICR_TYPER
-//register and could be 2*64kb (GICR_STRIDE) or 4*64kb (see VLPIS bit 1) and LAST (bit 4)
-//See https://developer.arm.com/documentation/ddi0601/2025-03/External-Registers/GICR-TYPER--Redistributor-Type-Register?lang=en
-//So the correct solution would be to have an array of rdist bases for each cpu and
-//have it determined in per-cpu init where we would loop every 2/4*64k until last
-//and check AFF if matches
+void gic_v3_redist::init_cpu_base(int smp_idx)
+{
+    if (!smp_idx) {
+        _cpu_bases = new mmu::phys[sched::cpus.size()];
+    }
+
+    debug_early_u64("init_cpu_base: smp_idx:", smp_idx);
+    uint64_t mpidr = processor::read_mpidr();
+
+    u64 offset = 0;
+    u64 typer;
+    do {
+        typer = mmio_getq((mmioaddr_t)_base + (offset + GICR_TYPER));
+
+        if (((mpidr & MPIDR_AFF3_MASK) >> 32) == GICR_TYPER_AFF3(typer) &&
+            ((mpidr & MPIDR_AFF2_MASK) >> 16) == GICR_TYPER_AFF2(typer) &&
+            ((mpidr & MPIDR_AFF1_MASK) >> 8) == GICR_TYPER_AFF1(typer) &&
+             (mpidr & MPIDR_AFF0_MASK) == GICR_TYPER_AFF0(typer)) {
+            break;
+        }
+        offset += GICR_STRIDE;
+        if (typer & GICR_TYPER_VLPIS) {
+            offset += GICR_STRIDE;
+        }
+    } while (!(typer & GICR_TYPER_LAST));
+
+    assert(offset == ((u64)smp_idx * GICR_STRIDE));
+    _cpu_bases[smp_idx] = _base + offset;
+}
+
 u32 gic_v3_redist::read_at_offset(int smp_idx, u32 offset)
 {
-    return mmio_getl((mmioaddr_t)_base + smp_idx * GICR_STRIDE + offset);
+    return mmio_getl((mmioaddr_t)_cpu_bases[smp_idx] + offset);
 }
 
 u64 gic_v3_redist::read64_at_offset(int smp_idx, u32 offset)
 {
-    return mmio_getq((mmioaddr_t)_base + smp_idx * GICR_STRIDE + offset);
+    return mmio_getq((mmioaddr_t)_cpu_bases[smp_idx] + offset);
 }
 
 void gic_v3_redist::write_at_offset(int smp_idx, u32 offset, u32 value)
 {
-    mmio_setl((mmioaddr_t)_base + smp_idx * GICR_STRIDE + offset, value);
+    mmio_setl((mmioaddr_t)_cpu_bases[smp_idx] + offset, value);
 }
 
 void gic_v3_redist::write64_at_offset(int smp_idx, u32 offset, u64 value)
 {
-    mmio_setq((mmioaddr_t)_base + smp_idx * GICR_STRIDE + offset, value);
+    mmio_setq((mmioaddr_t)_cpu_bases[smp_idx] + offset, value);
 }
 
 void gic_v3_redist::wait_for_write_complete()
@@ -127,14 +150,17 @@ void gic_v3_redist::wait_for_write_complete()
     } while (val & GICD_CTLR_WRITE_COMPLETE);
 }
 
-//TODO: Verify formula
-mmu::phys gic_v3_redist::rdbase(int smp_idx, bool pta)
+void gic_v3_redist::init_rdbase(int smp_idx, bool pta)
 {
+    if (!smp_idx) {
+        _rdbases = new mmu::phys[sched::cpus.size()];
+    }
+
     if (pta) {
-        return (_base + smp_idx * GICR_STRIDE) >> 16;
+        _rdbases[smp_idx] = (_cpu_bases[smp_idx]) >> 16;
     } else {
-	u64 typer = read64_at_offset(smp_idx, GICR_TYPER);
-	return GICR_TYPER_PROC_NUM(typer);
+        u64 typer = read64_at_offset(smp_idx, GICR_TYPER);
+        _rdbases[smp_idx] = GICR_TYPER_PROC_NUM(typer);
     }
 }
 
@@ -351,11 +377,11 @@ void gic_v3_driver::init_lpis(int smp_idx)
         _lpi_pend_base = mmu::virt_to_phys(pending_table) | GICR_PENDBASER_PTZ;
     }
 
-    _gicr.write64_at_offset(smp_idx, GICR_PROPBASER, _lpi_prop_base);
-    _gicr.write64_at_offset(smp_idx, GICR_PENDBASER, _lpi_pend_base);
+    _gicrd.write64_at_offset(smp_idx, GICR_PROPBASER, _lpi_prop_base);
+    _gicrd.write64_at_offset(smp_idx, GICR_PENDBASER, _lpi_pend_base);
 
     //Enable LPIs
-    _gicr.write_at_offset(smp_idx, GICR_CTLR, GICR_CTLR_EnableLPIs);
+    _gicrd.write_at_offset(smp_idx, GICR_CTLR, GICR_CTLR_EnableLPIs);
 }
 
 /* to be called only from the boot CPU */
@@ -429,33 +455,33 @@ void gic_v3_driver::init_redist(int smp_idx)
     _mpids_by_smpid[smp_idx] = processor::read_mpidr();
 
     /* Wake up CPU redistributor */
-    u32 val = _gicr.read_at_offset(smp_idx, GICR_WAKER);
+    u32 val = _gicrd.read_at_offset(smp_idx, GICR_WAKER);
     val &= ~GICR_WAKER_ProcessorSleep;
-    _gicr.write_at_offset(smp_idx, GICR_WAKER, val);
+    _gicrd.write_at_offset(smp_idx, GICR_WAKER, val);
 
     /* Poll GICR_WAKER.ChildrenAsleep */
     do {
-        val = _gicr.read_at_offset(smp_idx, GICR_WAKER);
+        val = _gicrd.read_at_offset(smp_idx, GICR_WAKER);
     } while ((val & GICR_WAKER_ChildrenAsleep));
 
     /* Set PPI and SGI to a default value */
     for (unsigned int i = 0; i < GIC_SPI_BASE; i += GICD_I_PER_IPRIORITYn)
-        _gicr.write_at_offset(smp_idx, GICR_IPRIORITYR4(i), GICD_IPRIORITY_DEF);
+        _gicrd.write_at_offset(smp_idx, GICR_IPRIORITYR4(i), GICD_IPRIORITY_DEF);
 
     /* Deactivate SGIs and PPIs as the state is unknown at boot */
-    _gicr.write_at_offset(smp_idx, GICR_ICACTIVER0, GICD_DEF_ICACTIVERn);
+    _gicrd.write_at_offset(smp_idx, GICR_ICACTIVER0, GICD_DEF_ICACTIVERn);
 
     /* Disable all PPIs */
-    _gicr.write_at_offset(smp_idx, GICR_ICENABLER0, GICD_DEF_PPI_ICENABLERn);
+    _gicrd.write_at_offset(smp_idx, GICR_ICENABLER0, GICD_DEF_PPI_ICENABLERn);
 
     /* Configure SGIs and PPIs as non-secure Group 1 */
-    _gicr.write_at_offset(smp_idx, GICR_IGROUPR0, GICD_DEF_IGROUPRn);
+    _gicrd.write_at_offset(smp_idx, GICR_IGROUPR0, GICD_DEF_IGROUPRn);
 
     /* Enable all SGIs */
-    _gicr.write_at_offset(smp_idx, GICR_ISENABLER0, GICD_DEF_SGI_ISENABLERn);
+    _gicrd.write_at_offset(smp_idx, GICR_ISENABLER0, GICD_DEF_SGI_ISENABLERn);
 
     /* Wait for completion */
-    _gicr.wait_for_write_complete();
+    _gicrd.wait_for_write_complete();
 
     /* Enable system register access */
     val = READ_SYS_REG32(ICC_SRE_EL1);
@@ -480,7 +506,7 @@ void gic_v3_driver::init_redist(int smp_idx)
     //Enable cpu timer on secondary CPU
     if (smp_idx) {
         u32 val = 1UL << (get_timer_irq_id() % GICR_I_PER_ISENABLERn);
-        _gicr.write_at_offset(smp_idx, GICR_ISENABLER0, val);
+        _gicrd.write_at_offset(smp_idx, GICR_ISENABLER0, val);
     }
 
     if (!smp_idx) {
@@ -549,7 +575,9 @@ void gic_v3_driver::init_its(int smp_idx)
     }
 
     //Init on each cpu
-    mmu::phys rdbase = _gicr.rdbase(smp_idx, _gits.is_typer_pta());
+    _gicrd.init_rdbase(smp_idx, _gits.is_typer_pta());
+    mmu::phys rdbase = _gicrd.rdbase(smp_idx);
+    debug_early_u64("init_its: rdbase: ", rdbase);
 
     if (smp_idx == 0) {
         // Init on primary CPU
@@ -575,7 +603,7 @@ void gic_v3_driver::mask_irq(unsigned int irq)
             _gicd.write_reg_at_offset((u32)gicd_reg_irq1::GICD_ICENABLER, 4 * (irq >> 5), val);
         } else {
             u32 val = 1UL << (irq % GICR_I_PER_ICENABLERn);
-            _gicr.write_at_offset(sched::cpu::current()->id, GICR_ICENABLER0, val);
+            _gicrd.write_at_offset(sched::cpu::current()->id, GICR_ICENABLER0, val);
         }
     }
 }
@@ -591,7 +619,7 @@ void gic_v3_driver::unmask_irq(unsigned int irq)
             _gicd.write_reg_at_offset((u32)gicd_reg_irq1::GICD_ISENABLER, 4 * (irq >> 5), val);
         } else {
             u32 val = 1UL << (irq % GICR_I_PER_ISENABLERn);
-            _gicr.write_at_offset(sched::cpu::current()->id, GICR_ISENABLER0, val);
+            _gicrd.write_at_offset(sched::cpu::current()->id, GICR_ISENABLER0, val);
         }
     }
 }
@@ -733,10 +761,11 @@ void gic_v3_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 
         _cpu_by_vector.insert(std::make_pair(vector, target_cpu));
 
         //Sync redistributor
-        mmu::phys rdbase = _gicr.rdbase(target_cpu, _gits.is_typer_pta());
+        mmu::phys rdbase = _gicrd.rdbase(target_cpu);
+        debug_early_u64("map_msi_vector: rdbase: ", rdbase);
         _gits.cmd_sync(rdbase);
     }
-    debugf("gic_v3::map_msi_vector(): device_id=%d, vector:%u, cpu:%u\n", dev->get_device_id(), vector, target_cpu);
+    //debugf("gic_v3::map_msi_vector(): device_id=%d, vector:%u, cpu:%u\n", dev->get_device_id(), vector, target_cpu);
 }
 
 void gic_v3_driver::unmap_msi_vector(unsigned int vector, pci::function* dev)
@@ -750,7 +779,7 @@ void gic_v3_driver::unmap_msi_vector(unsigned int vector, pci::function* dev)
             _gits.cmd_inv(device_id, vector);
 
             //Sync redistributor
-            mmu::phys rdbase = _gicr.rdbase(vector_cpu->second, _gits.is_typer_pta());
+            mmu::phys rdbase = _gicrd.rdbase(vector_cpu->second);
             _gits.cmd_sync(rdbase);
         }
     }
@@ -761,7 +790,7 @@ void gic_v3_driver::msi_format(u64 *address, u32 *data, int vector)
 {
     *address = _gits.base() + GITS_TRANSLATER;
     *data = vector - GIC_LPI_INTS_START;
-    debugf("gic_v3::msi_format(): address:%p, vector:%u\n", *address, vector);
+    //debugf("gic_v3::msi_format(): address:%p, vector:%u\n", *address, vector);
 }
 
 }
