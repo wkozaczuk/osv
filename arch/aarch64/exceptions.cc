@@ -40,6 +40,8 @@ interrupt_table::interrupt_table() {
 #if CONF_logger_debug
     debug_early_entry("interrupt_table::interrupt_table()");
 #endif
+    this->msi_vector_base = 0;
+    this->max_msi_vector = 0;
 
     gic::gic->init_on_primary_cpu();
 
@@ -166,7 +168,7 @@ bool interrupt_table::invoke_interrupt(unsigned int iar)
 #endif
     WITH_LOCK(osv::rcu_read_lock) {
         // First see if it is an MSI vector and handle it
-        if (iar >= msi_vector_base && iar <= max_msi_vector) {
+        if (iar && iar >= msi_vector_base && iar <= max_msi_vector) {
             unsigned handler_idx = iar - msi_vector_base;
             if (handler_idx >= max_msi_handlers || !msi_handlers[handler_idx]) {
                 // This should never happen unless there is some bug
