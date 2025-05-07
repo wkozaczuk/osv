@@ -240,14 +240,8 @@ void gic_v2_driver::end_irq(unsigned int iar)
 
 void gic_v2_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu)
 {
-    WITH_LOCK(gic_lock) {
-	//TODO: Not necesarily best place but the SPI actint as MSIs need to be of type EDGE
-        //Normally the irq type is passed from the driver
-        //Is irq type in general not passed when msi?
-        _gicd.write_reg_grp(gicd_reg_irq2::GICD_ICFGR, vector, (u32)(irq_type::IRQ_TYPE_EDGE) << 1);
-    }
-    //TODO: If kept switch to debug early because interrupts may be disabled
-    //debugf("gic_v2_driver::map_msi_vector: device_id=%d, vector:%u, cpu:%u\n", dev->get_device_id(), vector, target_cpu);
+    //TODO: when investigating and fixing affinity
+    //set target cpu using GICD_ITARGETSR - look line 112
 }
 
 //Not sure about the below

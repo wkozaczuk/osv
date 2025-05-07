@@ -315,6 +315,8 @@ public:
     virtual void end_irq(unsigned int iar);
 
     virtual void allocate_msi_dev_mapping(pci::function* dev);
+
+    virtual void initialize_msi_vector(unsigned int vector) {}
     virtual void map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu);
     virtual void unmap_msi_vector(unsigned int vector, pci::function* dev);
     virtual void msi_format(u64 *address, u32 *data, int vector);

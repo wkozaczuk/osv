@@ -135,6 +135,8 @@ public:
     unsigned int nr_of_irqs() { return _nr_irqs; }
 
     virtual void allocate_msi_dev_mapping(pci::function* dev) = 0;
+
+    virtual void initialize_msi_vector(unsigned int vector) = 0;
     virtual void map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu) = 0;
     virtual void unmap_msi_vector(unsigned int vector, pci::function* dev) = 0;
     virtual void msi_format(u64 *address, u32 *data, int vector) = 0;

@@ -65,6 +65,8 @@ private:
     void enable_irq(int id);
     void disable_irq(int id);
 
+    void enable_msi_vector(unsigned vector);
+
     std::atomic<u32> next_msi_vector;
     u32 max_msi_vector;
     u32 msi_vector_base;

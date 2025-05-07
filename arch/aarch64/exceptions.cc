@@ -59,6 +59,12 @@ void interrupt_table::disable_irq(int id)
     gic::gic->mask_irq(id);
 }
 
+void interrupt_table::enable_msi_vector(unsigned vector)
+{
+    gic::gic->initialize_msi_vector(vector);
+    gic::gic->unmask_irq(vector);
+}
+
 unsigned interrupt_table::register_handler(std::function<void ()> handler)
 {
     unsigned vector = next_msi_vector.fetch_add(1);
@@ -69,7 +75,7 @@ unsigned interrupt_table::register_handler(std::function<void ()> handler)
 
     debug_early_u64("Registered handler for MSI vector: ", vector);
     msi_handlers[index] = handler;
-    enable_irq(vector);
+    enable_msi_vector(vector);
     return vector;
 }
 
