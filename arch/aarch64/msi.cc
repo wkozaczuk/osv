@@ -45,25 +45,21 @@ bool interrupt_manager::setup_entry(unsigned entry_id, msix_vector* msix, sched:
 {
     auto vector = msix->get_vector();
 
-    debugf("interrupt_manager::setup_entry(): entry_id:%u ... about to map msi vector\n", entry_id);
     gic::gic->map_msi_vector(vector, _dev, cpu ? cpu->id : 0);
 
     u64 msix_address;
     u32 msix_data;
 
     gic::gic->msi_format(&msix_address, &msix_data, vector);
-    debugf("interrupt_manager::setup_entry(): entry_id:%u ... AFTER msi format\n", entry_id);
 
     if (msix_address == 0) {
         return (false);
     }
 
     if (_dev->is_msix()) {
-        debugf("interrupt_manager::setup_entry(): BEFORE msix_write_entry entry_id:%u, address:%lx, data:%x\n", entry_id, msix_address, msix_data);
         if (!_dev->msix_write_entry(entry_id, msix_address, msix_data)) {
             return false;
         }
-        debugf("interrupt_manager::setup_entry(): entry_id:%u, address:%lx, data:%x\n", entry_id, msix_address, msix_data);
     } else {
         if (!_dev->msi_write_entry(entry_id, msix_address, msix_data)) {
             return false;
@@ -71,6 +67,5 @@ bool interrupt_manager::setup_entry(unsigned entry_id, msix_vector* msix, sched:
     }
 
     msix->add_entryid(entry_id);
-    //gic::gic->unmask_irq(vector);
     return (true);
 }

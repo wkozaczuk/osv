@@ -132,10 +132,8 @@ void arch_setup_free_memory()
     size_t dist_len, redist_len, cpuif_len, its_len, v2m_len;
     if (dtb_get_gic_v3(&dist, &dist_len, &redist, &redist_len, &its, &its_len)) {
         gic::gic = new gic::gic_v3_driver(dist, dist_len, redist, redist_len, its, its_len);
-	debug_early("arch-setup: enabled GICv3.\n");
     } else if (dtb_get_gic_v2(&dist, &dist_len, &cpuif, &cpuif_len, &v2m, &v2m_len)) {
         gic::gic = new gic::gic_v2_driver(dist, dist_len, cpuif, cpuif_len, v2m, v2m_len);
-	debug_early_u64("arch-setup: enabled GICv2.\n", v2m_len);
     } else {
         abort("arch-setup: failed to get GICv3 nor GiCv2 information from dtb.\n");
     }

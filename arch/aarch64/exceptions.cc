@@ -75,7 +75,6 @@ unsigned interrupt_table::register_handler(std::function<void ()> handler)
         abort("The MSI vector %d too large\n", index);
     }
 
-    debug_early_u64("Registered handler for MSI vector: ", vector);
     msi_handlers[index] = handler;
     enable_msi_vector(vector);
     return vector;

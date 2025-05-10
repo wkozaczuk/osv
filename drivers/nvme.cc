@@ -496,7 +496,6 @@ bool driver::msix_register(unsigned iv,
                   t->wake_with_irq_disabled();
               });
 
-    //if (!_msi.setup_entry(iv, vec.get(), assign_affinity && t ? t->get_cpu() : nullptr)) {
     if (!_msi.setup_entry(iv, vec.get())) {
         return false;
     }

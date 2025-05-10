@@ -163,12 +163,12 @@ void gic_v2_driver::init_v2m()
     //GICv2m is somewhat documented in https://documentation-service.arm.com/static/5fae4f00ca04df4095c1c988?token=
     //chapter 9 (Appendix E) - GICV2M ARCHITECTURE)
     u64 typer = mmio_getl((mmioaddr_t)(_v2m_base + GIC2_V2M_TYPER_REG));
+
     u64 msi_base = (typer >> 16) & GIC2_V2M_MSI_BASE_MASK;
-    debug_early_u64("msi_base: ", msi_base);
     idt.init_msi_vector_base(msi_base);
+
     u64 msi_vector_num = typer & GIC2_V2M_MSI_BASE_MASK;
     idt.set_max_msi_vector(msi_base + msi_vector_num - 1);
-    debug_early_u64("max_msi_vector: ", msi_base + msi_vector_num - 1);
 }
 
 void gic_v2_driver::mask_irq(unsigned int id)
@@ -180,7 +180,6 @@ void gic_v2_driver::mask_irq(unsigned int id)
 
 void gic_v2_driver::unmask_irq(unsigned int id)
 {
-    debug_early_u64("gic_v2_driver::unmask_irq() id: ", id);
     WITH_LOCK(gic_lock) {
         _gicd.write_reg_grp(gicd_reg_irq1::GICD_ISENABLER, id, 1);
     }
@@ -240,16 +239,13 @@ void gic_v2_driver::end_irq(unsigned int iar)
 
 void gic_v2_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu)
 {
-    debug_early_u64("gic_v2_driver::map_msi_vector() vector: ", vector);
-    debug_early_u64("gic_v2_driver::map_msi_vector() cpu   : ", target_cpu);
     WITH_LOCK(gic_lock) {
         unsigned int reg = vector / 4;
         u32 cpuMask = _gicd.read_reg_at_offset((u32)gicd_reg_irq8::GICD_ITARGETSR, reg * 4);
-        debug_early_u64("gic_v2_driver::map_msi_vector() mask O: ", cpuMask);
+
         unsigned int bitOffset = (vector % 4) * 8;
         cpuMask &= ~(0b11111111 << bitOffset);
         cpuMask |= ((1 << target_cpu) << bitOffset);
-        debug_early_u64("gic_v2_driver::map_msi_vector() mask N: ", cpuMask);
         _gicd.write_reg_at_offset((u32)gicd_reg_irq8::GICD_ITARGETSR, reg * 4, cpuMask);
     }
 }
@@ -261,6 +257,5 @@ void gic_v2_driver::msi_format(u64 *address, u32 *data, int vector)
 {
     *address = _v2m_base + GIC_V2M_MSI_SETSPI_NS;
     *data = vector;
-    //debugf("gic_v2_driver::msi_format: address:%p, vector:%u\n", *address, vector);
 }
 }

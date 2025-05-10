@@ -97,7 +97,6 @@ void gic_v3_redist::init_cpu_base(int smp_idx)
         _cpu_bases = new mmu::phys[sched::cpus.size()];
     }
 
-    debug_early_u64("init_cpu_base: smp_idx:", smp_idx);
     uint64_t mpidr = processor::read_mpidr();
 
     u64 offset = 0;
@@ -222,7 +221,6 @@ void gic_v3_its::initialize_cmd_queue()
     //Queue needs to be 64KB aligned
     _cmd_queue = memory::alloc_phys_contiguous_aligned(GIC_ITS_CMD_QUEUE_SIZE, 0x10000);
     memset(_cmd_queue, 0, GIC_ITS_CMD_QUEUE_SIZE);
-    debug_early_u64("gic_v3::initialize_cmd_queue() GIC_ITS_CMD_QUEUE_SIZE: ", GIC_ITS_CMD_QUEUE_SIZE);
 
     u64 cmd_queue_pa = mmu::virt_to_phys(_cmd_queue);
     u64 queue_size_in_pages = GIC_ITS_CMD_QUEUE_SIZE / mmu::page_size;
@@ -236,7 +234,6 @@ void gic_v3_its::enqueue_cmd(its_cmd *cmd)
 {
     u64 cread = read_reg64(gic_its_reg::GICITS_CREADR);
     u64 cwrite = read_reg64(gic_its_reg::GICITS_CWRITER);
-    debug_early_u64("gic_v3::enqueue_cmd() cwrite: ", cwrite);
     //
     //Wait until queue is not full
     while (cread == cwrite + sizeof(*cmd)) {
@@ -369,7 +366,6 @@ void gic_v3_driver::init_lpis(int smp_idx)
         //Read https://developer.arm.com/documentation/102923/0100/Redistributors/Initial-configuration-of-a-Redistributor
         //and https://developer.arm.com/documentation/ddi0601/2024-09/External-Registers/GICR-PROPBASER--Redistributor-Properties-Base-Address-Register
         _msi_vector_num = std::max(_msi_vector_num, (u16)4096);
-        debug_early_u64("gic_v3::init_lpis() number of LPIs: ", _msi_vector_num);
 
         //Set up LPI configuration table
         void *config_table = memory::alloc_phys_contiguous_aligned(_msi_vector_num, 4096);
@@ -377,12 +373,10 @@ void gic_v3_driver::init_lpis(int smp_idx)
         _lpi_config_table = (u8*)config_table;
 
         u64 id_bits = ilog2_roundup<u64>(_msi_vector_num + GIC_LPI_INTS_START) - 1;
-        debug_early_u64("gic_v3::init_lpis() ID bits: ", id_bits);
         _lpi_prop_base = mmu::virt_to_phys(config_table) | id_bits;
 
         //Set up LPI pending table
         size_t pending_table_size = (_msi_vector_num + GIC_LPI_INTS_START) / 8;
-        debug_early_u64("gic_v3::init_lpis() pending_table_size: ", pending_table_size);
         void *pending_table = memory::alloc_phys_contiguous_aligned(pending_table_size, 4096);
         memset(pending_table, 0, pending_table_size);
 
@@ -406,8 +400,6 @@ void gic_v3_driver::init_dist()
     if (_nr_irqs > GIC_MAX_IRQ) {
         _nr_irqs = GIC_MAX_IRQ + 1;
     }
-
-    debug_early_u64("gic_v3::init_dist() _nr_irqs: ", _nr_irqs);
 
     /* Configure all SPIs as non-secure Group 1 */
     for (unsigned int i = GIC_SPI_BASE; i < _nr_irqs; i += GICD_I_PER_IGROUPRn)
@@ -524,9 +516,7 @@ void gic_v3_driver::init_redist(int smp_idx)
 
     if (!smp_idx) {
         idt.init_msi_vector_base(GIC_LPI_INTS_START);
-        debug_early_u64("msi_vector_base: ", GIC_LPI_INTS_START);
         idt.set_max_msi_vector(GIC_LPI_INTS_START + _msi_vector_num - 1);
-        debug_early_u64("max_msi_vector: ", GIC_LPI_INTS_START + _msi_vector_num - 1);
     }
 }
 
@@ -537,7 +527,6 @@ void gic_v3_driver::init_redist(int smp_idx)
 void gic_v3_driver::init_its_device_or_collection_table(int idx)
 {
     //Read https://developer.arm.com/documentation/ddi0601/2024-09/External-Registers/GITS-BASER-n---ITS-Table-Descriptors
-    debug_early_u64("gic_v3::init_its_device_or_collection_table() idx ", idx);
     u32 offset = idx * 8;
     u64 base = _gits.read_reg64_at_offset(gic_its_reg::GICITS_BASER, offset);
 
@@ -553,7 +542,6 @@ void gic_v3_driver::init_its_device_or_collection_table(int idx)
     u64 table_size = page_size_type == GITS_TABLE_PAGE_SIZE_4K ? 0x1000 :
 	           (page_size_type == GITS_TABLE_PAGE_SIZE_16K ? 0x4000 : 0x10000);
 
-    debug_early_u64("gic_v3::init_its_device_or_collection_table() table_size: ", table_size);
     //if (type == GITS_TABLE_DEVICES_TYPE) {
     //    //TODO: Calculate maximum devices count and save it somewhere
     //}
@@ -563,7 +551,6 @@ void gic_v3_driver::init_its_device_or_collection_table(int idx)
 
     u64 table_pa = mmu::virt_to_phys(table);
     base = (base & ~GITS_TABLE_BASE_PA_MASK) | table_pa;
-    debug_early_u64("gic_v3::init_its_device_or_collection_table() base: ", base);
     _gits.write_reg64_at_offset(gic_its_reg::GICITS_BASER, offset, GITS_BASER_VALID | base);
 }
 
@@ -593,7 +580,6 @@ void gic_v3_driver::init_its(int smp_idx)
     //Init on each cpu
     _gicrd.init_rdbase(smp_idx, _gits.is_typer_pta());
     mmu::phys rdbase = _gicrd.rdbase(smp_idx);
-    debug_early_u64("init_its: rdbase: ", rdbase);
 
     if (smp_idx == 0) {
         // Init on primary CPU
@@ -626,7 +612,6 @@ void gic_v3_driver::mask_irq(unsigned int irq)
 
 void gic_v3_driver::unmask_irq(unsigned int irq)
 {
-    debug_early_u64("gic::unmask_irq() id: ", irq);
     WITH_LOCK(gic_lock) {
         if (irq >= GIC_LPI_INTS_START) {
             _lpi_config_table[irq - GIC_LPI_INTS_START] |= GIC_LPI_ENABLE;
@@ -752,13 +737,11 @@ void gic_v3_driver::allocate_msi_dev_mapping(pci::function* dev)
             itt_size = std::max(itt_size, (u64)256);
 
             void *itt = memory::alloc_phys_contiguous_aligned(itt_size, 256);
-            debugf("gic_v3::allocate_msi_dev_mapping(): device_id=%d, itt_size:%d\n", dev->get_device_id(), itt_size);
             memset(itt, 0, itt_size);
             _itt_by_device_id.insert(std::make_pair(device_id, itt));
 
             u64 itt_pa = mmu::virt_to_phys(itt);
             _gits.cmd_mapd(device_id, itt_pa, ilog2_roundup<u64>(entries_num) - 1);
-            debugf("gic_v3::allocate_msi_dev_mapping(): device_id=%d, created MAPPING\n", dev->get_device_id());
         }
     }
 }
@@ -780,8 +763,6 @@ void gic_v3_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 
 
             //Sync redistributor
             mmu::phys rdbase = _gicrd.rdbase(target_cpu);
-            debug_early_u64("map_msi_vector: vector:  ", vector);
-            debug_early_u64("map_msi_vector: new cpu: ", target_cpu);
             _gits.cmd_sync(rdbase);
         } else if (vector_cpu->second != target_cpu) { //We need to move interrupt to different redistributor (cpu)
             //Read https://developer.arm.com/documentation/102923/0100/ITS/Migrating-interrupts-between-Redistributors
@@ -792,15 +773,11 @@ void gic_v3_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 
             //
             //Sync old redistributor
             mmu::phys rdbase = _gicrd.rdbase(vector_cpu->second);
-            debug_early_u64("map_msi_vector: vector:  ", vector);
-            debug_early_u64("map_msi_vector: old cpu: ", vector_cpu->second);
-            debug_early_u64("map_msi_vector: new cpu: ", target_cpu);
             _gits.cmd_sync(rdbase);
 
             _cpu_by_vector.insert(std::make_pair(vector, target_cpu));
         }
     }
-    //debugf("gic_v3::map_msi_vector(): device_id=%d, vector:%u, cpu:%u\n", dev->get_device_id(), vector, target_cpu);
 }
 
 void gic_v3_driver::unmap_msi_vector(unsigned int vector, pci::function* dev)
@@ -825,7 +802,6 @@ void gic_v3_driver::msi_format(u64 *address, u32 *data, int vector)
 {
     *address = _gits.base() + GITS_TRANSLATER;
     *data = vector - GIC_LPI_INTS_START;
-    //debugf("gic_v3::msi_format(): address:%p, vector:%u\n", *address, vector);
 }
 
 }
