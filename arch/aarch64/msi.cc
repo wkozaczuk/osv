@@ -38,10 +38,15 @@ interrupt_manager::~interrupt_manager()
 
 bool interrupt_manager::setup_entry(unsigned entry_id, msix_vector* msix)
 {
+    return this->setup_entry(entry_id, msix, nullptr);
+}
+
+bool interrupt_manager::setup_entry(unsigned entry_id, msix_vector* msix, sched::cpu *cpu)
+{
     auto vector = msix->get_vector();
 
     debugf("interrupt_manager::setup_entry(): entry_id:%u ... about to map msi vector\n", entry_id);
-    gic::gic->map_msi_vector(vector, _dev, 0);
+    gic::gic->map_msi_vector(vector, _dev, cpu ? cpu->id : 0);
 
     u64 msix_address;
     u32 msix_data;

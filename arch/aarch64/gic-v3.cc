@@ -284,6 +284,19 @@ void gic_v3_its::cmd_mapti(u32 dev_id, int vector, int smp_idx)
     enqueue_cmd(&cmd);
 }
 
+//See 6.3.13 in GIC3/4 spec
+//"Updates the ICID field in the ITT entry for the event defined by DeviceID and EventID."
+void gic_v3_its::cmd_movi(u32 dev_id, int vector, int smp_idx)
+{
+    its_cmd cmd;
+    cmd.data[0] = ((u64)dev_id << 32) | (u32)gic_its_cmd::ITS_CMD_MOVI;
+    u32 event_id = vector - GIC_LPI_INTS_START;
+    cmd.data[1] = event_id;
+    cmd.data[2] = CPUID_2_ICID(smp_idx);
+    cmd.data[3] = 0;
+    enqueue_cmd(&cmd);
+}
+
 //See 6.3.6 in GIC3/4 spec
 //"Specifies that the ITS must ensure that any caching in the Redistributors associated with the specified
 // EventID is consistent with the LPI Configuration tables held in memory."
@@ -755,18 +768,37 @@ void gic_v3_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 
     WITH_LOCK(gic_lock) {
         u32 device_id = pci_device_id(dev);
 
-        //Read https://developer.arm.com/documentation/102923/0100/ITS/Mapping-an-interrupt-to-a-Redistributor
+        auto vector_cpu = _cpu_by_vector.find(vector);
+        if (vector_cpu == _cpu_by_vector.end()) {
+            //Read https://developer.arm.com/documentation/102923/0100/ITS/Mapping-an-interrupt-to-a-Redistributor
 
-        //Map event ID to collection ID
-        _gits.cmd_mapti(device_id, vector, target_cpu);
-        _gits.cmd_inv(device_id, vector);
+            //Map event ID to collection ID
+            _gits.cmd_mapti(device_id, vector, target_cpu);
+            _gits.cmd_inv(device_id, vector);
 
-        _cpu_by_vector.insert(std::make_pair(vector, target_cpu));
+            _cpu_by_vector.insert(std::make_pair(vector, target_cpu));
 
-        //Sync redistributor
-        mmu::phys rdbase = _gicrd.rdbase(target_cpu);
-        debug_early_u64("map_msi_vector: rdbase: ", rdbase);
-        _gits.cmd_sync(rdbase);
+            //Sync redistributor
+            mmu::phys rdbase = _gicrd.rdbase(target_cpu);
+            debug_early_u64("map_msi_vector: vector:  ", vector);
+            debug_early_u64("map_msi_vector: new cpu: ", target_cpu);
+            _gits.cmd_sync(rdbase);
+        } else if (vector_cpu->second != target_cpu) { //We need to move interrupt to different redistributor (cpu)
+            //Read https://developer.arm.com/documentation/102923/0100/ITS/Migrating-interrupts-between-Redistributors
+
+            //Re-Map event ID to collection ID
+            _gits.cmd_movi(device_id, vector, target_cpu);
+            _gits.cmd_inv(device_id, vector);
+            //
+            //Sync old redistributor
+            mmu::phys rdbase = _gicrd.rdbase(vector_cpu->second);
+            debug_early_u64("map_msi_vector: vector:  ", vector);
+            debug_early_u64("map_msi_vector: old cpu: ", vector_cpu->second);
+            debug_early_u64("map_msi_vector: new cpu: ", target_cpu);
+            _gits.cmd_sync(rdbase);
+
+            _cpu_by_vector.insert(std::make_pair(vector, target_cpu));
+        }
     }
     //debugf("gic_v3::map_msi_vector(): device_id=%d, vector:%u, cpu:%u\n", dev->get_device_id(), vector, target_cpu);
 }

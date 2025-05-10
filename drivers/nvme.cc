@@ -40,6 +40,7 @@ TRACEPOINT(trace_nvme_strategy, "bio=%p, bcount=%lu", struct bio*, size_t);
 
 #define QEMU_VID 0x1b36
 
+std::atomic<u64> io_submissions[4] = {};
 namespace nvme {
 
 int driver::_disk_idx = 0;
@@ -447,6 +448,7 @@ int driver::make_request(bio* bio, u32 nsid)
     }
 
     unsigned int qidx = sched::current_cpu->id % _io_queues.size();
+    io_submissions[sched::current_cpu->id].fetch_add(1, std::memory_order_relaxed);
     return _io_queues[qidx]->make_request(bio, nsid);
 }
 
@@ -494,6 +496,7 @@ bool driver::msix_register(unsigned iv,
                   t->wake_with_irq_disabled();
               });
 
+    //if (!_msi.setup_entry(iv, vec.get(), assign_affinity && t ? t->get_cpu() : nullptr)) {
     if (!_msi.setup_entry(iv, vec.get())) {
         return false;
     }

@@ -76,6 +76,8 @@ public:
     bool assign_isr(msix_vector*, std::function<void ()> handler);
     // Multiple entry can be assigned the same vector
     bool setup_entry(unsigned entry_id, msix_vector* vector);
+    // Multiple entry can be assigned the same vector
+    bool setup_entry(unsigned entry_id, msix_vector* vector, sched::cpu *cpu);
     // unmasks all interrupts
     bool unmask_interrupts(const std::vector<msix_vector*>& vectors);
 

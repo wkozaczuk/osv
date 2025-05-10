@@ -756,6 +756,9 @@ void* do_main_thread(void *_main_args)
     return nullptr;
 }
 
+extern std::atomic<u64> msi_counters[];
+extern std::atomic<u64> msi_vector_counters[];
+extern std::atomic<u64> io_submissions[];
 void main_cont(int loader_argc, char** loader_argv)
 {
     osv::firmware_probe();
@@ -861,6 +864,14 @@ void main_cont(int loader_argc, char** loader_argv)
         sched::thread::wait_until([] { return false; });
     }
 
+    printf("io subs: %lu, msi cpu0: %lu\n", io_submissions[0].load(), msi_counters[0].load());
+    printf("io subs: %lu, msi cpu1: %lu\n", io_submissions[1].load(), msi_counters[1].load());
+    printf("io subs: %lu, msi cpu2: %lu\n", io_submissions[2].load(), msi_counters[2].load());
+    printf("io subs: %lu, msi cpu3: %lu\n", io_submissions[3].load(), msi_counters[3].load());
+    printf("-----\n");
+    for (int i = 0; i < 10; i++) {
+        printf("msi vector: %x - %lu\n", 0x2000 + i, msi_vector_counters[i].load());
+    }
 #if CONF_memory_tracker
     if (memory::tracker_enabled) {
         debug("Leak testing done. Please use 'osv leak show' in gdb to analyze results.\n");

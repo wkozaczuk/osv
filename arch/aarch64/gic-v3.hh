@@ -262,6 +262,7 @@ public:
 
     void cmd_mapd(u32 dev_id, u64 itt_pa, u64 itt_size);
     void cmd_mapti(u32 dev_id, int vector, int smp_idx);
+    void cmd_movi(u32 dev_id, int vector, int smp_idx);
     void cmd_inv(u32 dev_id, int vector);
     void cmd_discard(u32 dev_id, int vector);
     void cmd_sync(mmu::phys rdbase);

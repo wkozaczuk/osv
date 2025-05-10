@@ -161,6 +161,8 @@ void interrupt_table::init_msi_vector_base(u32 initial)
     next_msi_vector.store(initial);
 }
 
+std::atomic<u64> msi_counters[4] = {};
+std::atomic<u64> msi_vector_counters[10] = {};
 bool interrupt_table::invoke_interrupt(unsigned int iar)
 {
 #if CONF_lazy_stack_invariant
@@ -177,6 +179,8 @@ bool interrupt_table::invoke_interrupt(unsigned int iar)
                 assert(0);
             } else {
                 msi_handlers[handler_idx]();
+                msi_counters[sched::cpu::current()->id].fetch_add(1, std::memory_order_relaxed);
+                msi_vector_counters[handler_idx].fetch_add(1, std::memory_order_relaxed);
             }
             return true;
         }
