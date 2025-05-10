@@ -240,8 +240,18 @@ void gic_v2_driver::end_irq(unsigned int iar)
 
 void gic_v2_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu)
 {
-    //TODO: when investigating and fixing affinity
-    //set target cpu using GICD_ITARGETSR - look line 112
+    debug_early_u64("gic_v2_driver::map_msi_vector() vector: ", vector);
+    debug_early_u64("gic_v2_driver::map_msi_vector() cpu   : ", target_cpu);
+    WITH_LOCK(gic_lock) {
+        unsigned int reg = vector / 4;
+        u32 cpuMask = _gicd.read_reg_at_offset((u32)gicd_reg_irq8::GICD_ITARGETSR, reg * 4);
+        debug_early_u64("gic_v2_driver::map_msi_vector() mask O: ", cpuMask);
+        unsigned int bitOffset = (vector % 4) * 8;
+        cpuMask &= ~(0b11111111 << bitOffset);
+        cpuMask |= ((1 << target_cpu) << bitOffset);
+        debug_early_u64("gic_v2_driver::map_msi_vector() mask N: ", cpuMask);
+        _gicd.write_reg_at_offset((u32)gicd_reg_irq8::GICD_ITARGETSR, reg * 4, cpuMask);
+    }
 }
 
 //Not sure about the below
@@ -251,6 +261,6 @@ void gic_v2_driver::msi_format(u64 *address, u32 *data, int vector)
 {
     *address = _v2m_base + GIC_V2M_MSI_SETSPI_NS;
     *data = vector;
-    debugf("gic_v2_driver::msi_format: address:%p, vector:%u\n", *address, vector);
+    //debugf("gic_v2_driver::msi_format: address:%p, vector:%u\n", *address, vector);
 }
 }
