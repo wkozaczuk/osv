@@ -141,11 +141,11 @@ ext_mount(struct mount *mp, const char *dev, int flags, const void *data)
     struct device *device;
 
     const char *dev_name = dev + 5;
-    ext_debug("Trying to open device: [%s]\n", dev_name);
+    kprintf("[ext4] Trying to open device: [%s]\n", dev_name);
     int error = device_open(dev_name, DO_RDWR, &device);
 
     if (error) {
-        kprintf("[ext4] Error opening device!\n");
+        kprintf("[ext4] Error opening device (BOLO)!\n");
         return error;
     }
 
@@ -172,8 +172,9 @@ ext_mount(struct mount *mp, const char *dev, int flags, const void *data)
 
     ext_debug("Trying to mount ext4 on device: [%s] with size:%ld\n", dev_name, device->size);
     int r = ext4_block_init(&ext_blockdev);
-    if (r != EOK)
+    if (r != EOK) {
         return r;
+    }
 
     r = ext4_fs_init(&ext_fs, &ext_blockdev, false);
     if (r != EOK) {
@@ -264,6 +265,7 @@ void __attribute__((constructor)) initialize_vfsops() {
     ext_vfsops.vfs_vget = ((vfsop_vget_t)vfs_nullop);
     ext_vfsops.vfs_statfs = ext_statfs;
     ext_vfsops.vfs_vnops = &ext_vnops;
+    ext_debug("libext LOADED!\n");
 }
 
 asm(".pushsection .note.osv-mlock, \"a\"; .long 0, 0, 0; .popsection");

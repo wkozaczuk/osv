@@ -1,4 +1,4 @@
-arch=x64
+#arch=x64
 include ../common.gmk
 
 module_out := $(out)/modules/libext
