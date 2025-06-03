@@ -97,6 +97,23 @@ typedef struct uio uio_t;
 typedef	off_t offset_t;
 typedef	struct vattr vattr_t;
 
+#define EXT4_EPOCH_BITS 2
+#define EXT4_EPOCH_MASK ((1 << EXT4_EPOCH_BITS) - 1)
+#define EXT4_NSEC_MASK (~0UL << EXT4_EPOCH_BITS)
+
+#define set_inode_time(inode, time, type) { \
+    ext4_inode_set_ ## type ## _time(inode, (int32_t)time.tv_sec); \
+    uint32_t extra_time = ((time.tv_sec - (int32_t)time.tv_sec) >> 32) & EXT4_EPOCH_MASK; \
+    ext4_inode_set_extra_ ## type ## _time(inode, extra_time | (time.tv_nsec << EXT4_EPOCH_BITS)); \
+}
+
+#define get_inode_time(inode, time, type) { \
+    time.tv_sec = ext4_inode_get_ ## type ## _time(inode); \
+    uint32_t extra_time = ext4_inode_get_extra_ ## type ## _time(inode); \
+    time.tv_sec += (uint64_t)(extra_time & EXT4_EPOCH_MASK) << 32; \
+    time.tv_nsec = (extra_time & EXT4_NSEC_MASK) >> EXT4_EPOCH_BITS; \
+}
+
 //TODO:
 //Ops:
 // - ext_ioctl
@@ -464,8 +481,10 @@ out_fsize:
 Finish:
     struct timespec now;
     clock_gettime(CLOCK_REALTIME, &now);
-    ext4_inode_set_change_inode_time(ref->inode, now.tv_sec);
-    ext4_inode_set_modif_time(ref->inode, now.tv_sec);
+    set_inode_time(ref->inode, now, change_inode);
+    set_inode_time(ref->inode, now, modif);
+    //ext4_inode_set_change_inode_time(ref->inode, now.tv_sec);
+    //ext4_inode_set_modif_time(ref->inode, now.tv_sec);
     ref->dirty = true;
 
     return r;
@@ -764,14 +783,19 @@ ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no, u
     if (r == EOK) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
-        ext4_inode_set_change_inode_time(child_ref.inode, now.tv_sec);
+        //ext4_inode_set_change_inode_time(child_ref.inode, now.tv_sec);
+        set_inode_time(child_ref.inode, now, change_inode);
         if (!inode_no) {
-            ext4_inode_set_access_time(child_ref.inode, now.tv_sec);
-            ext4_inode_set_modif_time(child_ref.inode, now.tv_sec);
+            //ext4_inode_set_access_time(child_ref.inode, now.tv_sec);
+            set_inode_time(child_ref.inode, now, access);
+            //ext4_inode_set_modif_time(child_ref.inode, now.tv_sec);
+            set_inode_time(child_ref.inode, now, modif);
         }
 
-        ext4_inode_set_change_inode_time(inode_ref._ref.inode, now.tv_sec);
-        ext4_inode_set_modif_time(inode_ref._ref.inode, now.tv_sec);
+        //ext4_inode_set_change_inode_time(inode_ref._ref.inode, now.tv_sec);
+        set_inode_time(inode_ref._ref.inode, now, change_inode);
+        //ext4_inode_set_modif_time(inode_ref._ref.inode, now.tv_sec);
+        set_inode_time(inode_ref._ref.inode, now, modif);
 
         inode_ref._ref.dirty = true;
         child_ref.dirty = true;
@@ -985,8 +1009,10 @@ ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
     if (r == EOK) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
-        ext4_inode_set_change_inode_time(parent._ref.inode, now.tv_sec);
-        ext4_inode_set_modif_time(parent._ref.inode, now.tv_sec);
+        //ext4_inode_set_change_inode_time(parent._ref.inode, now.tv_sec);
+        set_inode_time(parent._ref.inode, now, change_inode);
+        //ext4_inode_set_modif_time(parent._ref.inode, now.tv_sec);
+        set_inode_time(parent._ref.inode, now, modif);
 
         parent._ref.dirty = true;
     }
@@ -1147,9 +1173,12 @@ ext_getattr(vnode_t *vp, vattr_t *vap)
     vap->va_size = ext4_inode_get_size(&fs->sb, inode_ref._ref.inode);
     ext_debug("getattr: i-node:%ld va_size:%ld\n", vp->v_ino, vap->va_size);
 
-    vap->va_atime.tv_sec = ext4_inode_get_access_time(inode_ref._ref.inode);
-    vap->va_mtime.tv_sec = ext4_inode_get_modif_time(inode_ref._ref.inode);
-    vap->va_ctime.tv_sec = ext4_inode_get_change_inode_time(inode_ref._ref.inode);
+    get_inode_time(inode_ref._ref.inode, vap->va_atime, access);
+    get_inode_time(inode_ref._ref.inode, vap->va_mtime, modif);
+    get_inode_time(inode_ref._ref.inode, vap->va_ctime, change_inode);
+    //vap->va_atime.tv_sec = ext4_inode_get_access_time(inode_ref._ref.inode);
+    //vap->va_mtime.tv_sec = ext4_inode_get_modif_time(inode_ref._ref.inode);
+    //vap->va_ctime.tv_sec = ext4_inode_get_change_inode_time(inode_ref._ref.inode);
 
     //auto *fsid = &vnode->v_mount->m_fsid; //TODO
     //attr->va_fsid = ((uint32_t)fsid->__val[0]) | ((dev_t) ((uint32_t)fsid->__val[1]) << 32);
@@ -1170,17 +1199,20 @@ ext_setattr(vnode_t *vp, vattr_t *vap)
     }
 
     if (vap->va_mask & AT_ATIME) {
-        ext4_inode_set_access_time(inode_ref._ref.inode, vap->va_atime.tv_sec);
+        //ext4_inode_set_access_time(inode_ref._ref.inode, vap->va_atime.tv_sec);
+        set_inode_time(inode_ref._ref.inode, vap->va_atime, access);
         inode_ref._ref.dirty = true;
     }
 
     if (vap->va_mask & AT_CTIME) {
-        ext4_inode_set_change_inode_time(inode_ref._ref.inode, vap->va_ctime.tv_sec);
+        //ext4_inode_set_change_inode_time(inode_ref._ref.inode, vap->va_ctime.tv_sec);
+        set_inode_time(inode_ref._ref.inode, vap->va_ctime, change_inode);
         inode_ref._ref.dirty = true;
     }
 
     if (vap->va_mask & AT_MTIME) {
-        ext4_inode_set_modif_time(inode_ref._ref.inode, vap->va_mtime.tv_sec);
+        //ext4_inode_set_modif_time(inode_ref._ref.inode, vap->va_mtime.tv_sec);
+        set_inode_time(inode_ref._ref.inode, vap->va_mtime, modif);
         inode_ref._ref.dirty = true;
     }
 
