@@ -301,6 +301,8 @@ int main(int argc, char **argv)
 
     rc = open(N2, O_RDONLY | O_NOFOLLOW);
     report(rc < 0 && errno == ELOOP, "open(symlink, O_NOFOLLOW) must fail");
+
+    close(fd);
     report(unlink(N2) == 0, "unlink");
     report(unlink(N1) == 0, "unlink");
 
