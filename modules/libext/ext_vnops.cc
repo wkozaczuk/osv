@@ -572,6 +572,7 @@ ext_readdir(struct vnode *dvp, struct file *fp, struct dirent *dir)
     /* Check if node is directory */
     if (!ext4_inode_is_type(&fs->sb, inode_ref.inode, EXT4_INODE_MODE_DIRECTORY)) {
         ext4_fs_put_inode_ref(&inode_ref);
+        ext_debug("ext_readdir: i-node %li not a directory\n", dvp->v_ino);
         return ENOTDIR;
     }
 
@@ -631,6 +632,7 @@ static int
 ext_lookup(struct vnode *dvp, char *nm, struct vnode **vpp)
 {
     ext_debug("Looking up %s in directory with i-node:%ld\n", nm, dvp->v_ino);
+    *vpp = nullptr;
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
 
     auto_inode_ref inode_ref(fs, dvp->v_ino);
@@ -640,6 +642,7 @@ ext_lookup(struct vnode *dvp, char *nm, struct vnode **vpp)
 
     /* Check if node is directory */
     if (!ext4_inode_is_type(&fs->sb, inode_ref._ref.inode, EXT4_INODE_MODE_DIRECTORY)) {
+        ext_debug("ext_lookup: i-node %li not a directory\n", dvp->v_ino);
         return ENOTDIR;
     }
 
@@ -647,7 +650,10 @@ ext_lookup(struct vnode *dvp, char *nm, struct vnode **vpp)
     int r = ext4_dir_find_entry(&result, &inode_ref._ref, nm, strlen(nm));
     if (r == EOK) {
         uint32_t inode_no = ext4_dir_en_get_inode(result.dentry);
-        if (vget(dvp->v_mount, inode_no, vpp)) {
+        struct vnode *vp;
+        if (vget(dvp->v_mount, inode_no, &vp)) {
+            ext_debug("ext_lookup: i-node %i found in cache\n", inode_no);
+            *vpp = vp;
             return EOK;
         }
 
@@ -658,23 +664,24 @@ ext_lookup(struct vnode *dvp, char *nm, struct vnode **vpp)
 
         uint32_t i_type = ext4_inode_type(&fs->sb, inode_ref2._ref.inode);
         if (i_type == EXT4_INODE_MODE_DIRECTORY) {
-            (*vpp)->v_type = VDIR;
+            vp->v_type = VDIR;
         } else if (i_type == EXT4_INODE_MODE_FILE) {
-            (*vpp)->v_type = VREG;
-            (*vpp)->v_size = ext4_inode_get_size(&fs->sb, inode_ref2._ref.inode);
-            ext_debug("Looked up file %s with size:%ld\n", nm, (*vpp)->v_size);
+            vp->v_type = VREG;
+            vp->v_size = ext4_inode_get_size(&fs->sb, inode_ref2._ref.inode);
+            ext_debug("Looked up file %s with size:%ld\n", nm, vp->v_size);
         } else if (i_type == EXT4_INODE_MODE_SOFTLINK) {
-            (*vpp)->v_type = VLNK;
+            vp->v_type = VLNK;
         } else {
             uint32_t i_mode = ext4_inode_get_mode(&fs->sb, inode_ref2._ref.inode);
             ext_debug("Diff i_type:%x, i_mode:%x\n", i_type, i_mode);
         }
 
-        (*vpp)->v_mode = ext4_inode_get_mode(&fs->sb, inode_ref2._ref.inode);
+        vp->v_mode = ext4_inode_get_mode(&fs->sb, inode_ref2._ref.inode);
 
         ext_debug("Looked up %s %s in directory with i-node:%ld as i-node:%d\n",
-            (*vpp)->v_type == VDIR ? "DIR" : ((*vpp)->v_type == VREG ? "FILE" : "SYMLINK"),
+            vp->v_type == VDIR ? "DIR" : (vp->v_type == VREG ? "FILE" : "SYMLINK"),
             nm, dvp->v_ino, inode_no);
+        *vpp = vp;
     } else {
         r = ENOENT;
     }
@@ -733,6 +740,7 @@ ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no, u
 
     /* Check if node is directory */
     if (!ext4_inode_is_type(&fs->sb, inode_ref._ref.inode, EXT4_INODE_MODE_DIRECTORY)) {
+        ext_debug("ext_dir_link: i-node %li not a directory\n", dvp->v_ino);
         return ENOTDIR;
     }
 

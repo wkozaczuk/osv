@@ -206,6 +206,7 @@ ext_mount(struct mount *mp, const char *dev, int flags, const void *data)
     ext_blockdev.fs = &ext_fs;
     mp->m_data = &ext_fs;
     mp->m_root->d_vnode->v_ino = EXT4_INODE_ROOT_INDEX;
+    mp->m_root->d_vnode->v_type = VDIR;
 
     kprintf("[ext4] Mounted ext4 on device: [%s] with code:%d\n", dev_name, r);
     return r;
