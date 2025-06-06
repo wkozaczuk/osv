@@ -125,6 +125,7 @@ static int
 ext_open(struct file *fp)
 {
     ext_debug("Opening file\n");
+    //TODO: Reference count (look at ramfs)
     return (EOK);
 }
 
@@ -132,6 +133,8 @@ static int
 ext_close(vnode_t *vp, file_t *fp)
 {
     ext_debug("Closing file\n");
+    //TODO: Reference count (look at ramfs)
+    //TODO: Delete i-node if marked for deletion when remove or friends was called and it was open
     return (EOK);
 }
 
@@ -483,8 +486,6 @@ Finish:
     clock_gettime(CLOCK_REALTIME, &now);
     set_inode_time(ref->inode, now, change_inode);
     set_inode_time(ref->inode, now, modif);
-    //ext4_inode_set_change_inode_time(ref->inode, now.tv_sec);
-    //ext4_inode_set_modif_time(ref->inode, now.tv_sec);
     ref->dirty = true;
 
     return r;
@@ -493,8 +494,6 @@ Finish:
 static int
 ext_write(vnode_t *vp, uio_t *uio, int ioflag)
 {
-    ext_debug("Writing %ld bytes at offset:%ld to file i-node:%ld\n", uio->uio_resid, uio->uio_offset, vp->v_ino);
-
     /* Cant write directories */
     if (vp->v_type == VDIR)
         return EISDIR;
@@ -520,11 +519,13 @@ ext_write(vnode_t *vp, uio_t *uio, int ioflag)
         return inode_ref._r;
     }
 
-    uio_t uio_copy = *uio;
     if (ioflag & IO_APPEND) {
-        uio_copy.uio_offset = ext4_inode_get_size(&fs->sb, inode_ref._ref.inode);
+        uio->uio_offset = ext4_inode_get_size(&fs->sb, inode_ref._ref.inode);
     }
 
+    ext_debug("Writing %ld bytes at offset:%ld to file i-node:%ld\n", uio->uio_resid, uio->uio_offset, vp->v_ino);
+
+    uio_t uio_copy = *uio;
     void *buf = alloc_contiguous_aligned(uio->uio_resid, alignof(std::max_align_t));
     int ret = uiomove(buf, uio->uio_resid, &uio_copy);
     if (ret) {
@@ -729,7 +730,7 @@ ext_dir_initialize(ext4_inode_ref *parent, ext4_inode_ref *child, bool dir_index
 }
 
 static int
-ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no, uint32_t *inode_no_created)
+ext_dir_link(struct vnode *dvp, char *name, int file_type, mode_t mode, uint32_t *inode_no, uint32_t *inode_no_created)
 {
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
     auto_write_back wb(fs);
@@ -791,18 +792,21 @@ ext_dir_link(struct vnode *dvp, char *name, int file_type, uint32_t *inode_no, u
     if (r == EOK) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
-        //ext4_inode_set_change_inode_time(child_ref.inode, now.tv_sec);
         set_inode_time(child_ref.inode, now, change_inode);
         if (!inode_no) {
-            //ext4_inode_set_access_time(child_ref.inode, now.tv_sec);
             set_inode_time(child_ref.inode, now, access);
-            //ext4_inode_set_modif_time(child_ref.inode, now.tv_sec);
             set_inode_time(child_ref.inode, now, modif);
+
+            if (mode) {
+                uint32_t current_mode = ext4_inode_get_mode(&fs->sb, child_ref.inode);
+                uint32_t inode_type = current_mode & EXT4_INODE_MODE_TYPE_MASK;
+                uint32_t mode_to_set = (mode & ~EXT4_INODE_MODE_TYPE_MASK) | inode_type;
+                ext_debug("ext_dir_link: set mode of %s to:%x\n", name, mode_to_set);
+                ext4_inode_set_mode(&fs->sb, child_ref.inode, mode_to_set);
+            }
         }
 
-        //ext4_inode_set_change_inode_time(inode_ref._ref.inode, now.tv_sec);
         set_inode_time(inode_ref._ref.inode, now, change_inode);
-        //ext4_inode_set_modif_time(inode_ref._ref.inode, now.tv_sec);
         set_inode_time(inode_ref._ref.inode, now, modif);
 
         inode_ref._ref.dirty = true;
@@ -839,11 +843,11 @@ ext_create(struct vnode *dvp, char *name, mode_t mode)
     if (!S_ISREG(mode))
         return EINVAL;
 
-    return ext_dir_link(dvp, name, EXT4_DE_REG_FILE, nullptr, nullptr);
+    return ext_dir_link(dvp, name, EXT4_DE_REG_FILE, mode, nullptr, nullptr);
 }
 
 static int
-ext_trunc_inode(struct ext4_fs *fs, uint32_t index, uint64_t new_size)
+ext_trunc_inode(struct ext4_fs *fs, uint32_t index, uint64_t new_size, bool *update_cmtimes)
 {
     struct ext4_inode_ref inode_ref;
     int r = ext4_fs_get_inode_ref(fs, index, &inode_ref);
@@ -868,23 +872,15 @@ ext_trunc_inode(struct ext4_fs *fs, uint32_t index, uint64_t new_size)
         ext_debug("[ext_trunc_inode] Expanding size of the node %d by %ld bytes\n", index, extra_size);
         r = ext_internal_write(fs, &inode_ref2._ref, inode_size, buf, extra_size, &write_count);
         free_contiguous_aligned(buf);
-        //if (!r)
         return r;
     }
 
-/*
-    bool has_trans = mp->fs.jbd_journal && mp->fs.curr_trans;
-    if (has_trans)
-        ext4_trans_stop(mp);*/
-
+    bool truncated = false;
     while (inode_size > new_size + CONFIG_MAX_TRUNCATE_SIZE) {
-
         inode_size -= CONFIG_MAX_TRUNCATE_SIZE;
 
-        //ext4_trans_start(mp);
         r = ext4_fs_get_inode_ref(fs, index, &inode_ref);
         if (r != EOK) {
-            //ext4_trans_abort(mp);
             break;
         }
         r = ext4_fs_truncate_inode(&inode_ref, inode_size);
@@ -894,39 +890,31 @@ ext_trunc_inode(struct ext4_fs *fs, uint32_t index, uint64_t new_size)
             r = ext4_fs_put_inode_ref(&inode_ref);
 
         if (r != EOK) {
-            //ext4_trans_abort(mp);
             goto Finish;
-        }/* else
-            ext4_trans_stop(mp);*/
+        }
+        truncated = true;
     }
 
     if (inode_size > new_size) {
         inode_size = new_size;
 
-        //ext4_trans_start(mp);
         r = ext4_fs_get_inode_ref(fs, index, &inode_ref);
         if (r != EOK) {
-            //ext4_trans_abort(mp);
             goto Finish;
         }
         r = ext4_fs_truncate_inode(&inode_ref, inode_size);
         if (r != EOK)
             ext4_fs_put_inode_ref(&inode_ref);
-        else
+        else {
             r = ext4_fs_put_inode_ref(&inode_ref);
-/*
-        if (r != EOK)
-            ext4_trans_abort(mp);
-        else
-            ext4_trans_stop(mp);*/
-
+            truncated = true;
+        }
     }
 
 Finish:
-
-    /*if (has_trans)
-        ext4_trans_start(mp);*/
-
+    if (update_cmtimes) {
+        *update_cmtimes = truncated;
+    }
     return r;
 }
 
@@ -943,14 +931,13 @@ ext_dir_trunc(struct ext4_fs *fs, struct ext4_inode_ref *parent, struct ext4_ino
         if (r != EOK)
             return r;
 
-        r = ext_trunc_inode(fs, dir->index,
-                     EXT4_DIR_DX_INIT_BCNT * block_size);
+        r = ext_trunc_inode(fs, dir->index, EXT4_DIR_DX_INIT_BCNT * block_size, nullptr);
         if (r != EOK)
             return r;
     } else
 #endif
     {
-        r = ext_trunc_inode(fs, dir->index, block_size);
+        r = ext_trunc_inode(fs, dir->index, block_size, nullptr);
         if (r != EOK)
             return r;
     }
@@ -979,7 +966,7 @@ ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
     uint32_t inode_type = ext4_inode_type(&fs->sb, child._ref.inode);
     if (inode_type != EXT4_INODE_MODE_DIRECTORY) {
         if (ext4_inode_get_links_cnt(child._ref.inode) == 1) {
-            r = ext_trunc_inode(fs, child._ref.index, 0);
+            r = ext_trunc_inode(fs, child._ref.index, 0, nullptr);
             if (r != EOK) {
                 return r;
             }
@@ -998,6 +985,7 @@ ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
         return r;
     }
 
+    //TODO: Remove inode only if there no open descriptors anymore (use reference)
     ext_debug("ext_dir_remove_entry (3) %s\n", name);
     if (inode_type != EXT4_INODE_MODE_DIRECTORY) {
         int links_cnt = ext4_inode_get_links_cnt(child._ref.inode);
@@ -1017,9 +1005,7 @@ ext_dir_remove_entry(struct vnode *dvp, struct vnode *vp, char *name)
     if (r == EOK) {
         struct timespec now;
         clock_gettime(CLOCK_REALTIME, &now);
-        //ext4_inode_set_change_inode_time(parent._ref.inode, now.tv_sec);
         set_inode_time(parent._ref.inode, now, change_inode);
-        //ext4_inode_set_modif_time(parent._ref.inode, now.tv_sec);
         set_inode_time(parent._ref.inode, now, modif);
 
         parent._ref.dirty = true;
@@ -1144,7 +1130,7 @@ ext_mkdir(struct vnode *dvp, char *dirname, mode_t mode)
     if (!S_ISDIR(mode))
         return EINVAL;
 
-    return ext_dir_link(dvp, dirname, EXT4_DE_DIR, nullptr, nullptr);
+    return ext_dir_link(dvp, dirname, EXT4_DE_DIR, mode, nullptr, nullptr);
 }
 
 static int
@@ -1179,14 +1165,12 @@ ext_getattr(vnode_t *vp, vattr_t *vap)
 
     vap->va_nodeid = vp->v_ino;
     vap->va_size = ext4_inode_get_size(&fs->sb, inode_ref._ref.inode);
+    vap->va_nlink = ext4_inode_get_links_cnt(inode_ref._ref.inode);
     ext_debug("getattr: i-node:%ld va_size:%ld\n", vp->v_ino, vap->va_size);
 
     get_inode_time(inode_ref._ref.inode, vap->va_atime, access);
     get_inode_time(inode_ref._ref.inode, vap->va_mtime, modif);
     get_inode_time(inode_ref._ref.inode, vap->va_ctime, change_inode);
-    //vap->va_atime.tv_sec = ext4_inode_get_access_time(inode_ref._ref.inode);
-    //vap->va_mtime.tv_sec = ext4_inode_get_modif_time(inode_ref._ref.inode);
-    //vap->va_ctime.tv_sec = ext4_inode_get_change_inode_time(inode_ref._ref.inode);
 
     //auto *fsid = &vnode->v_mount->m_fsid; //TODO
     //attr->va_fsid = ((uint32_t)fsid->__val[0]) | ((dev_t) ((uint32_t)fsid->__val[1]) << 32);
@@ -1207,19 +1191,16 @@ ext_setattr(vnode_t *vp, vattr_t *vap)
     }
 
     if (vap->va_mask & AT_ATIME) {
-        //ext4_inode_set_access_time(inode_ref._ref.inode, vap->va_atime.tv_sec);
         set_inode_time(inode_ref._ref.inode, vap->va_atime, access);
         inode_ref._ref.dirty = true;
     }
 
     if (vap->va_mask & AT_CTIME) {
-        //ext4_inode_set_change_inode_time(inode_ref._ref.inode, vap->va_ctime.tv_sec);
         set_inode_time(inode_ref._ref.inode, vap->va_ctime, change_inode);
         inode_ref._ref.dirty = true;
     }
 
     if (vap->va_mask & AT_MTIME) {
-        //ext4_inode_set_modif_time(inode_ref._ref.inode, vap->va_mtime.tv_sec);
         set_inode_time(inode_ref._ref.inode, vap->va_mtime, modif);
         inode_ref._ref.dirty = true;
     }
@@ -1243,7 +1224,20 @@ ext_truncate(struct vnode *vp, off_t new_size)
     ext_debug("truncate node:%ld, new_size:%ld\n", vp->v_ino, new_size);
     struct ext4_fs *fs = (struct ext4_fs *)vp->v_mount->m_data;
     auto_write_back wb(fs);
-    return ext_trunc_inode(fs, vp->v_ino, new_size);
+    bool update_cmtimed = false;
+    int r = ext_trunc_inode(fs, vp->v_ino, new_size, &update_cmtimed);
+    if (update_cmtimed) {
+        auto_inode_ref inode_ref(fs, vp->v_ino);
+        if (inode_ref._r != EOK) {
+            return inode_ref._r;
+        }
+        struct timespec now;
+        clock_gettime(CLOCK_REALTIME, &now);
+        set_inode_time(inode_ref._ref.inode, now, change_inode);
+        set_inode_time(inode_ref._ref.inode, now, modif);
+        inode_ref._ref.dirty = true;
+    }
+    return r;
 }
 
 static int
@@ -1256,7 +1250,7 @@ ext_link(vnode_t *tdvp, vnode_t *svp, char *name)
     }
 
     uint32_t source_link_no = svp->v_ino;
-    return ext_dir_link(tdvp, name, EXT4_DE_REG_FILE, &source_link_no, nullptr);
+    return ext_dir_link(tdvp, name, EXT4_DE_REG_FILE, 0, &source_link_no, nullptr);
 }
 
 static int
@@ -1360,7 +1354,7 @@ ext_symlink(vnode_t *dvp, char *name, char *link)
     struct ext4_fs *fs = (struct ext4_fs *)dvp->v_mount->m_data;
     auto_write_back wb(fs);
     uint32_t inode_no_created;
-    int r = ext_dir_link(dvp, name, EXT4_DE_SYMLINK, nullptr, &inode_no_created);
+    int r = ext_dir_link(dvp, name, EXT4_DE_SYMLINK, 0, nullptr, &inode_no_created);
     if (r == EOK ) {
        return ext_fsymlink_set(fs, inode_no_created, link, strlen(link));
     }
