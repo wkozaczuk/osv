@@ -46,7 +46,7 @@ else:
 
 class TestRunnerTest(SingleCommandTest):
     def __init__(self, name):
-        super(TestRunnerTest, self).__init__(name, '%s /tests/%s' % (linux_ld if cmdargs.linux_ld else '', name))
+        super(TestRunnerTest, self).__init__(name, '%s --rootfs=ext /tests/%s' % (linux_ld if cmdargs.linux_ld else '', name))
 
 # Not all files in build/release/tests/tst-*.so may be on the test image
 # (e.g., some may have actually remain there from old builds) - so lets take
@@ -92,6 +92,7 @@ def run_test(test):
 
     start = time.time()
     try:
+        #sys.stdout.write("  Passing run_py_args [" + ','.join(run_py_args) + ']\n')
         test.set_run_py_args(run_py_args)
         test.set_hypervisor(cmdargs.hypervisor)
         test.run()

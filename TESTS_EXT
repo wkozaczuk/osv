@@ -1,0 +1,37 @@
+taskset -c 4-7 ./scripts/test.py \
+
+Works after va_mode fix:
+  -d tst-chmod.so \
+
+Works after truncate fix:
+  -d tst-mmap-file.so \
+
+Works affter fsync set to nullop:
+  -d tst-zfs-mount.so
+
+Work after the v_size and arc fix
+  -d java-perms \
+  -d java_no_wrapper \
+  -d tst-seek.so \
+
+FIXED with extra time handling:
+---------
+tst-utimensat.so:
+  FAIL: check mtime changes
+
+tst-utimes.so:
+  FAIL: check changes made to mtime
+  FAIL: check if lutimes made no changes to mtime
+  FAIL: check if lutimes made changes to link's mtime
+  FAIL: check if utimes made changes to link target's mtime
+
+FIXED by adding missing close() on a file descriptor:
+
+TODO: ext_remove() and friends need to detect if there is any descriptor still open
+and only delete entry from a directory it belongs to but delay deleting node until
+remaining file descriptors are closed. Currently, unlinking() open file removes the i-node
+even if there is still vfs node available
+
+-----
+tst-symlink.so:
+  FAIL: symlink

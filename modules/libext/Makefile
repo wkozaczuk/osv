@@ -1,4 +1,3 @@
-#arch=x64
 include ../common.gmk
 
 module_out := $(out)/modules/libext
@@ -25,7 +24,9 @@ init:
 	$(call very-quiet, mkdir -p $(module_out))
 .PHONY: init
 
-module: init $(module_out)/$(TARGET).so
+library: init $(module_out)/$(TARGET).so
+
+module: library
 	echo '/usr/lib/fs/libext.so: ./modules/libext/libext.so' > usr.manifest
 
 clean:

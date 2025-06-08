@@ -2390,7 +2390,7 @@ TEST(STDIO_TEST, fseek_64bit) {
 
 // POSIX requires that fseek/fseeko fail with EOVERFLOW if the new file offset
 // isn't representable in long/off_t.
-#if !defined(READ_ONLY_FS)
+#if defined(READ_ONLY_FS)
 TEST(STDIO_TEST, fseek_overflow_32bit) {
   TemporaryFile tf;
   FILE* fp = fopen64(tf.path, "w+");

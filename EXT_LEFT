@@ -1,0 +1,9 @@
+building
+- modify scripts/build to call make modules/lwext4|libext after stage1 and before all if fs=ext
+  (or add "libext" module before "make all")
+- modify main makefile to depend on libsolaris.so or libext.so|lwext4.so depending of the "fs" parameter (target bootfs.bin)
+- test rofs_with_ext
+- do not add libext.so to usr.manifest by libext module if fs=ext
+
+- improve create_ext_disk.sh - addd mounting existing image option
+- hide most symbols in lwext4
