@@ -69,7 +69,6 @@ class Fedora(object):
                 'wget',
                 'yaml-cpp-devel',
                 'pax-utils',
-                'java-1.8.0-openjdk',
                 'lua',
                 'lua-devel',
                 'glibc-static',
