@@ -249,7 +249,7 @@ if [[ ${vars[append_manifest]} == "true" && $modules == "!default" ]]; then
 	modules="empty"
 fi
 
-if [[ "$fs_type" == "ext" ]]; then
+if [[ "$fs_type" == "ext" || "$fs_type" == "rofs_with_ext" ]]; then
 	modules="$modules,libext"
 fi
 
@@ -402,7 +402,7 @@ zfs)
 	create_zfs_disk ;;
 ext)
 	rm -rf disk.ext
-	"$SRC"/scripts/create_ext_disk.sh disk.ext
+	"$SRC"/scripts/create_ext_disk.sh create disk.ext $(((fs_size - partition_offset)/(1024*1024))) true
 	partition_size=`stat --printf %s disk.ext`
 	image_size=$fs_size
 	create_ext_disk ;;
@@ -421,7 +421,7 @@ rofs_with_zfs|rofs_with_ext)
 	rm -rf rofs.img
 	cp "$SRC"/static/etc/fstab_rofs fstab
         if [[ "$fs_type" == "rofs_with_zfs" ]]; then
-	    echo "/dev/vblk0.2 /data      zfs       defaults 0 0" >> fstab
+            echo "/dev/vblk0.2 /data      zfs       defaults 0 0" >> fstab
         else
 	    echo "/dev/vblk0.2 /data      ext       defaults 0 0" >> fstab
         fi
@@ -439,7 +439,10 @@ rofs_with_zfs|rofs_with_ext)
 	    create_zfs_filesystem $qcow2_disk.img "/dev/vblk0.2" 2
         else
             rm -rf disk.ext
-            "$SRC"/scripts/create_ext_disk.sh disk.ext
+            "$SRC"/scripts/create_ext_disk.sh create disk.ext $((snd_partition_size/(1024*1024)))
+	    qemu-img convert -f qcow2 -O raw $qcow2_disk.img $raw_disk.raw
+	    dd if=disk.ext of=${raw_disk}.raw obs=$snd_partition_offset seek=1 >/dev/null 2>&1
+	    qemu-img convert -f raw -O qcow2 $raw_disk.raw $qcow2_disk.img
         fi ;;
 ramfs|virtiofs)
 	# No need to create extra fs like above: ramfs is already created (as the

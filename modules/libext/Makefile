@@ -24,11 +24,8 @@ init:
 	$(call very-quiet, mkdir -p $(module_out))
 .PHONY: init
 
-library: init $(module_out)/$(TARGET).so
-
-module: library
-	echo '/usr/lib/fs/libext.so: ./modules/libext/libext.so' > usr.manifest
+module: init $(module_out)/$(TARGET).so
 
 clean:
-	rm -f $(TARGET)*.so usr.manifest
+	rm -f $(TARGET)*.so
 	$(call very-quiet, $(RM) -rf $(module_out))

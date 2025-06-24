@@ -90,3 +90,4 @@ __isoc23_strtoll = strtoll;
 __isoc23_vsscanf = vsscanf;
 __isoc23_strtol = strtol;
 __isoc23_strtoull = strtoull;
+__isoc23_strtoimax = strtoimax;
