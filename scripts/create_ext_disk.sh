@@ -37,7 +37,7 @@ create_disk() {
         exit 1
     fi
     dd if=/dev/zero of=$DISK_PATH bs=1M count=$DISK_SIZE_IN_MB 2>1 1>/dev/null
-    sudo -p "password for %p to run mkfs.ext4" mkfs.ext4 $DISK_PATH 1>/dev/null
+    sudo -p "password for %p to run mkfs.ext4:" mkfs.ext4 $DISK_PATH 1>/dev/null
     echo "Created empty ext4 disk at $DISK_PATH of the size $DISK_SIZE_IN_MB mb"
 }
 
@@ -65,7 +65,7 @@ mount_disk() {
         echo "The $DISK_PATH is already created and mounted. Please unmount and delete it first!"
         exit 1
     fi
-    LOOP_DEV=$(sudo -p "password for %p to run losetup to create loop device" losetup -o 0 -f --show $DISK_PATH 2>/dev/null| grep "/dev/loop")
+    LOOP_DEV=$(sudo -p "password for %p to run losetup to create loop device:" losetup -o 0 -f --show $DISK_PATH 2>/dev/null| grep "/dev/loop")
     mkdir $DISK_PATH.image
     sudo mount $LOOP_DEV $DISK_PATH.image
     echo "Mounted the ext4 disk at $DISK_PATH.image under the loop device $LOOP_DEV"
@@ -80,7 +80,7 @@ unmount_disk() {
         echo "The loop_dev has not been specified!"
         exit 1
     fi
-    sudo -p "password for %p to unmount disk" umount $DISK_PATH.image
+    sudo -p "password for %p to unmount disk:" umount $DISK_PATH.image
     rmdir $DISK_PATH.image
     sudo losetup -d $LOOP_DEV
 }
