@@ -5405,6 +5405,7 @@ zfsdev_ioctl(struct cdev *dev, u_long cmd, caddr_t addr, int flag,
 
 	if (vec >= sizeof (zfs_ioc_vec) / sizeof (zfs_ioc_vec[0]))
 		return (EINVAL);
+        printf("zfsdev_ioctl: vec=%d\n", vec);
 
 	if (cflag != ZFS_CMD_COMPAT_NONE) {
 		zc = kmem_zalloc(sizeof(zfs_cmd_t), KM_SLEEP);

@@ -80,7 +80,7 @@ vdev_getops(const char *type)
 		if (strcmp(ops->vdev_op_type, type) == 0)
 			break;
 
-        printf("vdev_getops: %s\n", type);
+        //printf("vdev_getops: %s\n", type);
         if (!ops) {
 		abort();
         }

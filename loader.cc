@@ -497,7 +497,7 @@ static int load_zfs_library_and_mount_zfs_root(bool pivot_when_error = false)
 {
     // Load and initialize ZFS filesystem driver implemented in libsolaris.so
     return load_fs_library(libsolaris_path, [pivot_when_error]() {
-        zfsdev::zfsdev_init();
+        //zfsdev::zfsdev_init();
 
         auto error = mount_rootfs("/zfs", "/dev/vblk0.1", "zfs", 0, (void *)"osv/zfs", opt_pivot);
         if (!error && opt_pivot && opt_extra_zfs_pools) {

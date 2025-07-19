@@ -70,7 +70,7 @@ void __attribute__((constructor)) zfs_initialize(void) {
     system_taskq_init(NULL);
 
     //Register osv_zfs_ioctl() as callback in drivers/zfs.cc
-    register_osv_zfs_ioctl(&osv_zfs_ioctl);
+    //register_osv_zfs_ioctl(&osv_zfs_ioctl);
     //Register arc_lowmem() and arc_sized_adjust() as callbacks in arc_shrinker
     //implemented as part of bsd/porting/shrinker.cc
     register_shrinker_arc_funs(&arc_lowmem, &arc_sized_adjust);

@@ -2635,9 +2635,9 @@ extern "C" void pivot_rootfs(const char* path)
                 auto lib_path = std::string("/usr/lib/fs/") + dirent->d_name;
                 auto module = dlopen(lib_path.c_str(), RTLD_LAZY);
                 if (module) {
-                    if (strcmp(dirent->d_name, "libsolaris.so") == 0) {
-                        zfsdev::zfsdev_init();
-                    }
+                    //if (strcmp(dirent->d_name, "libsolaris.so") == 0) {
+                    //    zfsdev::zfsdev_init();
+                    //}
                     debugf("VFS: initialized filesystem library: %s\n", lib_path.c_str());
                 }
             }

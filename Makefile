@@ -836,7 +836,7 @@ zfs += bsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs/zfs_debug.o
 zfs += bsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs/zfs_dir.o
 zfs += bsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs/zfs_fm.o
 zfs += bsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs/zfs_fuid.o
-zfs += bsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs/zfs_ioctl.o
+#zfs += bsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs/zfs_ioctl.o
 zfs += bsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs/zfs_init.o
 zfs += bsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs/zfs_log.o
 #zfs += bsd/sys/cddl/contrib/opensolaris/uts/common/fs/zfs/zfs_onexit.o
@@ -900,7 +900,7 @@ drivers += drivers/isa-serial-base.o
 drivers += core/elf.o
 $(out)/core/elf.o: CXXFLAGS += -DHIDE_SYMBOLS=$(conf_hide_symbols)
 drivers += drivers/random.o
-drivers += drivers/zfs.o
+#drivers += drivers/zfs.o
 drivers += drivers/null.o
 drivers += drivers/device.o
 ifeq ($(conf_drivers_pci),1)
