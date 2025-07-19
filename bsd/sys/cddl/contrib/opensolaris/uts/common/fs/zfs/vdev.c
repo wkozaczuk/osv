@@ -52,18 +52,18 @@ SYSCTL_NODE(_vfs_zfs, OID_AUTO, vdev, CTLFLAG_RW, 0, "ZFS VDEV");
 
 static vdev_ops_t *vdev_ops_table[] = {
 	&vdev_root_ops,
-	&vdev_raidz_ops,
+//	&vdev_raidz_ops,
 	&vdev_mirror_ops,
-	&vdev_replacing_ops,
-	&vdev_spare_ops,
+//	&vdev_replacing_ops,
+//	&vdev_spare_ops,
 #if defined(__FreeBSD__) && defined(_KERNEL)
 	&vdev_geom_ops,
 #else
 	&vdev_disk_ops,
 #endif
-	&vdev_file_ops,
-	&vdev_missing_ops,
-	&vdev_hole_ops,
+//	&vdev_file_ops,
+//	&vdev_missing_ops,
+//	&vdev_hole_ops,
 	NULL
 };
 
@@ -79,6 +79,11 @@ vdev_getops(const char *type)
 	for (opspp = vdev_ops_table; (ops = *opspp) != NULL; opspp++)
 		if (strcmp(ops->vdev_op_type, type) == 0)
 			break;
+
+        printf("vdev_getops: %s\n", type);
+        if (!ops) {
+		abort();
+        }
 
 	return (ops);
 }
@@ -130,8 +135,10 @@ vdev_get_min_asize(vdev_t *vd)
 	 * The allocatable space for a raidz vdev is N * sizeof(smallest child),
 	 * so each child must provide at least 1/Nth of its asize.
 	 */
+#ifndef __OSV__
 	if (pvd->vdev_ops == &vdev_raidz_ops)
 		return (pvd->vdev_min_asize / pvd->vdev_children);
+#endif
 
 	return (pvd->vdev_min_asize);
 }
@@ -296,7 +303,7 @@ vdev_alloc_common(spa_t *spa, uint_t id, uint64_t guid, vdev_ops_t *ops)
 		spa->spa_load_guid = spa_generate_guid(NULL);
 	}
 
-	if (guid == 0 && ops != &vdev_hole_ops) {
+	if (guid == 0) {// && ops != &vdev_hole_ops) {
 		if (spa->spa_root_vdev == vd) {
 			/*
 			 * The root vdev's guid will also be the pool guid,
@@ -318,7 +325,7 @@ vdev_alloc_common(spa_t *spa, uint_t id, uint64_t guid, vdev_ops_t *ops)
 	vd->vdev_guid_sum = guid;
 	vd->vdev_ops = ops;
 	vd->vdev_state = VDEV_STATE_CLOSED;
-	vd->vdev_ishole = (ops == &vdev_hole_ops);
+	vd->vdev_ishole = false;//(ops == &vdev_hole_ops);
 
 	mutex_init(&vd->vdev_dtl_lock, NULL, MUTEX_DEFAULT, NULL);
 	mutex_init(&vd->vdev_stat_lock, NULL, MUTEX_DEFAULT, NULL);
@@ -398,13 +405,14 @@ vdev_alloc(spa_t *spa, vdev_t **vdp, nvlist_t *nv, vdev_t *parent, uint_t id,
 	if (islog && spa_version(spa) < SPA_VERSION_SLOGS)
 		return (ENOTSUP);
 
-	if (ops == &vdev_hole_ops && spa_version(spa) < SPA_VERSION_HOLES)
-		return (ENOTSUP);
+	//if (ops == &vdev_hole_ops && spa_version(spa) < SPA_VERSION_HOLES)
+	//	return (ENOTSUP);
 
 	/*
 	 * Set the nparity property for RAID-Z vdevs.
 	 */
 	nparity = -1ULL;
+#ifndef __OSV__
 	if (ops == &vdev_raidz_ops) {
 		if (nvlist_lookup_uint64(nv, ZPOOL_CONFIG_NPARITY,
 		    &nparity) == 0) {
@@ -433,8 +441,11 @@ vdev_alloc(spa_t *spa, vdev_t **vdp, nvlist_t *nv, vdev_t *parent, uint_t id,
 			nparity = 1;
 		}
 	} else {
+#endif
 		nparity = 0;
+#ifndef __OSV__
 	}
+#endif
 	ASSERT(nparity != -1ULL);
 
 	vd = vdev_alloc_common(spa, id, guid, ops);
@@ -769,6 +780,7 @@ vdev_add_parent(vdev_t *cvd, vdev_ops_t *ops)
 void
 vdev_remove_parent(vdev_t *cvd)
 {
+        abort();
 	vdev_t *mvd = cvd->vdev_parent;
 	vdev_t *pvd = mvd->vdev_parent;
 
@@ -1196,8 +1208,8 @@ vdev_open(vdev_t *vd)
 	/*
 	 * For hole or missing vdevs we just return success.
 	 */
-	if (vd->vdev_ishole || vd->vdev_ops == &vdev_missing_ops)
-		return (0);
+//	if (vd->vdev_ishole || vd->vdev_ops == &vdev_missing_ops)
+//		return (0);
 
 	for (int c = 0; c < vd->vdev_children; c++) {
 		if (vd->vdev_child[c]->vdev_state != VDEV_STATE_HEALTHY) {
@@ -2222,11 +2234,11 @@ vdev_online(spa_t *spa, uint64_t guid, uint64_t flags, vdev_state_t *newstate)
 
 	if (newstate)
 		*newstate = vd->vdev_state;
-	if ((flags & ZFS_ONLINE_UNSPARE) &&
+	/*if ((flags & ZFS_ONLINE_UNSPARE) &&
 	    !vdev_is_dead(vd) && vd->vdev_parent &&
 	    vd->vdev_parent->vdev_ops == &vdev_spare_ops &&
 	    vd->vdev_parent->vdev_child[0] == vd)
-		vd->vdev_unspare = B_TRUE;
+		vd->vdev_unspare = B_TRUE;*/
 
 	if ((flags & ZFS_ONLINE_EXPAND) || spa->spa_autoexpand) {
 
@@ -2404,10 +2416,11 @@ vdev_clear(spa_t *spa, vdev_t *vd)
 	 * unspare the device, as we assume that the original spare was
 	 * done in response to the FMA fault.
 	 */
+/*
 	if (!vdev_is_dead(vd) && vd->vdev_parent != NULL &&
 	    vd->vdev_parent->vdev_ops == &vdev_spare_ops &&
 	    vd->vdev_parent->vdev_child[0] == vd)
-		vd->vdev_unspare = B_TRUE;
+		vd->vdev_unspare = B_TRUE;*/
 }
 
 boolean_t
@@ -2420,8 +2433,8 @@ vdev_is_dead(vdev_t *vd)
 	 * Instead we rely on the fact that we skip over dead devices
 	 * before issuing I/O to them.
 	 */
-	return (vd->vdev_state < VDEV_STATE_DEGRADED || vd->vdev_ishole ||
-	    vd->vdev_ops == &vdev_missing_ops);
+	return (vd->vdev_state < VDEV_STATE_DEGRADED || vd->vdev_ishole);
+//	    vd->vdev_ops == &vdev_missing_ops);
 }
 
 boolean_t

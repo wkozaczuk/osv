@@ -32,6 +32,7 @@
 #include <sys/fs/zfs.h>
 #include <sys/fm/fs/zfs.h>
 
+#ifndef __OSV__
 /*
  * Virtual device vector for RAID-Z.
  *
@@ -2135,14 +2136,23 @@ vdev_raidz_state_change(vdev_t *vd, int faulted, int degraded)
 	else
 		vdev_set_state(vd, B_FALSE, VDEV_STATE_HEALTHY, VDEV_AUX_NONE);
 }
-
+#endif
 vdev_ops_t vdev_raidz_ops = {
+#ifndef __OSV__
 	vdev_raidz_open,
 	vdev_raidz_close,
 	vdev_raidz_asize,
 	vdev_raidz_io_start,
 	vdev_raidz_io_done,
 	vdev_raidz_state_change,
+#else
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+        NULL,
+#endif
 	NULL,
 	NULL,
 	VDEV_TYPE_RAIDZ,	/* name of this vdev type */

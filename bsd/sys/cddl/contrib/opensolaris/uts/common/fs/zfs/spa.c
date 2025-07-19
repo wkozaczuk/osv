@@ -143,7 +143,7 @@ static boolean_t spa_has_active_shared_spare(spa_t *spa);
 static int spa_load_impl(spa_t *spa, uint64_t, nvlist_t *config,
     spa_load_state_t state, spa_import_type_t type, boolean_t mosconfig,
     char **ereport);
-static void spa_vdev_resilver_done(spa_t *spa);
+//static void spa_vdev_resilver_done(spa_t *spa);
 
 uint_t		zio_taskq_batch_pct = 100;	/* 1 thread per cpu in pset */
 #ifdef PSRSET_BIND
@@ -1627,6 +1627,7 @@ spa_config_valid(spa_t *spa, nvlist_t *config)
 		    KM_SLEEP);
 		VERIFY(nvlist_alloc(&nv, NV_UNIQUE_NAME, KM_SLEEP) == 0);
 
+#ifdef NOT_YET 
 		for (int c = 0; c < rvd->vdev_children; c++) {
 			vdev_t *tvd = rvd->vdev_child[c];
 			vdev_t *mtvd  = mrvd->vdev_child[c];
@@ -1635,8 +1636,9 @@ spa_config_valid(spa_t *spa, nvlist_t *config)
 			    mtvd->vdev_ops != &vdev_missing_ops &&
 			    mtvd->vdev_islog)
 				child[idx++] = vdev_config_generate(spa, mtvd,
-				    B_FALSE, 0);
+				   B_FALSE, 0);
 		}
+#endif
 
 		if (idx) {
 			VERIFY(nvlist_add_nvlist_array(nv,
@@ -1660,6 +1662,7 @@ spa_config_valid(spa_t *spa, nvlist_t *config)
 		vdev_t *tvd = rvd->vdev_child[c];
 		vdev_t *mtvd  = mrvd->vdev_child[c];
 
+#ifdef NOT_YET
 		/*
 		 * Resolve any "missing" vdevs in the current configuration.
 		 * If we find that the MOS config has more accurate information
@@ -1667,7 +1670,6 @@ spa_config_valid(spa_t *spa, nvlist_t *config)
 		 */
 		if (tvd->vdev_ops == &vdev_missing_ops &&
 		    mtvd->vdev_ops != &vdev_missing_ops) {
-
 			if (!(spa->spa_import_flags & ZFS_IMPORT_MISSING_LOG))
 				continue;
 
@@ -1702,6 +1704,8 @@ spa_config_valid(spa_t *spa, nvlist_t *config)
 
 			vdev_reopen(rvd);
 		} else if (mtvd->vdev_islog) {
+#endif
+		if (mtvd->vdev_islog) {
 			/*
 			 * Load the slog device's state from the MOS config
 			 * since it's possible that the label does not
@@ -1740,6 +1744,7 @@ spa_check_logs(spa_t *spa)
 	return (0);
 }
 
+#ifdef NOT_YET 
 static boolean_t
 spa_passivate_log(spa_t *spa)
 {
@@ -1779,6 +1784,7 @@ spa_activate_log(spa_t *spa)
 			metaslab_group_activate(mg);
 	}
 }
+#endif
 
 int
 spa_offline_log(spa_t *spa)
@@ -3794,6 +3800,7 @@ spa_import_rootpool(char *devpath, char *devid)
 		goto out;
 	}
 
+#ifdef NOT_YET 
 	/*
 	 * If the boot device is part of a spare vdev then ensure that
 	 * we're booting off the active spare.
@@ -3807,6 +3814,7 @@ spa_import_rootpool(char *devpath, char *devid)
 		error = EINVAL;
 		goto out;
 	}
+#endif
 
 	error = 0;
 	spa_history_log_version(spa, LOG_POOL_IMPORT);
@@ -4767,6 +4775,7 @@ spa_vdev_add(spa_t *spa, nvlist_t *nvroot)
 	return (0);
 }
 
+#ifdef NOT_YET 
 /*
  * Attach a device to a mirror.  The arguments are the path to any device
  * in the mirror, and the nvroot for the new device.  If the path specifies
@@ -4836,6 +4845,8 @@ spa_vdev_attach(spa_t *spa, uint64_t guid, nvlist_t *nvroot, int replacing)
 			return (spa_vdev_exit(spa, newrootvd, txg, ENOTSUP));
 
 		pvops = &vdev_mirror_ops;
+        }
+#ifdef NOT_YET 
 	} else {
 		/*
 		 * Active hot spares can only be replaced by inactive hot
@@ -4867,6 +4878,7 @@ spa_vdev_attach(spa_t *spa, uint64_t guid, nvlist_t *nvroot, int replacing)
 		else
 			pvops = &vdev_replacing_ops;
 	}
+#endif
 
 	/*
 	 * Make sure the new device is big enough.
@@ -4973,7 +4985,9 @@ spa_vdev_attach(spa_t *spa, uint64_t guid, nvlist_t *nvroot, int replacing)
 
 	return (0);
 }
+#endif
 
+#ifdef NOT_YET 
 /*
  * Detach a device from a mirror or replacing vdev.
  * If 'replace_done' is specified, only detach if the parent
@@ -5023,19 +5037,20 @@ spa_vdev_detach(spa_t *spa, uint64_t guid, uint64_t pguid, int replace_done)
 	/*
 	 * Only 'replacing' or 'spare' vdevs can be replaced.
 	 */
-	if (replace_done && pvd->vdev_ops != &vdev_replacing_ops &&
-	    pvd->vdev_ops != &vdev_spare_ops)
+	if (replace_done)
+	//if (replace_done && pvd->vdev_ops != &vdev_replacing_ops &&
+	 //   pvd->vdev_ops != &vdev_spare_ops)
 		return (spa_vdev_exit(spa, NULL, txg, ENOTSUP));
 
-	ASSERT(pvd->vdev_ops != &vdev_spare_ops ||
-	    spa_version(spa) >= SPA_VERSION_SPARES);
+	//ASSERT(pvd->vdev_ops != &vdev_spare_ops ||
+	//    spa_version(spa) >= SPA_VERSION_SPARES);
 
 	/*
 	 * Only mirror, replacing, and spare vdevs support detach.
 	 */
-	if (pvd->vdev_ops != &vdev_replacing_ops &&
-	    pvd->vdev_ops != &vdev_mirror_ops &&
-	    pvd->vdev_ops != &vdev_spare_ops)
+	//if (pvd->vdev_ops != &vdev_replacing_ops &&
+	 //   pvd->vdev_ops != &vdev_mirror_ops &&
+	  //  pvd->vdev_ops != &vdev_spare_ops)
 		return (spa_vdev_exit(spa, NULL, txg, ENOTSUP));
 
 	/*
@@ -5047,6 +5062,7 @@ spa_vdev_detach(spa_t *spa, uint64_t guid, uint64_t pguid, int replace_done)
 
 	ASSERT(pvd->vdev_children >= 2);
 
+#ifdef NOT_YET 
 	/*
 	 * If we are detaching the second disk from a replacing vdev, then
 	 * check to see if we changed the original vdev's path to have "/old"
@@ -5080,6 +5096,7 @@ spa_vdev_detach(spa_t *spa, uint64_t guid, uint64_t pguid, int replace_done)
 	    vd->vdev_id == 0 &&
 	    pvd->vdev_child[pvd->vdev_children - 1]->vdev_isspare)
 		unspare = B_TRUE;
+#endif
 
 	/*
 	 * Erase the disk labels so the disk can be used for other things.
@@ -5213,7 +5230,9 @@ spa_vdev_detach(spa_t *spa, uint64_t guid, uint64_t pguid, int replace_done)
 
 	return (error);
 }
+#endif
 
+#ifdef NOT_YET 
 /*
  * Split a set of devices from their mirrors, and create a new pool from them.
  */
@@ -5502,7 +5521,9 @@ out:
 	kmem_free(vml, children * sizeof (vdev_t *));
 	return (error);
 }
+#endif
 
+#ifdef NOT_YET 
 static nvlist_t *
 spa_nvlist_lookup_by_guid(nvlist_t **nvpp, int count, uint64_t target_guid)
 {
@@ -5518,7 +5539,9 @@ spa_nvlist_lookup_by_guid(nvlist_t **nvpp, int count, uint64_t target_guid)
 
 	return (NULL);
 }
+#endif
 
+#ifdef NOT_YET 
 static void
 spa_vdev_remove_aux(nvlist_t *config, char *name, nvlist_t **dev, int count,
 	nvlist_t *dev_to_remove)
@@ -5543,10 +5566,12 @@ spa_vdev_remove_aux(nvlist_t *config, char *name, nvlist_t **dev, int count,
 	if (count > 1)
 		kmem_free(newdev, (count - 1) * sizeof (void *));
 }
+#endif
 
 /*
  * Evacuate the device.
  */
+#ifdef NOT_YET 
 static int
 spa_vdev_remove_evacuate(spa_t *spa, vdev_t *vd)
 {
@@ -5586,10 +5611,12 @@ spa_vdev_remove_evacuate(spa_t *spa, vdev_t *vd)
 
 	return (0);
 }
+#endif
 
 /*
  * Complete the removal by cleaning up the namespace.
  */
+#ifdef NOT_YET 
 static void
 spa_vdev_remove_from_namespace(spa_t *spa, vdev_t *vd)
 {
@@ -5629,6 +5656,7 @@ spa_vdev_remove_from_namespace(spa_t *spa, vdev_t *vd)
 	 */
 	vdev_reopen(rvd);
 }
+#endif
 
 /*
  * Remove a device from the pool -
@@ -5644,6 +5672,7 @@ spa_vdev_remove_from_namespace(spa_t *spa, vdev_t *vd)
  * Remove a device from the pool.  Currently, this supports removing only hot
  * spares, slogs, and level 2 ARC devices.
  */
+#ifdef NOT_YET 
 int
 spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 {
@@ -5749,11 +5778,13 @@ spa_vdev_remove(spa_t *spa, uint64_t guid, boolean_t unspare)
 
 	return (error);
 }
+#endif
 
 /*
  * Find any device that's done replacing, or a vdev marked 'unspare' that's
  * current spared, so we can detach it.
  */
+#ifdef NOT_YET 
 static vdev_t *
 spa_vdev_resilver_done_hunt(vdev_t *vd)
 {
@@ -5864,6 +5895,7 @@ spa_vdev_resilver_done(spa_t *spa)
 
 	spa_config_exit(spa, SCL_ALL, FTAG);
 }
+#endif
 
 /*
  * Update the stored path or FRU for this vdev.

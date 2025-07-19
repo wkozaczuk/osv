@@ -1653,6 +1653,8 @@ zfs_ioc_vdev_add(zfs_cmd_t *zc)
 static int
 zfs_ioc_vdev_remove(zfs_cmd_t *zc)
 {
+	abort();
+#ifdef NOT_YET 
 	spa_t *spa;
 	int error;
 
@@ -1662,6 +1664,7 @@ zfs_ioc_vdev_remove(zfs_cmd_t *zc)
 	error = spa_vdev_remove(spa, zc->zc_guid, B_FALSE);
 	spa_close(spa, FTAG);
 	return (error);
+#endif
 }
 
 static int
@@ -1709,6 +1712,8 @@ zfs_ioc_vdev_set_state(zfs_cmd_t *zc)
 static int
 zfs_ioc_vdev_attach(zfs_cmd_t *zc)
 {
+	abort();
+#ifdef NOT_YET 
 	spa_t *spa;
 	int replacing = zc->zc_cookie;
 	nvlist_t *config;
@@ -1725,11 +1730,14 @@ zfs_ioc_vdev_attach(zfs_cmd_t *zc)
 
 	spa_close(spa, FTAG);
 	return (error);
+#endif
 }
 
 static int
 zfs_ioc_vdev_detach(zfs_cmd_t *zc)
 {
+	abort();
+#ifdef NOT_YET 
 	spa_t *spa;
 	int error;
 
@@ -1740,11 +1748,14 @@ zfs_ioc_vdev_detach(zfs_cmd_t *zc)
 
 	spa_close(spa, FTAG);
 	return (error);
+#endif
 }
 
 static int
 zfs_ioc_vdev_split(zfs_cmd_t *zc)
 {
+        abort();
+#ifdef NOT_YET 
 	spa_t *spa;
 	nvlist_t *config, *props = NULL;
 	int error;
@@ -1775,6 +1786,7 @@ zfs_ioc_vdev_split(zfs_cmd_t *zc)
 	nvlist_free(props);
 
 	return (error);
+#endif
 }
 
 static int

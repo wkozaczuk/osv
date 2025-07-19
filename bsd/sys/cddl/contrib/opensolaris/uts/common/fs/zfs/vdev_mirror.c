@@ -112,8 +112,9 @@ vdev_mirror_map_alloc(zio_t *zio)
 
 		mm = kmem_zalloc(offsetof(mirror_map_t, mm_child[c]), KM_SLEEP);
 		mm->mm_children = c;
-		mm->mm_replacing = (vd->vdev_ops == &vdev_replacing_ops ||
-		    vd->vdev_ops == &vdev_spare_ops);
+		mm->mm_replacing = false;
+		//mm->mm_replacing = (vd->vdev_ops == &vdev_replacing_ops ||
+		//    vd->vdev_ops == &vdev_spare_ops);
 		mm->mm_preferred = mm->mm_replacing ? 0 :
 		    (zio->io_offset >> vdev_mirror_shift) % c;
 		mm->mm_root = B_FALSE;
@@ -129,7 +130,7 @@ vdev_mirror_map_alloc(zio_t *zio)
 	zio->io_vsd_ops = &vdev_mirror_vsd_ops;
 	return (mm);
 }
-
+/*
 static int
 vdev_mirror_open(vdev_t *vd, uint64_t *asize, uint64_t *max_asize,
     uint64_t *ashift)
@@ -171,7 +172,7 @@ vdev_mirror_close(vdev_t *vd)
 {
 	for (int c = 0; c < vd->vdev_children; c++)
 		vdev_close(vd->vdev_child[c]);
-}
+}*/
 
 static void
 vdev_mirror_child_done(zio_t *zio)
@@ -438,7 +439,7 @@ vdev_mirror_io_done(zio_t *zio)
 		}
 	}
 }
-
+/*
 static void
 vdev_mirror_state_change(vdev_t *vd, int faulted, int degraded)
 {
@@ -449,21 +450,21 @@ vdev_mirror_state_change(vdev_t *vd, int faulted, int degraded)
 		vdev_set_state(vd, B_FALSE, VDEV_STATE_DEGRADED, VDEV_AUX_NONE);
 	else
 		vdev_set_state(vd, B_FALSE, VDEV_STATE_HEALTHY, VDEV_AUX_NONE);
-}
+}*/
 
 vdev_ops_t vdev_mirror_ops = {
-	vdev_mirror_open,
-	vdev_mirror_close,
-	vdev_default_asize,
+	NULL,//vdev_mirror_open,
+	NULL,//vdev_mirror_close,
+	NULL,//vdev_default_asize,
 	vdev_mirror_io_start,
 	vdev_mirror_io_done,
-	vdev_mirror_state_change,
+	NULL,//vdev_mirror_state_change,
 	NULL,
 	NULL,
 	VDEV_TYPE_MIRROR,	/* name of this vdev type */
 	B_FALSE			/* not a leaf vdev */
 };
-
+/*
 vdev_ops_t vdev_replacing_ops = {
 	vdev_mirror_open,
 	vdev_mirror_close,
@@ -473,8 +474,8 @@ vdev_ops_t vdev_replacing_ops = {
 	vdev_mirror_state_change,
 	NULL,
 	NULL,
-	VDEV_TYPE_REPLACING,	/* name of this vdev type */
-	B_FALSE			/* not a leaf vdev */
+	VDEV_TYPE_REPLACING,	
+	B_FALSE		
 };
 
 vdev_ops_t vdev_spare_ops = {
@@ -486,6 +487,6 @@ vdev_ops_t vdev_spare_ops = {
 	vdev_mirror_state_change,
 	NULL,
 	NULL,
-	VDEV_TYPE_SPARE,	/* name of this vdev type */
-	B_FALSE			/* not a leaf vdev */
-};
+	VDEV_TYPE_SPARE,
+	B_FALSE	
+};*/

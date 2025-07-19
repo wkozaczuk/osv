@@ -147,7 +147,7 @@ metaslab_class_validate(metaslab_class_t *mc)
 		ASSERT(vd->vdev_mg != NULL);
 		ASSERT3P(vd->vdev_top, ==, vd);
 		ASSERT3P(mg->mg_class, ==, mc);
-		ASSERT3P(vd->vdev_ops, !=, &vdev_hole_ops);
+		//ASSERT3P(vd->vdev_ops, !=, &vdev_hole_ops); //TODO: Comment out
 	} while ((mg = mg->mg_next) != mc->mc_rotor);
 
 	return (0);
