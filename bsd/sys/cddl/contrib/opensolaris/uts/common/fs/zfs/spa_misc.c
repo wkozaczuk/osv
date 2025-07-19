@@ -856,6 +856,7 @@ spa_l2cache_exists(uint64_t guid, uint64_t *pool)
 void
 spa_l2cache_activate(vdev_t *vd)
 {
+	printf("spa_l2cache_activate\n");
 	mutex_enter(&spa_l2cache_lock);
 	ASSERT(vd->vdev_isl2cache);
 	spa_aux_activate(vd, &spa_l2cache_avl);
@@ -1632,13 +1633,13 @@ spa_init(int mode)
 	zpool_prop_init();
 	zpool_feature_init();
 	spa_config_load();
-	l2arc_start();
+	//l2arc_start();
 }
 
 OSV_LIB_SOLARIS_API void
 spa_fini(void)
 {
-	l2arc_stop();
+	//l2arc_stop();
 
 	spa_evict_all();
 

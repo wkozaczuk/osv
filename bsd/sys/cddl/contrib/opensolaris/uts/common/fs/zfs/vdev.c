@@ -1523,10 +1523,11 @@ vdev_reopen(vdev_t *vd)
 	 */
 	if (vd->vdev_aux) {
 		(void) vdev_validate_aux(vd);
+/*
 		if (vdev_readable(vd) && vdev_writeable(vd) &&
 		    vd->vdev_aux == &spa->spa_l2cache &&
 		    !l2arc_vdev_present(vd))
-			l2arc_add_vdev(spa, vd);
+			l2arc_add_vdev(spa, vd);*/
 	} else {
 		(void) vdev_validate(vd, spa_last_synced_txg(spa));
 	}

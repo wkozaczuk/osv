@@ -550,7 +550,7 @@ static void arc_evict_ghost(arc_state_t *state, uint64_t spa, int64_t bytes);
 static void arc_buf_watch(arc_buf_t *buf);
 #endif /* illumos */
 
-static boolean_t l2arc_write_eligible(uint64_t spa_guid, arc_buf_hdr_t *ab);
+//static boolean_t l2arc_write_eligible(uint64_t spa_guid, arc_buf_hdr_t *ab);
 
 #define	GHOST_STATE(state)	\
 	((state) == arc_mru_ghost || (state) == arc_mfu_ghost ||	\
@@ -770,9 +770,9 @@ static kmutex_t l2arc_feed_thr_lock;
 static kcondvar_t l2arc_feed_thr_cv;
 static uint8_t l2arc_thread_exit;
 
-static void l2arc_read_done(zio_t *zio);
-static void l2arc_hdr_stat_add(void);
-static void l2arc_hdr_stat_remove(void);
+//static void l2arc_read_done(zio_t *zio);
+//static void l2arc_hdr_stat_add(void);
+//static void l2arc_hdr_stat_remove(void);
 
 static uint64_t
 buf_hash(uint64_t spa, const dva_t *dva, uint64_t birth)
@@ -1054,7 +1054,7 @@ arc_cksum_verify(arc_buf_t *buf)
 		panic("buffer modified while frozen!");
 	mutex_exit(&buf->b_hdr->b_freeze_lock);
 }
-
+/*
 static int
 arc_cksum_equal(arc_buf_t *buf)
 {
@@ -1067,7 +1067,7 @@ arc_cksum_equal(arc_buf_t *buf)
 	mutex_exit(&buf->b_hdr->b_freeze_lock);
 
 	return (equal);
-}
+}*/
 
 static void
 arc_cksum_compute(arc_buf_t *buf, boolean_t force)
@@ -1349,10 +1349,11 @@ arc_change_state(arc_state_t *new_state, arc_buf_hdr_t *ab, kmutex_t *hash_lock)
 	ab->b_state = new_state;
 
 	/* adjust l2arc hdr stats */
+/*
 	if (new_state == arc_l2c_only)
 		l2arc_hdr_stat_add();
 	else if (old_state == arc_l2c_only)
-		l2arc_hdr_stat_remove();
+		l2arc_hdr_stat_remove();*/
 }
 
 void
@@ -1722,12 +1723,15 @@ arc_hdr_destroy(arc_buf_hdr_t *hdr)
 		}
 
 		if (l2hdr != NULL) {
+/*
 			list_remove(l2hdr->b_dev->l2ad_buflist, hdr);
 			ARCSTAT_INCR(arcstat_l2_size, -hdr->b_size);
 			kmem_free(l2hdr, sizeof (l2arc_buf_hdr_t));
 			if (hdr->b_state == arc_l2c_only)
 				l2arc_hdr_stat_remove();
-			hdr->b_l2hdr = NULL;
+			hdr->b_l2hdr = NULL;*/
+		} else {
+ 			abort();
 		}
 
 		if (!buflist_held)
@@ -1968,7 +1972,7 @@ evict_start:
 					    buf->b_data == stolen, TRUE);
 				}
 			}
-
+/*
 			if (ab->b_l2hdr) {
 				ARCSTAT_INCR(arcstat_evict_l2_cached,
 				    ab->b_size);
@@ -1981,7 +1985,7 @@ evict_start:
 					    arcstat_evict_l2_ineligible,
 					    ab->b_size);
 				}
-			}
+			}*/
 
 			if (ab->b_datacnt == 0) {
 				arc_change_state(evicted_state, ab, hash_lock);
@@ -3274,6 +3278,8 @@ top:
 #endif
 
 		if (vd != NULL && l2arc_ndev != 0 && !(l2arc_norw && devw)) {
+			abort();
+#ifdef ZFS_FULL
 			/*
 			 * Read from the L2ARC if the following are true:
 			 * 1. The L2ARC vdev was previously cached.
@@ -3331,6 +3337,7 @@ top:
 					ARCSTAT_BUMP(arcstat_l2_rw_clash);
 				spa_config_exit(spa, SCL_L2ARC, vd);
 			}
+#endif
 		} else {
 			if (vd != NULL)
 				spa_config_exit(spa, SCL_L2ARC, vd);
@@ -4155,6 +4162,7 @@ arc_fini(void)
 #endif
 }
 
+#ifdef ZFS_FULL
 /*
  * Level 2 ARC
  *
@@ -5226,3 +5234,4 @@ l2arc_stop(void)
 		cv_wait(&l2arc_feed_thr_cv, &l2arc_feed_thr_lock);
 	mutex_exit(&l2arc_feed_thr_lock);
 }
+#endif

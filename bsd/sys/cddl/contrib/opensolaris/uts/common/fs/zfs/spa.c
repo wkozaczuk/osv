@@ -1267,7 +1267,7 @@ spa_unload(spa_t *spa)
 	/*
 	 * Drop and purge level 2 cache
 	 */
-	spa_l2cache_drop(spa);
+	//spa_l2cache_drop(spa);
 
 	/*
 	 * Close all vdevs.
@@ -1320,6 +1320,7 @@ spa_unload(spa_t *spa)
  * 'spa_spares.sav_config'.  We parse this into vdevs, try to open them, and
  * then re-generate a more complete list including status information.
  */
+#ifdef BULA
 static void
 spa_load_spares(spa_t *spa)
 {
@@ -1428,6 +1429,7 @@ spa_load_spares(spa_t *spa)
 		nvlist_free(spares[i]);
 	kmem_free(spares, spa->spa_spares.sav_count * sizeof (void *));
 }
+#endif
 
 /*
  * Load (or re-load) the current list of vdevs describing the active l2cache for
@@ -1437,9 +1439,11 @@ spa_load_spares(spa_t *spa)
  * Devices which are already active have their details maintained, and are
  * not re-opened.
  */
+#ifdef BULA
 static void
 spa_load_l2cache(spa_t *spa)
 {
+	printf("spa_load_l2cache\n");
 	nvlist_t **l2cache;
 	uint_t nl2cache;
 	int i, j, oldnvdevs;
@@ -1521,12 +1525,13 @@ spa_load_l2cache(spa_t *spa)
 		vd = oldvdevs[i];
 		if (vd != NULL) {
 			ASSERT(vd->vdev_isl2cache);
-
+			abort();
+/*
 			if (spa_l2cache_exists(vd->vdev_guid, &pool) &&
 			    pool != 0ULL && l2arc_vdev_present(vd))
 				l2arc_remove_vdev(vd);
 			vdev_clear_stats(vd);
-			vdev_free(vd);
+			vdev_free(vd);*/
 		}
 	}
 
@@ -1558,6 +1563,7 @@ out:
 	if (sav->sav_count)
 		kmem_free(l2cache, sav->sav_count * sizeof (void *));
 }
+#endif
 
 static int
 load_nvlist(spa_t *spa, uint64_t obj, nvlist_t **value)
@@ -2485,6 +2491,7 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	 * devices.
 	 */
 
+#ifdef ZFS_FULL
 	/*
 	 * Load any hot spares for this pool.
 	 */
@@ -2523,6 +2530,7 @@ spa_load_impl(spa_t *spa, uint64_t pool_guid, nvlist_t *config,
 	} else if (error == 0) {
 		spa->spa_l2cache.sav_sync = B_TRUE;
 	}
+#endif
 
 	spa->spa_delegation = zpool_prop_default_numeric(ZPOOL_PROP_DELEGATION);
 
@@ -3002,6 +3010,7 @@ spa_inject_delref(spa_t *spa)
 	mutex_exit(&spa_namespace_lock);
 }
 
+#ifdef BULA
 /*
  * Add spares device information to the nvlist.
  */
@@ -3105,6 +3114,7 @@ spa_add_l2cache(spa_t *spa, nvlist_t *config)
 		}
 	}
 }
+#endif
 
 static void
 spa_add_feature_stats(spa_t *spa, nvlist_t *config)
@@ -3182,8 +3192,8 @@ spa_get_stats(const char *name, nvlist_t **config,
 				    ZPOOL_CONFIG_SUSPENDED,
 				    spa->spa_failmode) == 0);
 
-			spa_add_spares(spa, *config);
-			spa_add_l2cache(spa, *config);
+			//spa_add_spares(spa, *config);
+			//spa_add_l2cache(spa, *config);
 			spa_add_feature_stats(spa, *config);
 		}
 	}
@@ -3320,6 +3330,7 @@ spa_validate_aux(spa_t *spa, nvlist_t *nvroot, uint64_t crtxg, int mode)
 	    VDEV_LABEL_L2CACHE));
 }
 
+#ifdef BULA
 static void
 spa_set_aux_vdevs(spa_aux_vdev_t *sav, nvlist_t **devs, int ndevs,
     const char *config)
@@ -3365,11 +3376,12 @@ spa_set_aux_vdevs(spa_aux_vdev_t *sav, nvlist_t **devs, int ndevs,
 		    devs, ndevs) == 0);
 	}
 }
+#endif
 
 /*
  * Stop and drop level 2 ARC devices
  */
-void
+/*void
 spa_l2cache_drop(spa_t *spa)
 {
 	vdev_t *vd;
@@ -3386,7 +3398,7 @@ spa_l2cache_drop(spa_t *spa)
 		    pool != 0ULL && l2arc_vdev_present(vd))
 			l2arc_remove_vdev(vd);
 	}
-}
+}*/
 
 /*
  * Pool Creation
@@ -3488,6 +3500,7 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 		return (error);
 	}
 
+#ifdef OLA
 	/*
 	 * Get the list of spares, if specified.
 	 */
@@ -3517,6 +3530,7 @@ spa_create(const char *pool, nvlist_t *nvroot, nvlist_t *props,
 		spa_config_exit(spa, SCL_ALL, FTAG);
 		spa->spa_l2cache.sav_sync = B_TRUE;
 	}
+#endif
 
 	spa->spa_is_initializing = B_TRUE;
 	spa->spa_dsl_pool = dp = dsl_pool_create(spa, zplprops, txg);
@@ -4332,6 +4346,7 @@ spa_import(const char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 	 * Toss any existing sparelist, as it doesn't have any validity
 	 * anymore, and conflicts with spa_has_spare().
 	 */
+#ifdef BULA
 	if (spa->spa_spares.sav_config) {
 		nvlist_free(spa->spa_spares.sav_config);
 		spa->spa_spares.sav_config = NULL;
@@ -4342,6 +4357,7 @@ spa_import(const char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 		spa->spa_l2cache.sav_config = NULL;
 		spa_load_l2cache(spa);
 	}
+#endif
 
 	VERIFY(nvlist_lookup_nvlist(config, ZPOOL_CONFIG_VDEV_TREE,
 	    &nvroot) == 0);
@@ -4367,6 +4383,7 @@ spa_import(const char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 
 	spa_async_resume(spa);
 
+#ifdef BULA
 	/*
 	 * Override any spares and level 2 cache devices as specified by
 	 * the user, as these may have correct device names/devids, etc.
@@ -4401,6 +4418,7 @@ spa_import(const char *pool, nvlist_t *config, nvlist_t *props, uint64_t flags)
 		spa_config_exit(spa, SCL_ALL, FTAG);
 		spa->spa_l2cache.sav_sync = B_TRUE;
 	}
+#endif
 
 	/*
 	 * Check for any removed devices.
@@ -4512,10 +4530,10 @@ spa_tryimport(nvlist_t *tryconfig)
 		/*
 		 * Add the list of hot spares and level 2 cache devices.
 		 */
-		spa_config_enter(spa, SCL_CONFIG, FTAG, RW_READER);
+		/*spa_config_enter(spa, SCL_CONFIG, FTAG, RW_READER);
 		spa_add_spares(spa, config);
 		spa_add_l2cache(spa, config);
-		spa_config_exit(spa, SCL_CONFIG, FTAG);
+		spa_config_exit(spa, SCL_CONFIG, FTAG);*/
 	}
 
 	spa_unload(spa);
@@ -4739,6 +4757,7 @@ spa_vdev_add(spa_t *spa, nvlist_t *nvroot)
 		vdev_config_dirty(tvd);
 	}
 
+#ifdef BULA
 	if (nspares != 0) {
 		spa_set_aux_vdevs(&spa->spa_spares, spares, nspares,
 		    ZPOOL_CONFIG_SPARES);
@@ -4752,6 +4771,7 @@ spa_vdev_add(spa_t *spa, nvlist_t *nvroot)
 		spa_load_l2cache(spa);
 		spa->spa_l2cache.sav_sync = B_TRUE;
 	}
+#endif
 
 	/*
 	 * We have to be careful when adding new vdevs to an existing pool.
