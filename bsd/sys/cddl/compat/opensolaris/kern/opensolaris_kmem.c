@@ -135,7 +135,8 @@ kmem_debugging(void)
 	return (0);
 }
 
-OSV_LIB_SOLARIS_API
+//OSV_LIB_SOLARIS_API
+OSV_MODULE_API
 uint64_t kmem_size(void)
 {
 	return physmem * PAGE_SIZE;

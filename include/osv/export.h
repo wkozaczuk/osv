@@ -31,7 +31,7 @@
 #define OSV_LD_LINUX_x86_64_API __attribute__((__visibility__("default")))
 
 // This is to expose some symbols in libsolaris.so
-#define OSV_LIB_SOLARIS_API __attribute__((__visibility__("default")))
+#define OSV_LIB_SOLARIS_API __attribute__((__visibility__("hidden")))
 //
 // This is to expose some OSv functions intended to be used by modules
 #define OSV_MODULE_API __attribute__((__visibility__("default")))

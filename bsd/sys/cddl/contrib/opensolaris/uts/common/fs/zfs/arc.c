@@ -445,7 +445,7 @@ static arc_stats_t arc_stats = {
 		}							\
 	}
 
-OSV_LIB_SOLARIS_API
+OSV_MODULE_API
 kstat_t			*arc_ksp;
 static arc_state_t	*arc_anon;
 static arc_state_t	*arc_mru;
