@@ -102,11 +102,14 @@ void zprop_register_impl(int, const char *, zprop_type_t, uint64_t,
     const char *, zprop_attr_t, int, const char *, const char *,
     boolean_t, boolean_t, const zprop_index_t *);
 void zprop_register_string(int, const char *, const char *,
-    zprop_attr_t attr, int, const char *, const char *);
+    //zprop_attr_t attr, int, const char *, const char *);
+    zprop_attr_t attr, int, const char *);
 void zprop_register_number(int, const char *, uint64_t, zprop_attr_t, int,
-    const char *, const char *);
+    //const char *, const char *);
+    const char *);
 void zprop_register_index(int, const char *, uint64_t, zprop_attr_t, int,
-    const char *, const char *, const zprop_index_t *);
+    //const char *, const char *, const zprop_index_t *);
+    const char *, const zprop_index_t *);
 void zprop_register_hidden(int, const char *, zprop_type_t, zprop_attr_t,
     int, const char *);
 

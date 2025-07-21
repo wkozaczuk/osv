@@ -100,30 +100,30 @@ zprop_register_impl(int prop, const char *name, zprop_type_t type,
 
 void
 zprop_register_string(int prop, const char *name, const char *def,
-    zprop_attr_t attr, int objset_types, const char *values,
+    zprop_attr_t attr, int objset_types, //const char *values,
     const char *colname)
 {
 	zprop_register_impl(prop, name, PROP_TYPE_STRING, 0, def, attr,
-	    objset_types, values, colname, B_FALSE, B_TRUE, NULL);
+	    objset_types, NULL, colname, B_FALSE, B_TRUE, NULL);
 
 }
 
 void
 zprop_register_number(int prop, const char *name, uint64_t def,
-    zprop_attr_t attr, int objset_types, const char *values,
+    zprop_attr_t attr, int objset_types, //const char *values,
     const char *colname)
 {
 	zprop_register_impl(prop, name, PROP_TYPE_NUMBER, def, NULL, attr,
-	    objset_types, values, colname, B_TRUE, B_TRUE, NULL);
+	    objset_types, NULL, colname, B_TRUE, B_TRUE, NULL);
 }
 
 void
 zprop_register_index(int prop, const char *name, uint64_t def,
-    zprop_attr_t attr, int objset_types, const char *values,
+    zprop_attr_t attr, int objset_types, //const char *values,
     const char *colname, const zprop_index_t *idx_tbl)
 {
 	zprop_register_impl(prop, name, PROP_TYPE_INDEX, def, NULL, attr,
-	    objset_types, values, colname, B_TRUE, B_TRUE, idx_tbl);
+	    objset_types, NULL, colname, B_TRUE, B_TRUE, idx_tbl);
 }
 
 void
@@ -251,6 +251,7 @@ zprop_name_to_prop_cb(int prop, void *cb_data)
 int
 zprop_name_to_prop(const char *propname, zfs_type_t type)
 {
+	//printf("zprop_name_to_prop: name:%s\n", propname);
 	int prop;
 	name_to_prop_cb_t cb_data;
 
