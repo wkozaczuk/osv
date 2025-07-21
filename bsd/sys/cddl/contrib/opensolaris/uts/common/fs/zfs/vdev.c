@@ -533,9 +533,9 @@ vdev_alloc(spa_t *spa, vdev_t **vdp, nvlist_t *nv, vdev_t *parent, uint_t id,
 		if (alloctype == VDEV_ALLOC_ROOTPOOL) {
 			uint64_t spare = 0;
 
-			if (nvlist_lookup_uint64(nv, ZPOOL_CONFIG_IS_SPARE,
-			    &spare) == 0 && spare)
-				spa_spare_add(vd);
+			//if (nvlist_lookup_uint64(nv, ZPOOL_CONFIG_IS_SPARE,
+			 //   &spare) == 0 && spare)
+			//	spa_spare_add(vd);
 		}
 
 		(void) nvlist_lookup_uint64(nv, ZPOOL_CONFIG_OFFLINE,
@@ -637,11 +637,11 @@ vdev_free(vdev_t *vd)
 		spa_strfree(vd->vdev_physpath);
 	if (vd->vdev_fru)
 		spa_strfree(vd->vdev_fru);
-
+/*
 	if (vd->vdev_isspare)
 		spa_spare_remove(vd);
 	if (vd->vdev_isl2cache)
-		spa_l2cache_remove(vd);
+		spa_l2cache_remove(vd);*/
 
 	txg_list_destroy(&vd->vdev_ms_list);
 	txg_list_destroy(&vd->vdev_dtl_list);
@@ -1522,7 +1522,8 @@ vdev_reopen(vdev_t *vd)
 	 * opened in response to vdev_reopen().
 	 */
 	if (vd->vdev_aux) {
-		(void) vdev_validate_aux(vd);
+		abort();
+		//(void) vdev_validate_aux(vd);
 /*
 		if (vdev_readable(vd) && vdev_writeable(vd) &&
 		    vd->vdev_aux == &spa->spa_l2cache &&

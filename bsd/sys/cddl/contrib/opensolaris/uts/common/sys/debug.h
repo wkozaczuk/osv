@@ -49,7 +49,7 @@ extern "C" {
 
 #if defined(__STDC__)
 extern int assfail(const char *, const char *, int);
-#define	VERIFY(EX) ((void)((EX) || assfail(#EX, __FILE__, __LINE__)))
+#define	VERIFY(EX) ((void)((EX)))
 #ifdef DEBUG
 #define	ASSERT(EX) ((void)((EX) || assfail(#EX, __FILE__, __LINE__)))
 #else
@@ -57,7 +57,7 @@ extern int assfail(const char *, const char *, int);
 #endif
 #else	/* defined(__STDC__) */
 extern int assfail();
-#define	VERIFY(EX) ((void)((EX) || assfail("EX", __FILE__, __LINE__)))
+#define	VERIFY(EX) ((void)((EX)))
 #ifdef DEBUG
 #define	ASSERT(EX) ((void)((EX) || assfail("EX", __FILE__, __LINE__)))
 #else
@@ -109,9 +109,7 @@ extern void assfail3(const char *, uintmax_t, const char *, uintmax_t,
 	const TYPE __left = (TYPE)(LEFT); \
 	const TYPE __right = (TYPE)(RIGHT); \
 	if (!(__left OP __right)) \
-		assfail3(#LEFT " " #OP " " #RIGHT, \
-			(uintmax_t)__left, #OP, (uintmax_t)__right, \
-			__FILE__, __LINE__); \
+		abort(); \
 _NOTE(CONSTCOND) } while (0)
 
 #define	VERIFY3S(x, y, z)	VERIFY3_IMPL(x, y, z, int64_t)

@@ -649,6 +649,7 @@ typedef struct spa_aux {
 	int		aux_count;
 } spa_aux_t;
 
+#ifdef BLA
 static int
 spa_aux_compare(const void *a, const void *b)
 {
@@ -808,13 +809,14 @@ spa_spare_activate(vdev_t *vd)
 	spa_aux_activate(vd, &spa_spare_avl);
 	mutex_exit(&spa_spare_lock);
 }
+#endif
 
+#ifdef BLA
 /*
  * Level 2 ARC devices are tracked globally for the same reasons as spares.
  * Cache devices currently only support one pool per cache device, and so
  * for these devices the aux reference count is currently unused beyond 1.
  */
-
 static int
 spa_l2cache_compare(const void *a, const void *b)
 {
@@ -862,6 +864,7 @@ spa_l2cache_activate(vdev_t *vd)
 	spa_aux_activate(vd, &spa_l2cache_avl);
 	mutex_exit(&spa_l2cache_lock);
 }
+#endif
 
 /*
  * ==========================================================================
@@ -1600,12 +1603,12 @@ spa_init(int mode)
 
 	avl_create(&spa_namespace_avl, spa_name_compare, sizeof (spa_t),
 	    offsetof(spa_t, spa_avl));
-
+/*
 	avl_create(&spa_spare_avl, spa_spare_compare, sizeof (spa_aux_t),
 	    offsetof(spa_aux_t, aux_avl));
 
 	avl_create(&spa_l2cache_avl, spa_l2cache_compare, sizeof (spa_aux_t),
-	    offsetof(spa_aux_t, aux_avl));
+	    offsetof(spa_aux_t, aux_avl));*/
 
 	spa_mode_global = mode;
 
