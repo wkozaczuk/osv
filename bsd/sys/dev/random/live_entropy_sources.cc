@@ -50,6 +50,7 @@ __FBSDID("$FreeBSD$");
 #include "live_entropy_sources.h"
 
 #include <osv/debug.h>
+#include <osv/debug.hh>
 
 LIST_HEAD(les_head, live_entropy_sources);
 static struct les_head sources = LIST_HEAD_INITIALIZER(sources);

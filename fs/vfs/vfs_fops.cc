@@ -9,6 +9,7 @@
 #include <fcntl.h>
 #include <sys/stat.h>
 #include <osv/file.h>
+#include <osv/sched.hh>
 #include <osv/poll.h>
 #include <fs/vfs/vfs.h>
 #include <osv/vfs_file.hh>

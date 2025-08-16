@@ -10,6 +10,7 @@
 #include <stdlib.h>
 #include <string.h>
 #include <osv/file.h>
+#include <osv/sched.hh>
 #include <osv/poll.h>
 #include <osv/debug.h>
 #include <osv/mutex.h>

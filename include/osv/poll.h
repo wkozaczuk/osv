@@ -138,6 +138,7 @@ struct poll_file {
  * is issued.
  *
  */
+//#include "sched.hh"
 struct pollreq {
     std::vector<poll_file> _pfd;
     nfds_t _nfds;

@@ -1433,7 +1433,7 @@ void thread::stop_wait()
     // in again - this is why we disabled preemption in prepare_wait.
     status old_status = status::waiting;
     auto& st = _detached_state->st;
-    if (st.compare_exchange_strong(old_status, status::running)) {
+    if (st.compare_exchange_strong(old_status, status::running) || old_status == status::running) {
         preempt_enable();
         return;
     }

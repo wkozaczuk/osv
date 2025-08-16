@@ -1,0 +1,312 @@
+/*
+ * Copyright (C) 2013 Cloudius Systems, Ltd.
+ *
+ * This work is open source software, licensed under the terms of the
+ * BSD license as described in the LICENSE file in the top-level directory.
+ */
+
+#include <mutex>
+#include <osv/sched.hh>
+#include <osv/rwlock.h>
+#include <osv/export.h>
+
+using namespace sched;
+
+rwlock::rwlock()
+    : _readers(0)
+{}
+
+rwlock::~rwlock()
+{
+    assert(_readers == 0);
+    assert(_read_waiters.empty());
+}
+
+static constexpr unsigned LOCK_INDICATOR  = 0x80000000;
+static constexpr unsigned WRITE_INDICATOR = 0x40000000;
+static constexpr unsigned READER_MASK     = 0x3fffffff;
+
+static constexpr unsigned RETRY_THRESHOLD = 0; //10; //Do not retry if single CPU
+
+//Possibly DONE
+bool rwlock::try_rlock() {
+    std::atomic<unsigned> *readers = reinterpret_cast<std::atomic<unsigned>*>(&_readers);
+    if (_readers < WRITE_INDICATOR) {
+        uint32_t prev_readers = readers->fetch_add(1);
+        if (prev_readers < LOCK_INDICATOR) {
+            return true;
+        }
+        readers->fetch_add(-1);
+    }
+    return false;
+}
+
+//Possibly DONE except for the problematic scenario explained before wait_until()
+void rwlock::rlock() {
+    unsigned retry = 0;
+    while (true) {
+        if (try_rlock())
+            return;
+
+        if (retry++ > RETRY_THRESHOLD) {
+            retry = 0;
+            //
+            //Wait up until try_rlock() succeeded
+            lockfree::linked_item<thread*> read_waiter(thread::current());
+            //
+            //Here is a scenario: we are the only reader to try and there is
+            //an active writer (that is why try_rlock() ABOVE failed) and we try again
+            //and fail in the wait_until() below. But then right after the writer calls
+            //wunlock(), removes the LOCK and WRITE indicator, and tries to pop
+            //any items from the _read_waiters which is empty, BEFORE we have a chance
+            //to push ours before going to sleep - who will wake us up?
+            bool rlocked = false; //This is NEW -> also sched::stop_wait() changed
+            thread::wait_until( [this, &read_waiter, &rlocked] { 
+                if (this->try_rlock()) {
+                    rlocked = true;
+                    return true;
+                } else {
+                    //Add to the _read_waiters - 1st time or other
+                    this->_read_waiters.push(&read_waiter);
+                    return false;
+                }
+            });
+            if (rlocked) return;
+        }
+    }
+}
+
+//Possibly DONE
+void rwlock::runlock() {
+    std::atomic<unsigned> *readers = reinterpret_cast<std::atomic<unsigned>*>(&_readers);
+
+    unsigned prev_readers = readers->fetch_add(-1);
+
+    assert(prev_readers > 0);
+    assert(prev_readers < LOCK_INDICATOR);
+
+    //Wake potential writer if any (no other active writer) if we are the last one
+    if ((prev_readers & READER_MASK) == 1 && (prev_readers & WRITE_INDICATOR) && (prev_readers & LOCK_INDICATOR) == 0) {
+        //Wake the _wmtx owner - pending writer - if not null
+        auto pending_writer = _wmtx.get_owner();
+        if (pending_writer) {
+            pending_writer->wake();
+        }
+    }
+}
+
+//Possibly DONE
+bool rwlock::try_upgrade() {
+    if (!_wmtx.try_lock()) {
+        return false;
+    }
+    std::atomic<unsigned> *readers = reinterpret_cast<std::atomic<unsigned>*>(&_readers);
+    unsigned prev_readers = readers->load();
+    if (prev_readers == 1) { // LOCK_INDICATOR and WRITE_INDICATOR are off 
+        if (readers->compare_exchange_weak(prev_readers, (WRITE_INDICATOR | LOCK_INDICATOR))) {
+            // we've won the race
+            return true;
+        }
+    }
+    //We either were not the only reader or have lost the race with a new reader or writer
+    _wmtx.unlock();
+    return false;
+}
+
+//Possibly DONE
+bool rwlock::internal_try_wlock(std::atomic<unsigned> *readers) {
+    uint32_t prev_readers = readers->load();
+    if ((prev_readers & READER_MASK) == 0 && (prev_readers & LOCK_INDICATOR) == 0) {
+        if (readers->compare_exchange_weak(prev_readers, WRITE_INDICATOR | LOCK_INDICATOR)) {
+            // we've won the race
+            return true;
+        }
+    } else if (prev_readers & LOCK_INDICATOR && _wmtx.owned()) {
+        return true;
+    }
+    return false;
+}
+
+//Possibly DONE
+bool rwlock::try_wlock() {
+    if (!_wmtx.try_lock()) {
+        return false;
+    }
+    std::atomic<unsigned> *readers = reinterpret_cast<std::atomic<unsigned>*>(&_readers);
+    if (internal_try_wlock(readers)) {
+        return true; 
+    }
+    //We have lost the race with a new reader or writer
+    _wmtx.unlock();
+    return false;
+}
+
+//Possibly DONE
+void rwlock::wlock() {
+    //Lets set the write indicator in order to phase out the current readers and block new ones
+    std::atomic<unsigned> *readers = reinterpret_cast<std::atomic<unsigned>*>(&_readers);
+    //readers->fetch_or(WRITE_INDICATOR); //This changed
+
+    //Lock the writer mutex which may obviusly go sleep
+    _wmtx.lock();
+    //At this point we are still a potential writer and the one that is the 1st from all the
+    //pending ones if any
+    //
+    //The previous writer if any removed the flag to let some readers in so
+    //lets set the write indicator again in order to phase out the current
+    //readers and block new ones
+    readers->fetch_or(WRITE_INDICATOR);
+    
+    //Now retry to set lock indicator in a loop 
+    unsigned retry = 0;
+    while (true) {
+        if (internal_try_wlock(readers)) {
+            return;
+        }
+
+        if (retry++ > RETRY_THRESHOLD) { //TODO: It should be so when RETRY_THRESHOLD = 0 it should try once
+            retry = 0;
+            //Go to sleep
+            thread::wait_until( [this, readers] { return this->internal_try_wlock(readers); });
+            return; 
+        }
+    }
+}
+
+//Possibly DONE
+void rwlock::wunlock() {
+    assert(_readers & (LOCK_INDICATOR | WRITE_INDICATOR));
+
+    //If we are recursed then simply unlock and return
+    if (_wmtx.getdepth() > 1) {
+        return _wmtx.unlock();
+    }
+
+    //Now more difficult part
+    std::atomic<unsigned> *readers = reinterpret_cast<std::atomic<unsigned>*>(&_readers);
+    //unsigned rnum = readers->fetch_and(~(LOCK_INDICATOR | WRITE_INDICATOR)) & READER_MASK; //May race with wlock() loop
+    readers->fetch_and(~(LOCK_INDICATOR | WRITE_INDICATOR)); //May race with wlock() loop
+    //Wake the waiting readers
+    while (true) {
+        lockfree::linked_item<thread*> *read_waiter = _read_waiters.pop();
+        //if (!read_waiter || rnum > 0) { //This was potentially necessary
+        if (!read_waiter) {
+            break;
+        }
+        read_waiter->value->wake();
+        //rnum--;
+    }
+
+    _wmtx.unlock();
+}
+
+//Possibly DONE
+void rwlock::downgrade()
+{
+    assert(_readers & (LOCK_INDICATOR | WRITE_INDICATOR));
+
+    std::atomic<unsigned> *readers = reinterpret_cast<std::atomic<unsigned>*>(&_readers);
+
+    //Remove LOCK and WRITE indicators but increment readers
+    while(true) {
+        uint32_t prev_readers = readers->load();
+        uint32_t next_readers = (prev_readers & ~(LOCK_INDICATOR | WRITE_INDICATOR)) + 1;
+        if (readers->compare_exchange_weak(prev_readers, next_readers)) {
+            break;
+        }
+    }
+    //Wake the waiting readers
+    while (true) {
+        lockfree::linked_item<thread*> *read_waiter = _read_waiters.pop();
+        if (!read_waiter) {
+            break;
+        }
+        read_waiter->value->wake();
+    }
+
+    //Unlock all the way down
+    for (int depth = _wmtx.getdepth(); depth > 0; depth--) {
+        _wmtx.unlock();
+    }
+}
+
+bool rwlock::wowned()
+{
+    return _wmtx.owned();
+}
+
+bool rwlock::has_readers()
+{
+    return _readers;
+}
+
+OSV_LIBSOLARIS_API
+void rwlock_init(rwlock_t* rw)
+{
+    new (rw) rwlock;
+}
+
+OSV_LIBSOLARIS_API
+void rwlock_destroy(rwlock_t* rw)
+{
+    rw->~rwlock();
+}
+
+OSV_LIBSOLARIS_API
+void rw_rlock(rwlock_t* rw)
+{
+    rw->rlock();
+}
+
+OSV_LIBSOLARIS_API
+void rw_wlock(rwlock_t* rw)
+{
+    rw->wlock();
+}
+
+OSV_LIBSOLARIS_API
+int rw_try_rlock(rwlock_t* rw)
+{
+    return rw->try_rlock();
+}
+
+OSV_LIBSOLARIS_API
+int rw_try_wlock(rwlock_t* rw)
+{
+    return rw->try_wlock();
+}
+
+OSV_LIBSOLARIS_API
+void rw_runlock(rwlock_t* rw)
+{
+    rw->runlock();
+}
+
+OSV_LIBSOLARIS_API
+void rw_wunlock(rwlock_t* rw)
+{
+    rw->wunlock();
+}
+
+OSV_LIBSOLARIS_API
+int rw_try_upgrade(rwlock_t* rw)
+{
+    return rw->try_upgrade();
+}
+
+OSV_LIBSOLARIS_API
+void rw_downgrade(rwlock_t* rw)
+{
+    rw->downgrade();
+}
+
+OSV_LIBSOLARIS_API
+int rw_wowned(rwlock_t* rw)
+{
+    return rw->wowned();
+}
+
+int rw_has_readers(rwlock_t* rw)
+{
+    return rw->has_readers();
+}

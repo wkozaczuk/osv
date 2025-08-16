@@ -96,7 +96,8 @@ private:
     friend class rwlock_for_read;
     friend class rwlock_for_write;
 
-    void wake_waiting_readers(std::atomic<unsigned> *readers, unsigned waiting_readers);
+    bool internal_try_wlock(std::atomic<unsigned> *readers);
+    void wake_read_waiters(lockfree::linked_item<sched::thread*> *skip = nullptr);
 
     lockfree::queue_mpsc<lockfree::linked_item<sched::thread*>> _read_waiters;
 #else
@@ -109,7 +110,7 @@ private:
 
     mutex_t _wmtx;
     unsigned _readers;
-    bool _writer_wait;
+    bool _waking_waiters;
 };
 
 typedef struct rwlock rwlock_t;

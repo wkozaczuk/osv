@@ -103,6 +103,7 @@
 #include <sys/cdefs.h>
 #include <stddef.h>
 
+#include <osv/sched.hh>
 #include <osv/poll.h>
 #include <sys/epoll.h>
 #include <osv/debug.h>

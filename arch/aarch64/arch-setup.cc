@@ -269,11 +269,11 @@ void arch_init_early_console()
     console::mmio_isa_serial_console::_phys_mmio_address = 0;
 
 #if CONF_drivers_xen
-    if (is_xen()) {
+/*    if (is_xen()) {
         new (&console::aarch64_console.xen) console::XEN_Console();
         console::arch_early_console = console::aarch64_console.xen;
         return;
-    }
+    }*/
 #endif
 
     int irqid;

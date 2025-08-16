@@ -995,7 +995,7 @@ ifeq ($(conf_drivers_cadence),1)
 drivers += drivers/cadence-uart.o
 endif
 ifeq ($(conf_drivers_xen),1)
-drivers += drivers/xenconsole.o
+#drivers += drivers/xenconsole.o
 endif
 
 ifeq ($(conf_drivers_virtio),1)
@@ -1099,7 +1099,12 @@ endif
 objects += core/math.o
 objects += core/spinlock.o
 objects += core/lfmutex.o
-objects += core/rwlock.o
+#objects += core/rwlock.o
+#objects += core/rwlock_improved.o
+#Below WORKS
+#objects += core/rwlock_improved_1.o
+#objects += core/rwlock_improved2.o
+objects += core/rwlock_improved_21.o
 objects += core/semaphore.o
 objects += core/condvar.o
 objects += core/debug.o

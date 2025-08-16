@@ -15,7 +15,9 @@
 #include <signal.h>
 
 #include <osv/file.h>
+#include <osv/sched.hh>
 #include <osv/poll.h>
+#include <osv/waitqueue.hh>
 #include <fs/fs.hh>
 #include <boost/lockfree/queue.hpp>
 #include <boost/lockfree/policies.hpp>

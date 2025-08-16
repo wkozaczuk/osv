@@ -9,6 +9,7 @@
 #include <stdlib.h>
 #include <errno.h>
 #include <signal.h>
+#include <osv/sched.hh>
 #include <osv/poll.h>
 #include <osv/export.h>
 #include <osv/debug.h>

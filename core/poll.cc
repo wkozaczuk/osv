@@ -47,8 +47,10 @@
 #include <signal.h>
 
 #include <osv/file.h>
+#include <osv/sched.hh>
 #include <osv/poll.h>
 #include <osv/export.h>
+#include <osv/waitqueue.hh>
 #include <sys/epoll.h>
 
 #include <bsd/porting/netport.h>

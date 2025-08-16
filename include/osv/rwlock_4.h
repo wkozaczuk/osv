@@ -23,9 +23,19 @@ namespace sched {
     class thread;
 }
 
-static_assert(sizeof(lockfree::queue_mpsc<lockfree::linked_item<sched::thread*>>) == LOCKFREE_QUEUE_MPSC_SIZE,
+class read_waiter {
+public:
+    sched::thread *t;
+    read_waiter *next;
+    bool woken;
+    bool locked;
+    read_waiter() : t(nullptr), next(nullptr), woken(false), locked(false) { }
+    explicit read_waiter(sched::thread *tt) : t(tt), next(nullptr), woken(false), locked(false) { }
+};
+
+static_assert(sizeof(lockfree::queue_mpsc<read_waiter>) == LOCKFREE_QUEUE_MPSC_SIZE,
          "LOCKFREE_QUEUE_MPSC_SIZE should match lockfree::mutex");
-static_assert(alignof(lockfree::queue_mpsc<lockfree::linked_item<sched::thread*>>) == alignof(LOCKFREE_QUEUE_MPSC_ALIGN),
+static_assert(alignof(lockfree::queue_mpsc<read_waiter>) == alignof(LOCKFREE_QUEUE_MPSC_ALIGN),
          "LOCKFREE_QUEUE_MPSC_ALIGN should match alignment of lockfree::mutex");
 
 class rwlock;
@@ -96,9 +106,10 @@ private:
     friend class rwlock_for_read;
     friend class rwlock_for_write;
 
-    void wake_waiting_readers(std::atomic<unsigned> *readers, unsigned waiting_readers);
+    bool internal_try_wlock(std::atomic<unsigned> *readers);
+    bool wake_read_waiters(bool lock, read_waiter *skip = nullptr);
 
-    lockfree::queue_mpsc<lockfree::linked_item<sched::thread*>> _read_waiters;
+    lockfree::queue_mpsc<read_waiter> _read_waiters;
 #else
     //For C
     union {
@@ -109,7 +120,7 @@ private:
 
     mutex_t _wmtx;
     unsigned _readers;
-    bool _writer_wait;
+    bool _waking_waiters;
 };
 
 typedef struct rwlock rwlock_t;

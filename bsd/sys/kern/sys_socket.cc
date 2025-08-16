@@ -38,6 +38,7 @@
 #include <osv/ioctl.h>
 #include <osv/socket.hh>
 #include <osv/initialize.hh>
+#include <osv/sched.hh>
 #include <osv/poll.h>
 
 #include <bsd/sys/sys/libkern.h>

@@ -30,6 +30,7 @@
 #define SYS_DEV_RANDOM_RANDOMDEV_SOFT_H_INCLUDED
 
 #include <sys/sys/random.h>
+#include <algorithm>
 
 /* This header contains only those definitions that are global
  * and harvester-specific for the entropy processor

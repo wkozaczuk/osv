@@ -31,6 +31,7 @@
 
 #include <sys/cdefs.h>
 
+#include <osv/sched.hh>
 #include <osv/poll.h>
 #include <osv/clock.hh>
 #include <osv/signal.hh>

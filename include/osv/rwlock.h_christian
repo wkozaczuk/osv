@@ -9,24 +9,14 @@
 #define __OSV_RWLOCK_H__
 
 #include <osv/mutex.h>
+#include <osv/condvar.h>
 #include <sys/cdefs.h>
+#include <osv/waitqueue.hh>
+
 
 #define RWLOCK_INITIALIZER {}
 
-#define LOCKFREE_QUEUE_MPSC_ALIGN void*
-#define LOCKFREE_QUEUE_MPSC_SIZE  16
-
 #ifdef __cplusplus
-#include <lockfree/queue-mpsc.hh>
-
-namespace sched {
-    class thread;
-}
-
-static_assert(sizeof(lockfree::queue_mpsc<lockfree::linked_item<sched::thread*>>) == LOCKFREE_QUEUE_MPSC_SIZE,
-         "LOCKFREE_QUEUE_MPSC_SIZE should match lockfree::mutex");
-static_assert(alignof(lockfree::queue_mpsc<lockfree::linked_item<sched::thread*>>) == alignof(LOCKFREE_QUEUE_MPSC_ALIGN),
-         "LOCKFREE_QUEUE_MPSC_ALIGN should match alignment of lockfree::mutex");
 
 class rwlock;
 
@@ -93,23 +83,19 @@ public:
     bool has_readers();
 
 private:
+    bool read_lockable();
+    bool write_lockable();
+
     friend class rwlock_for_read;
     friend class rwlock_for_write;
 
-    void wake_waiting_readers(std::atomic<unsigned> *readers, unsigned waiting_readers);
-
-    lockfree::queue_mpsc<lockfree::linked_item<sched::thread*>> _read_waiters;
-#else
-    //For C
-    union {
-        char forsize[LOCKFREE_QUEUE_MPSC_SIZE];
-        LOCKFREE_QUEUE_MPSC_ALIGN foralignment;
-    };
 #endif // __cplusplus
 
-    mutex_t _wmtx;
     unsigned _readers;
-    bool _writer_wait;
+
+    void* _wowner;
+    unsigned _wrecurse;
+
 };
 
 typedef struct rwlock rwlock_t;
