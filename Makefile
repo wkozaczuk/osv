@@ -1104,7 +1104,9 @@ objects += core/lfmutex.o
 #Below WORKS
 #objects += core/rwlock_improved_1.o
 #objects += core/rwlock_improved2.o
-objects += core/rwlock_improved_21.o
+#objects += core/rwlock_improved_21.o
+#objects += core/rwlock_improved_22.o
+objects += core/rwlock_improved_23.o
 objects += core/semaphore.o
 objects += core/condvar.o
 objects += core/debug.o

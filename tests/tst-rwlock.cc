@@ -22,6 +22,8 @@ static std::atomic<s64> writer_lock_wait_total(0);
 static std::atomic<s64> writer_unlock_wait_total(0);
 static std::atomic<s64> writer_work_total(0);
 
+rwlock *my_lock;
+
 static void writer_thread(int id, rwlock &lock, long iterations, int data[], long data_len,
                           int inc, int loops, bool writer_sleep, bool sleep_before)
 {
@@ -126,6 +128,7 @@ static void test(params& p, bool pinned)
         data[j] = j;
 
     rwlock the_lock;
+    my_lock = &the_lock;
 
     int all_threads = p.readers + p.writers;
     sched::thread **threads = new sched::thread *[all_threads];
