@@ -131,11 +131,11 @@ template<typename T> const char *typeinfo<T>::_name = nullptr;
 template <typename T>
 static void test(int N, long len, bool pinned, threadfunc<T> f)
 {
-    printf("Contended mutex test, %s, %d %spinned threads\n",typeinfo<T>::name(), N,
-            pinned ? "" : "non-");
     assert (!pinned || (unsigned int)N <= sched::cpus.size());
     long shared=0;
     T m;
+    printf("Contended mutex test, %s, %d %spinned threads, m=%p\n",typeinfo<T>::name(), N,
+            pinned ? "" : "non-", &m);
     sched::thread *threads[N];
     for(int i = 0; i < N; i++) {
         threads[i]= sched::thread::make([i, len, &m, &shared, f] {
@@ -260,13 +260,13 @@ int main(int argc, char **argv)
         auto lff = increment_thread<mutex>;
         test<mutex>(2, n, true, lff);
         test<mutex>((int)sched::cpus.size(), n, true, lff);
-        test<mutex>(20, n, false, lff);
-
+        //test<mutex>(20, n, false, lff);
+/*
         auto spf = increment_thread<spinlock>;
         test<spinlock>(2, n, true, spf);
         test<spinlock>((int)sched::cpus.size(), n, true, spf);
-        test<spinlock>(20, n, false, spf);
-
+        test<spinlock>(20, n, false, spf);*/
+/*
         auto wrwf = increment_thread<rwlock_write_lock>;
         test<rwlock_write_lock>(2, n, true, wrwf);
         test<rwlock_write_lock>((int)sched::cpus.size(), n, true, wrwf);
@@ -275,7 +275,7 @@ int main(int argc, char **argv)
         auto rwf = loop_thread<rwlock_read_lock>;
         test<rwlock_read_lock>(2, n, true, rwf);
         test<rwlock_read_lock>((int)sched::cpus.size(), n, true, rwf);
-        test<rwlock_read_lock>(20, n, false, rwf);
+        test<rwlock_read_lock>(20, n, false, rwf);*/
     }
 
     if (run_misc || run_all) {

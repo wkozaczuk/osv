@@ -15,7 +15,7 @@
 #include <stdio.h>
 #include <stdint.h>
 
-uint64_t target_time = 10; // seconds
+uint64_t target_time = 10; // seconds 1
 
 #include <thread>
 #include <sched.h>
@@ -128,6 +128,7 @@ void test(std::string name,
     pin0(t0);
     pin1(t1);
     auto n_iterations = 10000;
+    //auto n_iterations = 100;
     exiting = false;
     bool converged = false;
     uint64_t start, end;
@@ -152,6 +153,7 @@ void test(std::string name,
 
         end = nstime();
         converged = (end - start) >= (target_time * 1000000000);
+        //converged = (end - start) >= (target_time * 10000);
     }
 
 

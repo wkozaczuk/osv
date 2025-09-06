@@ -1098,7 +1098,8 @@ objects += core/xen_intr.o
 endif
 objects += core/math.o
 objects += core/spinlock.o
-objects += core/lfmutex.o
+#objects += core/lfmutex.o
+objects += core/lfmutex_with_spinning.o
 objects += core/rwlock.o
 objects += core/semaphore.o
 objects += core/condvar.o
