@@ -131,16 +131,17 @@ template<typename T> const char *typeinfo<T>::_name = nullptr;
 template <typename T>
 static void test(int N, long len, bool pinned, threadfunc<T> f)
 {
-    assert (!pinned || (unsigned int)N <= sched::cpus.size());
+    //assert (!pinned || (unsigned int)N <= sched::cpus.size());
     long shared=0;
     T m;
     printf("Contended mutex test, %s, %d %spinned threads, m=%p\n",typeinfo<T>::name(), N,
             pinned ? "" : "non-", &m);
     sched::thread *threads[N];
     for(int i = 0; i < N; i++) {
+        auto _cpu = i % sched::cpus.size();
         threads[i]= sched::thread::make([i, len, &m, &shared, f] {
             f(i, &m, len, &shared);
-        }, pinned ? sched::thread::attr().pin(sched::cpus[i]) : sched::thread::attr());
+        }, pinned ? sched::thread::attr().pin(sched::cpus[_cpu]) : sched::thread::attr());
     }
     auto t1 = clock::get()->time();
     for(int i = 0; i < N; i++) {
@@ -260,7 +261,8 @@ int main(int argc, char **argv)
         auto lff = increment_thread<mutex>;
         test<mutex>(2, n, true, lff);
         test<mutex>((int)sched::cpus.size(), n, true, lff);
-        //test<mutex>(20, n, false, lff);
+        test<mutex>(20, n, true, lff);
+        test<mutex>(20, n, false, lff);
 /*
         auto spf = increment_thread<spinlock>;
         test<spinlock>(2, n, true, spf);
