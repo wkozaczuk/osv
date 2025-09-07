@@ -146,7 +146,12 @@ void mutex::lock()
         }
 	//}
 	//if (!holder && c > 5) c = 5;
-        asm volatile ("pause");
+#ifdef __x86_64__
+        __asm __volatile("pause");
+#endif
+#ifdef __aarch64__
+        __asm __volatile("isb sy");
+#endif
     }
     if (reset_spinning)
         spinning.store(false, std::memory_order_relaxed);
