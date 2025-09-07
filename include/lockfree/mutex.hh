@@ -75,13 +75,11 @@ protected:
     queue_mpsc<wait_record> waitqueue;
     std::atomic<unsigned int> handoff;
     unsigned int sequence;
-    unsigned int unlock_cpu;
-    //bool morphing;
 public:
     // Note: mutex's constructor just initializes the whole structure to
     // zero, and its destructor does nothing. This is useful to know when
     // allocating a mutex in C.
-    constexpr mutex() : count(0), depth(0), owner(nullptr), waitqueue(), handoff(0), sequence(0), unlock_cpu(0) { }
+    constexpr mutex() : count(0), depth(0), owner(nullptr), waitqueue(), handoff(0), sequence(0) { }
     ~mutex() { /*assert(count==0);*/ }
 
     void lock();

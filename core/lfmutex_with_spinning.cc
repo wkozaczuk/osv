@@ -28,7 +28,8 @@ TRACEPOINT(trace_mutex_send_lock, "%p, wr=%p, flavor=%d", mutex *, wait_record *
 TRACEPOINT(trace_mutex_receive_lock, "%p", mutex *);
 TRACEPOINT(trace_mutex_spun_times, "%p, success=%d, times=%d, fholder=%p, lholder=%p, count=%d, time=%ld", mutex *, bool, int, sched::thread*, sched::thread*, int, u64);
 
-constexpr unsigned int SPIN_MAX = 15; //20 Seems pretty good, 10 is kind of on a line
+//With new change to stop spinning after failed handoff, the 20 seems to be sweet spot
+constexpr unsigned int SPIN_MAX = 20; //20 Seems best, 10 is kind of on a line
 
 void mutex::lock()
 {
@@ -82,17 +83,14 @@ void mutex::lock()
     // spin, as it will be woken first, and no handoff will be done.
 //#ifdef ALE
 //The 1000 and my "holder" if seems to be improving 2 pinned to ~150, and 4 to 340
+    //if (_count < 2) {
     {
     auto t = clock::get()->time();
     //SCOPE_LOCK(preempt_lock);
-    //int c = 0;
     int c = SPIN_MAX; //100 lowers apart cont mutex with 2 cores, 10 sometimes
     sched::thread* holder1 = nullptr;
     sched::thread* holder = nullptr;
-    //auto this_cpu = smp_allocator ? sched::cpu::current()->id : 0;
-    //for (; c < 1000 && waitqueue.empty(); c++) {
     for (; c && waitqueue.empty(); c--) {
-    //for (; c < 1000 && !morphing && waitqueue.empty(); c++) {
         // If the lock holder got preempted, we would better be served
         // by going to sleep and let it run again, than futile spinning.
         // Especially if the lock holder wants to run on this CPU.
@@ -101,7 +99,7 @@ void mutex::lock()
 	if (c == SPIN_MAX) {
              holder1 = holder;
 	     //if (!holder1) break;
-	     //if (!holder1) c = 5;
+	     //if (!holder1) c = 10; //Breaks whole spinning
 	}
         // FIXME: what if thread exits while we want to check if it's
         // running? as soon as we find the owner above, it might already
@@ -117,9 +115,6 @@ void mutex::lock()
         //if (!holder || !holder->running()) { //SEEMS to be wrong
             break;
         }
-	/*if (!holder && unlock_cpu == this_cpu) {
-	    break;
-	}*/
         // If the lock holder is on the same CPU as us, better go to sleep
         // and let it run than to futily spin
         //
@@ -132,12 +127,15 @@ void mutex::lock()
 	//if (!holder) {
         auto old_handoff = handoff.load();
         //Could this be "compare_exchange_weak"? because we are looping
-        if (old_handoff && handoff.compare_exchange_strong(old_handoff, 0U)) {
+        //if (old_handoff && handoff.compare_exchange_strong(old_handoff, 0U)) {
+        if (old_handoff) {
+	if (handoff.compare_exchange_strong(old_handoff, 0U)) {
             owner.store(current, std::memory_order_relaxed);
             depth = 1;
             trace_mutex_spun_times(this, true, c, holder1, holder, _count, clock::get()->time() - t);
             preempt_lock.unlock();
             return;
+	} else break; //Other spinning won
         }
 	//}
 	//if (!holder && c > 5) c = 5;
@@ -344,9 +342,6 @@ void mutex::unlock()
     // count (as soon as count goes down to 0, we released the lock and some
     // other thread might alread set its own owner).
     owner.store(nullptr, std::memory_order_relaxed);
-    if (smp_allocator) {
-        unlock_cpu = sched::cpu::current()->id;
-    }
 
     // If there is no waiting lock(), we're done. This is the easy case :-)
     int _count = count.fetch_add(-1, std::memory_order_release);
