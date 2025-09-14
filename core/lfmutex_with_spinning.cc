@@ -85,11 +85,11 @@ void mutex::lock()
 //The 1000 and my "holder" if seems to be improving 2 pinned to ~150, and 4 to 340
     //if (_count < 2) {
     {
-    bool reset_spinning = false;
-    //auto t = clock::get()->time();
+    //bool reset_spinning = false;
+    auto t = clock::get()->time();
     //SCOPE_LOCK(preempt_lock);
     int c = SPIN_MAX; //100 lowers apart cont mutex with 2 cores, 10 sometimes
-    //sched::thread* holder1 = nullptr;
+    sched::thread* holder1 = nullptr;
     sched::thread* holder = nullptr;
     for (; c && waitqueue.empty(); c--) {
         // If the lock holder got preempted, we would better be served
@@ -98,12 +98,12 @@ void mutex::lock()
         barrier(); // trying. didn't help
         holder = owner.load(std::memory_order_relaxed);
 	if (c == SPIN_MAX) {
-             //holder1 = holder;
-             bool not_spinning = false;
+             holder1 = holder;
+             /*bool not_spinning = false;
              if (!spinning.compare_exchange_strong(not_spinning, true)) {
                  break;
              }
-             reset_spinning = true;
+             reset_spinning = true;*/
 	     //if (!holder1) break;
 	     //if (!holder1) c = 10; //Breaks whole spinning
 	}
@@ -138,8 +138,8 @@ void mutex::lock()
 	if (handoff.compare_exchange_strong(old_handoff, 0U)) {
             owner.store(current, std::memory_order_relaxed);
             depth = 1;
-            //trace_mutex_spun_times(this, true, c, holder1, holder, _count, clock::get()->time() - t);
-            spinning.store(false, std::memory_order_relaxed);
+            trace_mutex_spun_times(this, true, c, holder1, holder, _count, clock::get()->time() - t);
+            //spinning.store(false, std::memory_order_relaxed);
             preempt_lock.unlock();
             return;
 	} else break; //Other spinning won
@@ -153,9 +153,9 @@ void mutex::lock()
         __asm __volatile("isb sy");
 #endif
     }
-    if (reset_spinning)
-        spinning.store(false, std::memory_order_relaxed);
-    //trace_mutex_spun_times(this, false, SPIN_MAX - c, holder1, holder, _count, clock::get()->time() - t);
+    //if (reset_spinning)
+    //    spinning.store(false, std::memory_order_relaxed);
+    trace_mutex_spun_times(this, false, SPIN_MAX - c, holder1, holder, _count, clock::get()->time() - t);
     }
 //#endif
     preempt_lock.unlock();
@@ -197,6 +197,20 @@ void mutex::lock()
                 }
             }
         }
+    }
+
+    for (int c = 2 * SPIN_MAX; c; c--) {
+        if (waiter.woken()) {
+            owner.store(current, std::memory_order_relaxed);
+            depth = 1;
+            return;
+        }
+        barrier(); // trying. didn't help
+        sched::thread* holder = owner.load(std::memory_order_relaxed);
+        if (holder && !holder->running()) {
+            break;
+        }
+        asm volatile ("pause");
     }
 
     // Wait until another thread pops us from the wait queue and wakes us up.

@@ -260,9 +260,10 @@ int main(int argc, char **argv)
         printf("\n==== BENCHMARK 2 ====\nContended tests using increment_thread:\n");
         auto lff = increment_thread<mutex>;
         test<mutex>(2, n, true, lff);
+        test<mutex>(3, n, true, lff);
         test<mutex>((int)sched::cpus.size(), n, true, lff);
-        test<mutex>(20, n, true, lff);
-        test<mutex>(20, n, false, lff);
+        /*test<mutex>(20, n, true, lff);
+        test<mutex>(20, n, false, lff);*/
 /*
         auto spf = increment_thread<spinlock>;
         test<spinlock>(2, n, true, spf);
