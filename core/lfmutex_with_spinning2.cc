@@ -22,10 +22,11 @@ TRACEPOINT(trace_mutex_try_lock, "%p, success=%d", mutex *, bool);
 TRACEPOINT(trace_mutex_unlock, "%p", mutex *);
 TRACEPOINT(trace_mutex_send_lock, "%p, wr=%p", mutex *, wait_record *);
 TRACEPOINT(trace_mutex_receive_lock, "%p", mutex *);
-TRACEPOINT(trace_mutex_spun_times, "%p, success=%d, times=%d, fholder=%p, lholder=%p, count=%d, time=%ld", mutex *, bool, int, sched::thread*, sched::thread*, int, u64);
+TRACEPOINT(trace_mutex_spun_times, "%p, attempt=%d, success=%d, count=%d, spun=%d, spin_time=%ld, fholder=%p, lholder=%p, time=%ld",
+    mutex*, int, bool, int, int, u64, sched::thread*, sched::thread*);
 
 //With new change to stop spinning after failed handoff, the 20 seems to be sweet spot
-constexpr unsigned int SPIN_MAX = 20; //20 Seems best, 10 is kind of on a line
+constexpr unsigned int spin_max = 20; //20 Seems best, 10 is kind of on a line
 
 void mutex::lock()
 {
@@ -76,8 +77,8 @@ void mutex::lock()
     // spin, as it will be woken first, and no handoff will be done.
     auto t = clock::get()->time();
     sched::thread* holder = nullptr, *fholder = nullptr;
-    unsigned int c = 0;
-    for (; c < SPIN_MAX && waitqueue.empty(); c++) {
+    unsigned int c = 0, spin_count = sched::cpus.size() > 1 ? spin_max : 0; //do not spin when single CPU
+    for (; c < spin_count && waitqueue.empty(); c++) {
         // If the lock holder got preempted, we would better be served
         // by going to sleep and let it run again, than futile spinning.
         // Especially if the lock holder wants to run on this CPU.
@@ -85,7 +86,7 @@ void mutex::lock()
         holder = owner.load(std::memory_order_relaxed);
         if (!c) {
             fholder = holder;
-        }   
+        }
         // FIXME: what if thread exits while we want to check if it's
         // running? as soon as we find the owner above, it might already
         // be gone... Switch to using detached_thread as owner?
@@ -93,34 +94,45 @@ void mutex::lock()
         // How exactly _detached_state would help us in the case the thread is terminated
         //
         // Waldek: This probably should be : if (holder && !holder->running()) {
+        // as it was in Nadav's version 2 (see https://groups.google.com/g/osv-dev/c/F9fYWjdFmks/m/avafVdCEcXYJ)
         // meaning if there is still a lock holder and got preempted
         // then do not spin. In the original version we would not attempt to spin
-        // if there was NOT a lock holder which is exactly when we should spin
+        // if there was NOT a lock holder which is exactly when we should spin -
+        // see the unlock() where it sets owner to null before trying RHO
         //if (!holder || !holder->running()) { //SEEMS to be wrong
+        // Maybe the above version of "if" would deal better with morhing behavior
+        // when "colocated" increases
         if (holder && !holder->running()) {
+            //Either unlock() just set owner to null or owner thread is not running anymore
             break;
         }
         // If the lock holder is on the same CPU as us, better go to sleep
         // and let it run than to futily spin
         //
-        // Waldek: I think this is never possible - this code is running
+        // Waldek: I think this is never possible - the above was false, so this code is running
         // on this cpu so there could not be an owner (if there is one)
         // on the same cpu that is also running
+        // TODO: Maybe it is possible -> if so we should only check it once, no?
         /*if (holder && holder->tcpu() == sched::cpu::current()) {
             break;
         }*/
+        // Please note that other threads spinning in lock() that came later
+        // may be more lucky than us and grab the handoff - is this unfair?
         auto old_handoff = handoff.load();
         if (old_handoff) {
             if (handoff.compare_exchange_strong(old_handoff, 0U)) {
                 owner.store(current, std::memory_order_relaxed);
                 depth = 1;
-                trace_mutex_spun_times(this, true, c, fholder, holder, _count, clock::get()->time() - t);
+                trace_mutex_spun_times(this, 1, true, _count, c, clock::get()->time() - t, fholder, holder);
                 preempt_lock.unlock();
                 return;
             } else {
-                break; //Other spinning won
+                // Other spinning lock() won - we assume there is no point in more spinning
+                // because it would unlikely catch 2nd unlock()
+                break;
             }
         }
+//TODO: Eventually add inline private pause() method
 #ifdef __x86_64__
         __asm __volatile("pause");
 #endif
@@ -128,7 +140,7 @@ void mutex::lock()
         __asm __volatile("isb sy");
 #endif
     }
-    trace_mutex_spun_times(this, false, c, fholder, holder, _count, clock::get()->time() - t);
+    trace_mutex_spun_times(this, 1, false, _count, c, clock::get()->time() - t, fholder, holder);
     preempt_lock.unlock();
 
     // If we're here still here the lock is owned by a different thread.
@@ -169,23 +181,25 @@ void mutex::lock()
         }
     }
 
-    //Spin again for a possibility that the unlock popped us from the waitqueue
+    //Spin again for a possibility that the unlock() popped us from the waitqueue
     //and trying to wake us. If the unlock called wake() in wait_record
-    //we can simply try to check if it is woken and prevent from going to sleep
+    //we can simply try to check if it is woken and prevent us from going to sleep
     t = clock::get()->time();
-    for (c = 0; c < 2 * SPIN_MAX; c++) {
+    spin_count *= 2;
+    for (c = 0; c < spin_count; c++) {
         barrier(); // trying. didn't help
         holder = owner.load(std::memory_order_relaxed);
         if (!c) {
             fholder = holder;
-        }   
+        }
         if (holder && !holder->running()) {
             break;
         }
+        // Should we move this if before checking for holder?
         if (waiter.woken()) {
             owner.store(current, std::memory_order_relaxed);
             depth = 1;
-            trace_mutex_spun_times(this, true, c, fholder, holder, _count, clock::get()->time() - t);
+            trace_mutex_spun_times(this, 2, true, _count, c, clock::get()->time() - t, fholder, holder);
             return;
         }
 #ifdef __x86_64__
@@ -195,7 +209,7 @@ void mutex::lock()
         __asm __volatile("isb sy");
 #endif
     }
-    trace_mutex_spun_times(this, false, c, fholder, holder, _count, clock::get()->time() - t);
+    trace_mutex_spun_times(this, 2, false, _count, c, clock::get()->time() - t, fholder, holder);
 
     // Wait until another thread pops us from the wait queue and wakes us up.
     trace_mutex_lock_wait(this);
@@ -312,6 +326,11 @@ bool mutex::try_lock()
     // false), but the last chance is if we can accept a handoff - and if
     // we do, we got the lock.
     auto old_handoff = handoff.load();
+    // TODO: Why are we not checking the waitqueue? What if it is not
+    // empty, if that case the try_lock() would succeed and bypass the queue.
+    // Is that correct?
+    // It may be correct, because unlock() which initiates the HO, only does
+    // it [aka stores new handoff value], if the waitqueue is empty.
     if(old_handoff && handoff.compare_exchange_strong(old_handoff, 0U)) {
         count.fetch_add(1, std::memory_order_relaxed);
         owner.store(current, std::memory_order_relaxed);
