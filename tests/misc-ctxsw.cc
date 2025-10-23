@@ -171,11 +171,11 @@ void test(std::string name,
 int main(int ac, char** av)
 {
     auto pin0 = [](pinned_thread& t) { t.pin(0); };
-    auto pin1 = [](pinned_thread& t) { t.pin(1); };
-    auto nopin = [](pinned_thread& t) {};
+    //auto pin1 = [](pinned_thread& t) { t.pin(1); };
+    //auto nopin = [](pinned_thread& t) {};
     test("colocated", pin0, pin0);
-    test("apart", pin0, pin1);
-    test("nopin", nopin, nopin);
+    //test("apart", pin0, pin1);
+    //test("nopin", nopin, nopin);
 }
 
 
