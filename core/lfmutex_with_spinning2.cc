@@ -9,7 +9,6 @@
 #include <osv/trace.hh>
 #include <osv/sched.hh>
 #include <osv/wait_record.hh>
-#include <osv/preempt-lock.hh>
 #include <osv/clock.hh>
 #include <osv/export.h>
 
@@ -22,11 +21,20 @@ TRACEPOINT(trace_mutex_try_lock, "%p, success=%d", mutex *, bool);
 TRACEPOINT(trace_mutex_unlock, "%p", mutex *);
 TRACEPOINT(trace_mutex_send_lock, "%p, wr=%p", mutex *, wait_record *);
 TRACEPOINT(trace_mutex_receive_lock, "%p", mutex *);
-TRACEPOINT(trace_mutex_spun_times, "%p, attempt=%d, success=%d, count=%d, spun=%d, spin_time=%ld, fholder=%p, lholder=%p, time=%ld",
+TRACEPOINT(trace_mutex_spun_times, "%p, attempt=%d, success=%d, count=%d, spun=%d, spin_time=%ld, fholder=%p, lholder=%p",
     mutex*, int, bool, int, int, u64, sched::thread*, sched::thread*);
 
 //With new change to stop spinning after failed handoff, the 20 seems to be sweet spot
 constexpr unsigned int spin_max = 20; //20 Seems best, 10 is kind of on a line
+
+#define CONF_mutex_preempt 0 //Does not seem to change much
+#define CONF_mutex_spin_attempt_1 1
+#define CONF_mutex_spin_attempt_2 0 //Seems to improve misc-mutex -c with 3 threads better, but with 2 worse than when off (still better than without spinning)
+#define CONF_mutex_wake_set_owner 1 //Makes misc-ctx colocated run normal if 1 (ON)
+
+#if CONF_mutex_preempt
+#include <osv/preempt-lock.hh>
+#endif
 
 void mutex::lock()
 {
@@ -34,7 +42,9 @@ void mutex::lock()
 
     sched::thread *current = sched::thread::current();
 
+#if CONF_mutex_preempt
     preempt_lock.lock(); //Should we disable preemption just before spinning?
+#endif
     auto _count = count.fetch_add(1, std::memory_order_acquire);
     if (_count == 0) {
         // Uncontended case (no other thread is holding the lock, and no
@@ -43,7 +53,9 @@ void mutex::lock()
         // just for implementing a recursive mutex.
         owner.store(current, std::memory_order_relaxed);
         depth = 1;
+#if CONF_mutex_preempt
         preempt_lock.unlock();
+#endif
         return;
     }
 
@@ -53,7 +65,9 @@ void mutex::lock()
     if (owner.load(std::memory_order_relaxed) == current) {
         count.fetch_add(-1, std::memory_order_relaxed);
         ++depth;
+#if CONF_mutex_preempt
         preempt_lock.unlock();
+#endif
         return;
     }
 
@@ -75,6 +89,7 @@ void mutex::lock()
     //
     // If someone is on the waitqueue, there's no point in continuing to
     // spin, as it will be woken first, and no handoff will be done.
+#if CONF_mutex_spin_attempt_1
     auto t = clock::get()->time();
     sched::thread* holder = nullptr, *fholder = nullptr;
     unsigned int c = 0, spin_count = sched::cpus.size() > 1 ? spin_max : 0; //do not spin when single CPU
@@ -124,7 +139,9 @@ void mutex::lock()
                 owner.store(current, std::memory_order_relaxed);
                 depth = 1;
                 trace_mutex_spun_times(this, 1, true, _count, c, clock::get()->time() - t, fholder, holder);
+#if CONF_mutex_preempt
                 preempt_lock.unlock();
+#endif
                 return;
             } else {
                 // Other spinning lock() won - we assume there is no point in more spinning
@@ -140,8 +157,12 @@ void mutex::lock()
         __asm __volatile("isb sy");
 #endif
     }
+    if (c > 0)
     trace_mutex_spun_times(this, 1, false, _count, c, clock::get()->time() - t, fholder, holder);
+#if CONF_mutex_preempt
     preempt_lock.unlock();
+#endif
+#endif
 
     // If we're here still here the lock is owned by a different thread.
     // Put this thread in a waiting queue, so it will eventually be woken
@@ -169,6 +190,10 @@ void mutex::lock()
                     // below, waiter.thread() may become 0: the thread we woke
                     // can call unlock() and decide to wake us up.
                     assert(waiter.thread());
+#if CONF_mutex_wake_set_owner
+                    owner.store(const_cast<sched::thread*>(waiter.thread()), std::memory_order_relaxed);
+                    depth = 1;
+#endif
                     other->wake();
                 } else {
                     // got the lock ourselves
@@ -184,15 +209,24 @@ void mutex::lock()
     //Spin again for a possibility that the unlock() popped us from the waitqueue
     //and trying to wake us. If the unlock called wake() in wait_record
     //we can simply try to check if it is woken and prevent us from going to sleep
-#if 0
+#if CONF_mutex_spin_attempt_2
     t = clock::get()->time();
-    spin_count *= 2;
+    if (c > 0) { //In 1st attempt we did spin at least once, otherwise the waitqueue was non empty so do not spin again
+        spin_count *= 2;
+    } else {
+        spin_count = 0;
+    }
+    //spin_count *= 2;
+#if CONF_mutex_preempt
+    preempt_lock.lock();
+#endif
     for (c = 0; c < spin_count; c++) {
         barrier(); // trying. didn't help
         holder = owner.load(std::memory_order_relaxed);
         if (!c) {
             fholder = holder;
         }
+        //if (!holder || !holder->running()) {
         if (holder && !holder->running()) {
             break;
         }
@@ -201,6 +235,9 @@ void mutex::lock()
             owner.store(current, std::memory_order_relaxed);
             depth = 1;
             trace_mutex_spun_times(this, 2, true, _count, c, clock::get()->time() - t, fholder, holder);
+#if CONF_mutex_preempt
+            preempt_lock.unlock();
+#endif
             return;
         }
 #ifdef __x86_64__
@@ -210,7 +247,11 @@ void mutex::lock()
         __asm __volatile("isb sy");
 #endif
     }
+    if (c > 0)
     trace_mutex_spun_times(this, 2, false, _count, c, clock::get()->time() - t, fholder, holder);
+#if CONF_mutex_preempt
+    preempt_lock.unlock();
+#endif
 #endif
 
     // Wait until another thread pops us from the wait queue and wakes us up.
@@ -240,6 +281,10 @@ void mutex::send_lock(wait_record *wr)
     if (count.fetch_add(1, std::memory_order_acquire) == 0) {
         // Uncontended case (no other thread is holding the lock, and no
         // concurrent lock() attempts). We got the lock for wr, so wake it.
+#if CONF_mutex_wake_set_owner
+        owner.store(const_cast<sched::thread*>(wr->thread()), std::memory_order_relaxed);
+        depth = 1;
+#endif
         wr->wake();
         return;
     }
@@ -258,6 +303,10 @@ void mutex::send_lock(wait_record *wr)
             if (handoff.compare_exchange_strong(old_handoff, 0U)) {
                 wait_record *other = waitqueue.pop();
                 assert(other);
+#if CONF_mutex_wake_set_owner
+                owner.store(const_cast<sched::thread*>(other->thread()), std::memory_order_relaxed);
+                depth = 1;
+#endif
                 other->wake();
             }
         }
@@ -362,7 +411,9 @@ void mutex::unlock()
     // Alternatives to this change include remembering the lock holder's cpu
     // (makes the mutex larger...), stopping spinning when !holder (makes
     // "apart" ctxsw benchmark slower).
+#if CONF_mutex_preempt
     SCOPE_LOCK(preempt_lock);
+#endif
 
     // When we return from unlock(), we will no longer be holding the lock.
     // We can't leave owner==current, otherwise a later lock() in the same
@@ -386,6 +437,11 @@ void mutex::unlock()
         wait_record *other = waitqueue.pop();
         if (other) {
             assert(other->thread() != sched::thread::current()); // this thread isn't waiting, we know that :(
+#if CONF_mutex_wake_set_owner
+            //Setting owner here makes the misc-ctxsw colocated run similar to non-spinning (around 340ns)
+            owner.store(const_cast<sched::thread*>(other->thread()), std::memory_order_relaxed);
+            depth = 1;
+#endif
             other->wake();
             return;
         }
