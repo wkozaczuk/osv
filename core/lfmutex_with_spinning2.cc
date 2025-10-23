@@ -27,9 +27,9 @@ TRACEPOINT(trace_mutex_spun_times, "%p, attempt=%d, success=%d, count=%d, spun=%
 //With new change to stop spinning after failed handoff, the 20 seems to be sweet spot
 constexpr unsigned int spin_max = 20; //20 Seems best, 10 is kind of on a line
 
-#define CONF_mutex_preempt 0 //Does not seem to change much
+#define CONF_mutex_preempt 1 //Does not seem to change much
 #define CONF_mutex_spin_attempt_1 1
-#define CONF_mutex_spin_attempt_2 0 //Seems to improve misc-mutex -c with 3 threads better, but with 2 worse than when off (still better than without spinning)
+#define CONF_mutex_spin_attempt_2 1 //Seems to improve misc-mutex -c with 3 threads better, but with 2 worse than when off (still better than without spinning)
 #define CONF_mutex_wake_set_owner 1 //Makes misc-ctx colocated run normal if 1 (ON)
 
 #if CONF_mutex_preempt
