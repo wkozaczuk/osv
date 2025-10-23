@@ -184,6 +184,7 @@ void mutex::lock()
     //Spin again for a possibility that the unlock() popped us from the waitqueue
     //and trying to wake us. If the unlock called wake() in wait_record
     //we can simply try to check if it is woken and prevent us from going to sleep
+#if 0
     t = clock::get()->time();
     spin_count *= 2;
     for (c = 0; c < spin_count; c++) {
@@ -210,6 +211,7 @@ void mutex::lock()
 #endif
     }
     trace_mutex_spun_times(this, 2, false, _count, c, clock::get()->time() - t, fholder, holder);
+#endif
 
     // Wait until another thread pops us from the wait queue and wakes us up.
     trace_mutex_lock_wait(this);
