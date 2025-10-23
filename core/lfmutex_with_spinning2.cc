@@ -27,10 +27,11 @@ TRACEPOINT(trace_mutex_spun_times, "%p, attempt=%d, success=%d, count=%d, spun=%
 //With new change to stop spinning after failed handoff, the 20 seems to be sweet spot
 constexpr unsigned int spin_max = 20; //20 Seems best, 10 is kind of on a line
 
-#define CONF_mutex_preempt 1 //Does not seem to change much
+#define CONF_mutex_preempt 0 //Does not seem to change much
 #define CONF_mutex_spin_attempt_1 1
 #define CONF_mutex_spin_attempt_2 1 //Seems to improve misc-mutex -c with 3 threads better, but with 2 worse than when off (still better than without spinning)
-#define CONF_mutex_wake_set_owner 1 //Makes misc-ctx colocated run normal if 1 (ON)
+#define CONF_mutex_spin_attempt_2_if_waitqueue_empty 1
+#define CONF_mutex_wake_set_owner 0 //Makes misc-ctx colocated run normal if 1 (ON)
 
 #if CONF_mutex_preempt
 #include <osv/preempt-lock.hh>
@@ -93,7 +94,12 @@ void mutex::lock()
     auto t = clock::get()->time();
     sched::thread* holder = nullptr, *fholder = nullptr;
     unsigned int c = 0, spin_count = sched::cpus.size() > 1 ? spin_max : 0; //do not spin when single CPU
-    for (; c < spin_count && waitqueue.empty(); c++) {
+    bool waitqueue_empty;
+    for (; c < spin_count; c++) {
+        waitqueue_empty = waitqueue.empty();
+        if (!waitqueue_empty) {
+            break;
+        }
         // If the lock holder got preempted, we would better be served
         // by going to sleep and let it run again, than futile spinning.
         // Especially if the lock holder wants to run on this CPU.
@@ -211,12 +217,15 @@ void mutex::lock()
     //we can simply try to check if it is woken and prevent us from going to sleep
 #if CONF_mutex_spin_attempt_2
     t = clock::get()->time();
-    if (c > 0) { //In 1st attempt we did spin at least once, otherwise the waitqueue was non empty so do not spin again
+#if CONF_mutex_spin_attempt_2_if_waitqueue_empty
+    if (waitqueue_empty) {
         spin_count *= 2;
     } else {
         spin_count = 0;
     }
-    //spin_count *= 2;
+#else
+    spin_count *= 2;
+#endif
 #if CONF_mutex_preempt
     preempt_lock.lock();
 #endif
