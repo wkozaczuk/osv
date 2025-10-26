@@ -21,17 +21,20 @@ TRACEPOINT(trace_mutex_try_lock, "%p, success=%d", mutex *, bool);
 TRACEPOINT(trace_mutex_unlock, "%p", mutex *);
 TRACEPOINT(trace_mutex_send_lock, "%p, wr=%p", mutex *, wait_record *);
 TRACEPOINT(trace_mutex_receive_lock, "%p", mutex *);
-TRACEPOINT(trace_mutex_spun_times, "%p, attempt=%d, success=%d, count=%d, spun=%d, spin_time=%ld, fholder=%p, lholder=%p",
-    mutex*, int, bool, int, int, u64, sched::thread*, sched::thread*);
+TRACEPOINT(trace_mutex_spin_success, "%p, attempt=%d, count=%d, spun=%d, spin_time=%ld, fholder=%p, lholder=%p",
+    mutex*, int, int, int, u64, sched::thread*, sched::thread*);
+TRACEPOINT(trace_mutex_spin_failure, "%p, attempt=%d, count=%d, spun=%d, spin_time=%ld, fholder=%p, lholder=%p",
+    mutex*, int, int, int, u64, sched::thread*, sched::thread*);
 
 //With new change to stop spinning after failed handoff, the 20 seems to be sweet spot
 constexpr unsigned int spin_max = 20; //20 Seems best, 10 is kind of on a line
 
 #define CONF_mutex_preempt 0 //Does not seem to change much
 #define CONF_mutex_spin_attempt_1 1
-#define CONF_mutex_spin_attempt_2 1 //Seems to improve misc-mutex -c with 3 threads better, but with 2 worse than when off (still better than without spinning)
+#define CONF_mutex_spin_attempt_2 2 //Seems to improve misc-mutex -c with 3 threads better, but with 2 threads
+                                    //worse than when off (still better than without spinning)
 #define CONF_mutex_spin_attempt_2_if_waitqueue_empty 1
-#define CONF_mutex_wake_set_owner 0 //Makes misc-ctx colocated run normal if 1 (ON)
+#define CONF_mutex_wake_set_owner 0 //Makes misc-ctx colocated run almost unaffected if 1 (ON)
 
 #if CONF_mutex_preempt
 #include <osv/preempt-lock.hh>
@@ -144,7 +147,7 @@ void mutex::lock()
             if (handoff.compare_exchange_strong(old_handoff, 0U)) {
                 owner.store(current, std::memory_order_relaxed);
                 depth = 1;
-                trace_mutex_spun_times(this, 1, true, _count, c, clock::get()->time() - t, fholder, holder);
+                trace_mutex_spin_success(this, 1, _count, c, clock::get()->time() - t, fholder, holder);
 #if CONF_mutex_preempt
                 preempt_lock.unlock();
 #endif
@@ -164,7 +167,7 @@ void mutex::lock()
 #endif
     }
     if (c > 0)
-    trace_mutex_spun_times(this, 1, false, _count, c, clock::get()->time() - t, fholder, holder);
+        trace_mutex_spin_failure(this, 1, _count, c, clock::get()->time() - t, fholder, holder);
 #if CONF_mutex_preempt
     preempt_lock.unlock();
 #endif
@@ -243,7 +246,7 @@ void mutex::lock()
         if (waiter.woken()) {
             owner.store(current, std::memory_order_relaxed);
             depth = 1;
-            trace_mutex_spun_times(this, 2, true, _count, c, clock::get()->time() - t, fholder, holder);
+            trace_mutex_spin_success(this, 2, _count, c, clock::get()->time() - t, fholder, holder);
 #if CONF_mutex_preempt
             preempt_lock.unlock();
 #endif
@@ -257,7 +260,7 @@ void mutex::lock()
 #endif
     }
     if (c > 0)
-    trace_mutex_spun_times(this, 2, false, _count, c, clock::get()->time() - t, fholder, holder);
+        trace_mutex_spin_failure(this, 2, _count, c, clock::get()->time() - t, fholder, holder);
 #if CONF_mutex_preempt
     preempt_lock.unlock();
 #endif
