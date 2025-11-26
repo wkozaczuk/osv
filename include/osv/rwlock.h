@@ -98,7 +98,7 @@ private:
     friend class rwlock_for_read;
     friend class rwlock_for_write;
 
-    void wake_waiting_readers(std::atomic<unsigned> *readers, unsigned waiting_readers);
+    void wake_pending_readers(unsigned pending_readers);
 
     //TODO: Consider replacing with lockfree::unordered_queue_mpsc which is
     //supposedly faster but uses more memory (has to be CACHELINE_ALIGNED)
@@ -112,8 +112,13 @@ private:
 #endif // __cplusplus
 
     mutex_t _wmtx;
-    unsigned _readers; //TODO: Consider expanding to a 64-bit long type to increase maximum number of owning readers and pending readers
-    bool _writer_wait;
+#ifdef __cplusplus
+    std::atomic<unsigned> _readers; //TODO: Consider expanding to a 64-bit long type to increase maximum number of owning readers and pending readers
+    std::atomic<bool> _writer_wait;
+#else
+    unsigned _readers_for_size;
+    bool _writer_wait_for_size;
+#endif
 };
 
 typedef struct rwlock rwlock_t;
