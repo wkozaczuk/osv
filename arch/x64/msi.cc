@@ -26,7 +26,6 @@ interrupt_manager::interrupt_manager(pci::function* dev)
 
 interrupt_manager::~interrupt_manager()
 {
-
 }
 
 bool interrupt_manager::setup_entry(unsigned entry_id, msix_vector* msix)

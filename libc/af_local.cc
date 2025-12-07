@@ -99,7 +99,8 @@ int af_local::close()
 
 int socketpair_af_local(int type, int proto, int sv[2])
 {
-    assert(type == SOCK_STREAM);
+    printf("type: %x\n", type);
+    //assert(type == SOCK_STREAM);
     assert(proto == 0);
     pipe_buffer_ref b1{new pipe_buffer};
     pipe_buffer_ref b2{new pipe_buffer};

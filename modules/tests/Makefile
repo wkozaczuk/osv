@@ -70,6 +70,14 @@ $(out)/tests/tst-reloc.o: CFLAGS:=$(subst -fPIC,-fpie,$(CFLAGS))
 $(out)/tests/tst-reloc.so: $(src)/tests/tst-reloc.c
 	$(call quiet, $(CC) $(CFLAGS) $(LDFLAGS) -pie -o $@ $< $(LIBS), LD tests/tst-reloc.so)
 
+$(out)/tests/lib-circular-reloc1.so: $(src)/tests/lib-circular-reloc1.cc
+$(out)/tests/lib-circular-reloc2.so: $(src)/tests/lib-circular-reloc2.cc
+$(out)/tests/tst-elf-circular-reloc.so: \
+		$(out)/tests/tst-elf-circular-reloc.o \
+		$(out)/tests/lib-circular-reloc1.so \
+		$(out)/tests/lib-circular-reloc2.so
+	$(call quiet, cd $(out); $(CXX) $(CXXFLAGS) $(LDFLAGS) -shared -o $@ $< $(LIBS) tests/lib-circular-reloc1.so tests/lib-circular-reloc2.so, LD tests/tst-elf-circular-reloc.so)
+
 $(out)/tests/commands.o: $(src)/core/commands.cc
 	$(makedir)
 	$(call quiet, $(CXX) $(CXXFLAGS) -c -o $@ $<, CXX core/commands.cc => tests/commands.o)
@@ -102,6 +110,8 @@ rofs-only-tests := rofs/tst-chdir.so rofs/tst-symlink.so rofs/tst-readdir.so \
 
 zfs-only-tests := tst-readdir.so tst-fallocate.so tst-fs-link.so \
 	tst-concurrent-read.so tst-solaris-taskq.so
+
+ext-only-tests := tst-readdir.so tst-concurrent-read.so tst-fs-link.so
 
 specific-fs-tests := $($(fs_type)-only-tests)
 
@@ -147,7 +157,8 @@ tests := tst-pthread.so misc-ramdisk.so tst-vblk.so tst-bsd-evh.so \
 	tst-sigaction.so tst-syscall.so tst-ifaddrs.so tst-getdents.so \
 	tst-netlink.so misc-zfs-io.so misc-zfs-arc.so tst-pthread-create.so \
 	misc-futex-perf.so misc-syscall-perf.so tst-brk.so tst-reloc.so \
-	misc-vdso-perf.so tst-string-utils.so
+	misc-vdso-perf.so tst-string-utils.so tst-elf-circular-reloc.so \
+	lib-circular-reloc1.so lib-circular-reloc2.so tst-rwlock.so
 #	tst-f128.so \
 
 
@@ -267,13 +278,15 @@ rofs-only-boost-tests := rofs/tst-stdio.so
 
 zfs-only-boost-tests := tst-rename.so tst-stdio.so
 
+ext-only-boost-tests := tst-rename.so tst-stdio.so
+
 boost-tests += $($(fs_type)-only-boost-tests)
 
 $(boost-tests:%=$(out)/tests/%): LIBS += \
 	-lboost_unit_test_framework \
 	-lboost_filesystem
 
-boost-program-options-tests := misc-tcp.so misc-zfs-arc.so
+boost-program-options-tests := misc-tcp.so misc-zfs-arc.so tst-rwlock.so
 $(boost-program-options-tests:%=$(out)/tests/%): LIBS += \
 	-lboost_program_options
 

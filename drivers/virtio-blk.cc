@@ -41,7 +41,8 @@ TRACEPOINT(trace_virtio_blk_read_config_ro, "readonly=true");
 TRACEPOINT(trace_virtio_blk_make_request_seg_max, "request of size %d needs more segment than the max %d", size_t, u32);
 TRACEPOINT(trace_virtio_blk_make_request_readonly, "write on readonly device");
 TRACEPOINT(trace_virtio_blk_wake, "");
-TRACEPOINT(trace_virtio_blk_strategy, "bio=%p", struct bio*);
+TRACEPOINT(trace_virtio_blk_strategy, "write=%u, offset=%lu, bcount=%lu", bool, off_t, size_t);
+TRACEPOINT(trace_virtio_blk_strategy_ret, "%d", int);
 TRACEPOINT(trace_virtio_blk_req_ok, "bio=%p, sector=%lu, len=%lu, type=%x", struct bio*, u64, size_t, u32);
 TRACEPOINT(trace_virtio_blk_req_unsupp, "bio=%p, sector=%lu, len=%lu, type=%x", struct bio*, u64, size_t, u32);
 TRACEPOINT(trace_virtio_blk_req_err, "bio=%p, sector=%lu, len=%lu, type=%x", struct bio*, u64, size_t, u32);
@@ -64,8 +65,9 @@ blk_strategy(struct bio *bio)
 {
     struct blk_priv *prv = reinterpret_cast<struct blk_priv*>(bio->bio_dev->private_data);
 
-    trace_virtio_blk_strategy(bio);
+    trace_virtio_blk_strategy(bio->bio_cmd == BIO_WRITE, bio->bio_offset, bio->bio_bcount);
     prv->drv->make_request(bio);
+    trace_virtio_blk_strategy_ret(0);
 }
 
 static int
@@ -148,20 +150,20 @@ blk::blk(virtio_device& virtio_dev)
     };
 #endif
 
+#if CONF_drivers_mmio
 #ifdef __aarch64__
     int_factory.create_spi_edge_interrupt = [this,t]() {
         return new spi_interrupt(
-                gic::irq_type::IRQ_TYPE_EDGE,
-                _dev.get_irq(),
-                [=] { return this->ack_irq(); },
-                [=] { t->wake_with_irq_disabled(); });
+            gic::irq_type::IRQ_TYPE_EDGE,
+            _dev.get_irq(),
+            [=] { return this->ack_irq(); },
+            [=] { t->wake_with_irq_disabled(); });
     };
 #else
-#if CONF_drivers_mmio
     int_factory.create_gsi_edge_interrupt = [this,t]() {
         return new gsi_edge_interrupt(
-                _dev.get_irq(),
-                [=] { if (this->ack_irq()) t->wake_with_irq_disabled(); });
+            _dev.get_irq(),
+            [=] { if (this->ack_irq()) t->wake_with_irq_disabled(); });
     };
 #endif
 #endif

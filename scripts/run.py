@@ -263,6 +263,9 @@ def start_osv_qemu(options):
 
         args += ["-device", net_device_options_str]
 
+    if int(options.nics) == 0:
+         args += ["-nic", "none"]
+
     if options.hypervisor != 'qemu_microvm':
         args += ["-device", "virtio-rng-pci%s" % options.virtio_device_suffix]
 
@@ -654,7 +657,7 @@ if __name__ == "__main__":
     parser.add_argument("--pass-pci", action="store",
                         help="passthrough a pci device in given slot if bound to vfio driver")
     parser.add_argument("--gic-version", action="store", default="max",
-                        help="specify gic version")
+                        help="specify GIC version (only applicable on aarch64)")
     cmdargs = parser.parse_args()
 
     cmdargs.opt_path = "debug" if cmdargs.debug else "release" if cmdargs.release else "last"

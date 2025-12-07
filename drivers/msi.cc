@@ -1,5 +1,6 @@
 /*
  * Copyright (C) 2013 Cloudius Systems, Ltd.
+ * Copyright (C) 2025 Waldemar Kozaczuk
  *
  * This work is open source software, licensed under the terms of the
  * BSD license as described in the LICENSE file in the top-level directory.
@@ -86,10 +87,9 @@ void msix_vector::interrupt(void)
 static inline void set_affinity_and_wake(
     sched::cpu*& current, msix_vector* v, sched::thread* t)
 {
-    auto cpu = t->get_cpu();;
+    auto cpu = t->get_cpu();
 
     if (cpu != current) {
-
         //
         // According to PCI spec chapter 6.8.3.5 the MSI-X table entry may be
         // updated only if the entry is masked and the new values are promissed

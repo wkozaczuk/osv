@@ -1,5 +1,7 @@
 /*
  * Copyright (C) 2013 Cloudius Systems, Ltd.
+ * Copyright (C) 2015 Huawei Technologies Duesseldorf GmbH
+ * Copyright (C) 2025 Waldemar Kozaczuk
  *
  * This work is open source software, licensed under the terms of the
  * BSD license as described in the LICENSE file in the top-level directory.
@@ -11,8 +13,6 @@
 
 using namespace pci;
 
-//TODO: Maybe eliminate any msi logic because it would not be supported
-//But maybe it is OK
 void msix_vector::set_affinity(sched::cpu *cpu)
 {
     u64 msix_address;
@@ -34,7 +34,6 @@ interrupt_manager::interrupt_manager(pci::function* dev)
 
 interrupt_manager::~interrupt_manager()
 {
-
 }
 
 bool interrupt_manager::setup_entry(unsigned entry_id, msix_vector* msix)
@@ -64,10 +63,6 @@ bool interrupt_manager::setup_entry(unsigned entry_id, msix_vector* msix)
         }
     }
 
-    //debugf("interrupt_manager::setup_entry(): entry_id:%u ... about to map msi vector\n", entry_id);
-    //gic::gic->map_msi_vector(vector, _dev, 0);
-
     msix->add_entryid(entry_id);
-    //gic::gic->unmask_irq(vector);
     return (true);
 }
