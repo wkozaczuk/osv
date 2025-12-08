@@ -92,7 +92,6 @@ void gic_v2_driver::init_dist()
     if (_nr_irqs > GIC_MAX_IRQ) {
         _nr_irqs = GIC_MAX_IRQ + 1;
     }
-    debug_early_u64("Number of interrupts: ", _nr_irqs);
 
     // Send all SPIs to the cpu 0
     u32 cpu_0_mask = 1U;
@@ -120,19 +119,6 @@ void gic_v2_driver::init_dist()
     _gicd.enable();
 }
 
-//TODO Take it from DTB
-/*
- *                 v2m@8020000 {
-                        phandle = <0x8003>;
-                        reg = <0x00 0x8020000 0x00 0x1000>;
-                        msi-controller;
-                        compatible = "arm,gic-v2m-frame";
-                };
-*/
-
-//Should come from the above
-#define DEV_BASE_GIC_V2M      0x08020000
-
 void gic_v2_driver::init_cpuif(int smp_idx)
 {
 #if CONF_logger_debug
@@ -159,17 +145,6 @@ void gic_v2_driver::init_cpuif(int smp_idx)
     /* enable CPU clock timer PPI interrupt on non-primary CPUs */
     if (smp_idx) {
         _gicd.write_reg_grp(gicd_reg_irq1::GICD_ISENABLER, get_timer_irq_id(), 1);
-    }
-
-    if (!smp_idx) {
-	//GICv2m is somewhat documented in https://documentation-service.arm.com/static/5fae4f00ca04df4095c1c988?token=
-	//chapter 9 (Appendix E) - GICV2M ARCHITECTURE)
-        mmu::linear_map((void *)DEV_BASE_GIC_V2M, (mmu::phys)DEV_BASE_GIC_V2M, 0x1000,
-		    "v2m", mmu::page_size, mmu::mattr::dev);
-        u64 typer = mmio_getl((mmioaddr_t)(DEV_BASE_GIC_V2M + 0x8));
-	u64 msi_base = (typer >> 16) & 0b11111111111ul; //Mask with 11bits or 12
-	debug_early_u64("msi_base: ", msi_base);
-	idt.init_msi_vector(msi_base);
     }
 
 #if CONF_logger_debug
@@ -204,7 +179,6 @@ void gic_v2_driver::mask_irq(unsigned int id)
 
 void gic_v2_driver::unmask_irq(unsigned int id)
 {
-    debug_early_u64("gic_v2_driver::unmask_irq() id: ", id);
     WITH_IRQ_LOCK(_gic_lock) {
         _gicd.write_reg_grp(gicd_reg_irq1::GICD_ISENABLER, id, 1);
     }

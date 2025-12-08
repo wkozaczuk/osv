@@ -226,8 +226,6 @@ void interrupt(exception_frame* frame)
     // don't nest.
     current_interrupt_frame = frame;
 
-    //TODO: Maybe somehow change it to not mask irq with 0x3ff
-    //to account for MSIs (>= GIC_LPI_INTS_START)
     unsigned int iar = gic::gic->ack_irq();
     if (idt.invoke_interrupt(iar)) {
         gic::gic->end_irq(iar);

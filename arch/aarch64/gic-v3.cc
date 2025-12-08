@@ -138,11 +138,6 @@ u64 gic_v3_redist::read64_at_offset(int smp_idx, u32 offset)
     return mmio_getq((mmioaddr_t)_cpu_bases[smp_idx] + offset);
 }
 
-u64 gic_v3_redist::read64_at_offset(int smp_idx, u32 offset)
-{
-    return mmio_getq((mmioaddr_t)_base + smp_idx * GICR_STRIDE + offset);
-}
-
 void gic_v3_redist::write_at_offset(int smp_idx, u32 offset, u32 value)
 {
     mmio_setl((mmioaddr_t)_cpu_bases[smp_idx] + offset, value);
@@ -151,11 +146,6 @@ void gic_v3_redist::write_at_offset(int smp_idx, u32 offset, u32 value)
 void gic_v3_redist::write64_at_offset(int smp_idx, u32 offset, u64 value)
 {
     mmio_setq((mmioaddr_t)_cpu_bases[smp_idx] + offset, value);
-}
-
-void gic_v3_redist::write64_at_offset(int smp_idx, u32 offset, u64 value)
-{
-    mmio_setq((mmioaddr_t)_base + smp_idx * GICR_STRIDE + offset, value);
 }
 
 void gic_v3_redist::wait_for_write_complete()
@@ -539,10 +529,6 @@ void gic_v3_driver::init_redist(int smp_idx)
         idt.init_msi_vector_base(GIC_LPI_INTS_START);
         idt.set_max_msi_vector(GIC_LPI_INTS_START + _msi_vector_num - 1);
     }
-
-    if (!smp_idx) {
-	idt.init_msi_vector(GIC_LPI_INTS_START);
-    }
 }
 
 //https://developer.arm.com/documentation/102923/0100/ITS/The-sizes-and-layout-of-Collection-and-Device-tables
@@ -582,7 +568,6 @@ void gic_v3_driver::init_its_device_or_collection_table(int idx)
     debug_early_u64("-> allocated at phys:", table_pa);
     base = (base & ~GITS_TABLE_BASE_PA_MASK) | table_pa;
     debug_early_u64("-> new base:", base);
-    base = (base & ~GITS_TABLE_BASE_PA_MASK) | table_pa;
     _gits.write_reg64_at_offset(gic_its_reg::GICITS_BASER, offset, GITS_BASER_VALID | base);
 }
 
@@ -797,7 +782,7 @@ void gic_v3_driver::allocate_msi_dev_mapping(pci::function* dev)
 
 void gic_v3_driver::map_msi_vector(unsigned int vector, pci::function* dev, u32 target_cpu)
 {
-    debugf("gic_v3_driver::map_msi_vector: device_id=%d, vector:%u, cpu:%u\n", dev->get_device_id(), vector, target_cpu); 
+    debugf("gic_v3_driver::map_msi_vector: device_id=%d, vector:%u, cpu:%u\n", dev->get_device_id(), vector, target_cpu);
     auto index = vector - GIC_LPI_INTS_START;
     assert(index < max_msi_handlers);
 

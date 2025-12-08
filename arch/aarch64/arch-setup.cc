@@ -340,8 +340,20 @@ void arch_setup_free_memory()
     debug_early("OSv " OSV_VERSION "\n");
     //while (true) {}
 
+    u64 dist, redist, cpuif, its;
+    size_t dist_len, redist_len, cpuif_len, its_len;
+    if (acpi::get_gic_v3(&dist, &dist_len, &redist, &redist_len, &its, &its_len)) {
+        gic::gic = new gic::gic_v3_driver(dist, dist_len, redist, redist_len, its, its_len);
+        debug_early("Enabled GIC3\n");
+    } else if (acpi::get_gic_v2(&dist, &dist_len, &cpuif, &cpuif_len)) {
+        gic::gic = new gic::gic_v2_driver(dist, dist_len, cpuif, cpuif_len, 0, 0);
+        debug_early("Enabled GIC2\n");
+    } else {
+        abort("arch-setup: failed to get GICv3 nor GiCv2 information from acpi.\n");
+    }
     //
     //Locate GICv2 or GICv3 information in DTB and construct corresponding GIC driver
+    /*TODO
     u64 dist, redist, cpuif, its, v2m;
     size_t dist_len, redist_len, cpuif_len, its_len, v2m_len;
     if (dtb_get_gic_v3(&dist, &dist_len, &redist, &redist_len, &its, &its_len)) {
@@ -350,7 +362,7 @@ void arch_setup_free_memory()
         gic::gic = new gic::gic_v2_driver(dist, dist_len, cpuif, cpuif_len, v2m, v2m_len);
     } else {
         abort("arch-setup: failed to get GICv3 nor GiCv2 information from dtb.\n");
-    }
+    }*/
 
 #if CONF_drivers_pci
     if (!opt_pci_disabled) {
