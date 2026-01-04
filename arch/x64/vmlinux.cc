@@ -78,5 +78,7 @@ extern "C" void extract_linux_boot_params(void *boot_params)
         mb_info->mb.mmap_length += sizeof(e820ent);
     }
 
+    mb_info->pvh_rsdp = 0x7FB7E014;
+
     reset_bootchart(mb_info);
 }

@@ -555,7 +555,7 @@ void* do_main_thread(void *_main_args)
         unmount_devfs();
 
         if (opt_rootfs.compare("rofs") == 0) {
-            auto error = mount_rootfs("/rofs", "/dev/vblk0.1", "rofs", MNT_RDONLY, nullptr, opt_pivot);
+            auto error = mount_rootfs("/rofs", "/dev/vblk1.1", "rofs", MNT_RDONLY, nullptr, opt_pivot);
             if (error) {
                 debug("Could not mount rofs root filesystem.\n");
             }

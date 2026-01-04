@@ -1,0 +1,18 @@
+Resources:
+- UEFI spec - https://uefi.org/specs/UEFI/2.9_A/07_Services_Boot_Services.html#memory-type-usage-after-exitbootservices
+- efi sample code efi_loader.c based on and it libraries - https://github.com/krinkinmu/efi, https://krinkinmu.github.io/2020/10/11/efi-getting-started.html
+- https://wiki.osdev.org/GNU-EFI - original GNU EFI
+- useful efi loader sources and makefile rules we use (crt0-efi-*.S, reloc_*.c, elf_*_efi.lds) - https://github.com/vathpela/gnu-efi
+- https://0xc0ffee.netlify.app/osdev/09-loading-the-kernel-p2#get-memory-map - example of code to load kernel at designated area of physical memory
+- https://joonas.fi/2021/02/uefi-pc-boot-process-and-uefi-with-qemu/ - legacy BIOS vs UEFI
+- https://rust-osdev.github.io/uefi-rs/tutorial/vm.html - Rust UEFI book
+- https://github.com/ajxs/uefi-elf-bootloader/tree/master - another UEFI boot loader example
+
+State:
+- Initially hardcoded to work on aarch64 (see branch efi_acpi_gicv3_its with master merged on Dec 7th 2025)
+- Modified and hard-coded to work on x64:
+  - ACPI rdsp hardcoded - should be passed
+  - memory layout hardcoded - should be passed
+  - kernel ELF loaded at 0x200000 - can it always work?
+  - shall we allocate memory for kernel ELF and stack?
+- What about the code from https://github.com/krinkinmu/efi - copy what we need, it uses https://unlicense.org/)

@@ -68,9 +68,9 @@ static efi_status_t setup_loader(
 			"failed to get loader image protocol\r\n");
 		return status;
 	}
-	/*err(
+	err(
 		system,
-		"Po get_loader_image\n");*/
+		"Po get_loader_image\n");
 
 	struct efi_simple_file_system_protocol *rootfs;
 	status = get_rootfs(
@@ -120,7 +120,7 @@ static efi_status_t load_kernel(struct efi_system_table *system,
 		return status;
 	}
 
-        uint64_t pages_to_alloc = (image_size + 0x200000 + 0x90000) / page_size; //Add 2MB
+        /*uint64_t pages_to_alloc = (image_size + 0x200000 + 0x90000) / page_size; //Add 2MB
 	status = system->boot->allocate_pages(
 		EFI_ALLOCATE_ANY_PAGES,
 		EFI_LOADER_DATA,
@@ -132,11 +132,12 @@ static efi_status_t load_kernel(struct efi_system_table *system,
 			"failed to allocate buffer for the kernel\r\n");
 		return status;
 	}
-	err( system, "Allocated %u pages at address:%p\r\n", pages_to_alloc, image_addr);
+	err( system, "Allocated %u pages at address:%p\r\n", pages_to_alloc, image_addr);*/
 	//memset((void *)image_addr, 0, image_size); //Some BSS zero-ing?
 	//
         //Load kernel file into memory
-	image_addr = ((image_addr + 0x200000 -1) & (-0x200000)) + 0x90000; //Align it to conform to OSv expecting it like with regular boot
+	//image_addr = ((image_addr + 0x200000 -1) & (-0x200000)) + 0x90000; //Align it to conform to OSv expecting it like with regular boot
+	image_addr = 0x200000;
 	err( system, "Loading kernel at: %p\r\n", image_addr);
 	status = efi_read_fixed(
 		system,
@@ -202,13 +203,13 @@ static efi_status_t exit_efi_boot_services(struct efi_boot_table *boot, efi_hand
 
 		return status;
 	}
-
+/*
 	uint16_t buffer[512];
 
 	u16snprintf(buffer, 512, "Max memory type:%lu, loop:%u, handle:%p\n", EFI_MAX_MEMORY_TYPE, loop, handle);
 	out->output_string(out, buffer);
 
-	/*efi_uint_t i = 0;
+	efi_uint_t i = 0;
 	uint64_t desc_num = ((uint64_t)mmap_size) / desc_size;
         for (; i < desc_num; i++) {
 	    struct efi_memory_descriptor* desc = (struct efi_memory_descriptor*)((void*)mmap + i * desc_size);
@@ -216,9 +217,9 @@ static efi_status_t exit_efi_boot_services(struct efi_boot_table *boot, efi_hand
 	    if (type != EFI_LOADER_CODE && type != EFI_LOADER_DATA && type != EFI_BOOT_SERVICES_CODE && type != EFI_BOOT_SERVICES_DATA && type != EFI_CONVENTIAL_MEMORY) continue;
 	    u16snprintf(buffer, 512, "Memory descriptor: type:%u, start:%p, pages:%u\n", type, desc->physical_start, desc->pages);
 	    out->output_string(out, buffer);
-	}*/
+	}
 	uint16_t msg[] = u"-------------------------\n";
-	out->output_string(out, msg);
+	out->output_string(out, msg);*/
 
 	*memory_map = mmap;
         *descriptor_size = desc_size;
@@ -243,8 +244,8 @@ static efi_status_t exit_efi_boot_services(struct efi_boot_table *boot, efi_hand
 //  LOAD           0x000000 0x0000000fc0090000 0x0000000fc0090000 0x6820a4 0x714178 RWE 0x10000 (Newest with ACPI and ITS)
 //  LOAD           0x000000 0x0000000fc0090000 0x0000000fc0090000 0x6920a4 0x724178 RWE 0x10000 (with ENA)
 //  LOAD           0x000000 0x0000000fc0090000 0x0000000fc0090000 0x6a20a4 0x734178 RWE 0x10000 (with ENA and trace)
-#define KERNEL_MEMORY_SIZE 0x730000 //0x724178 Rounded up to the align 0x10000
-#define KERNEL_FILE_SIZE   0x6920a4
+#define KERNEL_MEMORY_SIZE 0x700000 //0x68cca8 Rounded up to the align 0x10000
+#define KERNEL_FILE_SIZE   0x609084
 
 static int memcmp( const void *ptr1, const void *ptr2, size_t num)
 {
@@ -253,6 +254,10 @@ static int memcmp( const void *ptr1, const void *ptr2, size_t num)
 		  return 1;
         return 0;
 }
+
+#define BOOT_PARAMS 0x9000
+#define SETUP_HEADER_OFFSET  0x1f1
+#define CMDLINE 0xb000
 
 efi_status_t efi_main(
 	efi_handle_t handle, struct efi_system_table *system)
@@ -286,7 +291,7 @@ efi_status_t efi_main(
         size_t memory_size = KERNEL_MEMORY_SIZE;
 	size_t file_size = KERNEL_FILE_SIZE;
 	uint16_t kernel_path[] = u"efi\\boot\\loader.elf";
-	//err(system, "Przed load_kernel\n");
+	err(system, "Przed load_kernel\n");
 	uint64_t kernel_phys_start;
 	status = load_kernel(
 		system,
@@ -296,27 +301,49 @@ efi_status_t efi_main(
                 memory_size,
 		file_size,
 		&kernel_phys_start);
-	//err(system, "Po load_kernel, kernel_phys_start:%p\n", kernel_phys_start);
+	err(system, "Po load_kernel, kernel_phys_start:%p\n", kernel_phys_start);
 	if (status != 0)
 		return status;
-        uint64_t entry_point = kernel_phys_start + 0x30000; //TODO do not hardcode 0x30000
+        //uint64_t entry_point = kernel_phys_start + 0x30000; //TODO do not hardcode 0x30000
+        uint64_t entry_point = 0x326188;
+        //uint64_t entry_point = 0x32617c;
 	err(system, "Entry point:%p\n", entry_point);
 
 	void *memory_map;
 	size_t descriptor_size, mmap_size;
 	exit_efi_boot_services(system->boot, my_handle, system->out, &memory_map, &descriptor_size, &mmap_size);
 
-	void (ELFABI *entry)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t) ;
-	entry = (void (ELFABI *)(uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t, uint64_t)) entry_point;
+	void (ELFABI *entry)(uint64_t);
+	entry = (void (ELFABI *)(uint64_t)) entry_point;
+	const char* cmdline = "--verbose --rootfs=rofs /hello";
+	//const char* cmdline = "--verbose --rootfs=rofs --mount-fs=rofs,/dev/vblk1.1,/data /data/hello";
 	//const char* cmdline = "--bootchart --rootfs=rofs /hello";
 	//const char* cmdline = "--bootchart --noshutdown --rootfs=rofs /httpserver.so";
-	const char* cmdline = "--bootchart --noshutdown --rootfs=rofs /libhttpserver-api.so --access-allow=true";
+	//const char* cmdline = "--bootchart --noshutdown --rootfs=rofs /libhttpserver-api.so --access-allow=true";
+	char *cmdline_copy = (char*)CMDLINE;
+	for (; *cmdline; cmdline_copy++, cmdline++)
+            *cmdline_copy = *cmdline;
+        *cmdline_copy = 0;
 
 	/* disable MMU */
-        uint64_t sctlr = 0;
-        asm volatile ("msr SCTLR_EL1, %0;"
-                      "isb":: "r" (sctlr));
-	(*entry)(0, mmap_size, acpi_rsdp, kernel_phys_start, (uint64_t)cmdline, 0x40000000, (uint64_t)memory_map, descriptor_size);
+        //uint64_t sctlr = 0;
+        //asm volatile ("msr SCTLR_EL1, %0;"
+        //              "isb":: "r" (sctlr));
+        uint64_t boot_params = BOOT_PARAMS;
+        *((uint16_t*)(boot_params + SETUP_HEADER_OFFSET + 1 + 8 + 4)) = 0xaa55;
+        *((uint32_t*)(boot_params + SETUP_HEADER_OFFSET + 1 + 12 + 4)) = 0x53726448;
+        *((uint32_t*)(boot_params + SETUP_HEADER_OFFSET + 5 + 2 * 11 + 4 * 7)) = CMDLINE;
+        // e820
+        *((uint8_t*)(boot_params + 0x1e8)) = 2;                 //entries num
+        *((uint64_t*)(boot_params + 0x2d0 + 0)) = 0x100000;     //table 1st entry
+        *((uint64_t*)(boot_params + 0x2d0 + 8)) = 5127 * 4096;
+        *((uint32_t*)(boot_params + 0x2d0 + 16)) = 1;
+        *((uint64_t*)(boot_params + 0x2d0 + 20)) = 0x1600000;   //table 2nd entry
+        *((uint64_t*)(boot_params + 0x2d0 + 28)) = 502110 * 4096;
+        *((uint32_t*)(boot_params + 0x2d0 + 36)) = 1;
+
+        asm volatile ("mov %0, %%rsi;":: "r" (boot_params));
+	(*entry)(boot_params);
 
 	//while (1) {}
 
