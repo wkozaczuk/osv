@@ -1,0 +1,28 @@
+#qemu-system-aarch64 -M virt,acpi=off -m 1G -smp 1 --nographic -machine gic-version=2 \
+#qemu-system-aarch64 -M virt,acpi=off -enable-kvm -cpu host -m 1G -smp 1 --nographic -machine gic-version=max \
+/home/wkozaczuk/projects/qemu/build/qemu-system-aarch64 -M virt,acpi=on -enable-kvm -cpu host -m 512M -smp 1 --nographic -machine gic-version=max \
+	-drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/aarch64/QEMU_EFI-silent-pflash.raw \
+	-drive if=pflash,format=raw,file=build/release/efi/QEMU_VARS_efi_loader.fd \
+        -device nvme,serial=deadbeef,drive=nvm \
+        -drive file=build/release/efi/efi_loader_with_disk.img,format=raw,if=none,id=nvm \
+        -device virtio-rng-pci \
+        -netdev user,id=un0,net=192.168.122.0/24,host=192.168.122.1 \
+        -device virtio-net-pci,netdev=un0 \
+	-gdb tcp::1234,server,nowait \
+        -D /tmp/qemu-debug-log
+
+#VIRTIO
+#	-drive file=build/release/efi/efi_loader_with_disk.img,format=raw,id=hd0,if=none \
+#       -device virtio-blk-pci,id=blk0,drive=hd0 \
+#NVME
+# See why cache=none,aio=native breaks, and maybe without it it causes nvme slow
+#       -device nvme,serial=deadbeef,drive=nvm \
+#       -drive file=build/release/efi/efi_loader_with_disk.img,format=raw,if=none,id=nvm,cache=none,aio=native \
+
+	#-drive file=build/release/efi/efi_loader_with_disk.img,format=raw,id=hd0,if=none \
+#        -D /tmp/qemu-debug-log -no-reboot -no-shutdown
+
+#        -netdev user,id=un0,net=192.168.122.0/24,host=192.168.122.1 \
+#        -device virtio-net-pci,netdev=un0 \
+#        -device virtio-blk-device,id=blk0,drive=hd0 \
+#        -net none \

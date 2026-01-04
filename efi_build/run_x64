@@ -1,0 +1,30 @@
+qemu-system-x86_64 \
+-m 2G \
+-smp 4 \
+-vnc :1 \
+-gdb tcp::1234,server,nowait \
+-drive if=pflash,format=raw,readonly=on,file=/usr/share/OVMF/OVMF_CODE.fd \
+-device virtio-blk-pci,id=blk0,drive=hd0 \
+-drive file=build/release/efi/efi_loader.img,if=none,id=hd0,cache=none,aio=native \
+-device virtio-blk-pci,id=blk1,drive=hd1 \
+-drive file=build/release/usr.img,if=none,id=hd1,cache=none,aio=native \
+-netdev user,id=un0,net=192.168.122.0/24,host=192.168.122.1 \
+-device virtio-net-pci,romfile="",rombar=0,netdev=un0 \
+-device virtio-rng-pci \
+-enable-kvm \
+-cpu host,+x2apic \
+-chardev stdio,mux=on,id=stdio,signal=off \
+-mon chardev=stdio,mode=readline \
+-device isa-serial,chardev=stdio #-S
+
+#-drive if=pflash,format=raw,readonly=on,file=/usr/share/edk2/ovmf/OVMF_CODE.fd \
+
+#-nic none \
+#-netdev user,id=un0,net=192.168.122.0/24,host=192.168.122.1 \
+#-device virtio-net-pci,netdev=un0 \
+
+#-drive if=pflash,format=raw,file=build/release/efi/OVMF_VARS.fd \
+
+#-device virtio-blk-pci,id=blk1,drive=hd1 \
+#-drive file=build/release/usr.img,if=none,id=hd1,cache=none,aio=native \
+#-nographic \

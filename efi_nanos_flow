@@ -1,0 +1,20 @@
+src/x86_64/uefi-crt0.s: _start calls
+ - elf_dyn_relocate
+ - efi_main
+
+src/boot/uefi.c: ef_main calls
+ - uefi_arch_setup
+ - create_filesystem -> uefi_bootfs_complete
+
+  uefi_bootfs_complete calls
+    - load_elf_to_physical -> uefi_kernel_loaded -> uefi_start_kernel (if "load_to_physical" option) OR
+    - uefi_kernel_complete -> 
+      - load_kernel_elf
+      - uefi_start_kernel
+
+src/x86_64/uefi.c: uefi_start_kernel
+ - detect memory
+ - call start_kernel which in essence starts the kernel
+
+----
+src/x86_64/uefi.c: uefi_arch_setup

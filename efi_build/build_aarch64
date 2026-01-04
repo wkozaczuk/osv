@@ -1,0 +1,33 @@
+name=$1
+
+OUT=build/release/efi
+mkdir -p $OUT
+gcc -Iefi/efi -Iefi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-outline-atomics -c efi_build/crt0-efi-aarch64.S -o $OUT/crt0-efi-aarch64.o
+gcc -Iefi/efi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-outline-atomics -c efi_build/reloc_aarch64.c -o $OUT/reloc_aarch64.o
+
+gcc -Iefi/efi -Iefi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-outline-atomics -c efi/clib.c -o $OUT/clib.o
+gcc -Iefi/efi -Iefi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-outline-atomics -c efi/io.c -o $OUT/io.o
+gcc -Iefi/efi -Iefi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-outline-atomics -c efi/log.c -o $OUT/log.o
+
+gcc -Iefi/efi -Iefi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-outline-atomics -c efi_loader.c -o $OUT/efi_loader.o
+
+ld -shared -Bsymbolic -Tefi_build/elf_aarch64_efi.lds $OUT/efi_loader.o $OUT/clib.o $OUT/io.o $OUT/log.o $OUT/crt0-efi-aarch64.o $OUT/reloc_aarch64.o -o $OUT/efi_loader.so
+
+objcopy -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym  -j .rel \
+	-j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-aarch64 --subsystem=10 $OUT/efi_loader.so $OUT/efi_loader.efi
+
+dd if=/dev/zero of=$OUT/efi_loader.img bs=1k count=10000
+mformat -i $OUT/efi_loader.img -h 2 -t 100 -s 128 ::
+
+mmd -i $OUT/efi_loader.img ::/EFI
+mmd -i $OUT/efi_loader.img ::/EFI/BOOT
+mcopy -i $OUT/efi_loader.img $OUT/efi_loader.efi ::/efi/boot/bootx64.efi
+
+#mmd -i $OUT/efi_loader.img ::/EFI/Boot
+#mcopy -i $OUT/efi_loader.img $OUT/efi_loader.efi ::/EFI/Boot/bootaa64.efi
+#mcopy -i $OUT/efi_loader.img $OUT/efi_loader.efi ::/EFI/Boot/bootx64.efi
+
+mcopy -i $OUT/efi_loader.img build/release/loader-stripped.elf ::/efi/boot/loader.elf
+
+#cp /home/wkozaczuk/projects/osv/QEMU_VARS_efi_loader.fd $OUT/QEMU_VARS_efi_loader.fd
+cp /home/wkozaczuk/projects/osv/QEMU_VARS_efi_loader_nvme.fd $OUT/QEMU_VARS_efi_loader.fd

@@ -1,0 +1,9 @@
+cp build/release/efi/efi_loader.img build/release/efi/efi_loader_with_disk.img
+#./scripts/imgedit.py setpartition "-f raw build/release/efi/efi_loader_with_disk.img" 2 10485760 2017280
+#./scripts/imgedit.py setpartition "-f raw build/release/efi/efi_loader_with_disk.img" 2 10485760 6618112
+./scripts/imgedit.py setpartition "-f raw build/release/efi/efi_loader_with_disk.img" 2 10485760 1973760
+#qemu-img resize build/release/efi/efi_loader_with_disk.img 16777216b
+qemu-img resize build/release/efi/efi_loader_with_disk.img 20971520b
+#qemu-img resize build/release/rofs.img 4194304b
+qemu-img resize build/release/rofs.img 8388608b
+dd if=build/release/rofs.img of=build/release/efi/efi_loader_with_disk.img obs=10485760 seek=1

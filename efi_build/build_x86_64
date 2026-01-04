@@ -1,0 +1,35 @@
+name=$1
+
+OUT=build/release/efi
+mkdir -p $OUT
+gcc -DEFIAPI="__attribute__((ms_abi))" -Iefi/efi -Iefi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-avx -mno-red-zone -c efi_build/crt0-efi-x86_64.S -o $OUT/crt0-efi-x86_64.o
+gcc -DEFIAPI="__attribute__((ms_abi))" -Iefi/efi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-avx -mno-red-zone -c efi_build/reloc_x86_64.c -o $OUT/reloc_x86_64.o
+
+gcc -DEFIAPI="__attribute__((ms_abi))" -Iefi/efi -Iefi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-avx -mno-red-zone -c efi/clib.c -o $OUT/clib.o
+gcc -DEFIAPI="__attribute__((ms_abi))" -Iefi/efi -Iefi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-avx -mno-red-zone -c efi/io.c -o $OUT/io.o
+gcc -DEFIAPI="__attribute__((ms_abi))" -Iefi/efi -Iefi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-avx -mno-red-zone -c efi/log.c -o $OUT/log.o
+
+gcc -DEFIAPI="__attribute__((ms_abi))" -Iefi/efi -Iefi -fpic -ffreestanding -fno-stack-protector -fno-stack-check -fshort-wchar -mno-avx -mno-red-zone -c efi_loader.c -o $OUT/efi_loader.o
+
+ld -z noexecstack -shared -Bsymbolic -Tefi_build/elf_x86_64_efi.lds $OUT/efi_loader.o $OUT/clib.o $OUT/io.o $OUT/log.o $OUT/crt0-efi-x86_64.o $OUT/reloc_x86_64.o -o $OUT/efi_loader.so
+
+objcopy -j .text -j .sdata -j .data -j .rodata -j .dynamic -j .dynsym  -j .rel \
+	-j .rela -j .rel.* -j .rela.* -j .reloc --target efi-app-x86_64 --subsystem=10 $OUT/efi_loader.so $OUT/efi_loader.efi
+
+dd if=/dev/zero of=$OUT/efi_loader.raw bs=1k count=10000
+mformat -i $OUT/efi_loader.raw -h 2 -t 100 -s 128 ::
+
+mmd -i $OUT/efi_loader.raw ::/EFI
+mmd -i $OUT/efi_loader.raw ::/EFI/Boot
+mcopy -i $OUT/efi_loader.raw $OUT/efi_loader.efi ::/EFI/Boot/bootx64.efi
+
+#mmd -i $OUT/efi_loader.raw ::/EFI/Boot
+#mcopy -i $OUT/efi_loader.raw $OUT/efi_loader.efi ::/EFI/Boot/bootaa64.efi
+#mcopy -i $OUT/efi_loader.raw $OUT/efi_loader.efi ::/EFI/Boot/bootx64.efi
+
+mcopy -i $OUT/efi_loader.raw build/release/loader-stripped.elf ::/EFI/Boot/loader.elf
+qemu-img convert -O qcow2 $OUT/efi_loader.raw $OUT/efi_loader.img
+
+#cp /home/wkozaczuk/projects/osv/QEMU_VARS_efi_loader.fd $OUT/QEMU_VARS_efi_loader.fd
+#cp /home/wkozaczuk/projects/osv/QEMU_VARS_efi_loader_nvme.fd $OUT/QEMU_VARS_efi_loader.fd
+#cp /usr/share/edk2/ovmf/OVMF_VARS.fd build/release/efi/

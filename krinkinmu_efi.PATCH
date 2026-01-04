@@ -1,0 +1,175 @@
+diff --git a/efi/boot_table.h b/efi/boot_table.h
+index 2b3e50d..4c2e423 100644
+--- a/efi/boot_table.h
++++ b/efi/boot_table.h
+@@ -14,21 +14,21 @@ struct efi_boot_table
+ 	void (*unused2)();
+ 
+ 	// Memory Services
+-	efi_status_t (*allocate_pages)(
++	efi_status_t (EFIAPI *allocate_pages)(
+ 		enum efi_allocate_type,
+ 		enum efi_memory_type,
+ 		efi_uint_t,
+ 		uint64_t *);
+-	efi_status_t (*free_pages)(uint64_t, efi_uint_t);
+-	efi_status_t (*get_memory_map)(
++	efi_status_t (EFIAPI *free_pages)(uint64_t, efi_uint_t);
++	efi_status_t (EFIAPI *get_memory_map)(
+ 		efi_uint_t *,
+ 		struct efi_memory_descriptor *,
+ 		efi_uint_t *,
+ 		efi_uint_t *,
+ 		uint32_t *);
+-	efi_status_t (*allocate_pool)(
++	efi_status_t (EFIAPI *allocate_pool)(
+ 		enum efi_memory_type, efi_uint_t, void **);
+-	efi_status_t (*free_pool)(void *);
++	efi_status_t (EFIAPI *free_pool)(void *);
+ 
+ 	// Event & Timer Services
+ 	void (*unused7)();
+@@ -55,7 +55,7 @@ struct efi_boot_table
+ 	void (*unused23)();
+ 	void (*unused24)();
+ 
+-	efi_status_t (*exit_boot_services)(efi_handle_t, efi_uint_t);
++	efi_status_t (EFIAPI *exit_boot_services)(efi_handle_t, efi_uint_t);
+ 
+ 	// Miscellaneius Services
+ 	void (*unused26)();
+@@ -67,14 +67,14 @@ struct efi_boot_table
+ 	void (*unused30)();
+ 
+ 	// Open and Close Protocol Services
+-	efi_status_t (*open_protocol)(
++	efi_status_t (EFIAPI *open_protocol)(
+ 		efi_handle_t,
+ 		struct efi_guid *,
+ 		void **,
+ 		efi_handle_t,
+ 		efi_handle_t,
+ 		uint32_t);
+-	efi_status_t (*close_protocol)(
++	efi_status_t (EFIAPI *close_protocol)(
+ 		efi_handle_t,
+ 		struct efi_guid *,
+ 		efi_handle_t,
+@@ -82,7 +82,7 @@ struct efi_boot_table
+ 	void (*unused33)();
+ 
+ 	// Library Services
+-	efi_status_t (*protocols_per_handle)(
++	efi_status_t (EFIAPI *protocols_per_handle)(
+ 		efi_handle_t, struct efi_guid ***, efi_uint_t *);
+ 	void (*unused35)();
+ 	void (*unused36)();
+diff --git a/efi/file_protocol.h b/efi/file_protocol.h
+index de728f2..0283198 100644
+--- a/efi/file_protocol.h
++++ b/efi/file_protocol.h
+@@ -38,24 +38,24 @@ struct efi_file_info {
+ 
+ struct efi_file_protocol {
+     uint64_t revision;
+-    efi_status_t (*open)(
++    efi_status_t (EFIAPI *open)(
+         struct efi_file_protocol *,
+         struct efi_file_protocol **,
+         uint16_t *,
+         uint64_t,
+         uint64_t);
+-    efi_status_t (*close)(struct efi_file_protocol *);
++    efi_status_t (EFIAPI *close)(struct efi_file_protocol *);
+ 
+     void (*unused1)();
+ 
+-    efi_status_t (*read)(struct efi_file_protocol *, efi_uint_t *, void *);
++    efi_status_t (EFIAPI *read)(struct efi_file_protocol *, efi_uint_t *, void *);
+ 
+     void (*unused2)();
+ 
+-    efi_status_t (*get_position)(struct efi_file_protocol *, uint64_t *);
+-    efi_status_t (*set_position)(struct efi_file_protocol *, uint64_t);
++    efi_status_t (EFIAPI *get_position)(struct efi_file_protocol *, uint64_t *);
++    efi_status_t (EFIAPI *set_position)(struct efi_file_protocol *, uint64_t);
+ 
+-    efi_status_t (*get_info)(
++    efi_status_t (EFIAPI *get_info)(
+         struct efi_file_protocol *, struct efi_guid *, efi_uint_t *, void *);
+ 
+     void (*unused6)();
+diff --git a/efi/simple_file_system_protocol.h b/efi/simple_file_system_protocol.h
+index a88383b..0be2726 100644
+--- a/efi/simple_file_system_protocol.h
++++ b/efi/simple_file_system_protocol.h
+@@ -10,7 +10,7 @@
+ 
+ struct efi_simple_file_system_protocol {
+     uint64_t revision;
+-    efi_status_t (*open_volume)(
++    efi_status_t (EFIAPI *open_volume)(
+         struct efi_simple_file_system_protocol *, struct efi_file_protocol **);
+ };
+ 
+diff --git a/efi/simple_text_output_protocol.h b/efi/simple_text_output_protocol.h
+index 78a0675..a78662f 100644
+--- a/efi/simple_text_output_protocol.h
++++ b/efi/simple_text_output_protocol.h
+@@ -7,7 +7,7 @@ struct efi_simple_text_output_protocol
+ {
+ 	void (*unused1)();
+ 
+-	efi_status_t (*output_string)(
++	efi_status_t (EFIAPI *output_string)(
+ 		struct efi_simple_text_output_protocol *,
+ 		uint16_t *);
+ 
+@@ -16,7 +16,7 @@ struct efi_simple_text_output_protocol
+ 	void (*unused4)();
+ 	void (*unused5)();
+ 
+-	efi_status_t (*clear_screen)(
++	efi_status_t (EFIAPI *clear_screen)(
+ 		struct efi_simple_text_output_protocol *);
+ 
+ 	void (*unused6)();
+diff --git a/efi/system_table.h b/efi/system_table.h
+index a900abb..334d3f9 100644
+--- a/efi/system_table.h
++++ b/efi/system_table.h
+@@ -5,6 +5,11 @@
+ #include "simple_text_output_protocol.h"
+ #include "types.h"
+ 
++struct efi_configuration_table {
++        struct efi_guid guid;
++        void *table;
++};
++
+ struct efi_system_table
+ {
+ 	struct efi_table_header header;
+@@ -18,8 +23,8 @@ struct efi_system_table
+ 	struct efi_simple_text_output_protocol *err;
+ 	void *unused8;
+ 	struct efi_boot_table *boot;
+-	efi_uint_t unused10;
+-	void *unused11;
++        efi_uint_t number_of_table_entries;
++        struct efi_configuration_table* configuration_table;
+ };
+ 
+ #endif // __EFI_SYSTEM_TABLE_H__
+diff --git a/efi/types.h b/efi/types.h
+index 681e982..ca4e83d 100644
+--- a/efi/types.h
++++ b/efi/types.h
+@@ -50,6 +50,7 @@ struct efi_table_header {
+ 
+ struct efi_memory_descriptor {
+ 	uint32_t type;
++	uint32_t pad;
+ 	uint64_t physical_start;
+ 	uint64_t virtual_start;
+ 	uint64_t pages;
